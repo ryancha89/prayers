@@ -1,0 +1,53 @@
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { colors } from '../shared/theme';
+import { useT, TranslationKey } from '../shared/i18n';
+import { Icon, IconName } from '../shared/components/Icon';
+import { TabParamList } from './types';
+import { HomeScreen } from '../features/home/screens/HomeScreen';
+import { ConversationsScreen } from '../features/conversations/screens/ConversationsScreen';
+import { DiscoverScreen } from '../features/discover/screens/DiscoverScreen';
+import { MyPageScreen } from '../features/profile/screens/MyPageScreen';
+
+const Tab = createBottomTabNavigator<TabParamList>();
+
+const ICONS: Record<keyof TabParamList, IconName> = {
+  Home: 'home',
+  Conversations: 'chat',
+  Discover: 'compass',
+  My: 'person',
+};
+
+const LABEL_KEYS: Record<keyof TabParamList, TranslationKey> = {
+  Home: 'tab.home',
+  Conversations: 'tab.conversations',
+  Discover: 'tab.discover',
+  My: 'tab.my',
+};
+
+export const BottomTabNavigator: React.FC = () => {
+  const t = useT();
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.violetSoft,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: colors.bgElevated,
+          borderTopColor: 'rgba(255,255,255,0.06)',
+          borderTopWidth: 1,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabel: t(LABEL_KEYS[route.name]),
+        tabBarIcon: ({ color, focused }) => (
+          <Icon name={ICONS[route.name]} size={focused ? 22 : 20} color={color} />
+        ),
+      })}>
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Conversations" component={ConversationsScreen} />
+      <Tab.Screen name="Discover" component={DiscoverScreen} />
+      <Tab.Screen name="My" component={MyPageScreen} />
+    </Tab.Navigator>
+  );
+};
