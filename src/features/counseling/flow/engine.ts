@@ -588,6 +588,32 @@ export class ConsultationEngine {
     this.finish();
   }
 
+  /**
+   * Stage a beat that has no phase in the asset.
+   *
+   * The loop and the failure notices are RN's own: the doc's twenty phases end
+   * at the farewell and say nothing about a conversation after it, or about
+   * what the counselor does when the reading cannot be made. Until now those
+   * beats sent no staging at all, so he held whatever pose the last real phase
+   * left him in — thinking, through an entire chat.
+   *
+   * The gestures here are a DIRECTION CHOICE, not a transcription: `Agreeing`
+   * when he takes a question, `HeadShake` when he cannot answer, `Laugh` for
+   * the one relaxed moment in the session. Change them freely; nothing computes
+   * anything from these ids.
+   */
+  private stageBeat(id: string, trigger: string) {
+    this.stage.phase({
+      phaseId: id,
+      camera: 'dialogue',
+      animationTriggers: [trigger],
+      vfx: [],
+      sound: [],
+      spotlight: '',
+      resetVfx: false,
+    });
+  }
+
   /* ── Waiting on the reading ───────────────────────────────────────────── */
 
   private holdForReading(i: number) {
@@ -630,6 +656,7 @@ export class ConsultationEngine {
    */
   private showNotice(readingIndex: number) {
     this.stage.thinking(false);
+    this.stageBeat('NOTICE', 'HeadShake');
     const key =
       this.oracleError === 'no_chart'
         ? 'consult_no_chart_body'
@@ -683,6 +710,7 @@ export class ConsultationEngine {
   private openLoop() {
     this.inLoop = true;
     this.clearTimer();
+    this.stageBeat('LOOP_OPEN', 'Laugh');
     this.patch({
       screen: 'loop',
       canTap: false,
@@ -709,6 +737,8 @@ export class ConsultationEngine {
     this.appendTranscript('user', text);
     this.opts.onUserLine?.(text);
     this.patch({ inputEnabled: false, suggestion: '' });
+    // He takes the question in before he starts thinking about it.
+    this.stageBeat('LOOP_ASK', 'Agreeing');
     this.stage.thinking(true);
     this.stage.askOracle({ question: text, topic: this.topic, scope: this.scope, loop: true });
   }
@@ -728,6 +758,7 @@ export class ConsultationEngine {
       return;
     }
     this.followup = payload.followup ?? '';
+    this.stageBeat('LOOP_ANSWER', 'Explaining');
     this.appendTranscript('counselor', text);
     this.opts.onCounselorLine?.(text);
     this.patch({ inputEnabled: true, suggestion: this.followup });
