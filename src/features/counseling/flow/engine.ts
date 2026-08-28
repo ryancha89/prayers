@@ -1,0 +1,761 @@
+/**
+ * The consultation, run from React Native.
+ *
+ * This is a port of `ConsultationFlowController.cs` — order and state, nothing
+ * else. It walks the 20 phases, decides how long each one is held, collects the
+ * branch tags, and asks for the reading at the right moment. What the phase
+ * LOOKS like is the React layer's business; what it sounds and moves like is
+ * Unity's, reached only through `StagePort`.
+ *
+ * Why it moved: Unity was drawing the dialogue card, the choices, the question
+ * box and the report on a canvas inside the embedded player. That put the app's
+ * typography, its keyboard, its safe areas and its back gesture on the far side
+ * of a texture. The flow came along with the UI because the UI was where it was
+ * driven from — not because it needs an engine.
+ *
+ * What did NOT move, deliberately: the saju chart, the `uniq_id` thread key
+ * derived from it, and the AI turn that both feed. That derivation has to match
+ * `saju_world` byte for byte or the reading resumes into an empty thread, and a
+ * second copy of it in TypeScript is a second chance to get it wrong. Those stay
+ * in C# behind ORACLE_ASK / ORACLE_RESULT.
+ *
+ * Framework-free on purpose: no React, no timers of its own beyond an injectable
+ * scheduler, so the whole 20-phase walk is testable without a renderer.
+ */
+import {
+  ConsultationPhase,
+  PhaseChoice,
+  PhaseUi,
+} from './types';
+import { phases as allPhases, indexOf, loc, format } from './flowData';
+import { ui } from './strings';
+import type { Lang } from '../../../shared/i18n';
+import type {
+  OracleAskPayload,
+  OracleResultPayload,
+  StagePhasePayload,
+} from '../types';
+
+/* ── Tuning, ported from the controller's serialized fields ───────────────── */
+
+/** Reading speed in characters per second. Lower = each line is held longer. */
+const CHARS_PER_SECOND = 13;
+/** Minimum hold, even for a two-word line. */
+const MIN_HOLD_MS = 1800;
+/** Maximum hold, so an unusually long line does not freeze the screen. */
+const MAX_HOLD_MS = 9000;
+/** The pause after a line finishes, before the next phase. */
+const TAIL_MS = 700;
+/** How often a cover phase re-checks whether the reading has landed. */
+const COVER_POLL_MS = 200;
+/** The report card carries more text, so its hold is multiplied. */
+const REPORT_HOLD_MULTIPLIER = 2.2;
+
+/**
+ * Talk-first. The doc stages a scripted session: pick an area (P03), pick a
+ * time range (P04), then type. The app already asked for the topic on the way
+ * in, so two pickers in front of the input contradict it. P12/P16 are skipped
+ * because they cannot change the answer — the whole walk spends ONE AI turn.
+ */
+const SKIP_PHASES = ['P03', 'P04', 'P12', 'P16'];
+
+/** Phases that exist only to cover the wait for the server. */
+const COVER_PHASES = ['P06', 'P07', 'P08', 'P09', 'P10'];
+
+/** The last spoken reading beat; the free-chat loop takes over after it. */
+const LOOP_AFTER_PHASE = 'P19';
+
+/** The first phase that speaks the reading — the only one that has to wait. */
+const READING_PHASE = 'P11';
+
+/** Which viz stage the spotlight features, by phase (`SpotlightCueFor`). */
+const SPOTLIGHT: Record<string, string> = {
+  P07: 'MagicCircleForm',
+  P08: 'PillarYear',
+  P09: 'FiveElements',
+  P10: 'YearlyEnergyApproach',
+  P13: 'ReopenSaju',
+  P14: 'ReopenSaju',
+  P15: 'TimelineAppear',
+};
+
+/* ── Ports ────────────────────────────────────────────────────────────────── */
+
+/** Everything the flow asks of the 3D stage. One implementation drives Unity;
+ *  the tests use a recording double. */
+export interface StagePort {
+  phase(payload: StagePhasePayload): void;
+  thinking(on: boolean): void;
+  /** A fixed line: Unity looks up the recording by loc key. `cacheKey` is what
+   *  SPEAK_DONE comes back under, so it must be the same key the engine is
+   *  waiting on — a take that reports under a different name never unblocks. */
+  speakClip(locKeys: string[], topic: string, cacheKey: string): void;
+  /** An AI-written line: Unity synthesises it and files it under `cacheKey`. */
+  speakText(text: string, cacheKey: string): void;
+  stopSpeak(): void;
+  askOracle(payload: OracleAskPayload): void;
+  exit(): void;
+}
+
+export interface Scheduler {
+  set(fn: () => void, ms: number): number;
+  clear(handle: number): void;
+  /** The clock the timers run on. Read through the scheduler rather than from
+   *  `Date.now()` so a test that fast-forwards time also fast-forwards the
+   *  measurements taken between ticks — otherwise every dwell reads as zero
+   *  elapsed and the walk never leaves its first phase. */
+  now(): number;
+}
+
+export const realScheduler: Scheduler = {
+  set: (fn, ms) => setTimeout(fn, ms) as unknown as number,
+  clear: handle => clearTimeout(handle as unknown as ReturnType<typeof setTimeout>),
+  now: () => Date.now(),
+};
+
+/* ── State the React layer renders ────────────────────────────────────────── */
+
+export type FlowScreen =
+  | PhaseUi          // the phase's own mode
+  | 'thinking'       // waiting on the reading
+  | 'notice'         // disconnect / no-chart / upstream
+  | 'loop';          // free conversation
+
+export interface ChoiceView {
+  label: string;
+  choice: PhaseChoice;
+}
+
+export interface TranscriptLine {
+  role: 'user' | 'counselor';
+  text: string;
+}
+
+export interface NoticeView {
+  body: string;
+  retryLabel: string;
+  leaveLabel: string;
+}
+
+export interface ReportView {
+  rows: { label: string; score: number }[];
+  keywords: string;
+  period: string;
+}
+
+export interface FlowState {
+  phaseId: string | null;
+  screen: FlowScreen;
+  speaker: string;
+  line: string;
+  choices: ChoiceView[];
+  /** A dialogue beat is waiting for a tap; show the continue hint. */
+  canTap: boolean;
+  /** The chat bar accepts a question right now. */
+  inputEnabled: boolean;
+  notice: NoticeView | null;
+  report: ReportView | null;
+  transcript: TranscriptLine[];
+  /** The server's own follow-up question, offered as a pill. */
+  suggestion: string;
+  topic: string;
+  finished: boolean;
+}
+
+const emptyState: FlowState = {
+  phaseId: null,
+  screen: 'none',
+  speaker: '',
+  line: '',
+  choices: [],
+  canTap: false,
+  inputEnabled: false,
+  notice: null,
+  report: null,
+  transcript: [],
+  suggestion: '',
+  topic: '',
+  finished: false,
+};
+
+export interface EngineOptions {
+  stage: StagePort;
+  lang: Lang;
+  /** The area the app already asked for (design step 8). Seeds `topic`. */
+  presetTopic?: string;
+  /** Mirrored into the app's conversation history. */
+  onCounselorLine?: (text: string) => void;
+  onUserLine?: (text: string) => void;
+  onFinished?: () => void;
+  scheduler?: Scheduler;
+  phases?: ConsultationPhase[];
+}
+
+/* ── The engine ───────────────────────────────────────────────────────────── */
+
+export class ConsultationEngine {
+  private readonly stage: StagePort;
+  private readonly sched: Scheduler;
+  private readonly phases: ConsultationPhase[];
+  private readonly opts: EngineOptions;
+  private lang: Lang;
+
+  private state: FlowState = emptyState;
+  private listeners = new Set<(s: FlowState) => void>();
+
+  private index = -1;
+  private running = false;
+  private timer: number | null = null;
+
+  /** Branch tags collected so far — the reading layer reads these. */
+  private branches: string[] = [];
+  private topic = '';
+  private scope = '';
+  private question = '';
+
+  /** The reading, once it lands: phaseId → lines. */
+  private beats: Record<string, string[]> = {};
+  private oraclePending = false;
+  private oracleError: OracleResultPayload['error'] | null = null;
+  private followup = '';
+  private reportData: ReportView | null = null;
+
+  /** Set while a spoken take is playing; SPEAK_DONE clears it. */
+  private speaking: string | null = null;
+  private speakDoneWaiter: (() => void) | null = null;
+
+  private inLoop = false;
+  private loopTurns = 0;
+
+  constructor(opts: EngineOptions) {
+    this.opts = opts;
+    this.stage = opts.stage;
+    this.sched = opts.scheduler ?? realScheduler;
+    this.phases = opts.phases ?? allPhases;
+    this.lang = opts.lang;
+    this.topic = opts.presetTopic ?? '';
+  }
+
+  /* ── Subscription ─────────────────────────────────────────────────────── */
+
+  getState(): FlowState {
+    return this.state;
+  }
+
+  subscribe(fn: (s: FlowState) => void): () => void {
+    this.listeners.add(fn);
+    return () => {
+      this.listeners.delete(fn);
+    };
+  }
+
+  setLang(lang: Lang) {
+    this.lang = lang;
+  }
+
+  private patch(next: Partial<FlowState>) {
+    this.state = { ...this.state, ...next };
+    this.listeners.forEach(fn => fn(this.state));
+  }
+
+  /* ── Lifecycle ────────────────────────────────────────────────────────── */
+
+  begin() {
+    if (this.phases.length === 0) return;
+    this.branches = [];
+    this.question = '';
+    // Seeded, not blanked: begin() also runs on a replay, and the area the
+    // player picked on the way in still holds for the next question.
+    this.topic = this.opts.presetTopic ?? '';
+    this.scope = '';
+    this.beats = {};
+    this.reportData = null;
+    this.inLoop = false;
+    this.loopTurns = 0;
+    this.running = true;
+    this.index = -1;
+    this.state = { ...emptyState, topic: this.topic };
+    this.enter(0, { resetVfx: true });
+  }
+
+  dispose() {
+    this.clearTimer();
+    this.running = false;
+    this.listeners.clear();
+  }
+
+  /* ── Walking ──────────────────────────────────────────────────────────── */
+
+  advance() {
+    if (!this.running) return;
+    const current = this.current();
+    // Leaving the last reading beat hands over to the free-chat loop; the
+    // farewell only plays once the player is done asking.
+    if (current && current.id === LOOP_AFTER_PHASE && !this.inLoop) {
+      this.openLoop();
+      return;
+    }
+    this.enter(this.index + 1);
+  }
+
+  goTo(phaseId: string) {
+    if (!this.running) return;
+    const i = indexOf(phaseId);
+    if (i < 0) {
+      this.advance();
+      return;
+    }
+    // A backward jump is a new round: the table still holds the last reading's
+    // pillars, circle and timeline, and the new round rebuilds them at P07-P08.
+    this.enter(i, { resetVfx: i < this.index });
+  }
+
+  private current(): ConsultationPhase | null {
+    return this.index >= 0 && this.index < this.phases.length
+      ? this.phases[this.index]
+      : null;
+  }
+
+  private enter(i: number, opts: { resetVfx?: boolean } = {}) {
+    this.clearTimer();
+
+    // Hold at the analysis phases while the reading is still in flight. Those
+    // phases ARE the loading state — the doc simply never called them that.
+    if (this.running && this.oraclePending && this.needsReading(i)) {
+      this.holdForReading(i);
+      return;
+    }
+    // The turn can also fail before the flow ever reaches the hold.
+    if (this.running && this.oracleError && this.needsReading(i)) {
+      this.showNotice(i);
+      return;
+    }
+
+    if (i < 0 || i >= this.phases.length) {
+      this.finish();
+      return;
+    }
+
+    this.index = i;
+    const p = this.phases[i];
+    if (!p) {
+      this.advance();
+      return;
+    }
+
+    // Talk-first: step straight over the gates. `index` is already set, so
+    // advance() walks on exactly as if the phase had played out.
+    if (SKIP_PHASES.includes(p.id)) {
+      this.advance();
+      return;
+    }
+
+    this.stage.phase({
+      phaseId: p.id,
+      camera: p.camera,
+      animationTriggers: p.animationTriggers,
+      vfx: p.vfx,
+      sound: p.sound,
+      spotlight: SPOTLIGHT[p.id] ?? '',
+      resetVfx: opts.resetVfx === true,
+    });
+
+    this.show(p);
+
+    // Only unattended phases auto-advance. A Choices/QuestionBox phase waits
+    // for the player however long they need.
+    if (p.ui !== 'choices' && p.ui !== 'questionBox') this.autoAdvance(p);
+  }
+
+  private needsReading(i: number): boolean {
+    return i >= 0 && i < this.phases.length && this.phases[i]?.id === READING_PHASE;
+  }
+
+  /* ── Filling the card ─────────────────────────────────────────────────── */
+
+  private show(p: ConsultationPhase) {
+    const speaker = loc(p.speakerLocKey, this.lang, '');
+    const reading = this.beats[p.id];
+
+    if (reading && reading.length > 0) {
+      // The AI's reading wins over everything. The asset's text for the reading
+      // phases is the doc's "Example Dialogue" — a placeholder for the SHAPE of
+      // an answer, never the answer.
+      const text = reading.join('\n');
+      this.patch({
+        phaseId: p.id,
+        screen: p.ui,
+        speaker,
+        line: text,
+        choices: [],
+        canTap: true,
+        inputEnabled: false,
+        notice: null,
+        report: p.ui === 'report' ? this.reportData : null,
+      });
+      this.opts.onCounselorLine?.(text);
+      this.speak(() => this.stage.speakText(text, p.id), p.id);
+      return;
+    }
+
+    // A branch variant replaces the phase's own lines wholesale (doc phase 13).
+    // First match wins, so the most specific tag is listed first.
+    let lines = p.lines;
+    let keys = p.lineLocKeys;
+    for (const v of p.variants ?? []) {
+      if (!v.branchTag || !this.branches.includes(v.branchTag)) continue;
+      // A choices-only variant must not blank the card.
+      if (!v.lines || v.lines.length === 0) continue;
+      lines = v.lines;
+      keys = v.lineLocKeys;
+      break;
+    }
+
+    const body = (lines ?? [])
+      .map((fallback, i) => this.withTopic(loc(keys?.[i] ?? '', this.lang, fallback)))
+      .join('\n');
+
+    this.patch({
+      phaseId: p.id,
+      screen: p.ui,
+      speaker,
+      line: body,
+      choices: p.ui === 'choices' ? this.choicesOf(p) : [],
+      canTap: p.ui === 'dialogue' || p.ui === 'none',
+      inputEnabled: p.ui === 'questionBox',
+      notice: null,
+      report: p.ui === 'report' ? this.reportData : null,
+      topic: this.topic,
+    });
+    if (body) this.opts.onCounselorLine?.(body);
+
+    // Spoken with the SAME keys the line was resolved from, variant included,
+    // so a recorded take and the text on screen can never drift apart.
+    if (keys && keys.length > 0) {
+      this.speak(() => this.stage.speakClip(keys, this.topic, p.id), p.id);
+    }
+  }
+
+  private choicesOf(p: ConsultationPhase): ChoiceView[] {
+    return (p.choices ?? []).map(c => ({
+      label: this.withTopic(loc(c.locKey, this.lang, c.english)),
+      choice: c,
+    }));
+  }
+
+  /** `{0}` in a line is the topic — the asset interpolates rather than shipping
+   *  five copies of every phase from P04 onward. */
+  private withTopic(text: string): string {
+    if (!text.includes('{0}')) return text;
+    const label = this.topic ? loc(`consult_topic_${this.topic}`, this.lang, this.topic) : '';
+    return format(text, [label]);
+  }
+
+  /* ── Pacing ───────────────────────────────────────────────────────────── */
+
+  /** How long to leave a phase up when nobody authored a number: the time it
+   *  takes to READ what is on screen. */
+  private dwellMs(p: ConsultationPhase): number {
+    if (p.autoAdvanceSeconds > 0) return p.autoAdvanceSeconds * 1000;
+    const chars = this.state.line.length;
+    const read = (chars / CHARS_PER_SECOND) * 1000;
+    const mult = p.ui === 'report' ? REPORT_HOLD_MULTIPLIER : 1;
+    return Math.min(Math.max(read * mult, MIN_HOLD_MS), MAX_HOLD_MS * mult);
+  }
+
+  private autoAdvance(p: ConsultationPhase) {
+    const dwell = this.dwellMs(p);
+    const cover = COVER_PHASES.includes(p.id);
+    const started = this.sched.now();
+
+    const done = () => {
+      // A spoken take outlasting the reading estimate is the real clock —
+      // cutting the counselor off mid-sentence is worse than holding too long.
+      this.afterSpeech(() => {
+        this.timer = this.sched.set(() => {
+          this.timer = null;
+          this.advance();
+        }, TAIL_MS);
+      });
+    };
+
+    if (!cover) {
+      this.timer = this.sched.set(done, Math.max(1, dwell));
+      return;
+    }
+
+    // A cover phase stops the moment the reading is in hand. It still gets
+    // MIN_HOLD so the beat registers rather than flashing past, but it never
+    // pads a wait that is already over — so this one is polled rather than
+    // scheduled in a single shot.
+    //
+    // The tick has a floor of 1ms on purpose. Scheduling the exact remainder
+    // ends in an interval so small that adding it to the clock is a no-op in
+    // floating point, and the phase then spins forever a hair short of its own
+    // dwell — a hang with no error and no log.
+    const tick = () => {
+      const elapsed = this.sched.now() - started;
+      if (elapsed >= dwell || (elapsed >= MIN_HOLD_MS && !this.oraclePending)) {
+        done();
+        return;
+      }
+      this.timer = this.sched.set(tick, Math.max(1, Math.min(COVER_POLL_MS, dwell - elapsed)));
+    };
+    this.timer = this.sched.set(tick, Math.max(1, Math.min(COVER_POLL_MS, dwell)));
+  }
+
+  private speak(fire: () => void, cacheKey: string) {
+    this.stage.stopSpeak();
+    this.speaking = cacheKey;
+    fire();
+  }
+
+  private afterSpeech(then: () => void) {
+    if (!this.speaking) {
+      then();
+      return;
+    }
+    this.speakDoneWaiter = then;
+  }
+
+  /** Unity finished a spoken take. */
+  onSpeakDone(cacheKey: string) {
+    if (this.speaking && this.speaking !== cacheKey) return;
+    this.speaking = null;
+    const waiter = this.speakDoneWaiter;
+    this.speakDoneWaiter = null;
+    waiter?.();
+  }
+
+  private clearTimer() {
+    if (this.timer !== null) {
+      this.sched.clear(this.timer);
+      this.timer = null;
+    }
+    this.speakDoneWaiter = null;
+  }
+
+  /* ── Player input ─────────────────────────────────────────────────────── */
+
+  /** Tap-to-continue on a dialogue beat. */
+  tap() {
+    if (!this.running || !this.state.canTap) return;
+    this.clearTimer();
+    this.speaking = null;
+    this.stage.stopSpeak();
+    this.advance();
+  }
+
+  choose(choice: PhaseChoice) {
+    if (!this.running) return;
+    if (!choice) {
+      this.advance();
+      return;
+    }
+    if (choice.branchTag) {
+      this.branches.push(choice.branchTag);
+      if (choice.branchTag.startsWith('topic:')) {
+        this.topic = choice.branchTag.slice('topic:'.length);
+        this.patch({ topic: this.topic });
+      } else if (choice.branchTag.startsWith('scope:')) {
+        this.scope = choice.branchTag.slice('scope:'.length);
+      }
+    }
+    if (choice.goTo) this.goTo(choice.goTo);
+    else this.advance();
+  }
+
+  /** The P05 question, or a follow-up turn once the loop is open. */
+  submitQuestion(text: string) {
+    const trimmed = (text ?? '').trim();
+    if (!this.running || !trimmed) return;
+
+    if (this.inLoop) {
+      this.askLoop(trimmed);
+      return;
+    }
+
+    this.question = trimmed;
+    this.opts.onUserLine?.(trimmed);
+    this.oraclePending = true;
+    this.oracleError = null;
+    this.stage.askOracle({ question: trimmed, topic: this.topic, scope: this.scope });
+    this.patch({ inputEnabled: false });
+    this.advance();
+  }
+
+  leave() {
+    this.finish();
+  }
+
+  /* ── Waiting on the reading ───────────────────────────────────────────── */
+
+  private holdForReading(i: number) {
+    // Say that the wait is a wait. Without this the card from the last cover
+    // phase just sat there, and a 5-30 s hold looked exactly like a crash.
+    const p = this.phases[i];
+    this.patch({
+      screen: 'thinking',
+      speaker: loc(p?.speakerLocKey ?? '', this.lang, this.state.speaker),
+      line: loc('consult_thinking', this.lang, ui('thinking', this.lang)),
+      choices: [],
+      canTap: false,
+      inputEnabled: false,
+      notice: null,
+    });
+    this.stage.thinking(true);
+
+    const poll = () => {
+      if (!this.running) return;
+      if (this.oraclePending) {
+        this.timer = this.sched.set(poll, COVER_POLL_MS);
+        return;
+      }
+      this.timer = null;
+      this.stage.thinking(false);
+      if (this.oracleError) {
+        this.showNotice(i);
+        return;
+      }
+      this.enter(i);
+    };
+    this.timer = this.sched.set(poll, COVER_POLL_MS);
+  }
+
+  /**
+   * Three bodies for three different situations. Everything used to be
+   * "connection lost", including the case where the server answered perfectly
+   * well and the reading layer behind it had died — sending the player off to
+   * check their wifi for a fault that was not wifi.
+   */
+  private showNotice(readingIndex: number) {
+    this.stage.thinking(false);
+    const key =
+      this.oracleError === 'no_chart'
+        ? 'consult_no_chart_body'
+        : this.oracleError === 'upstream'
+          ? 'consult_upstream_body'
+          : 'consult_disconnect_body';
+    this.pendingRetryIndex = readingIndex;
+    this.patch({
+      screen: 'notice',
+      speaker: loc('consult_speaker_counselor', this.lang, ''),
+      line: '',
+      choices: [],
+      canTap: false,
+      inputEnabled: false,
+      notice: {
+        body: loc(key, this.lang, ''),
+        retryLabel: loc('consult_retry', this.lang, 'Retry'),
+        leaveLabel: loc('consult_leave_room', this.lang, 'Leave'),
+      },
+    });
+  }
+
+  private pendingRetryIndex = -1;
+
+  /** Re-asks the SAME question — the flow still holds topic, scope and text. */
+  retry() {
+    if (this.pendingRetryIndex < 0) return;
+    this.oraclePending = true;
+    this.oracleError = null;
+    this.stage.askOracle({ question: this.question, topic: this.topic, scope: this.scope });
+    this.enter(this.pendingRetryIndex);
+  }
+
+  /* ── The reading arrives ──────────────────────────────────────────────── */
+
+  onOracleResult(payload: OracleResultPayload) {
+    if (payload.loop) {
+      this.onLoopResult(payload);
+      return;
+    }
+    this.oraclePending = false;
+    this.oracleError = payload.ok ? null : (payload.error ?? 'connection');
+    this.followup = payload.followup ?? '';
+    if (payload.report) this.reportData = payload.report;
+    this.beats = {};
+    for (const beat of payload.beats ?? []) this.beats[beat.phaseId] = beat.lines;
+  }
+
+  /* ── The free-chat loop ───────────────────────────────────────────────── */
+
+  private openLoop() {
+    this.inLoop = true;
+    this.clearTimer();
+    this.patch({
+      screen: 'loop',
+      canTap: false,
+      inputEnabled: true,
+      choices: [],
+      notice: null,
+      suggestion: this.followup,
+      // The loop's opening line never had a Unity string key — it was an
+      // inspector field on ConsultationLoop. It is RN copy now.
+      line: ui('loop.intro', this.lang),
+    });
+    const intro = this.state.line;
+    if (intro) {
+      this.opts.onCounselorLine?.(intro);
+      this.appendTranscript('counselor', intro);
+      // No recorded take exists for a line that was never in the string
+      // table, so this one is synthesised like the reading beats are.
+      this.speak(() => this.stage.speakText(intro, 'loop_intro'), 'loop_intro');
+    }
+  }
+
+  private askLoop(text: string) {
+    this.loopTurns += 1;
+    this.appendTranscript('user', text);
+    this.opts.onUserLine?.(text);
+    this.patch({ inputEnabled: false, suggestion: '' });
+    this.stage.thinking(true);
+    this.stage.askOracle({ question: text, topic: this.topic, scope: this.scope, loop: true });
+  }
+
+  private onLoopResult(payload: OracleResultPayload) {
+    this.stage.thinking(false);
+    const text = (payload.beats?.[0]?.lines ?? []).join('\n');
+    if (!payload.ok || !text) {
+      this.patch({
+        inputEnabled: true,
+        suggestion: this.followup,
+      });
+      this.appendTranscript(
+        'counselor',
+        loc('consult_disconnect_body', this.lang, ''),
+      );
+      return;
+    }
+    this.followup = payload.followup ?? '';
+    this.appendTranscript('counselor', text);
+    this.opts.onCounselorLine?.(text);
+    this.patch({ inputEnabled: true, suggestion: this.followup });
+    this.speak(() => this.stage.speakText(text, `loop_${this.loopTurns}`), `loop_${this.loopTurns}`);
+  }
+
+  /** Leave the loop through P20 — a FORWARD jump, so the standing VFX survive
+   *  and the farewell always plays. */
+  endLoop() {
+    if (!this.inLoop) return;
+    this.inLoop = false;
+    this.patch({ screen: 'none', inputEnabled: false, suggestion: '' });
+    this.goTo('P20');
+  }
+
+  private appendTranscript(role: TranscriptLine['role'], text: string) {
+    this.patch({ transcript: [...this.state.transcript, { role, text }] });
+  }
+
+  /* ── The end ──────────────────────────────────────────────────────────── */
+
+  private finish() {
+    if (!this.running) return;
+    this.running = false;
+    this.clearTimer();
+    this.stage.stopSpeak();
+    this.patch({ finished: true, screen: 'none', inputEnabled: false, canTap: false });
+    this.opts.onFinished?.();
+    this.stage.exit();
+  }
+}

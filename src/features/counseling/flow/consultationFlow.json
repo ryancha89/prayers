@@ -1,0 +1,1135 @@
+{
+  "phases": [
+    {
+      "id": "P01",
+      "situation": "The player enters the consultation room and meets the fortune teller.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "Hello."
+      ],
+      "lineLocKeys": [
+        "consult_p01_l0"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "DoorOpen",
+        "WalkIn",
+        "WalkStop",
+        "LookAtCounselor",
+        "SitDown",
+        "IdleSitting",
+        "CounselorLookAtCustomer",
+        "CounselorSlightSurprise",
+        "CounselorSmile"
+      ],
+      "camera": "establishing",
+      "vfx": [
+        "DoorLightTransition",
+        "AmbientParticles"
+      ],
+      "sound": [
+        "DoorOpening",
+        "Footsteps",
+        "ChairMovement",
+        "MusicStart"
+      ],
+      "ui": "none",
+      "choices": [],
+      "autoAdvanceSeconds": 4.0
+    },
+    {
+      "id": "P02",
+      "situation": "The counselor acknowledges the player and starts the consultation.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "Welcome. What would you like to know today?"
+      ],
+      "lineLocKeys": [
+        "consult_p02_l0"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "LookAtPlayer",
+        "Smile",
+        "GreetingHandGesture",
+        "SlightBow",
+        "OpenPalmGesture",
+        "Idle"
+      ],
+      "camera": "dialogue",
+      "vfx": [
+        "AmbientMagicParticles"
+      ],
+      "sound": [
+        "CounselorVoice",
+        "DialogueTransition"
+      ],
+      "ui": "dialogue",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P03",
+      "situation": "The counselor asks which area of fortune the player wants to explore.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "Which area of your life would you like me to read?"
+      ],
+      "lineLocKeys": [
+        "consult_p03_l0"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "Listen",
+        "Nod",
+        "ThinkingIdle",
+        "LookTowardSelectedOption"
+      ],
+      "camera": "dialogue",
+      "vfx": [
+        "OptionGlow",
+        "HoverScaleUp",
+        "SelectionHighlight"
+      ],
+      "sound": [
+        "Hover",
+        "Selection",
+        "Confirmation"
+      ],
+      "ui": "choices",
+      "choices": [
+        {
+          "locKey": "consult_p03_c0",
+          "english": "Wealth Fortune",
+          "goTo": "",
+          "branchTag": "topic:wealth"
+        },
+        {
+          "locKey": "consult_p03_c1",
+          "english": "Love Fortune",
+          "goTo": "",
+          "branchTag": "topic:love"
+        },
+        {
+          "locKey": "consult_p03_c2",
+          "english": "Business Fortune",
+          "goTo": "",
+          "branchTag": "topic:business"
+        },
+        {
+          "locKey": "consult_p03_c3",
+          "english": "Career Fortune",
+          "goTo": "",
+          "branchTag": "topic:career"
+        },
+        {
+          "locKey": "consult_p03_c4",
+          "english": "Health Fortune",
+          "goTo": "",
+          "branchTag": "topic:health"
+        }
+      ],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P04",
+      "situation": "After selecting a category, the player chooses the time range or specific concern.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "I see. How deeply would you like to explore your {0}?"
+      ],
+      "lineLocKeys": [
+        "consult_p04_l0"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "Thinking",
+        "HandOnChin",
+        "LookAtPlayer",
+        "Explain"
+      ],
+      "camera": "dialogue",
+      "vfx": [
+        "OptionsFadeIn"
+      ],
+      "sound": [
+        "OptionTransition"
+      ],
+      "ui": "choices",
+      "choices": [
+        {
+          "locKey": "consult_p04_c0",
+          "english": "Lifetime {0}",
+          "goTo": "",
+          "branchTag": "scope:lifetime"
+        },
+        {
+          "locKey": "consult_p04_c1",
+          "english": "{0} this year",
+          "goTo": "",
+          "branchTag": "scope:year"
+        },
+        {
+          "locKey": "consult_p04_c2",
+          "english": "{0} this month",
+          "goTo": "",
+          "branchTag": "scope:month"
+        },
+        {
+          "locKey": "consult_p04_c3",
+          "english": "Timing of opportunities",
+          "goTo": "",
+          "branchTag": "scope:timing"
+        },
+        {
+          "locKey": "consult_p04_c4",
+          "english": "Business / investment",
+          "goTo": "",
+          "branchTag": "scope:business"
+        }
+      ],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P05",
+      "situation": "The player enters a natural-language question related to the selected topic.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "What would you like to ask me?"
+      ],
+      "lineLocKeys": [
+        "consult_p05_l0"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "ListenMode",
+        "EyeContact",
+        "Blink",
+        "SlightNod",
+        "Listening",
+        "SmallSmile"
+      ],
+      "camera": "dialogue",
+      "vfx": [
+        "InputFocus"
+      ],
+      "sound": [
+        "AmbientLow"
+      ],
+      "ui": "questionBox",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P06",
+      "situation": "The counselor processes the user's question before beginning the Saju reading.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "I see. You would like to know about the flow of your {0} this year.",
+        "Let me take a closer look at your Saju."
+      ],
+      "lineLocKeys": [
+        "consult_p06_l0",
+        "consult_p06_l1"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "LookAtPlayer",
+        "Thinking",
+        "SlightNod",
+        "Decision",
+        "FocusedExpression"
+      ],
+      "camera": "closeUp",
+      "vfx": [
+        "SpaceTransition"
+      ],
+      "sound": [
+        "ShortTransition",
+        "VoiceEmphasis"
+      ],
+      "ui": "dialogue",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P07",
+      "situation": "The counselor prepares to analyze the player's Four Pillars.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "Let me examine your Four Pillars."
+      ],
+      "lineLocKeys": [
+        "consult_p07_l0"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "HandRaise",
+        "HandMove",
+        "PalmOpen",
+        "FingerPoint",
+        "Focus",
+        "EyesClose",
+        "DeepBreath"
+      ],
+      "camera": "analysis",
+      "vfx": [
+        "MagicCircleForm",
+        "LightGather"
+      ],
+      "sound": [
+        "LowMagicalTone",
+        "EnergyBuildUp"
+      ],
+      "ui": "none",
+      "choices": [],
+      "autoAdvanceSeconds": 3.5
+    },
+    {
+      "id": "P08",
+      "situation": "The player's Saju / Four Pillars appear as a 3D visualization.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "Let's see what your Saju reveals."
+      ],
+      "lineLocKeys": [
+        "consult_p08_l0"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "Focused",
+        "LookAtSaju",
+        "PointAtPillars",
+        "Analyze",
+        "Nod"
+      ],
+      "camera": "analysis",
+      "vfx": [
+        "MagicCircle",
+        "PillarYear",
+        "PillarMonth",
+        "PillarDay",
+        "PillarHour",
+        "HeavenlyStems",
+        "EarthlyBranches",
+        "PillarsConnect",
+        "EnergyLines"
+      ],
+      "sound": [
+        "LayeredReveal",
+        "SoftChimes",
+        "EnergyActivation"
+      ],
+      "ui": "dialogue",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P09",
+      "situation": "The Five Elements and their relationships are visualized around the Saju chart.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "This part of your elemental balance is especially important."
+      ],
+      "lineLocKeys": [
+        "consult_p09_l0"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "Thinking",
+        "Point",
+        "Analyze",
+        "SlightSurprise",
+        "FocusedLook"
+      ],
+      "camera": "analysis",
+      "vfx": [
+        "FiveElements",
+        "EnergyFlow",
+        "ConnectionLines",
+        "HighlightStrong",
+        "DimWeak",
+        "ParticleTrails"
+      ],
+      "sound": [
+        "ElementActivation",
+        "EnergyMovement"
+      ],
+      "ui": "dialogue",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P10",
+      "situation": "The player's Saju is connected with the current year's energy.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "Ah... this part connects directly to your {0} this year."
+      ],
+      "lineLocKeys": [
+        "consult_p10_l0"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "Analyze",
+        "LookAtSaju",
+        "LookAtPlayer",
+        "SlightSurprise",
+        "ConfidentExpression"
+      ],
+      "camera": "analysis",
+      "vfx": [
+        "YearlyEnergyApproach",
+        "EnergyConnection",
+        "WealthIndicatorHighlight"
+      ],
+      "sound": [
+        "BuildUp",
+        "EnergyConnection",
+        "SubtleImpact"
+      ],
+      "ui": "dialogue",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P11",
+      "situation": "The counselor gives the first meaningful interpretation.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "Your {0} this year is not weak.",
+        "In fact, there may be opportunities to create a new source of income."
+      ],
+      "lineLocKeys": [
+        "consult_p11_l0",
+        "consult_p11_l1"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "EyeContact",
+        "Smile",
+        "OpenHandGesture",
+        "SlightNod",
+        "Explain"
+      ],
+      "camera": "closeUp",
+      "vfx": [],
+      "sound": [
+        "VoiceEmphasis",
+        "SoftConfirmation"
+      ],
+      "ui": "dialogue",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P12",
+      "situation": "The counselor asks about the player's real-life situation.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "There is one thing I want to ask. Are you thinking about starting something new or investing this year?"
+      ],
+      "lineLocKeys": [
+        "consult_p12_l0"
+      ],
+      "variants": [
+        {
+          "branchTag": "",
+          "lines": [
+            "There is one thing I want to ask. Where does your heart stand right now?"
+          ],
+          "lineLocKeys": [
+            "consult_p12_love_l0"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "There is one thing I want to ask. What stage is your business at?"
+          ],
+          "lineLocKeys": [
+            "consult_p12_biz_l0"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "There is one thing I want to ask. How is your career path these days?"
+          ],
+          "lineLocKeys": [
+            "consult_p12_career_l0"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "There is one thing I want to ask. How has your health been lately?"
+          ],
+          "lineLocKeys": [
+            "consult_p12_health_l0"
+          ]
+        }
+      ],
+      "animationTriggers": [
+        "LeanForward",
+        "Curious",
+        "EyeContact",
+        "Listen"
+      ],
+      "camera": "dialogue",
+      "vfx": [
+        "ChoiceButtonsAppear"
+      ],
+      "sound": [
+        "ChoiceHover",
+        "ChoiceSelect"
+      ],
+      "ui": "choices",
+      "choices": [
+        {
+          "locKey": "consult_p12_c0",
+          "english": "Start a business",
+          "goTo": "",
+          "branchTag": "plan:business"
+        },
+        {
+          "locKey": "consult_p12_c1",
+          "english": "Consider investing",
+          "goTo": "",
+          "branchTag": "plan:invest"
+        },
+        {
+          "locKey": "consult_p12_c2",
+          "english": "Create a side income",
+          "goTo": "",
+          "branchTag": "plan:side"
+        },
+        {
+          "locKey": "consult_p12_c3",
+          "english": "No specific plans",
+          "goTo": "",
+          "branchTag": "plan:none"
+        }
+      ],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P13",
+      "situation": "The counselor reacts differently depending on the player's answer.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "Then the situation is a little different."
+      ],
+      "lineLocKeys": [
+        "consult_p13_l0"
+      ],
+      "variants": [
+        {
+          "branchTag": "",
+          "lines": [
+            "If it's a business, then the situation is a little different.",
+            "Your wealth pillar is active — but active in a way that puts the weight on you."
+          ],
+          "lineLocKeys": [
+            "consult_p13_business_l0",
+            "consult_p13_business_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "If it's investing, I need to look more carefully.",
+            "Money moves quickly for you this year — quickly in both directions."
+          ],
+          "lineLocKeys": [
+            "consult_p13_invest_l0",
+            "consult_p13_invest_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "A side income... that suits your chart.",
+            "Your wealth arrives as several small streams rather than one large one."
+          ],
+          "lineLocKeys": [
+            "consult_p13_side_l0",
+            "consult_p13_side_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Having no specific plan is fine.",
+            "But your chart says the opportunity will come to you — do not let it pass by."
+          ],
+          "lineLocKeys": [
+            "consult_p13_none_l0",
+            "consult_p13_none_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Getting to know someone... then this bond deserves a careful look.",
+            "Your romance star is bright — but bright does not yet mean lasting."
+          ],
+          "lineLocKeys": [
+            "consult_p13_love_seeing_l0",
+            "consult_p13_love_seeing_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Taking it further... that step needs the right moment.",
+            "Your chart says this bond grows stronger when unhurried."
+          ],
+          "lineLocKeys": [
+            "consult_p13_love_commit_l0",
+            "consult_p13_love_commit_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Just ended... then first the heart must settle.",
+            "While the old bond lingers, the new one keeps its distance."
+          ],
+          "lineLocKeys": [
+            "consult_p13_love_healing_l0",
+            "consult_p13_love_healing_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Being on your own is not a loss.",
+            "Your bonds arrive in seasons — what matters is opening the right door."
+          ],
+          "lineLocKeys": [
+            "consult_p13_love_single_l0",
+            "consult_p13_love_single_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Something new... your energy wants to move.",
+            "But movement needs a root — begin small and firm."
+          ],
+          "lineLocKeys": [
+            "consult_p13_biz_new_l0",
+            "consult_p13_biz_new_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Expanding asks how much your day pillar can carry.",
+            "Within your strength it holds; one step too far and it slips."
+          ],
+          "lineLocKeys": [
+            "consult_p13_biz_expand_l0",
+            "consult_p13_biz_expand_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "A stall is not a dead end.",
+            "Your luck is changing season — holding cash matters more than opening more."
+          ],
+          "lineLocKeys": [
+            "consult_p13_biz_stuck_l0",
+            "consult_p13_biz_stuck_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Thinking of stepping back... sometimes one step back keeps the whole board.",
+            "Your chart's luck is not cut — this stretch just asks for a slower pace."
+          ],
+          "lineLocKeys": [
+            "consult_p13_biz_exit_l0",
+            "consult_p13_biz_exit_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "A move... the door is ajar, not yet open.",
+            "On the right beat you rise; one hasty step and you start over."
+          ],
+          "lineLocKeys": [
+            "consult_p13_career_move_l0",
+            "consult_p13_career_move_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "For advancement we look at your official star.",
+            "This year a backer is present — do not stand where they cannot see you."
+          ],
+          "lineLocKeys": [
+            "consult_p13_career_grow_l0",
+            "consult_p13_career_grow_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Searching — then do not scatter too wide.",
+            "Your chart favors a narrow, deep door — one craft that feeds you long."
+          ],
+          "lineLocKeys": [
+            "consult_p13_career_start_l0",
+            "consult_p13_career_start_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Holding your place is also a move.",
+            "This luck builds the root — and a firm root makes the next step higher."
+          ],
+          "lineLocKeys": [
+            "consult_p13_career_stay_l0",
+            "consult_p13_career_stay_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Something worrying you... then listen to your body first, and me second.",
+            "The chart can only point at the weak spot — the one to confirm it is a doctor."
+          ],
+          "lineLocKeys": [
+            "consult_p13_health_issue_l0",
+            "consult_p13_health_issue_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Often drained means the energy is leaking.",
+            "Drop one task, sleep one watch earlier — a small leak mended early never becomes illness."
+          ],
+          "lineLocKeys": [
+            "consult_p13_health_tired_l0",
+            "consult_p13_health_tired_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Guarding early — that is what those who know their chart do.",
+            "Strong or weak, the body has its seasons — tend the right one and little is lost."
+          ],
+          "lineLocKeys": [
+            "consult_p13_health_prevent_l0",
+            "consult_p13_health_prevent_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Feeling fine is a blessing — still, the chart keeps one spot to watch.",
+            "Do not spend today's health as an advance on tomorrow."
+          ],
+          "lineLocKeys": [
+            "consult_p13_health_fine_l0",
+            "consult_p13_health_fine_l1"
+          ]
+        }
+      ],
+      "animationTriggers": [
+        "Surprise",
+        "Thinking",
+        "Serious",
+        "ReturnToAnalyze"
+      ],
+      "camera": "analysis",
+      "vfx": [
+        "ReopenSaju",
+        "HighlightBranchElements"
+      ],
+      "sound": [
+        "BranchTransition",
+        "AnalysisTone"
+      ],
+      "ui": "dialogue",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P14",
+      "situation": "The counselor performs a more targeted analysis based on the player's answer.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "Looking at your Saju, this year is better suited to..."
+      ],
+      "lineLocKeys": [
+        "consult_p14_l0"
+      ],
+      "variants": [
+        {
+          "branchTag": "",
+          "lines": [
+            "Looking at your Saju, you can start this year — but start small.",
+            "Your day stem has a root, so you can take the pressure; what is missing is a reserve."
+          ],
+          "lineLocKeys": [
+            "consult_p14_business_l0",
+            "consult_p14_business_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Looking at your Saju, you should split your investment this year.",
+            "Do not put it all in one place: your wealth flow rises and falls with the season."
+          ],
+          "lineLocKeys": [
+            "consult_p14_invest_l0",
+            "consult_p14_invest_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Looking at your Saju, a steady stream will be stronger than one big win.",
+            "What you need is something that keeps working while you are busy."
+          ],
+          "lineLocKeys": [
+            "consult_p14_side_l0",
+            "consult_p14_side_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "Looking at your Saju, this year is for holding and preparing.",
+            "The opening comes mid-year; having cash ready then is the advantage."
+          ],
+          "lineLocKeys": [
+            "consult_p14_none_l0",
+            "consult_p14_none_l1"
+          ]
+        }
+      ],
+      "animationTriggers": [
+        "Point",
+        "Explain",
+        "LookAtSaju",
+        "LookAtPlayer",
+        "HandGesture"
+      ],
+      "camera": "analysis",
+      "vfx": [
+        "ElementHighlight",
+        "Glow",
+        "EnergyConnection",
+        "YearlyInteraction",
+        "ResultIndicator"
+      ],
+      "sound": [
+        "Pointing",
+        "EnergyMovement",
+        "SubtleChime"
+      ],
+      "ui": "dialogue",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P15",
+      "situation": "The counselor identifies a favorable or cautionary period within the year.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "Pay particular attention to the period from June to September."
+      ],
+      "lineLocKeys": [
+        "consult_p15_l0"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "PointForward",
+        "FollowPoint",
+        "Nod",
+        "Explain"
+      ],
+      "camera": "analysis",
+      "vfx": [
+        "TimelineAppear",
+        "TimelineDraw",
+        "KeyPeriodGlow",
+        "MarkerLand"
+      ],
+      "sound": [
+        "TimelineSweep",
+        "HighlightChime"
+      ],
+      "ui": "dialogue",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P16",
+      "situation": "The player chooses one final question for a more focused answer.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "Would you like me to look a little deeper into this?"
+      ],
+      "lineLocKeys": [
+        "consult_p16_l0"
+      ],
+      "variants": [
+        {
+          "branchTag": "",
+          "lines": [],
+          "lineLocKeys": []
+        },
+        {
+          "branchTag": "",
+          "lines": [],
+          "lineLocKeys": []
+        },
+        {
+          "branchTag": "",
+          "lines": [],
+          "lineLocKeys": []
+        },
+        {
+          "branchTag": "",
+          "lines": [],
+          "lineLocKeys": []
+        }
+      ],
+      "animationTriggers": [
+        "Listen",
+        "Nod",
+        "CuriousExpression"
+      ],
+      "camera": "dialogue",
+      "vfx": [
+        "ChoiceCardsFadeIn"
+      ],
+      "sound": [
+        "ChoiceHover",
+        "ChoiceSelect"
+      ],
+      "ui": "choices",
+      "choices": [
+        {
+          "locKey": "consult_p16_c0",
+          "english": "How can I save more money?",
+          "goTo": "",
+          "branchTag": "final:save"
+        },
+        {
+          "locKey": "consult_p16_c1",
+          "english": "Should I invest?",
+          "goTo": "",
+          "branchTag": "final:invest"
+        },
+        {
+          "locKey": "consult_p16_c2",
+          "english": "Should I start a business?",
+          "goTo": "",
+          "branchTag": "final:business"
+        },
+        {
+          "locKey": "consult_p16_c3",
+          "english": "When should I act?",
+          "goTo": "",
+          "branchTag": "final:timing"
+        }
+      ],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P17",
+      "situation": "The counselor summarizes the personalized interpretation and advice.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "To summarize your {0} this year...",
+        "Rather than trying to make a large amount of money all at once, the stronger opportunity is to build a new source of income."
+      ],
+      "lineLocKeys": [
+        "consult_p17_l0",
+        "consult_p17_l1"
+      ],
+      "variants": [
+        {
+          "branchTag": "",
+          "lines": [
+            "To summarize your {0} this year...",
+            "You can open the door — but open it a little, and always keep a way back."
+          ],
+          "lineLocKeys": [
+            "consult_p17_business_l0",
+            "consult_p17_business_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "To summarize your {0} this year...",
+            "Splitting it and moving slowly beats one decisive bet — this is not your year to gamble."
+          ],
+          "lineLocKeys": [
+            "consult_p17_invest_l0",
+            "consult_p17_invest_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "To summarize your {0} this year...",
+            "A small steady stream will carry you further than one large one-off sum."
+          ],
+          "lineLocKeys": [
+            "consult_p17_side_l0",
+            "consult_p17_side_l1"
+          ]
+        },
+        {
+          "branchTag": "",
+          "lines": [
+            "To summarize your {0} this year...",
+            "There is no need to decide yet. This year's work is being ready when the opening comes."
+          ],
+          "lineLocKeys": [
+            "consult_p17_none_l0",
+            "consult_p17_none_l1"
+          ]
+        }
+      ],
+      "animationTriggers": [
+        "SitStraight",
+        "GentleSmile",
+        "OpenHands",
+        "Explain",
+        "Nod"
+      ],
+      "camera": "dialogue",
+      "vfx": [],
+      "sound": [
+        "WarmMusicLayer",
+        "VoiceEmphasis"
+      ],
+      "ui": "dialogue",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P18",
+      "situation": "The consultation result is presented as a concise personalized report.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "2026 {0}"
+      ],
+      "lineLocKeys": [
+        "consult_p18_l0"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "IdleRelaxed"
+      ],
+      "camera": "result",
+      "vfx": [
+        "ResultSequential",
+        "ScoreAnimation",
+        "KeywordReveal",
+        "TimelineHighlight"
+      ],
+      "sound": [
+        "ResultReveal",
+        "CompletionChime"
+      ],
+      "ui": "report",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P19",
+      "situation": "The counselor gives one memorable closing message.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "There is one thing I want you to remember.",
+        "You do not need to rush when an opportunity appears. Being prepared before you act is important."
+      ],
+      "lineLocKeys": [
+        "consult_p19_l0",
+        "consult_p19_l1"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "LeanForward",
+        "Serious",
+        "GentleSmile",
+        "Nod",
+        "EyeContact"
+      ],
+      "camera": "closeUp",
+      "vfx": [
+        "BackgroundGlow"
+      ],
+      "sound": [
+        "MusicLower",
+        "WarmFinalNote"
+      ],
+      "ui": "dialogue",
+      "choices": [],
+      "autoAdvanceSeconds": 0.0
+    },
+    {
+      "id": "P20",
+      "situation": "The counselor closes the session and offers the player the next destination.",
+      "speakerLocKey": "consult_speaker_counselor",
+      "lines": [
+        "That's all for today's consultation.",
+        "Would you like to explore another fortune?"
+      ],
+      "lineLocKeys": [
+        "consult_p20_l0",
+        "consult_p20_l1"
+      ],
+      "variants": [],
+      "animationTriggers": [
+        "Smile",
+        "SmallBow",
+        "GoodbyeGesture",
+        "ReturnToIdle"
+      ],
+      "camera": "closing",
+      "vfx": [
+        "SoftRoomLighting",
+        "TransitionParticles"
+      ],
+      "sound": [
+        "Goodbye",
+        "MusicResolve"
+      ],
+      "ui": "choices",
+      "choices": [
+        {
+          "locKey": "consult_p20_c0",
+          "english": "Explore another fortune",
+          "goTo": "P03",
+          "branchTag": "next:more"
+        },
+        {
+          "locKey": "consult_p20_c2",
+          "english": "Leave Consultation Room",
+          "goTo": "",
+          "branchTag": "next:leave"
+        }
+      ],
+      "autoAdvanceSeconds": 0.0
+    }
+  ]
+}
