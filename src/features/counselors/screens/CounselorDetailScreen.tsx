@@ -99,7 +99,15 @@ export const CounselorDetailScreen: React.FC = () => {
 
       {/* Single dominant CTA (spec §13) */}
       <SafeAreaView edges={['bottom']} style={styles.ctaBar}>
-        <PrimaryButton label={t('detail.start')} onPress={onStart} />
+        {/* A counselor with no 3D model cannot hold a consultation. Saying so on the button is
+            better than letting the tap through to a room that would substitute somebody else's
+            face, and far better than the version before it — a room that loaded and then ejected
+            the player with no explanation. */}
+        <PrimaryButton
+          label={counselor.comingSoon ? t('detail.comingSoon') : t('detail.start')}
+          onPress={onStart}
+          disabled={counselor.comingSoon}
+        />
       </SafeAreaView>
     </View>
   );

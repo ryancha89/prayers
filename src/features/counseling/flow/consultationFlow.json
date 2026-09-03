@@ -434,7 +434,7 @@
       ],
       "variants": [
         {
-          "branchTag": "",
+          "branchTag": "topic:love",
           "lines": [
             "There is one thing I want to ask. Where does your heart stand right now?"
           ],
@@ -443,7 +443,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "topic:business",
           "lines": [
             "There is one thing I want to ask. What stage is your business at?"
           ],
@@ -452,7 +452,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "topic:career",
           "lines": [
             "There is one thing I want to ask. How is your career path these days?"
           ],
@@ -461,7 +461,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "topic:health",
           "lines": [
             "There is one thing I want to ask. How has your health been lately?"
           ],
@@ -525,7 +525,7 @@
       ],
       "variants": [
         {
-          "branchTag": "",
+          "branchTag": "plan:business",
           "lines": [
             "If it's a business, then the situation is a little different.",
             "Your wealth pillar is active — but active in a way that puts the weight on you."
@@ -536,7 +536,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:invest",
           "lines": [
             "If it's investing, I need to look more carefully.",
             "Money moves quickly for you this year — quickly in both directions."
@@ -547,7 +547,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:side",
           "lines": [
             "A side income... that suits your chart.",
             "Your wealth arrives as several small streams rather than one large one."
@@ -558,7 +558,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:none",
           "lines": [
             "Having no specific plan is fine.",
             "But your chart says the opportunity will come to you — do not let it pass by."
@@ -569,7 +569,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:love_seeing",
           "lines": [
             "Getting to know someone... then this bond deserves a careful look.",
             "Your romance star is bright — but bright does not yet mean lasting."
@@ -580,7 +580,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:love_commit",
           "lines": [
             "Taking it further... that step needs the right moment.",
             "Your chart says this bond grows stronger when unhurried."
@@ -591,7 +591,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:love_healing",
           "lines": [
             "Just ended... then first the heart must settle.",
             "While the old bond lingers, the new one keeps its distance."
@@ -602,7 +602,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:love_single",
           "lines": [
             "Being on your own is not a loss.",
             "Your bonds arrive in seasons — what matters is opening the right door."
@@ -613,7 +613,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:biz_new",
           "lines": [
             "Something new... your energy wants to move.",
             "But movement needs a root — begin small and firm."
@@ -624,7 +624,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:biz_expand",
           "lines": [
             "Expanding asks how much your day pillar can carry.",
             "Within your strength it holds; one step too far and it slips."
@@ -635,7 +635,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:biz_stuck",
           "lines": [
             "A stall is not a dead end.",
             "Your luck is changing season — holding cash matters more than opening more."
@@ -646,7 +646,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:biz_exit",
           "lines": [
             "Thinking of stepping back... sometimes one step back keeps the whole board.",
             "Your chart's luck is not cut — this stretch just asks for a slower pace."
@@ -657,7 +657,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:career_move",
           "lines": [
             "A move... the door is ajar, not yet open.",
             "On the right beat you rise; one hasty step and you start over."
@@ -668,7 +668,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:career_grow",
           "lines": [
             "For advancement we look at your official star.",
             "This year a backer is present — do not stand where they cannot see you."
@@ -679,7 +679,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:career_start",
           "lines": [
             "Searching — then do not scatter too wide.",
             "Your chart favors a narrow, deep door — one craft that feeds you long."
@@ -690,7 +690,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:career_stay",
           "lines": [
             "Holding your place is also a move.",
             "This luck builds the root — and a firm root makes the next step higher."
@@ -701,7 +701,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:health_issue",
           "lines": [
             "Something worrying you... then listen to your body first, and me second.",
             "The chart can only point at the weak spot — the one to confirm it is a doctor."
@@ -712,7 +712,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:health_tired",
           "lines": [
             "Often drained means the energy is leaking.",
             "Drop one task, sleep one watch earlier — a small leak mended early never becomes illness."
@@ -723,7 +723,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:health_prevent",
           "lines": [
             "Guarding early — that is what those who know their chart do.",
             "Strong or weak, the body has its seasons — tend the right one and little is lost."
@@ -734,7 +734,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:health_fine",
           "lines": [
             "Feeling fine is a blessing — still, the chart keeps one spot to watch.",
             "Do not spend today's health as an advance on tomorrow."
@@ -776,7 +776,7 @@
       ],
       "variants": [
         {
-          "branchTag": "",
+          "branchTag": "plan:business",
           "lines": [
             "Looking at your Saju, you can start this year — but start small.",
             "Your day stem has a root, so you can take the pressure; what is missing is a reserve."
@@ -787,7 +787,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:invest",
           "lines": [
             "Looking at your Saju, you should split your investment this year.",
             "Do not put it all in one place: your wealth flow rises and falls with the season."
@@ -798,7 +798,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:side",
           "lines": [
             "Looking at your Saju, a steady stream will be stronger than one big win.",
             "What you need is something that keeps working while you are busy."
@@ -809,7 +809,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:none",
           "lines": [
             "Looking at your Saju, this year is for holding and preparing.",
             "The opening comes mid-year; having cash ready then is the advantage."
@@ -888,22 +888,22 @@
       ],
       "variants": [
         {
-          "branchTag": "",
+          "branchTag": "topic:love",
           "lines": [],
           "lineLocKeys": []
         },
         {
-          "branchTag": "",
+          "branchTag": "topic:business",
           "lines": [],
           "lineLocKeys": []
         },
         {
-          "branchTag": "",
+          "branchTag": "topic:career",
           "lines": [],
           "lineLocKeys": []
         },
         {
-          "branchTag": "",
+          "branchTag": "topic:health",
           "lines": [],
           "lineLocKeys": []
         }
@@ -964,7 +964,7 @@
       ],
       "variants": [
         {
-          "branchTag": "",
+          "branchTag": "plan:business",
           "lines": [
             "To summarize your {0} this year...",
             "You can open the door — but open it a little, and always keep a way back."
@@ -975,7 +975,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:invest",
           "lines": [
             "To summarize your {0} this year...",
             "Splitting it and moving slowly beats one decisive bet — this is not your year to gamble."
@@ -986,7 +986,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:side",
           "lines": [
             "To summarize your {0} this year...",
             "A small steady stream will carry you further than one large one-off sum."
@@ -997,7 +997,7 @@
           ]
         },
         {
-          "branchTag": "",
+          "branchTag": "plan:none",
           "lines": [
             "To summarize your {0} this year...",
             "There is no need to decide yet. This year's work is being ready when the opening comes."

@@ -2,18 +2,23 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, radius } from '../theme';
 
-type BadgeKind = 'new' | 'popular' | 'trending';
+type BadgeKind = 'new' | 'popular' | 'trending' | 'comingSoon';
 
 const LABEL: Record<BadgeKind, string> = {
   new: 'NEW',
   popular: 'POPULAR',
   trending: 'TRENDING',
+  // Not a promotion like the other three — this one says the counselor cannot be consulted yet.
+  // It outranks them on the card for that reason: "NEW" over a character you cannot open is worse
+  // than no badge at all.
+  comingSoon: 'COMING SOON',
 };
 
 const TINT: Record<BadgeKind, string> = {
   new: colors.new,
   popular: colors.popular,
   trending: colors.trending,
+  comingSoon: colors.card,
 };
 
 export const Badge: React.FC<{ kind: BadgeKind }> = ({ kind }) => (

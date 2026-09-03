@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing, typography } from '../../../shared/theme';
@@ -11,6 +11,7 @@ import { useCounselingStore } from '../store/counselingStore';
 import { isNativeUnity, unityApiBase, unityBridge } from '../bridge';
 import { getDeviceId } from '../../../shared/device/deviceId';
 import { UnityToRNEvent } from '../types';
+import { fetchTicketBalance } from '../api/tickets';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'UnityEntry'>;
@@ -31,8 +32,26 @@ export const UnityEntryScreen: React.FC = () => {
   const topic = useCounselingStore(s => s.topic);
   const handled = useRef(false);
 
+  // null = still asking, false = go ahead, true = stop here and say why.
+  //
+  // The engine refuses a ticketless session anyway, but it refuses INSIDE: the room loads, the
+  // counselor appears, and the session dies in front of the player. Asking here turns that into a
+  // precondition stated on the way in.
+  const [blocked, setBlocked] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const ac = new AbortController();
+    fetchTicketBalance(ac.signal).then(balance => {
+      // An unknown balance is NOT zero — see fetchTicketBalance. Locking the player out because the
+      // server hiccuped would be a worse bug than the one this check exists to fix.
+      setBlocked(balance != null && balance.tickets <= 0);
+    });
+    return () => ac.abort();
+  }, []);
+
   useEffect(() => {
     if (!counselor || !subject) return;
+    if (blocked !== false) return;   // do not boot Unity until the balance says it is worth booting
     const sessionId = `session_${counselor.id}_${subject.id}`;
 
     const goToRoom = () => {
@@ -76,7 +95,20 @@ export const UnityEntryScreen: React.FC = () => {
     });
 
     return unsub;
-  }, [counselor, subject, topic, navigation, params.resuming, lang]);
+  }, [counselor, subject, topic, navigation, params.resuming, lang, blocked]);
+
+  // Said on the way in, not after the room has loaded and given up.
+  if (blocked) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>{t('unity.noTickets.title')}</Text>
+        <Text style={styles.subtitle}>{t('unity.noTickets.body')}</Text>
+        <Pressable style={styles.back} onPress={() => navigation.goBack()}>
+          <Text style={styles.backText}>{t('unity.noTickets.back')}</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -95,5 +127,7 @@ const styles = StyleSheet.create({
   orb: { width: 120, height: 120, borderRadius: 60, opacity: 0.6, marginBottom: spacing.xxl },
   spinner: { marginBottom: spacing.lg },
   title: { ...typography.h3, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
+  subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center', paddingHorizontal: spacing.xxl },
+  back: { marginTop: spacing.xxl, paddingHorizontal: spacing.xxl, paddingVertical: spacing.md, borderRadius: 999, backgroundColor: colors.card },
+  backText: { ...typography.body, color: colors.textPrimary },
 });

@@ -152,6 +152,15 @@ export type RNToUnityEvent =
   | { type: 'SESSION_END' };
 
 export type UnityToRNEvent =
+  /** The transport is up, before any room exists — Unity's very first message.
+   *
+   *  NativeUnityBridge answers it with SESSION_INIT, which is what loads the room;
+   *  waiting for UNITY_READY instead would wait for a room only that reply creates.
+   *  It was missing from this union while the handler for it was already shipping,
+   *  so `event.type === 'BRIDGE_READY'` compared against a union it was not in and
+   *  tsc called the comparison unintentional (TS2367). Unity has always sent it —
+   *  see ConsultationHostChannel.BridgeReady. */
+  | { type: 'BRIDGE_READY' }
   | { type: 'UNITY_READY' }
   | { type: 'USER_MESSAGE'; payload: { text: string } }
   /** A counselor line — mirrored so the app's history holds both halves. */

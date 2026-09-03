@@ -1,3 +1,4 @@
+import { devlog } from '../../../shared/devlog';
 import {
   RNToUnityEvent,
   UnityBridge,
@@ -16,10 +17,14 @@ import {
  *    here via `UnityHost`'s onUnityMessage → `receiveFromUnity`.
  *
  * Lifecycle: `openCounselingRoom` only records the session payload — Unity
- * actually boots when a `UnityHost` mounts and registers its view ref. On the
- * UNITY_READY handshake we auto-send SESSION_INIT and flush anything queued,
- * so callers can `sendEvent` at any time without caring about boot order
- * (latency masking: the greeting request runs while Unity is still loading).
+ * actually boots when a `UnityHost` mounts and registers its view ref. The
+ * handshake then has two halves, and they mean different things:
+ *   BRIDGE_READY — the player is up and empty. We answer with SESSION_INIT,
+ *                  which is what makes it load the room.
+ *   UNITY_READY  — the room is up and the counselor seated. Only now do stage
+ *                  commands land, so this is what flips `ready` and flushes.
+ * Callers can `sendEvent` at any time without caring about boot order (latency
+ * masking: the greeting request runs while Unity is still loading).
  */
 
 /** Minimal surface of the UnityView ref we depend on. */
@@ -130,6 +135,24 @@ export class NativeUnityBridge implements UnityBridge {
       return;
     }
 
+    // The JS twin of Unity's BridgeTap, and the only place this direction can
+    // be watched from. Unity's own Debug.Log does NOT reach the device log once
+    // the player runs embedded inside a host app — only its two startup banners
+    // do — so on a device this line is the whole Unity->RN trace. Metro shows it.
+    devlog('[unity<-] ' + raw);
+
+    // Cold boot: the player is up but empty. SESSION_INIT is what loads the
+    // room, so it has to go out HERE — waiting for UNITY_READY would wait for
+    // a room that only this message creates. Not `ready`: the room does not
+    // exist yet and stage commands sent now are dropped on the far side.
+    if (event.type === 'BRIDGE_READY') {
+      this.everReady = true;
+      if (!this.initSent && this.payload) {
+        this.post({ type: 'SESSION_INIT', payload: this.payload });
+        this.initSent = true;
+      }
+    }
+
     if (event.type === 'UNITY_READY') {
       this.ready = true;
       this.everReady = true;
@@ -147,9 +170,14 @@ export class NativeUnityBridge implements UnityBridge {
 
   private post(event: RNToUnityEvent): void {
     if (!this.view) {
+      // Not a drop: it goes out when UNITY_READY flushes the outbox. Worth
+      // seeing, because a command queued here and never flushed looks exactly
+      // like a command Unity ignored.
+      devlog('[unity-> queued] ' + event.type);
       this.outbox.push(event);
       return;
     }
+    devlog('[unity->] ' + JSON.stringify(event));
     this.view.postMessage(BRIDGE_OBJECT, BRIDGE_METHOD, JSON.stringify(event));
   }
 }

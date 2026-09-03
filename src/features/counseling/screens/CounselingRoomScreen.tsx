@@ -140,9 +140,28 @@ export const CounselingRoomScreen: React.FC = () => {
 
   // The player can also leave from inside the player (a scripted exit, a
   // refused ticket). Both come back as EXIT_SESSION.
+  // SESSION_ERROR is the OTHER terminal message, and handling it is not cosmetic.
+  //
+  // The room sends it when it cannot continue: no seatable counselor
+  // (`auto_seat_failed:<persona>`), no chart for the person asked about
+  // (`subject_unavailable:inline`), or no tickets. Unhandled, nothing ever sets
+  // `consultation.ready`, so the loading veil below never lifts — the player sits
+  // watching a spinner over a room that already gave up, with nothing on screen
+  // saying so and no way out but the back gesture.
+  //
+  // Observed doing exactly that: `subject_unavailable:inline` arrived 1.7s after
+  // SESSION_INIT and the screen stayed on the veil indefinitely.
+  //
+  // The reason is logged rather than shown. It is diagnostic text — "auto_seat_failed:water"
+  // means nothing to a player — and the honest fix for each cause is to stop it happening,
+  // not to print it.
   useEffect(() => {
     return unityBridge.onEvent(e => {
       if (e.type === 'EXIT_SESSION') onExit();
+      else if (e.type === 'SESSION_ERROR') {
+        console.warn(`[room] session error: ${e.payload?.reason ?? 'unknown'}`);
+        onExit();
+      }
     });
   }, [onExit]);
 
