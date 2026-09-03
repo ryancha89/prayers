@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -65,7 +65,12 @@ const Rail: React.FC<{
         {items.map(c => (
           <Pressable key={c.id} onPress={() => onPress(c.id)} style={styles.railCard}>
             <View style={[styles.railArt, { backgroundColor: c.accent }]}>
-              <Text style={styles.railInitial}>{c.name.charAt(0)}</Text>
+              {/* 140x170 is the card's own 0.82, so the card art needs no second cut here. */}
+              {c.cardImage ? (
+                <Image source={c.cardImage} style={styles.railImg} resizeMode="cover" />
+              ) : (
+                <Text style={styles.railInitial}>{c.name.charAt(0)}</Text>
+              )}
             </View>
             <Text style={styles.railName}>{c.name}</Text>
             <Text style={styles.railTitle} numberOfLines={1}>
@@ -86,9 +91,11 @@ const styles = StyleSheet.create({
   sectionTitle: { ...typography.h2, color: colors.textPrimary, paddingHorizontal: spacing.lg, marginBottom: spacing.md },
   railRow: { paddingHorizontal: spacing.lg, gap: spacing.md },
   railCard: { width: 140, gap: 4 },
+  railImg: { width: '100%', height: '100%' },
   railArt: {
     width: 140,
     height: 170,
+    overflow: 'hidden',
     borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',

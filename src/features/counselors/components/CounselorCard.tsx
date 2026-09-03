@@ -5,6 +5,7 @@ import { compactNumber } from '../../../shared/utils/time';
 import { useT } from '../../../shared/i18n';
 import { Badge } from '../../../shared/components/Badge';
 import { CounselorSummary } from '../types';
+import { GradientScrim } from '../../../shared/components/GradientScrim';
 
 /**
  * Character-first discovery card (spec §6). Emphasises the portrait; feels like
@@ -16,18 +17,32 @@ export const CounselorCard: React.FC<{
   onPress: () => void;
 }> = ({ counselor, onPress }) => {
   const t = useT();
-  const badge = counselor.isNew ? 'new' : counselor.isTrending ? 'trending' : undefined;
+  // Coming-soon wins over NEW/TRENDING: those sell a counselor, and this one is not for sale
+  // yet. A card badged NEW that opens nothing is the promise the badge should have withdrawn.
+  const badge = counselor.comingSoon
+    ? 'comingSoon'
+    : counselor.isNew
+      ? 'new'
+      : counselor.isTrending
+        ? 'trending'
+        : undefined;
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-      <View style={[styles.portrait, { backgroundColor: counselor.accent }]}>
-        {counselor.thumbnailUrl ? (
+      <View style={[styles.portrait, { backgroundColor: counselor.accent },
+                    counselor.comingSoon && styles.portraitDim]}>
+        {counselor.cardImage ? (
+          // `cover`, and the art is cut to this exact aspect by Tools/gen_counselor_card_art.py,
+          // so nothing is cropped in practice — cover is the safety net for a card whose art
+          // arrives at another ratio, since `contain` would letterbox the accent through.
+          <Image source={counselor.cardImage} style={styles.portraitImg} resizeMode="cover" />
+        ) : counselor.thumbnailUrl ? (
           <Image source={{ uri: counselor.thumbnailUrl }} style={styles.portraitImg} />
         ) : (
           <Text style={styles.portraitInitial}>{counselor.name.charAt(0)}</Text>
         )}
-        <View style={styles.portraitScrim} />
+        <GradientScrim height={64} opacity={0.55} />
         {badge && (
           <View style={styles.badgeWrap}>
             <Badge kind={badge} />
@@ -83,13 +98,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: 'rgba(255,255,255,0.9)',
   },
-  portraitScrim: {
-    ...absoluteFill,
-    backgroundColor: 'transparent',
-    borderBottomWidth: 48,
-    borderBottomColor: 'rgba(0,0,0,0.25)',
-  },
   badgeWrap: { position: 'absolute', top: spacing.sm, left: spacing.sm },
+  // Legible, not hidden: the roster still shows who is planned.
+  portraitDim: { opacity: 0.45 },
   body: { padding: spacing.md, gap: 3 },
   name: { ...typography.h3, color: colors.textPrimary },
   title: { ...typography.caption, color: colors.violetSoft },

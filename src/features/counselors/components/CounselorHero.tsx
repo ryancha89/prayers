@@ -2,20 +2,32 @@ import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { absoluteFill, colors, spacing, typography } from '../../../shared/theme';
 import { CounselorSummary } from '../types';
+import { GradientScrim } from '../../../shared/components/GradientScrim';
 
 /**
  * Large portrait / looped-render area at the top of the detail screen (spec §11).
- * MVP uses an accent placeholder; swap to a pre-rendered loop video (Option A)
- * by dropping a <Video> in place of the placeholder — Unity is NOT used here.
+ * Shows the counselor's own artwork; the accent block is the fallback for one with no art yet.
+ * Swap to a pre-rendered loop video (Option A) by dropping a <Video> over the Image — Unity is
+ * NOT used here.
+ *
+ * The art is cut to 0.82 and this well is 460 tall and full-bleed wide, so `cover` crops the sides
+ * on a wide phone. That is the right way round: the art is drawn with the head centred, so the
+ * sides are background and the face survives every phone width.
+ *
+ * `overflow: hidden` on the frame and an explicit 100%/100% on the Image are both load-bearing.
+ * iOS does not clip children by default, and an absolutely-positioned Image given only insets was
+ * painting past the 460 and straight over the tags, the Preview heading and the chips below it.
  */
 export const CounselorHero: React.FC<{ counselor: CounselorSummary }> = ({ counselor }) => (
   <View style={[styles.hero, { backgroundColor: counselor.accent }]}>
-    {counselor.heroUrl ? (
+    {counselor.cardImage ? (
+      <Image source={counselor.cardImage} style={styles.art} resizeMode="cover" />
+    ) : counselor.heroUrl ? (
       <Image source={{ uri: counselor.heroUrl }} style={absoluteFill} />
     ) : (
       <Text style={styles.initial}>{counselor.name.charAt(0)}</Text>
     )}
-    <View style={styles.scrim} />
+    <GradientScrim height={260} />
     <View style={styles.caption}>
       <Text style={styles.name}>{counselor.name}</Text>
       <Text style={styles.title}>{counselor.title}</Text>
@@ -29,14 +41,10 @@ const styles = StyleSheet.create({
     height: 460,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
+  art: { ...absoluteFill, width: '100%', height: '100%' },
   initial: { fontSize: 180, fontWeight: '800', color: 'rgba(255,255,255,0.85)' },
-  scrim: {
-    ...absoluteFill,
-    backgroundColor: 'transparent',
-    borderBottomWidth: 220,
-    borderBottomColor: 'rgba(10,10,15,0.72)',
-  },
   caption: {
     position: 'absolute',
     left: spacing.xl,

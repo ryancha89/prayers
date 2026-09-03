@@ -1,5 +1,7 @@
 import { CounselorSummary } from '../types';
 import { Lang } from '../../../shared/i18n';
+import { COUNSELOR_AVATAR_ART, COUNSELOR_CARD_ART } from '../assets';
+import { PREVIEW_STRIPS } from '../assets/previews';
 
 /**
  * Mock counselor catalog (spec §47), bilingual (KO default / EN). At least six
@@ -26,17 +28,49 @@ interface RawCounselor {
   isTrending?: boolean;
   characterId: string;
   roomId: string;
-  previewLabels: { ko: string; en: string }[];
+  previewActions: PreviewAction[];
   l10n: Record<Lang, LocalizedContent>;
 }
 
-const PREVIEW_ACTIONS: { ko: string; en: string }[] = [
-  { ko: '인사하기', en: 'Say Hello' },
-  { ko: '미소', en: 'Smile' },
-  { ko: '생각', en: 'Thinking' },
-  { ko: '설명', en: 'Explaining' },
-  { ko: '끄덕임', en: 'Nod' },
+/**
+ * `key` is what pairs an action with its rendered clip in PREVIEW_STRIPS — so it is not free text:
+ * a counselor's action list may only name clips its 3D model actually has. That is why jiho's list
+ * is not the generic one; m_char_003 has no nod clip, and inventing one would mean a preview
+ * button that plays somebody else's gesture.
+ */
+interface PreviewAction {
+  key: string;
+  ko: string;
+  en: string;
+}
+
+const PREVIEW_ACTIONS: PreviewAction[] = [
+  { key: 'hello', ko: '인사하기', en: 'Say Hello' },
+  { key: 'smile', ko: '미소', en: 'Smile' },
+  { key: 'thinking', ko: '생각', en: 'Thinking' },
+  { key: 'explaining', ko: '설명', en: 'Explaining' },
+  { key: 'nod', ko: '끄덕임', en: 'Nod' },
 ];
+
+/** m_char_003 blesses instead of nodding. */
+const PREVIEW_ACTIONS_JIHO: PreviewAction[] = [
+  ...PREVIEW_ACTIONS.slice(0, 4),
+  { key: 'bless', ko: '축복', en: 'Blessing' },
+];
+
+/**
+ * The characterIds that have a 3D model in ConsultationSolo, and therefore the ones a consultation
+ * can actually be held with.
+ *
+ *   yuna_01 → persona `wood` → f_char_002 (female)
+ *   jiho_01 → persona `dosa` → m_char_003 (male)
+ *
+ * This list is the counterpart of RNBridge.PersonaFor on the Unity side: adding a counselor means
+ * adding it in BOTH places, and the pair is what stops a name being offered before its body exists.
+ * Everyone not named here is listed as "coming soon" rather than hidden — the roster stays honest
+ * about what is planned without pretending it is ready.
+ */
+const BUILT_CHARACTER_IDS = new Set(['yuna_01', 'jiho_01']);
 
 const RAW: RawCounselor[] = [
   {
@@ -47,7 +81,7 @@ const RAW: RawCounselor[] = [
     isTrending: true,
     characterId: 'seoyeon_01',
     roomId: 'seoyeon_room',
-    previewLabels: PREVIEW_ACTIONS,
+    previewActions: PREVIEW_ACTIONS,
     l10n: {
       ko: {
         name: '서연',
@@ -79,7 +113,7 @@ const RAW: RawCounselor[] = [
     isTrending: true,
     characterId: 'mina_01',
     roomId: 'mina_room',
-    previewLabels: PREVIEW_ACTIONS,
+    previewActions: PREVIEW_ACTIONS,
     l10n: {
       ko: {
         name: '미나',
@@ -110,7 +144,7 @@ const RAW: RawCounselor[] = [
     conversationCount: 960_000,
     characterId: 'yuna_01',
     roomId: 'yuna_room',
-    previewLabels: PREVIEW_ACTIONS,
+    previewActions: PREVIEW_ACTIONS,
     l10n: {
       ko: {
         name: '유나',
@@ -142,7 +176,7 @@ const RAW: RawCounselor[] = [
     isNew: true,
     characterId: 'harin_01',
     roomId: 'harin_room',
-    previewLabels: PREVIEW_ACTIONS,
+    previewActions: PREVIEW_ACTIONS,
     l10n: {
       ko: {
         name: '하린',
@@ -174,7 +208,7 @@ const RAW: RawCounselor[] = [
     isNew: true,
     characterId: 'doyun_01',
     roomId: 'doyun_room',
-    previewLabels: PREVIEW_ACTIONS,
+    previewActions: PREVIEW_ACTIONS,
     l10n: {
       ko: {
         name: '도윤',
@@ -205,7 +239,7 @@ const RAW: RawCounselor[] = [
     conversationCount: 720_000,
     characterId: 'jiho_01',
     roomId: 'jiho_room',
-    previewLabels: PREVIEW_ACTIONS,
+    previewActions: PREVIEW_ACTIONS_JIHO,
     l10n: {
       ko: {
         name: '지호',
@@ -236,12 +270,19 @@ function localize(raw: RawCounselor, lang: Lang): CounselorSummary {
   return {
     id: raw.id,
     accent: raw.accent,
+    // Undefined for a counselor with no art yet — the card falls back to the accent block rather
+    // than rendering an empty well. Looked up here so no screen has to know where art lives.
+    cardImage: COUNSELOR_CARD_ART[raw.id],
+    avatarImage: COUNSELOR_AVATAR_ART[raw.id],
     category: raw.category,
     conversationCount: raw.conversationCount,
     isNew: raw.isNew,
     isTrending: raw.isTrending,
     characterId: raw.characterId,
     roomId: raw.roomId,
+    // Derived, not authored: the flag follows the model list above, so it cannot drift out of
+    // sync with reality the way six hand-set booleans would.
+    comingSoon: !BUILT_CHARACTER_IDS.has(raw.characterId),
     name: c.name,
     title: c.title,
     hook: c.hook,
@@ -249,15 +290,30 @@ function localize(raw: RawCounselor, lang: Lang): CounselorSummary {
     personality: c.personality,
     specialties: c.specialties,
     tags: c.tags,
-    previews: raw.previewLabels.map((p, i) => ({
-      id: `${raw.id}_p${i}`,
-      label: p[lang],
+    previews: raw.previewActions.map(a => ({
+      id: `${raw.id}_${a.key}`,
+      label: a[lang],
+      // Undefined for a counselor with no 3D model — there is nothing to render, and the carousel
+      // says so rather than offering a play button over a colour block.
+      strip: PREVIEW_STRIPS[raw.id]?.[a.key],
     })),
   };
 }
 
+/**
+ * The roster, with the counselors you can actually consult first.
+ *
+ * Sorted HERE rather than in each screen: Home and Discover both start from this list and then
+ * filter it — by category, by trending, by new — so a screen that sorted for itself would leave the
+ * others showing coming-soon characters above ones that work. One order, defined once.
+ *
+ * Partitioned rather than `.sort()`ed on purpose. Both halves keep the order they were authored in,
+ * which is the order the feed was designed to read in; a comparator returning 0 for everything else
+ * relies on sort stability to do the same thing less clearly.
+ */
 export function localizeCounselors(lang: Lang): CounselorSummary[] {
-  return RAW.map(r => localize(r, lang));
+  const all = RAW.map(r => localize(r, lang));
+  return [...all.filter(c => !c.comingSoon), ...all.filter(c => c.comingSoon)];
 }
 
 export function getLocalizedCounselor(

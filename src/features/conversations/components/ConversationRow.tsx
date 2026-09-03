@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { relativeTime } from '../../../shared/utils/time';
 import { useLang, useT } from '../../../shared/i18n';
@@ -12,13 +12,19 @@ export const ConversationRow: React.FC<{
 }> = ({ conversation, onPress }) => {
   const t = useT();
   const lang = useLang();
-  // Re-derive the name from the counselor id so the list follows the language.
-  const name =
-    getLocalizedCounselor(conversation.counselorId, lang)?.name ?? conversation.counselorName;
+  // Re-derive from the counselor id so the list follows the language — and so the face comes from
+  // the roster rather than being copied into every stored conversation, where it would go stale
+  // the moment a counselor's art is redrawn.
+  const counselor = getLocalizedCounselor(conversation.counselorId, lang);
+  const name = counselor?.name ?? conversation.counselorName;
   return (
   <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
     <View style={[styles.portrait, { backgroundColor: conversation.counselorAccent }]}>
-      <Text style={styles.initial}>{name.charAt(0)}</Text>
+      {counselor?.avatarImage ? (
+        <Image source={counselor.avatarImage} style={styles.portraitImg} />
+      ) : (
+        <Text style={styles.initial}>{name.charAt(0)}</Text>
+      )}
     </View>
     <View style={styles.body}>
       <View style={styles.topLine}>
@@ -43,10 +49,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   pressed: { backgroundColor: colors.card },
+  portraitImg: { width: '100%', height: '100%' },
   portrait: {
     width: 56,
     height: 56,
     borderRadius: 28,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },

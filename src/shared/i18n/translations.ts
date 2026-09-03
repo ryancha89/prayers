@@ -20,9 +20,11 @@ export const translations = {
     'card.conversations': '{count}회 상담',
 
     'detail.preview': '미리보기',
+    'detail.previewComingSoon': '3D 모델이 준비되면 미리보기가 열립니다.',
     'detail.about': '{name} 소개',
     'detail.specialties': '전문 분야',
     'detail.start': '상담 시작하기',
+    'detail.comingSoon': '준비 중이에요',
     'detail.notFound': '상담사를 찾을 수 없어요.',
 
     'subject.title': '누구에 대해 상담할까요?',
@@ -50,6 +52,9 @@ export const translations = {
     'topic.other': '기타',
 
     'unity.preparing': '상담실을 준비하고 있어요…',
+    'unity.noTickets.title': '질문권이 없어요',
+    'unity.noTickets.body': '질문권을 마련한 뒤에 상담실에 들어갈 수 있어요.',
+    'unity.noTickets.back': '돌아가기',
     'unity.waiting': '{name} 상담사가 기다리고 있어요.',
     'unity.tip1': '향이 피어오르고, 상담사가 자리를 정돈하고 있어요.',
     'unity.tip2': '사주는 태어난 순간의 하늘을 여덟 글자에 담은 지도예요.',
@@ -110,9 +115,11 @@ export const translations = {
     'card.conversations': '{count} conversations',
 
     'detail.preview': 'Preview',
+    'detail.previewComingSoon': 'Previews open once this counselor has a 3D model.',
     'detail.about': 'About {name}',
     'detail.specialties': 'Specialties',
     'detail.start': 'Start Counseling',
+    'detail.comingSoon': 'Coming soon',
     'detail.notFound': 'Counselor not found.',
 
     'subject.title': 'Who would you like to ask about?',
@@ -140,6 +147,9 @@ export const translations = {
     'topic.other': 'Other',
 
     'unity.preparing': 'Preparing your counseling room…',
+    'unity.noTickets.title': 'You have no question tickets',
+    'unity.noTickets.body': 'Get a ticket and the counselor will read for you.',
+    'unity.noTickets.back': 'Go back',
     'unity.waiting': '{name} is waiting for you.',
     'unity.tip1': 'Incense is rising — the counselor is arranging her seat.',
     'unity.tip2': 'A saju chart maps the sky of your birth moment in eight characters.',
