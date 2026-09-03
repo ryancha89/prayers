@@ -1,4 +1,5 @@
 import { NativeModules, UIManager } from 'react-native';
+import { devlog } from '../../../shared/devlog';
 import { UnityBridge } from '../types';
 import { MockUnityBridge } from './MockUnityBridge';
 import { NativeUnityBridge } from './NativeUnityBridge';
@@ -24,11 +25,38 @@ export const isNativeUnity = hasNativeUnity;
  * Rails host the embedded consultation talks to. Dev: the Mac's local server
  * (the iOS simulator shares the host's localhost). Production wiring lands
  * with the login milestone.
+ *
+ * 2026-09-03 — this now points at the REAL Rails server on :4000, not the canned stub on :4001.
+ *
+ * What changed: :4000's only dead part was its model credentials (Gemini's key 401s, and
+ * OPENAI_ACCESS_TOKEN is a placeholder), so every consultation ended as 503 API_ERROR.
+ * `Tools/LocalLlmBridge/local_llm_bridge.py` now serves an OpenAI-compatible endpoint on :4002
+ * backed by the locally-authenticated `codex exec` CLI, and saju_server/.env points
+ * OPENAI_URI_BASE at it. Only the model transport is local — auth, the ticket ledger, the chart,
+ * prompt assembly, ChatSummary history and every DB write are the real server's.
+ *
+ * Two processes have to be up in dev, or the room falls back to the "connection interrupted"
+ * notice:
+ *     python3 Tools/LocalLlmBridge/local_llm_bridge.py       # :4002
+ *     (cd saju_server && bundle exec rails server -p 4000)   # :4000
+ *
+ * Known gap: POST /api/v1/game/tts does not exist on :4000 (only the stub answered it), so the
+ * reading is silent. ConsultationTts degrades to silence rather than failing, so nothing else
+ * breaks.
+ *
+ * The stub is still there (`Tools/FakeSajuServer/fake_saju_server.py`, :4001) for offline work and
+ * for its failure modes (essay / partial / error / noticket / slow), which :4000 cannot be asked
+ * to produce on demand.
  */
 export const unityApiBase = __DEV__ ? 'http://localhost:4000' : undefined;
 
 if (__DEV__) {
-  console.log(`[unity-bridge] native Unity ${hasNativeUnity ? 'DETECTED' : 'absent — using mock'}`);
+  const line = `[unity-bridge] native Unity ${hasNativeUnity ? 'DETECTED' : 'absent — using mock'}`;
+  console.log(line);
+  // Through devlog as well: the console mirror only wraps warn/error (log is far too chatty to
+  // ship wholesale), and this one line answers the question that costs the most time to answer any
+  // other way — whether this build is talking to the embedded player or quietly to the mock.
+  devlog(line);
 }
 
 /** Always instantiated so UnityHost can wire itself even in mock builds. */
