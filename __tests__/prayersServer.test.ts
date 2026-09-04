@@ -16,6 +16,7 @@ jest.mock('../src/shared/device/deviceId', () => ({ getDeviceId: () => 'device-a
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
 
 import {
+  checkConsultationReadiness,
   fetchTopics,
   sendConsultationMessage,
   TicketRequiredError,
@@ -200,5 +201,34 @@ describe('ServerCounselorAI', () => {
     const fetchSpy = stubFetch({});
     await ai.reply({ counselorName: 'Yuna', subject, userText: 'q', turn: 2, lang: 'en' });
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('checkConsultationReadiness', () => {
+  it('is ok only when the server answers AND the user has a chart', async () => {
+    stubFetch({ success: true, has_saju: true });
+    expect(await checkConsultationReadiness()).toBe('ok');
+  });
+
+  it('reports no-chart on a healthy 200, which is what the room actually hit', async () => {
+    // The failure this whole check exists for: the server is up and prompt, and the consultation
+    // still cannot happen. Treating it as a connection problem sends the player back to retry
+    // something that can never succeed.
+    stubFetch({ success: true, has_saju: false });
+    expect(await checkConsultationReadiness()).toBe('no-chart');
+  });
+
+  it('reports offline on a refused or unreachable server', async () => {
+    stubFetch({}, 401);
+    expect(await checkConsultationReadiness()).toBe('offline');
+
+    stubFetch({ success: false });
+    expect(await checkConsultationReadiness()).toBe('offline');
+  });
+
+  it('reports offline rather than throwing when fetch itself fails', async () => {
+    const fn = jest.fn(() => Promise.reject(new Error('network down')));
+    (globalThis as unknown as { fetch: typeof fn }).fetch = fn;
+    expect(await checkConsultationReadiness()).toBe('offline');
   });
 });

@@ -131,6 +131,44 @@ export async function fetchTopics(lang: Lang, signal?: AbortSignal): Promise<Top
   }
 }
 
+/**
+ * What the room needs before it is worth opening.
+ *
+ *  ok        — go.
+ *  offline   — the server did not answer, or refused this build's token.
+ *  no-chart  — the server is fine and this user has no saju on it.
+ *
+ * `no-chart` is the case that made this check exist. The room opened, the counselor sat down, the
+ * question went out, and `/api/v2/chatbots/send_message` answered HTTP **200** carrying
+ * `{code: 1204, error: "사주 정보가 없습니다"}` — no chart, enter a birth date first. Everything
+ * downstream buckets that as a connection failure, so the room said "the connection was
+ * interrupted, try again?" over a server that was up and had answered promptly. Retrying could
+ * never work.
+ *
+ * So this deliberately does NOT just ping for reachability. A reachability check would have passed
+ * this exact case and let the player back into the same dead end.
+ */
+export type ConsultationReadiness = 'ok' | 'offline' | 'no-chart';
+
+export async function checkConsultationReadiness(
+  signal?: AbortSignal,
+): Promise<ConsultationReadiness> {
+  const headers = authHeaders();
+  if (!headers) return 'offline';
+
+  try {
+    const res = await fetch(`${BASE}/api/v1/saju/me`, { headers, signal });
+    if (!res.ok) return 'offline';
+
+    const body = await res.json();
+    if (body?.success !== true) return 'offline';
+
+    return body.has_saju === true ? 'ok' : 'no-chart';
+  } catch {
+    return 'offline';
+  }
+}
+
 export interface SendMessageInput {
   /** Stable per counselor+subject, so the server can carry the session's history and language. */
   uniqId: string;

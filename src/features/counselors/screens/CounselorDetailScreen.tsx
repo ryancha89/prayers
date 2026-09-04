@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../../shared/theme';
@@ -14,6 +14,10 @@ import { CounselorHero } from '../components/CounselorHero';
 import { CounselorPreviewCarousel } from '../components/CounselorPreviewCarousel';
 import { useFavoritesStore } from '../store/favoritesStore';
 import { useCounselingStore } from '../../counseling/store/counselingStore';
+import {
+  checkConsultationReadiness,
+  type ConsultationReadiness,
+} from '../../counseling/api/prayersServer';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'CounselorDetail'>;
@@ -28,6 +32,35 @@ export const CounselorDetailScreen: React.FC = () => {
   const t = useT();
   const lang = useLang();
   const counselor = getLocalizedCounselor(params.counselorId, lang);
+
+  /**
+   * Whether a consultation can actually happen, asked BEFORE the room opens.
+   *
+   * It used to be asked by opening the room and finding out. The player watched the scene load and
+   * the counselor sit down, typed a question, and got "the connection was interrupted — try
+   * again?" over a server that was up: the real answer was `code 1204`, this account has no saju
+   * chart, which retrying can never fix. A precondition said at the door reads as a precondition;
+   * the same thing said from a chair reads as the product breaking.
+   *
+   * `undefined` while the answer is still in flight — the button says so rather than looking
+   * enabled and then refusing the tap.
+   */
+  const [readiness, setReadiness] = useState<ConsultationReadiness | undefined>();
+
+  // On focus, not on mount: the player can leave to fix the thing that was missing (add a birth
+  // date, get back online) and come straight back to this screen.
+  useFocusEffect(
+    useCallback(() => {
+      const ac = new AbortController();
+      setReadiness(undefined);
+      checkConsultationReadiness(ac.signal)
+        .then(r => {
+          if (!ac.signal.aborted) setReadiness(r);
+        })
+        .catch(() => {});
+      return () => ac.abort();
+    }, []),
+  );
 
   const isFavorite = useFavoritesStore(s => s.ids.includes(params.counselorId));
   const toggleFavorite = useFavoritesStore(s => s.toggle);
@@ -45,6 +78,25 @@ export const CounselorDetailScreen: React.FC = () => {
     begin(counselor);
     navigation.navigate('CounselingSubject');
   };
+
+  // The button carries the reason. "Coming soon" already worked this way and it is the right
+  // shape: a disabled CTA that does not say why is indistinguishable from a broken one.
+  const ctaLabel = counselor.comingSoon
+    ? t('detail.comingSoon')
+    : readiness === undefined
+      ? t('detail.checking')
+      : readiness === 'offline'
+        ? t('detail.serverDown')
+        : readiness === 'no-chart'
+          ? t('detail.needChart')
+          : t('detail.start');
+
+  const blockedHint =
+    counselor.comingSoon || readiness === undefined || readiness === 'ok'
+      ? null
+      : readiness === 'offline'
+        ? t('detail.serverDownHint')
+        : t('detail.needChartHint');
 
   return (
     <View style={styles.container}>
@@ -103,10 +155,11 @@ export const CounselorDetailScreen: React.FC = () => {
             better than letting the tap through to a room that would substitute somebody else's
             face, and far better than the version before it — a room that loaded and then ejected
             the player with no explanation. */}
+        {blockedHint ? <Text style={styles.blockedHint}>{blockedHint}</Text> : null}
         <PrimaryButton
-          label={counselor.comingSoon ? t('detail.comingSoon') : t('detail.start')}
+          label={ctaLabel}
           onPress={onStart}
-          disabled={counselor.comingSoon}
+          disabled={counselor.comingSoon || readiness !== 'ok'}
         />
       </SafeAreaView>
     </View>
@@ -117,6 +170,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingBottom: 120 },
   missing: { color: colors.textSecondary, padding: spacing.xl },
+  blockedHint: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+  },
   section: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl, gap: spacing.md },
   sectionTitle: { ...typography.h2, color: colors.textPrimary },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
