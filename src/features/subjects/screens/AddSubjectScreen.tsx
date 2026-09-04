@@ -7,6 +7,7 @@ import { useT } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
 import { PrimaryButton } from '../../../shared/components/PrimaryButton';
 import { useSubjectsStore } from '../store/subjectsStore';
+import { maskBirthDate, maskBirthTime } from '../birthMask';
 import type { RootStackParamList } from '../../../navigation/types';
 import type { CounselingSubject } from '../../counseling/types';
 
@@ -91,16 +92,20 @@ export const AddSubjectScreen: React.FC = () => {
         <Field
           label={t('addSubject.birthDate')}
           value={birthDate}
-          onChange={setBirthDate}
+          onChange={v => setBirthDate(maskBirthDate(v, birthDate))}
           placeholder="YYYY-MM-DD"
-          keyboardType="numbers-and-punctuation"
+          // A digits-only pad, now that the dashes type themselves. It was
+          // `numbers-and-punctuation` while the player had to reach for `-`.
+          keyboardType="number-pad"
+          maxLength={10}
         />
         <Field
           label={t('addSubject.birthTime')}
           value={birthTime}
-          onChange={setBirthTime}
+          onChange={v => setBirthTime(maskBirthTime(v, birthTime))}
           placeholder="HH:MM"
-          keyboardType="numbers-and-punctuation"
+          keyboardType="number-pad"
+          maxLength={5}
         />
         {/* Directly under the field it describes. Sitting below the gender row instead, it read as
             a note about gender — so the one field that IS optional looked required, and the one
@@ -146,8 +151,9 @@ const Field: React.FC<{
   onChange: (v: string) => void;
   placeholder?: string;
   autoFocus?: boolean;
-  keyboardType?: 'default' | 'numbers-and-punctuation';
-}> = ({ label, value, onChange, placeholder, autoFocus, keyboardType }) => (
+  keyboardType?: 'default' | 'numbers-and-punctuation' | 'number-pad';
+  maxLength?: number;
+}> = ({ label, value, onChange, placeholder, autoFocus, keyboardType, maxLength }) => (
   <View style={styles.field}>
     <Text style={styles.label}>{label}</Text>
     <TextInput
@@ -158,6 +164,7 @@ const Field: React.FC<{
       placeholderTextColor={colors.textMuted}
       autoFocus={autoFocus}
       keyboardType={keyboardType}
+      maxLength={maxLength}
     />
   </View>
 );
