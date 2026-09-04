@@ -150,6 +150,70 @@ export async function fetchTopics(lang: Lang, signal?: AbortSignal): Promise<Top
  */
 export type ConsultationReadiness = 'ok' | 'offline' | 'no-chart';
 
+/**
+ * Puts a birth profile on the account, which is the ONLY thing that turns `has_saju` true.
+ *
+ * `POST /api/v1/saju/save` — not `/prayers/chart`, which merely computes four pillars for the
+ * room's visualisation and saves nothing. Getting those two the wrong way round is easy: both take
+ * a birth date and both answer with ganji.
+ *
+ * ONE PROFILE PER ACCOUNT. The server persists to `UserList` index 0, so this is "who the account
+ * is about", not "one of the people it knows". Saving the subject at the moment a consultation
+ * starts is therefore deliberate: the reading has to be about whoever was just chosen, and asking
+ * about a friend genuinely does replace what the server holds until the next reading.
+ *
+ * `gender` is sent explicitly because the server defaults it to `male` — a default that silently
+ * changes the reading rather than failing.
+ */
+export interface SajuProfileInput {
+  name: string;
+  /** `YYYY-MM-DD`. */
+  birthDate: string;
+  /** `HH:MM`, or absent for "time unknown", which the calendar handles as its own case. */
+  birthTime?: string;
+  gender: 'male' | 'female';
+}
+
+export async function saveSajuProfile(
+  input: SajuProfileInput,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  const headers = authHeaders();
+  if (!headers) return false;
+
+  const date = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.birthDate.trim());
+  if (!date) return false;
+
+  const time = input.birthTime ? /^(\d{1,2}):(\d{2})$/.exec(input.birthTime.trim()) : null;
+
+  try {
+    const res = await fetch(`${BASE}/api/v1/saju/save`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        name: input.name,
+        year: Number(date[1]),
+        month: Number(date[2]),
+        day: Number(date[3]),
+        gender: input.gender,
+        calendar_type: 'solar',
+        // Sent together and consistently: an hour with time_unknown true would be read as a real
+        // hour by the pillar adjustment and quietly move the day pillar across the 23:00 boundary.
+        ...(time
+          ? { hour: Number(time[1]), minute: Number(time[2]), time_unknown: false }
+          : { time_unknown: true }),
+      }),
+      signal,
+    });
+    if (!res.ok) return false;
+
+    const body = await res.json();
+    return body?.success === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function checkConsultationReadiness(
   signal?: AbortSignal,
 ): Promise<ConsultationReadiness> {

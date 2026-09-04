@@ -8,9 +8,10 @@ import { useT } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
 import { PrimaryButton } from '../../../shared/components/PrimaryButton';
 import { RootStackParamList } from '../../../navigation/types';
-import { SELF, useSubjectsStore } from '../../subjects/store/subjectsStore';
+import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { SubjectCard } from '../../subjects/components/SubjectCard';
 import { useCounselingStore } from '../store/counselingStore';
+import { saveSajuProfile } from '../api/prayersServer';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -19,15 +20,48 @@ export const CounselingSubjectScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const t = useT();
   const subjects = useSubjectsStore(s => s.subjects);
-  const all = useMemo(() => [SELF, ...subjects], [subjects]);
+  // The stored self, not the frozen default: it now carries the account holder's own birth data.
+  const self = useSubjectsStore(s => s.self);
+  const all = useMemo(() => [self, ...subjects], [self, subjects]);
   const counselor = useCounselingStore(s => s.counselor);
   const setSubject = useCounselingStore(s => s.setSubject);
 
   const [selectedId, setSelectedId] = useState<string>('self');
+  const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
 
-  const onNext = () => {
+  /**
+   * The subject's birth data goes to the SERVER here, and the consultation only continues if it
+   * lands. This is the step that was missing entirely: the app collected birth dates and kept them
+   * on the phone, so every reading was asked for a person the server had never heard of.
+   *
+   * Incomplete data sends the player to the form instead of onward — a reading needs a date and a
+   * gender, and the version that let them through produced a room that failed from a chair.
+   */
+  const onNext = async () => {
     const subject = all.find(s => s.id === selectedId);
-    if (!subject) return;
+    if (!subject || saving) return;
+
+    if (!hasBirthData(subject)) {
+      navigation.navigate('AddSubject', { subjectId: subject.id });
+      return;
+    }
+
+    setSaving(true);
+    setSaveFailed(false);
+    const saved = await saveSajuProfile({
+      name: subject.displayName,
+      birthDate: subject.birthDate!,
+      birthTime: subject.birthTime,
+      gender: subject.gender!,
+    });
+    setSaving(false);
+
+    if (!saved) {
+      setSaveFailed(true);
+      return;
+    }
+
     setSubject(subject);
     navigation.navigate('CounselingTopic');
   };
@@ -79,13 +113,30 @@ export const CounselingSubjectScreen: React.FC = () => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <PrimaryButton label={t('subject.continue')} onPress={onNext} />
+        {saveFailed ? <Text style={styles.saveFailed}>{t('subject.saveFailed')}</Text> : null}
+        <PrimaryButton
+          label={
+            saving
+              ? t('subject.saving')
+              : hasBirthData(all.find(s => s.id === selectedId))
+                ? t('subject.continue')
+                : t('subject.addDetails')
+          }
+          onPress={onNext}
+          disabled={saving}
+        />
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  saveFailed: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingBottom: spacing.sm,
+  },
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: 'row',

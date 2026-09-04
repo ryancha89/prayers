@@ -159,7 +159,11 @@ export const CounselorDetailScreen: React.FC = () => {
         <PrimaryButton
           label={ctaLabel}
           onPress={onStart}
-          disabled={counselor.comingSoon || readiness !== 'ok'}
+          // `no-chart` is NOT blocked any more, because the flow behind this button can now fix it:
+          // the subject step collects the birth data and puts it on the server. Blocking it was
+          // right only while nothing downstream could. `offline` still blocks — nothing the player
+          // does inside will reach a server that is not answering.
+          disabled={counselor.comingSoon || readiness === undefined || readiness === 'offline'}
         />
       </SafeAreaView>
     </View>

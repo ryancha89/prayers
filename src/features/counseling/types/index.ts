@@ -4,9 +4,14 @@
 export interface CounselingSubject {
   id: string;
   displayName: string;
+  /** `YYYY-MM-DD`. Without it there is no chart, and without a chart there is no reading. */
   birthDate?: string;
+  /** `HH:MM`. Absent means "time unknown", which the calendar treats as its own case rather than
+   *  as midnight — the hour pillar is dropped instead of guessed. */
   birthTime?: string;
-  gender?: string;
+  /** Narrowed from `string`: the server defaults a missing gender to `male`, and that default
+   *  changes the reading instead of failing, so it must be asked for and sent. */
+  gender?: 'male' | 'female';
   relationship?: string;
   isUser: boolean;
 }

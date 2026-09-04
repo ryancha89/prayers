@@ -17,6 +17,7 @@ jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
 
 import {
   checkConsultationReadiness,
+  saveSajuProfile,
   fetchTopics,
   sendConsultationMessage,
   TicketRequiredError,
@@ -230,5 +231,60 @@ describe('checkConsultationReadiness', () => {
     const fn = jest.fn(() => Promise.reject(new Error('network down')));
     (globalThis as unknown as { fetch: typeof fn }).fetch = fn;
     expect(await checkConsultationReadiness()).toBe('offline');
+  });
+});
+
+describe('saveSajuProfile', () => {
+  it('splits the date and time the way the calendar expects', async () => {
+    const fetchSpy = stubFetch({ success: true, saju_data: {} });
+
+    const ok = await saveSajuProfile({
+      name: 'Linh',
+      birthDate: '1995-06-15',
+      birthTime: '09:00',
+      gender: 'female',
+    });
+
+    expect(ok).toBe(true);
+    expect(fetchSpy.mock.calls[0][0]).toContain('/api/v1/saju/save');
+    const body = bodyOf(fetchSpy);
+    expect(body).toMatchObject({
+      name: 'Linh',
+      year: 1995,
+      month: 6,
+      day: 15,
+      hour: 9,
+      minute: 0,
+      // Sent explicitly: the server defaults a missing gender to male, which changes the reading
+      // instead of failing.
+      gender: 'female',
+      time_unknown: false,
+    });
+  });
+
+  it('sends time_unknown and NO hour when the time is blank', async () => {
+    // An hour alongside time_unknown would be read as a real hour by the pillar adjustment and
+    // could move the day pillar across the 23:00 boundary.
+    const fetchSpy = stubFetch({ success: true });
+    await saveSajuProfile({ name: 'A', birthDate: '2000-01-02', gender: 'male' });
+
+    const body = bodyOf(fetchSpy);
+    expect(body.time_unknown).toBe(true);
+    expect(body.hour).toBeUndefined();
+    expect(body.minute).toBeUndefined();
+  });
+
+  it('refuses a malformed date without calling the server', async () => {
+    const fetchSpy = stubFetch({ success: true });
+    expect(await saveSajuProfile({ name: 'A', birthDate: '15/06/1995', gender: 'male' })).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('is false when the server does not confirm', async () => {
+    stubFetch({ success: false });
+    expect(await saveSajuProfile({ name: 'A', birthDate: '2000-01-02', gender: 'male' })).toBe(false);
+
+    stubFetch({}, 500);
+    expect(await saveSajuProfile({ name: 'A', birthDate: '2000-01-02', gender: 'male' })).toBe(false);
   });
 });
