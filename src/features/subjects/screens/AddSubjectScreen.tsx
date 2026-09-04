@@ -125,7 +125,11 @@ export const AddSubjectScreen: React.FC = () => {
         {/* Names what is still missing. A dead button that will not say why is the reason the
             optional field got blamed for the required one. */}
         {!complete ? <Text style={styles.hint}>{t('addSubject.required')}</Text> : null}
-        <PrimaryButton label={t('addSubject.save')} onPress={onSave} disabled={!complete} />
+        <PrimaryButton
+          label={onboarding ? t('addSubject.start') : t('addSubject.save')}
+          onPress={onSave}
+          disabled={!complete}
+        />
         {onboarding ? (
           <Pressable style={styles.later} onPress={deferProfile} hitSlop={8}>
             <Text style={styles.laterLabel}>{t('addSubject.later')}</Text>

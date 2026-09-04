@@ -1,5 +1,5 @@
 import { translations, translate } from '../src/shared/i18n/translations';
-import { LANGUAGES, isLang, labelFor, DEFAULT_LANG } from '../src/shared/i18n/store';
+import { LANGUAGES, isLang, labelFor, DEFAULT_LANG, langFromLocale } from '../src/shared/i18n/store';
 import { localizeCounselors } from '../src/features/counselors/data/mockCounselors';
 import { ui } from '../src/features/counseling/flow/strings';
 
@@ -94,5 +94,36 @@ describe('consultation copy RN owns', () => {
       expect(sent).toBeTruthy();
       expect(sent).not.toBe('loop.send');
     });
+  });
+});
+
+describe('langFromLocale', () => {
+  it('reads the plain cases, in either separator', () => {
+    expect(langFromLocale('vi_VN')).toBe('vi');
+    expect(langFromLocale('vi-VN')).toBe('vi');
+    expect(langFromLocale('ko_KR')).toBe('ko');
+    expect(langFromLocale('ja')).toBe('ja');
+    expect(langFromLocale('en-GB')).toBe('en');
+  });
+
+  it('splits Chinese by SCRIPT, not by the tag looking Chinese', () => {
+    // Getting this wrong is not a near miss: a Taiwanese reader would get the whole reading in
+    // Simplified.
+    expect(langFromLocale('zh-Hans-CN')).toBe('zh-CN');
+    expect(langFromLocale('zh_CN')).toBe('zh-CN');
+    expect(langFromLocale('zh-SG')).toBe('zh-CN');
+    expect(langFromLocale('zh-Hant-TW')).toBe('zh-TW');
+    expect(langFromLocale('zh_TW')).toBe('zh-TW');
+    expect(langFromLocale('zh-HK')).toBe('zh-TW');
+    expect(langFromLocale('zh-MO')).toBe('zh-TW');
+  });
+
+  it('is undefined for a language the app is not written in, and for nothing at all', () => {
+    // undefined, not DEFAULT_LANG: the caller decides what to fall back to, and a silent 'ko' here
+    // is exactly the bug this replaced.
+    expect(langFromLocale('fr-FR')).toBeUndefined();
+    expect(langFromLocale('')).toBeUndefined();
+    expect(langFromLocale(undefined)).toBeUndefined();
+    expect(langFromLocale(null)).toBeUndefined();
   });
 });
