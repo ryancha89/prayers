@@ -62,22 +62,26 @@ export const MyPageScreen: React.FC = () => {
           <Row
             label={t('my.language')}
             value={labelFor(lang)}
+            expanded={langOpen}
             onPress={() => setLangOpen(o => !o)}
           />
-          {langOpen &&
-            LANGUAGES.map(option => (
-              <Row
-                key={option.code}
-                // Each language is written in itself — someone looking for 日本語 is not helped by
-                // the word "Japanese" in a script they do not read.
-                label={option.label}
-                value={option.code === lang ? '✓' : undefined}
-                onPress={() => {
-                  setLang(option.code);
-                  setLangOpen(false);
-                }}
-              />
-            ))}
+          {langOpen && (
+            <View style={styles.optionGroup}>
+              {LANGUAGES.map(option => (
+                <OptionRow
+                  key={option.code}
+                  // Each language is written in itself — someone looking for 日本語 is not helped
+                  // by the word "Japanese" in a script they do not read.
+                  label={option.label}
+                  selected={option.code === lang}
+                  onPress={() => {
+                    setLang(option.code);
+                    setLangOpen(false);
+                  }}
+                />
+              ))}
+            </View>
+          )}
           <Row label={t('my.account')} />
           <Row label={t('my.notifications')} />
           <Row label={t('my.terms')} />
@@ -102,11 +106,17 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
   </View>
 );
 
-const Row: React.FC<{ label: string; value?: string; onPress?: () => void }> = ({
-  label,
-  value,
-  onPress,
-}) => (
+/**
+ * A settings row. `expanded` turns the chevron from "this goes somewhere" into "this opens below",
+ * which is the whole difference between a link and a disclosure — and the reason the language list
+ * read as four more settings pages instead of six choices.
+ */
+const Row: React.FC<{
+  label: string;
+  value?: string;
+  onPress?: () => void;
+  expanded?: boolean;
+}> = ({ label, value, onPress, expanded }) => (
   <Pressable
     style={({ pressed }) => [styles.settingRow, pressed && onPress ? styles.settingRowPressed : null]}
     onPress={onPress}
@@ -114,8 +124,35 @@ const Row: React.FC<{ label: string; value?: string; onPress?: () => void }> = (
     <Text style={styles.settingLabel}>{label}</Text>
     <View style={styles.settingRight}>
       {!!value && <Text style={styles.settingValue}>{value}</Text>}
-      <Icon name="back" size={22} color={colors.textMuted} style={styles.chevron} />
+      <Icon
+        name="back"
+        size={22}
+        color={colors.textMuted}
+        style={expanded ? styles.chevronOpen : styles.chevron}
+      />
     </View>
+  </Pressable>
+);
+
+/**
+ * One choice inside an expanded row — NOT a settings row.
+ *
+ * Indented, on its own recessed surface, with a rule down the left, and no chevron: a chevron here
+ * promises another screen that never comes. The selected one is the only coloured thing in the
+ * group, so which is active reads before any label does.
+ */
+const OptionRow: React.FC<{ label: string; selected: boolean; onPress: () => void }> = ({
+  label,
+  selected,
+  onPress,
+}) => (
+  <Pressable
+    style={({ pressed }) => [styles.optionRow, pressed ? styles.settingRowPressed : null]}
+    onPress={onPress}
+    accessibilityRole="radio"
+    accessibilityState={{ selected }}>
+    <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>{label}</Text>
+    {selected && <Text style={styles.optionCheck}>✓</Text>}
   </Pressable>
 );
 
@@ -171,4 +208,31 @@ const styles = StyleSheet.create({
   settingRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   settingValue: { ...typography.body, color: colors.violetSoft },
   chevron: { transform: [{ scaleX: -1 }] },
+  // Points down while the row is open: the list is below it, not through it.
+  chevronOpen: { transform: [{ scaleX: -1 }, { rotate: '90deg' }] },
+
+  // The nested group. Recessed a step darker than the card, inset from the left, with a rule the
+  // rows hang off — three cues that say "these belong to the row above", none of which cost a
+  // component the rest of the page does not already have.
+  optionGroup: {
+    backgroundColor: colors.bg,
+    marginLeft: spacing.lg,
+    marginRight: spacing.sm,
+    marginBottom: spacing.sm,
+    borderRadius: radius.sm,
+    borderLeftWidth: 2,
+    borderLeftColor: colors.violetDim,
+    overflow: 'hidden',
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingLeft: spacing.lg,
+    paddingRight: spacing.lg,
+    paddingVertical: spacing.sm + 2,
+  },
+  optionLabel: { ...typography.body, color: colors.textSecondary },
+  optionLabelSelected: { color: colors.violetSoft, fontWeight: '600' },
+  optionCheck: { ...typography.body, color: colors.violet, fontWeight: '700' },
 });
