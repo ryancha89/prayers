@@ -12,8 +12,11 @@ export type RootStackParamList = {
   CounselorDetail: { counselorId: string };
   CounselingSubject: undefined;
   CounselingTopic: undefined;
-  /** `subjectId` edits an existing person (including `'self'`); absent creates a new one. */
-  AddSubject: { subjectId?: string } | undefined;
+  /**
+   * `subjectId` edits an existing person (including `'self'`); absent creates a new one.
+   * `onboarding` is the first-run pass over `self`: no way back, because there is nothing behind it.
+   */
+  AddSubject: { subjectId?: string; onboarding?: boolean } | undefined;
   /** Loading screen that boots the (mock) Unity room, spec §17. */
   UnityEntry: {
     counselorId: string;

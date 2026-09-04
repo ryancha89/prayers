@@ -31,12 +31,14 @@ export const CounselingSubjectScreen: React.FC = () => {
   const [saveFailed, setSaveFailed] = useState(false);
 
   /**
-   * The subject's birth data goes to the SERVER here, and the consultation only continues if it
-   * lands. This is the step that was missing entirely: the app collected birth dates and kept them
-   * on the phone, so every reading was asked for a person the server had never heard of.
+   * The chosen subject's birth data goes to the SERVER here, and the consultation only continues if
+   * it lands. This is the step that was missing entirely: the app collected birth dates and kept
+   * them on the phone, so every reading was asked about a person the server had never heard of.
    *
-   * Incomplete data sends the player to the form instead of onward — a reading needs a date and a
-   * gender, and the version that let them through produced a room that failed from a chair.
+   * This screen does NOT ask for that data. It is a picker, and everything in it should already be
+   * pickable — `self` is filled in at first run and saved people are required to be complete. The
+   * route-to-the-form branch stays only for a person saved before gender was a field; if it starts
+   * firing for `self`, first-run did not run.
    */
   const onNext = async () => {
     const subject = all.find(s => s.id === selectedId);

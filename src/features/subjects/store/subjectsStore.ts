@@ -41,8 +41,10 @@ export const useSubjectsStore = create<SubjectsState>()(
     (set, get) => ({
       self: SELF_DEFAULT,
       subjects: [
-        { id: 'subj_minji', displayName: 'Minji Kim', birthDate: '1995-04-12', isUser: false },
-        { id: 'subj_jiwon', displayName: 'Jiwon Lee', birthDate: '1993-11-04', isUser: false },
+        // Gender is part of the seed because it is part of a usable subject: without it these two
+        // would sit in the picker looking complete and then send the player to a form.
+        { id: 'subj_minji', displayName: 'Minji Kim', birthDate: '1995-04-12', gender: 'female', isUser: false },
+        { id: 'subj_jiwon', displayName: 'Jiwon Lee', birthDate: '1993-11-04', gender: 'female', isUser: false },
       ],
       addSubject: partial => {
         const subject: CounselingSubject = { ...partial, id: makeId(), isUser: false };

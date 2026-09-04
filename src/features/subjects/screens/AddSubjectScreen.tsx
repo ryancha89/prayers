@@ -29,6 +29,7 @@ export const AddSubjectScreen: React.FC = () => {
 
   // The stored self carries a placeholder name nobody chose; showing it as a filled-in field would
   // invite the user to accept "Myself" as their name.
+  const onboarding = params?.onboarding === true;
   const initialName = existing && !existing.isUser ? existing.displayName : '';
 
   const [name, setName] = useState(initialName);
@@ -48,20 +49,34 @@ export const AddSubjectScreen: React.FC = () => {
     };
     if (existing) updateSubject(existing.id, patch);
     else addSubject(patch);
+    if (onboarding) return; // the navigator swaps the whole stack once `self` has data
     navigation.goBack();
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable hitSlop={8} onPress={() => navigation.goBack()}>
-          <Icon name="back" size={28} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('addSubject.title')}</Text>
+        {/* No way back out of the first run: this screen IS the app until it is answered, and a
+            back arrow with nothing behind it is a dead control. */}
+        {onboarding ? (
+          <View style={styles.headerSpacer} />
+        ) : (
+          <Pressable hitSlop={8} onPress={() => navigation.goBack()}>
+            <Icon name="back" size={28} />
+          </Pressable>
+        )}
+        <Text style={styles.headerTitle}>
+          {onboarding
+            ? t('addSubject.selfTitle')
+            : existing?.isUser
+              ? t('addSubject.editSelf')
+              : t('addSubject.title')}
+        </Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
+        {onboarding ? <Text style={styles.intro}>{t('addSubject.selfIntro')}</Text> : null}
         <Field
           label={t('addSubject.name')}
           value={name}
@@ -164,5 +179,6 @@ const styles = StyleSheet.create({
   genderLabel: { ...typography.body, color: colors.textSecondary },
   genderLabelActive: { color: colors.violetSoft },
   hint: { ...typography.caption, color: colors.textMuted, lineHeight: 18 },
+  intro: { ...typography.body, color: colors.textSecondary, lineHeight: 22 },
   footer: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
 });

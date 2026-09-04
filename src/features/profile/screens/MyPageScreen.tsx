@@ -1,6 +1,9 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { RootStackParamList } from '../../../navigation/types';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { LANGUAGES, labelFor, useLanguageStore, useT } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
@@ -12,6 +15,7 @@ import { mockWallet } from '../monetization';
 
 /** Simple profile page mirroring the reference structure (spec §33). */
 export const MyPageScreen: React.FC = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const t = useT();
   const lang = useLanguageStore(s => s.lang);
   const setLang = useLanguageStore(s => s.setLang);
@@ -51,6 +55,10 @@ export const MyPageScreen: React.FC = () => {
         </View>
 
         <Section title={t('my.library')}>
+          <Row
+            label={t('addSubject.myProfile')}
+            onPress={() => navigation.navigate('AddSubject', { subjectId: 'self' })}
+          />
           <Row label={t('my.savedPeople')} />
           <Row label={t('my.favoriteCounselors')} />
           <Row label={t('my.counselingHistory')} />
