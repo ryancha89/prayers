@@ -96,6 +96,110 @@ const REPLY_BEATS: Record<Lang, Beat[]> = {
       camera: 'default',
     },
   ],
+  ja: [
+    {
+      text: 'なるほど。今年はこのあたりに動きがあります。ただ時期の話をする前に — もう心は決まっていますか、それともまだ量っているところですか？',
+      emotion: 'thinking',
+      animation: 'thinking',
+      camera: 'closeUp',
+    },
+    {
+      text: '私が見ているものと合っています。気が塞がっているのではなく、急いているだけです。これがうまくいったと想像したら、最初に変わるのは何でしょう？',
+      emotion: 'neutral',
+      animation: 'talk',
+      camera: 'default',
+    },
+    {
+      text: 'ふむ。それは思っているより大事なところです。人生の別の場面でも、同じ形を感じたことはありますか？',
+      emotion: 'concerned',
+      animation: 'concern',
+      camera: 'closeUp',
+    },
+    {
+      text: 'いいですね。ご自身で思っているよりずっとはっきりしています。もう少し深く見て — これから数か月、何を見ておくべきかをお伝えします。',
+      emotion: 'happy',
+      animation: 'nod',
+      camera: 'default',
+    },
+  ],
+  'zh-CN': [
+    {
+      text: '明白了。今年这一块是有动静的。不过在说时机之前 — 你是已经拿定主意了，还是仍在掂量？',
+      emotion: 'thinking',
+      animation: 'thinking',
+      camera: 'closeUp',
+    },
+    {
+      text: '这和我看到的对得上。气不是堵住了，只是太急。你设想这件事顺了，第一个会变的是什么？',
+      emotion: 'neutral',
+      animation: 'talk',
+      camera: 'default',
+    },
+    {
+      text: '嗯。这一点比你以为的要紧。在生活的别处，你有没有察觉过同样的路数？',
+      emotion: 'concerned',
+      animation: 'concern',
+      camera: 'closeUp',
+    },
+    {
+      text: '很好。你比自己以为的清楚得多。我再往深里看一点 — 然后告诉你未来几个月该盯住什么。',
+      emotion: 'happy',
+      animation: 'nod',
+      camera: 'default',
+    },
+  ],
+  'zh-TW': [
+    {
+      text: '明白了。今年這一塊是有動靜的。不過在說時機之前 — 你是已經拿定主意了，還是仍在掂量？',
+      emotion: 'thinking',
+      animation: 'thinking',
+      camera: 'closeUp',
+    },
+    {
+      text: '這和我看到的對得上。氣不是堵住了，只是太急。你設想這件事順了，第一個會變的是什麼？',
+      emotion: 'neutral',
+      animation: 'talk',
+      camera: 'default',
+    },
+    {
+      text: '嗯。這一點比你以為的要緊。在生活的別處，你有沒有察覺過同樣的路數？',
+      emotion: 'concerned',
+      animation: 'concern',
+      camera: 'closeUp',
+    },
+    {
+      text: '很好。你比自己以為的清楚得多。我再往深裡看一點 — 然後告訴你未來幾個月該盯住什麼。',
+      emotion: 'happy',
+      animation: 'nod',
+      camera: 'default',
+    },
+  ],
+  vi: [
+    {
+      text: 'Ta hiểu rồi. Năm nay chỗ này của con có động. Nhưng trước khi nói về thời điểm — con đã quyết rồi, hay vẫn còn đang cân nhắc?',
+      emotion: 'thinking',
+      animation: 'thinking',
+      camera: 'closeUp',
+    },
+    {
+      text: 'Khớp với điều ta đang thấy. Khí không tắc, chỉ là đang nôn nóng. Con thử hình dung chuyện này xuôi — thứ đầu tiên đổi khác sẽ là gì?',
+      emotion: 'neutral',
+      animation: 'talk',
+      camera: 'default',
+    },
+    {
+      text: 'Ừm. Chỗ đó quan trọng hơn con tưởng. Ở một góc khác của đời mình, con có từng thấy cùng một nếp như vậy không?',
+      emotion: 'concerned',
+      animation: 'concern',
+      camera: 'closeUp',
+    },
+    {
+      text: 'Tốt. Con sáng hơn con tự nghĩ nhiều. Để ta nhìn sâu thêm chút nữa — rồi nói con nghe vài tháng tới nên trông chừng điều gì.',
+      emotion: 'happy',
+      animation: 'nod',
+      camera: 'default',
+    },
+  ],
 };
 
 const TOPIC_LABEL: Record<Lang, Record<CounselingTopic, string>> = {
@@ -114,6 +218,38 @@ const TOPIC_LABEL: Record<Lang, Record<CounselingTopic, string>> = {
     relationships: 'your relationships',
     life: 'your life',
     other: 'what is on your mind',
+  },
+  ja: {
+    love: '恋愛',
+    career: 'お仕事',
+    wealth: '金運',
+    relationships: '人間関係',
+    life: '人生',
+    other: '心にかかっていること',
+  },
+  'zh-CN': {
+    love: '感情',
+    career: '你的事业',
+    wealth: '你的财运',
+    relationships: '你的人际关系',
+    life: '你的人生',
+    other: '你心里挂着的事',
+  },
+  'zh-TW': {
+    love: '感情',
+    career: '你的事業',
+    wealth: '你的財運',
+    relationships: '你的人際關係',
+    life: '你的人生',
+    other: '你心裡掛著的事',
+  },
+  vi: {
+    love: 'chuyện tình cảm',
+    career: 'chuyện sự nghiệp của con',
+    wealth: 'chuyện tiền bạc của con',
+    relationships: 'chuyện quan hệ của con',
+    life: 'vận trình của con',
+    other: 'điều con đang canh cánh',
   },
 };
 

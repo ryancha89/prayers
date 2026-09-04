@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useLanguageStore } from './store';
 import { translate, TranslationKey } from './translations';
 
-export { useLanguageStore } from './store';
+export { useLanguageStore, LANGUAGES, labelFor, isLang, DEFAULT_LANG } from './store';
 export type { Lang } from './store';
 export type { TranslationKey } from './translations';
 

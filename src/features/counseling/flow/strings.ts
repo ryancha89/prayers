@@ -33,9 +33,61 @@ const EN: Bundle = {
   'thinking': 'Reading your chart',
 };
 
-// RN ships ko/en (see shared/i18n/store.ts). The Unity table also carries vi;
-// when a Vietnamese locale is added here, `loc()` already resolves it.
-const bundles: Record<Lang, Bundle> = { ko: KO, en: EN };
+const JA: Bundle = {
+  'loop.intro': 'ほかに気がかりなことはありますか？',
+  'loop.placeholder': '何でも聞いてください',
+  'loop.leave': '相談を終える',
+  'loop.send': '送る',
+  'question.placeholder': '聞きたいことを書いてください',
+  'question.consult': '相談する',
+  'tap.continue': 'タップして続ける',
+  thinking: '命式を読んでいます',
+};
+
+const ZH_CN: Bundle = {
+  'loop.intro': '还有别的想问吗？',
+  'loop.placeholder': '想问什么都可以',
+  'loop.leave': '结束这次咨询',
+  'loop.send': '发送',
+  'question.placeholder': '写下你想知道的事',
+  'question.consult': '开始咨询',
+  'tap.continue': '点一下继续',
+  thinking: '正在看你的命盘',
+};
+
+const ZH_TW: Bundle = {
+  'loop.intro': '還有別的想問嗎？',
+  'loop.placeholder': '想問什麼都可以',
+  'loop.leave': '結束這次諮詢',
+  'loop.send': '送出',
+  'question.placeholder': '寫下你想知道的事',
+  'question.consult': '開始諮詢',
+  'tap.continue': '點一下繼續',
+  thinking: '正在看你的命盤',
+};
+
+const VI: Bundle = {
+  'loop.intro': 'Con còn muốn hỏi gì nữa không?',
+  'loop.placeholder': 'Hỏi gì cũng được',
+  'loop.leave': 'Kết thúc buổi tư vấn',
+  'loop.send': 'Gửi',
+  'question.placeholder': 'Viết điều con muốn biết',
+  'question.consult': 'Xin thầy xem',
+  'tap.continue': 'Chạm để đi tiếp',
+  thinking: 'Đang xem lá số của con',
+};
+
+// These eight are RN's own copy, so RN carries all six languages for them. The room's other lines
+// come from consultationStrings.json, which is generated from the Unity table and still ships
+// ko/en/vi — those fall back until the table itself gains ja and Chinese.
+const bundles: Record<Lang, Bundle> = {
+  ko: KO,
+  en: EN,
+  ja: JA,
+  'zh-CN': ZH_CN,
+  'zh-TW': ZH_TW,
+  vi: VI,
+};
 
 export function ui(key: keyof typeof EN, lang: Lang): string {
   return bundles[lang]?.[key] ?? EN[key] ?? key;

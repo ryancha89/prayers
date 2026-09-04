@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
-import { useLanguageStore, useT } from '../../../shared/i18n';
+import { LANGUAGES, labelFor, useLanguageStore, useT } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
 import { PrimaryButton } from '../../../shared/components/PrimaryButton';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
@@ -14,7 +14,8 @@ import { mockWallet } from '../monetization';
 export const MyPageScreen: React.FC = () => {
   const t = useT();
   const lang = useLanguageStore(s => s.lang);
-  const toggleLang = useLanguageStore(s => s.toggle);
+  const setLang = useLanguageStore(s => s.setLang);
+  const [langOpen, setLangOpen] = React.useState(false);
   const savedCount = useSubjectsStore(s => s.subjects.length);
   const favCount = useFavoritesStore(s => s.ids.length);
   const sessionCount = useConversationsStore(s => s.order.length);
@@ -56,12 +57,27 @@ export const MyPageScreen: React.FC = () => {
         </Section>
 
         <Section title={t('my.settings')}>
-          {/* Language switch — Korean by default, tap to switch (spec: KO default + EN toggle) */}
+          {/* Language. Six of them now, so tapping expands a list rather than cycling: with a
+              cycle, reaching the language you want can mean tapping past five you cannot read. */}
           <Row
             label={t('my.language')}
-            value={lang === 'ko' ? '한국어' : 'English'}
-            onPress={toggleLang}
+            value={labelFor(lang)}
+            onPress={() => setLangOpen(o => !o)}
           />
+          {langOpen &&
+            LANGUAGES.map(option => (
+              <Row
+                key={option.code}
+                // Each language is written in itself — someone looking for 日本語 is not helped by
+                // the word "Japanese" in a script they do not read.
+                label={option.label}
+                value={option.code === lang ? '✓' : undefined}
+                onPress={() => {
+                  setLang(option.code);
+                  setLangOpen(false);
+                }}
+              />
+            ))}
           <Row label={t('my.account')} />
           <Row label={t('my.notifications')} />
           <Row label={t('my.terms')} />

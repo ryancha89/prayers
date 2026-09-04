@@ -38,24 +38,22 @@ interface RawCounselor {
  * is not the generic one; m_char_003 has no nod clip, and inventing one would mean a preview
  * button that plays somebody else's gesture.
  */
-interface PreviewAction {
+interface PreviewAction extends Record<Lang, string> {
   key: string;
-  ko: string;
-  en: string;
 }
 
 const PREVIEW_ACTIONS: PreviewAction[] = [
-  { key: 'hello', ko: '인사하기', en: 'Say Hello' },
-  { key: 'smile', ko: '미소', en: 'Smile' },
-  { key: 'thinking', ko: '생각', en: 'Thinking' },
-  { key: 'explaining', ko: '설명', en: 'Explaining' },
-  { key: 'nod', ko: '끄덕임', en: 'Nod' },
+  { key: 'hello', ko: '인사하기', en: 'Say Hello', ja: 'あいさつ', 'zh-CN': '打招呼', 'zh-TW': '打招呼', vi: 'Chào' },
+  { key: 'smile', ko: '미소', en: 'Smile', ja: '微笑み', 'zh-CN': '微笑', 'zh-TW': '微笑', vi: 'Mỉm cười' },
+  { key: 'thinking', ko: '생각', en: 'Thinking', ja: '考える', 'zh-CN': '思索', 'zh-TW': '思索', vi: 'Ngẫm' },
+  { key: 'explaining', ko: '설명', en: 'Explaining', ja: '説明', 'zh-CN': '讲解', 'zh-TW': '講解', vi: 'Giảng giải' },
+  { key: 'nod', ko: '끄덕임', en: 'Nod', ja: 'うなずき', 'zh-CN': '点头', 'zh-TW': '點頭', vi: 'Gật đầu' },
 ];
 
 /** m_char_003 blesses instead of nodding. */
 const PREVIEW_ACTIONS_JIHO: PreviewAction[] = [
   ...PREVIEW_ACTIONS.slice(0, 4),
-  { key: 'bless', ko: '축복', en: 'Blessing' },
+  { key: 'bless', ko: '축복', en: 'Blessing', ja: '祝福', 'zh-CN': '祝福', 'zh-TW': '祝福', vi: 'Chúc phúc' },
 ];
 
 /**
@@ -103,6 +101,46 @@ const RAW: RawCounselor[] = [
         specialties: ['Love', 'Career', 'Wealth', 'Life'],
         tags: ['#Saju', '#Career', '#LifePath'],
       },
+      ja: {
+        name: 'ソヨン',
+        title: '四柱推命・運命の相談者',
+        hook: 'あなたの運が何を告げようとしているのか、お伝えします。',
+        about:
+          'ソヨンは落ち着いた洞察のまなざしで運の流れを読みます。まず耳を傾け、これから一年が静かにどこへ向かっているのかを示してくれます。',
+        personality: ['穏やか', '洞察力', '温かさ'],
+        specialties: ['恋愛', '仕事', '金運', '人生'],
+        tags: ['#四柱推命', '#仕事', '#人生の道'],
+      },
+      'zh-CN': {
+        name: '瑞妍',
+        title: '八字 · 命运咨询师',
+        hook: '你的命想提醒你什么，我说给你听。',
+        about:
+          '瑞妍以沉静而透彻的眼光读运势的走向。她先听，再指出接下来这一年正悄悄往哪里走。',
+        personality: ['沉静', '透彻', '温和'],
+        specialties: ['感情', '事业', '财运', '人生'],
+        tags: ['#八字', '#事业', '#人生路'],
+      },
+      'zh-TW': {
+        name: '瑞妍',
+        title: '八字 · 命運諮詢師',
+        hook: '你的命想提醒你什麼，我說給你聽。',
+        about:
+          '瑞妍以沉靜而透徹的眼光讀運勢的走向。她先聽，再指出接下來這一年正悄悄往哪裡走。',
+        personality: ['沉靜', '透徹', '溫和'],
+        specialties: ['感情', '事業', '財運', '人生'],
+        tags: ['#八字', '#事業', '#人生路'],
+      },
+      vi: {
+        name: 'Seoyeon',
+        title: 'Thầy xem tứ trụ · vận mệnh',
+        hook: 'Để ta nói cho con nghe vận của con đang muốn nhắc điều gì.',
+        about:
+          'Seoyeon đọc dòng vận bằng cái nhìn điềm tĩnh và thấu đáo. Cô nghe trước đã, rồi mới chỉ ra năm tới đang lặng lẽ đi về đâu.',
+        personality: ['Điềm tĩnh', 'Thấu đáo', 'Ấm áp'],
+        specialties: ['Tình cảm', 'Sự nghiệp', 'Tiền bạc', 'Vận trình'],
+        tags: ['#TứTrụ', '#SựNghiệp', '#ĐườngĐời'],
+      },
     },
   },
   {
@@ -135,6 +173,46 @@ const RAW: RawCounselor[] = [
         specialties: ['Love', 'Dating', 'Relationships'],
         tags: ['#Love', '#Dating', '#Relationships'],
       },
+      ja: {
+        name: 'ミナ',
+        title: '恋愛・関係の相談者',
+        hook: '何があったのか話して — 私はカードじゃなく、人を読むの。',
+        about:
+          'ミナは率直で自信があって、少しいたずらっぽい人。こじれた心のざわめきを払って、あなたがもう薄々気づいていることを言ってくれます。',
+        personality: ['率直', '自信', '軽やか'],
+        specialties: ['恋愛', '片想い', '人間関係'],
+        tags: ['#恋愛', '#片想い', '#関係'],
+      },
+      'zh-CN': {
+        name: '美娜',
+        title: '感情 · 关系咨询师',
+        hook: '说说发生了什么 — 我读的是人，不是牌。',
+        about:
+          '美娜直率、有底气，还带点俏皮。她会拨开一颗乱心里的杂音，把你其实早已猜到的话说出来。',
+        personality: ['直率', '有底气', '俏皮'],
+        specialties: ['感情', '暧昧', '人际关系'],
+        tags: ['#感情', '#暧昧', '#关系'],
+      },
+      'zh-TW': {
+        name: '美娜',
+        title: '感情 · 關係諮詢師',
+        hook: '說說發生了什麼 — 我讀的是人，不是牌。',
+        about:
+          '美娜直率、有底氣，還帶點俏皮。她會撥開一顆亂心裡的雜音，把你其實早已猜到的話說出來。',
+        personality: ['直率', '有底氣', '俏皮'],
+        specialties: ['感情', '曖昧', '人際關係'],
+        tags: ['#感情', '#曖昧', '#關係'],
+      },
+      vi: {
+        name: 'Mina',
+        title: 'Thầy xem tình cảm · quan hệ',
+        hook: 'Kể ta nghe đã xảy ra chuyện gì — ta đọc người, không đọc lá bài.',
+        about:
+          'Mina thẳng thắn, tự tin, lại có chút tinh nghịch. Cô gạt đi những tiếng ồn trong một trái tim rối, rồi nói ra đúng điều con vốn đã ngờ ngợ.',
+        personality: ['Thẳng thắn', 'Tự tin', 'Tinh nghịch'],
+        specialties: ['Tình cảm', 'Tình mới chớm', 'Quan hệ'],
+        tags: ['#TìnhCảm', '#MớiChớm', '#QuanHệ'],
+      },
     },
   },
   {
@@ -165,6 +243,46 @@ const RAW: RawCounselor[] = [
         personality: ['Logical', 'Composed', 'Supportive'],
         specialties: ['Career', 'Life', 'Growth'],
         tags: ['#Career', '#Life', '#Decisions'],
+      },
+      ja: {
+        name: 'ユナ',
+        title: '仕事・人生の相談者',
+        hook: 'あなたの仕事が本当はどこへ向かうのか、一緒にはっきり見ましょう。',
+        about:
+          'ユナは理屈が通っていて落ち着いているので、決断が重く感じるときに頼りになります。選ぶ前に、不安と本当の合図を切り分ける手助けをしてくれます。',
+        personality: ['理知的', '落ち着き', '支えになる'],
+        specialties: ['仕事', '人生', '成長'],
+        tags: ['#仕事', '#人生', '#決断'],
+      },
+      'zh-CN': {
+        name: '侑娜',
+        title: '事业 · 人生咨询师',
+        hook: '你的工作到底在往哪走，我们一起看清楚。',
+        about:
+          '侑娜讲道理、沉得住气，在决定压得人喘不过气的时候特别靠得住。她会帮你在下决心之前，把害怕和真正的信号分开。',
+        personality: ['讲道理', '沉稳', '托得住'],
+        specialties: ['事业', '人生', '成长'],
+        tags: ['#事业', '#人生', '#抉择'],
+      },
+      'zh-TW': {
+        name: '侑娜',
+        title: '事業 · 人生諮詢師',
+        hook: '你的工作到底在往哪走，我們一起看清楚。',
+        about:
+          '侑娜講道理、沉得住氣，在決定壓得人喘不過氣的時候特別靠得住。她會幫你在下決心之前，把害怕和真正的信號分開。',
+        personality: ['講道理', '沉穩', '托得住'],
+        specialties: ['事業', '人生', '成長'],
+        tags: ['#事業', '#人生', '#抉擇'],
+      },
+      vi: {
+        name: 'Yuna',
+        title: 'Thầy xem sự nghiệp · vận trình',
+        hook: 'Cùng nhìn cho rõ công việc của con thật ra đang đi về đâu.',
+        about:
+          'Yuna có lý lẽ và điềm đạm, rất đáng dựa vào những lúc một quyết định đè nặng. Cô giúp con tách nỗi sợ ra khỏi tín hiệu thật trước khi chọn.',
+        personality: ['Có lý lẽ', 'Điềm đạm', 'Nâng đỡ'],
+        specialties: ['Sự nghiệp', 'Vận trình', 'Trưởng thành'],
+        tags: ['#SựNghiệp', '#VậnTrình', '#QuyếtĐịnh'],
       },
     },
   },
@@ -198,6 +316,46 @@ const RAW: RawCounselor[] = [
         specialties: ['Wealth', 'Investing', 'Timing'],
         tags: ['#Wealth', '#Saju', '#Timing'],
       },
+      ja: {
+        name: 'ハリン',
+        title: '金運・運勢の読み手',
+        hook: 'お金にはリズムがあります。あなたのリズムをお見せしましょう。',
+        about:
+          'ハリンは金運を、時期と気質の問題として見ます。あなたの財の運が流れる季節と、慎重さが得になる地点を読んでくれます。',
+        personality: ['地に足がつく', '鋭い', '率直'],
+        specialties: ['金運', '投資', '時期'],
+        tags: ['#金運', '#四柱推命', '#時期'],
+      },
+      'zh-CN': {
+        name: '荷琳',
+        title: '财运 · 运势解读',
+        hook: '钱是有节奏的。我把你的节奏指给你看。',
+        about:
+          '荷琳把财运看成时机与性情的事。她读的是你财气流动的季节，以及在哪一段谨慎反而更划算。',
+        personality: ['接地气', '锐利', '直言'],
+        specialties: ['财运', '投资', '时机'],
+        tags: ['#财运', '#八字', '#时机'],
+      },
+      'zh-TW': {
+        name: '荷琳',
+        title: '財運 · 運勢解讀',
+        hook: '錢是有節奏的。我把你的節奏指給你看。',
+        about:
+          '荷琳把財運看成時機與性情的事。她讀的是你財氣流動的季節，以及在哪一段謹慎反而更划算。',
+        personality: ['接地氣', '銳利', '直言'],
+        specialties: ['財運', '投資', '時機'],
+        tags: ['#財運', '#八字', '#時機'],
+      },
+      vi: {
+        name: 'Harin',
+        title: 'Thầy xem tiền bạc · vận thế',
+        hook: 'Tiền có nhịp của nó. Để ta chỉ cho con nhịp của con.',
+        about:
+          'Harin xem chuyện tiền bạc là chuyện của thời điểm và tính khí. Cô đọc ra mùa nào tài vận của con đang chảy, và chỗ nào cẩn trọng lại là có lời.',
+        personality: ['Thực tế', 'Sắc sảo', 'Nói thẳng'],
+        specialties: ['Tiền bạc', 'Đầu tư', 'Thời điểm'],
+        tags: ['#TiềnBạc', '#TứTrụ', '#ThờiĐiểm'],
+      },
     },
   },
   {
@@ -230,6 +388,46 @@ const RAW: RawCounselor[] = [
         specialties: ['Tarot', 'Love', 'Life'],
         tags: ['#Tarot', '#Intuition', '#Love'],
       },
+      ja: {
+        name: 'ドユン',
+        title: 'タロット・直感のガイド',
+        hook: '一緒に一枚引いて、あなたが感じたことから始めましょう。',
+        about:
+          'ドユンは直感とイメージで進めます。カードが判決を下すのではなく、話のきっかけになるように導いてくれます。',
+        personality: ['やさしい', '直感的', '好奇心'],
+        specialties: ['タロット', '恋愛', '人生'],
+        tags: ['#タロット', '#直感', '#恋愛'],
+      },
+      'zh-CN': {
+        name: '道润',
+        title: '塔罗 · 直觉引导',
+        hook: '跟我抽一张牌，从你感觉到的那点开始。',
+        about:
+          '道润凭直觉和意象来读。他让牌成为一段对话的开头，而不是一纸判决。',
+        personality: ['温和', '直觉', '好奇'],
+        specialties: ['塔罗', '感情', '人生'],
+        tags: ['#塔罗', '#直觉', '#感情'],
+      },
+      'zh-TW': {
+        name: '道潤',
+        title: '塔羅 · 直覺引導',
+        hook: '跟我抽一張牌，從你感覺到的那點開始。',
+        about:
+          '道潤憑直覺和意象來讀。他讓牌成為一段對話的開頭，而不是一紙判決。',
+        personality: ['溫和', '直覺', '好奇'],
+        specialties: ['塔羅', '感情', '人生'],
+        tags: ['#塔羅', '#直覺', '#感情'],
+      },
+      vi: {
+        name: 'Doyun',
+        title: 'Người dẫn tarot · trực giác',
+        hook: 'Rút một lá cùng ta, rồi bắt đầu từ chính cảm giác của con.',
+        about:
+          'Doyun làm việc bằng trực giác và hình ảnh. Anh để lá bài mở ra một cuộc chuyện trò, chứ không tuyên một bản án.',
+        personality: ['Dịu dàng', 'Trực giác', 'Tò mò'],
+        specialties: ['Tarot', 'Tình cảm', 'Vận trình'],
+        tags: ['#Tarot', '#TrựcGiác', '#TìnhCảm'],
+      },
     },
   },
   {
@@ -260,6 +458,46 @@ const RAW: RawCounselor[] = [
         personality: ['Warm', 'Reflective', 'Patient'],
         specialties: ['Life', 'Meaning', 'Growth'],
         tags: ['#Life', '#Meaning', '#Growth'],
+      },
+      ja: {
+        name: 'ジホ',
+        title: '人生・意味の相談者',
+        hook: '人生が止まって見えるとき、次の正直な一歩を一緒に探しましょう。',
+        about:
+          'ジホは温かく、よく考える人。何も間違っていないのに何もしっくりこない季節に合います。あなたが本当に望んでいるものに、名前をつける手助けをしてくれます。',
+        personality: ['温かい', '思慮深い', '辛抱強い'],
+        specialties: ['人生', '意味', '成長'],
+        tags: ['#人生', '#意味', '#成長'],
+      },
+      'zh-CN': {
+        name: '志豪',
+        title: '人生 · 意义咨询师',
+        hook: '当日子像卡住了，我们一起找出下一步该怎么走才不违心。',
+        about:
+          '志豪温和又爱琢磨，很适合那种什么都没出错、却什么都不对劲的时节。他帮你给心里真正想要的东西起个名字。',
+        personality: ['温和', '爱琢磨', '有耐心'],
+        specialties: ['人生', '意义', '成长'],
+        tags: ['#人生', '#意义', '#成长'],
+      },
+      'zh-TW': {
+        name: '志豪',
+        title: '人生 · 意義諮詢師',
+        hook: '當日子像卡住了，我們一起找出下一步該怎麼走才不違心。',
+        about:
+          '志豪溫和又愛琢磨，很適合那種什麼都沒出錯、卻什麼都不對勁的時節。他幫你給心裡真正想要的東西起個名字。',
+        personality: ['溫和', '愛琢磨', '有耐心'],
+        specialties: ['人生', '意義', '成長'],
+        tags: ['#人生', '#意義', '#成長'],
+      },
+      vi: {
+        name: 'Jiho',
+        title: 'Thầy xem vận trình · ý nghĩa',
+        hook: 'Khi đời như khựng lại, cùng tìm bước kế tiếp mà con thấy thật lòng.',
+        about:
+          'Jiho ấm áp và hay ngẫm, hợp với những mùa chẳng có gì sai mà cũng chẳng có gì vừa vặn. Anh giúp con gọi tên đúng thứ mình thật sự muốn.',
+        personality: ['Ấm áp', 'Hay ngẫm', 'Kiên nhẫn'],
+        specialties: ['Vận trình', 'Ý nghĩa', 'Trưởng thành'],
+        tags: ['#VậnTrình', '#ÝNghĩa', '#TrưởngThành'],
       },
     },
   },

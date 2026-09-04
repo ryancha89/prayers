@@ -8,6 +8,8 @@
  * edit the asset and re-run the exporter.
  */
 
+import type { Lang } from '../../../shared/i18n';
+
 /** What the screen is doing during a phase (C# `PhaseUi`). */
 export type PhaseUi = 'none' | 'dialogue' | 'choices' | 'questionBox' | 'report';
 
@@ -54,8 +56,13 @@ export interface ConsultationPhase {
 }
 
 /** One consultation string in the three languages the game ships. */
-export interface LocEntry {
-  ko: string;
-  en: string;
-  vi: string;
-}
+/**
+ * One line of the consultation string table, per language.
+ *
+ * Partial on purpose, and NOT `Record<Lang, string>`: consultationStrings.json is generated from
+ * Unity's LocalizationData.asset (Tools/consultation/export_flow.py), which carries ko/en/vi today.
+ * Adding ja or Chinese here by hand would fork a generated file and be overwritten by the next
+ * export — those languages belong in the Unity table, and arrive through the exporter. Until then
+ * `loc()` falls back ko → en → the key, which is what Unity's own Loc.Get does.
+ */
+export type LocEntry = Partial<Record<Lang, string>> & { ko: string };
