@@ -11,7 +11,7 @@ import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
 import { useCounselingStore } from '../store/counselingStore';
-import { counselorAI } from '../api/counselorAI';
+import { counselorAI, toneForCharacter } from '../api/counselorAI';
 import { isNativeUnity, unityBridge } from '../bridge';
 import { CounselorStage } from '../components/CounselorStage';
 import { UnityHost } from '../components/UnityHost';
@@ -112,6 +112,11 @@ export const CounselingRoomScreen: React.FC = () => {
               userText: question,
               turn: turn.current,
               lang,
+              // These two are what turn this from a scripted reply into the real reading: the
+              // session id is the thread the server remembers, and the tone is the voice it
+              // answers in. Without either it falls back to the mock, silently by design.
+              sessionId: params.sessionId,
+              tone: toneForCharacter(counselor?.characterId),
             });
       return resp.text;
     },

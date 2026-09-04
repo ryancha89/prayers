@@ -85,3 +85,6 @@ yarn-error.log
 # to regenerate anyway.
 unity/builds/
 unity/xcode/
+
+# Local server secret for dev builds (see devToken.example.ts). Never commit.
+src/features/counseling/api/devToken.ts

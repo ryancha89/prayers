@@ -12,11 +12,18 @@ export interface CounselingSubject {
 }
 
 /* ---- Topic (spec §16) ---- */
+/**
+ * `health` and `other` are the two halves of the same seam. The server's cards — the vocabulary
+ * Prayers::TopicClassifier actually decides with — are love/wealth/career/relationships/health/life;
+ * `other` is the app's own catch-all and means nothing to the classifier, so it is never sent.
+ * `health` is here because the fetched cards offer it and a selection has to be able to hold it.
+ */
 export type CounselingTopic =
   | 'love'
   | 'career'
   | 'wealth'
   | 'relationships'
+  | 'health'
   | 'life'
   | 'other';
 

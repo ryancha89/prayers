@@ -1,4 +1,5 @@
 import { Lang } from '../../../shared/i18n';
+import { sendConsultationMessage } from './prayersServer';
 import {
   CounselingSubject,
   CounselingTopic,
@@ -30,6 +31,10 @@ export interface CounselorAIService {
     userText: string;
     turn: number;
     lang: Lang;
+    /** Stable per counselor+subject. The server keys the session's memory and language on it. */
+    sessionId?: string;
+    /** Which counselor is speaking, as a voice the server knows (`sunyeo`, `dosa`, …). */
+    tone?: string;
   }): Promise<CounselorResponse>;
 }
 
@@ -209,6 +214,7 @@ const TOPIC_LABEL: Record<Lang, Record<CounselingTopic, string>> = {
     wealth: '재물',
     relationships: '인간관계',
     life: '인생',
+    health: '건강',
     other: '마음에 담긴 것',
   },
   en: {
@@ -217,6 +223,7 @@ const TOPIC_LABEL: Record<Lang, Record<CounselingTopic, string>> = {
     wealth: 'your wealth',
     relationships: 'your relationships',
     life: 'your life',
+    health: 'your health',
     other: 'what is on your mind',
   },
   ja: {
@@ -225,6 +232,7 @@ const TOPIC_LABEL: Record<Lang, Record<CounselingTopic, string>> = {
     wealth: '金運',
     relationships: '人間関係',
     life: '人生',
+    health: '健康',
     other: '心にかかっていること',
   },
   'zh-CN': {
@@ -233,6 +241,7 @@ const TOPIC_LABEL: Record<Lang, Record<CounselingTopic, string>> = {
     wealth: '你的财运',
     relationships: '你的人际关系',
     life: '你的人生',
+    health: '你的健康',
     other: '你心里挂着的事',
   },
   'zh-TW': {
@@ -241,6 +250,7 @@ const TOPIC_LABEL: Record<Lang, Record<CounselingTopic, string>> = {
     wealth: '你的財運',
     relationships: '你的人際關係',
     life: '你的人生',
+    health: '你的健康',
     other: '你心裡掛著的事',
   },
   vi: {
@@ -249,6 +259,7 @@ const TOPIC_LABEL: Record<Lang, Record<CounselingTopic, string>> = {
     wealth: 'chuyện tiền bạc của con',
     relationships: 'chuyện quan hệ của con',
     life: 'vận trình của con',
+    health: 'chuyện sức khoẻ của con',
     other: 'điều con đang canh cánh',
   },
 };
@@ -298,4 +309,75 @@ export class MockCounselorAI implements CounselorAIService {
   }
 }
 
-export const counselorAI: CounselorAIService = new MockCounselorAI();
+/**
+ * Which voice the server should answer in, per counselor.
+ *
+ * `setting.tone` picks the system prompt (`role_<tone>_full` + `tone_style_<tone>`) AND keys the
+ * session's ChatSummary history — change the tone mid-session and the counselor loses the thread.
+ * It is not the counselor's id and not the persona id: sending `wood` gets `Prayers::Catalog`'s
+ * default, not Sun-yeo, because it is not a tone the server knows.
+ *
+ * Only the two counselors with a 3D model are listed. The rest fall through to the server default,
+ * which is correct — a consultation cannot be started with them anyway.
+ */
+const TONE_BY_CHARACTER: Record<string, string> = {
+  yuna_01: 'sunyeo',
+  jiho_01: 'dosa',
+};
+
+export const toneForCharacter = (characterId?: string): string | undefined =>
+  characterId ? TONE_BY_CHARACTER[characterId] : undefined;
+
+/**
+ * The real reading, with the mock behind it.
+ *
+ * The greeting stays local on purpose. It is the room's own copy — "come, sit, what would you like
+ * to ask" — not a reading, and sending it to the model would spend a turn of the session's memory
+ * on a line nobody asked a question for. Every actual turn goes to the server.
+ *
+ * WHEN THE SERVER CANNOT ANSWER, THE SCRIPTED REPLY STANDS IN. That is a real trade: a canned
+ * paragraph in the counselor's voice is better than an error bubble mid-consultation, and worse
+ * than the truth. It is why `prayersServer` distinguishes its failures — a 402 throws (the room has
+ * to say "you need a ticket", not improvise a reading), everything else returns null and lands
+ * here, and dev builds get a devlog line naming the status so "the counselor sounds canned" never
+ * has to be diagnosed by ear.
+ */
+export class ServerCounselorAI implements CounselorAIService {
+  constructor(private readonly fallback: CounselorAIService) {}
+
+  greeting(input: Parameters<CounselorAIService['greeting']>[0]): Promise<CounselorResponse> {
+    return this.fallback.greeting(input);
+  }
+
+  async reply(input: Parameters<CounselorAIService['reply']>[0]): Promise<CounselorResponse> {
+    if (input.sessionId) {
+      const turn = await sendConsultationMessage({
+        uniqId: input.sessionId,
+        content: input.userText,
+        lang: input.lang,
+        tone: input.tone,
+        // `other` is the app's own catch-all and means nothing to Prayers::TopicClassifier; sending
+        // it would start the reading on a topic the server has to discard anyway.
+        topic: input.topic && input.topic !== 'other' ? input.topic : undefined,
+      });
+
+      if (turn) {
+        return {
+          id: nextId(),
+          text: turn.text,
+          // Deliberately flat. The server sends no emotion, and guessing one from the text would be
+          // this file inventing performance again — the per-sentence direction is what `scenes[]`
+          // carries, and staging that is its own piece of work.
+          emotion: 'neutral',
+          animation: 'talk',
+          camera: turn.followUp ? 'closeUp' : 'default',
+          followUp: turn.followUp,
+        };
+      }
+    }
+
+    return this.fallback.reply(input);
+  }
+}
+
+export const counselorAI: CounselorAIService = new ServerCounselorAI(new MockCounselorAI());

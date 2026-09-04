@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
-import { useT } from '../../../shared/i18n';
+import { useLang, useT } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
 import { PrimaryButton } from '../../../shared/components/PrimaryButton';
 import { RootStackParamList } from '../../../navigation/types';
 import { CounselingTopic } from '../types';
 import { useCounselingStore } from '../store/counselingStore';
+import { fetchTopics, type TopicCard } from '../api/prayersServer';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
+/**
+ * The offline list. The real cards come from `GET /api/v1/prayers/topics`, and this stands in when
+ * that cannot be reached — a topic screen a release behind beats one that will not render.
+ *
+ * It is NOT the same list: the server offers `health` and has no `other`, because its cards have to
+ * be exactly the vocabulary `Prayers::TopicClassifier` decides with on every turn. A card whose key
+ * the classifier does not know starts the reading already off-topic, which is why the list is
+ * fetched at all rather than kept here and hoped to match.
+ */
 const TOPICS: { key: CounselingTopic; labelKey: 'topic.love' | 'topic.career' | 'topic.wealth' | 'topic.relationships' | 'topic.life' | 'topic.other' }[] = [
   { key: 'love', labelKey: 'topic.love' },
   { key: 'career', labelKey: 'topic.career' },
@@ -26,11 +36,35 @@ const TOPICS: { key: CounselingTopic; labelKey: 'topic.love' | 'topic.career' | 
 export const CounselingTopicScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const t = useT();
+  const lang = useLang();
   const counselor = useCounselingStore(s => s.counselor);
   const subject = useCounselingStore(s => s.subject);
   const setTopic = useCounselingStore(s => s.setTopic);
 
   const [selected, setSelected] = useState<CounselingTopic | undefined>();
+  const [cards, setCards] = useState<TopicCard[] | null>(null);
+
+  useEffect(() => {
+    const ac = new AbortController();
+    fetchTopics(lang, ac.signal)
+      .then(list => {
+        if (!ac.signal.aborted) setCards(list);
+      })
+      .catch(() => {});
+    return () => ac.abort();
+  }, [lang]);
+
+  // One shape for both sources, so the grid below does not care which one it got.
+  const options = cards
+    ? cards.map(c => ({ key: c.key as CounselingTopic, label: c.label, description: c.description }))
+    : TOPICS.map(topic => ({ key: topic.key, label: t(topic.labelKey), description: '' }));
+
+  // A language change swaps the labels under a selection whose key still exists; a server list that
+  // does not carry the selected key would leave the Enter button live on nothing.
+  useEffect(() => {
+    if (selected && !options.some(o => o.key === selected)) setSelected(undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cards]);
 
   const onEnter = () => {
     if (!selected) return;
@@ -59,16 +93,21 @@ export const CounselingTopicScreen: React.FC = () => {
         </Text>
 
         <View style={styles.grid}>
-          {TOPICS.map(topic => {
-            const isActive = selected === topic.key;
+          {options.map(option => {
+            const isActive = selected === option.key;
             return (
               <Pressable
-                key={topic.key}
-                onPress={() => setSelected(isActive ? undefined : topic.key)}
+                key={option.key}
+                onPress={() => setSelected(isActive ? undefined : option.key)}
                 style={[styles.topic, isActive && styles.topicActive]}>
                 <Text style={[styles.topicLabel, isActive && styles.topicLabelActive]}>
-                  {t(topic.labelKey)}
+                  {option.label}
                 </Text>
+                {option.description ? (
+                  <Text style={styles.topicDescription} numberOfLines={2}>
+                    {option.description}
+                  </Text>
+                ) : null}
               </Pressable>
             );
           })}
@@ -92,7 +131,9 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   topic: {
     width: '47%',
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
+    minHeight: 92,
+    justifyContent: 'center',
     borderRadius: radius.md,
     backgroundColor: colors.card,
     alignItems: 'center',
@@ -100,7 +141,14 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   topicActive: { borderColor: colors.violet, backgroundColor: colors.violetDim },
-  topicLabel: { ...typography.h3, color: colors.textSecondary },
+  topicLabel: { ...typography.h3, color: colors.textSecondary, textAlign: 'center' },
+  topicDescription: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
   topicLabelActive: { color: colors.violetSoft },
   footer: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
 });
