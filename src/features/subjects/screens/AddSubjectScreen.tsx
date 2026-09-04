@@ -21,15 +21,19 @@ import type { CounselingSubject } from '../../counseling/types';
  */
 export const AddSubjectScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { params } = useRoute<RouteProp<RootStackParamList, 'AddSubject'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'AddSubject' | 'ProfileSetup'>>();
+  const onboarding = route.name === 'ProfileSetup';
+  const params = onboarding
+    ? { subjectId: 'self' }
+    : (route.params as RootStackParamList['AddSubject']);
   const t = useT();
   const addSubject = useSubjectsStore(s => s.addSubject);
+  const deferProfile = useSubjectsStore(s => s.deferProfile);
   const updateSubject = useSubjectsStore(s => s.updateSubject);
   const existing = useSubjectsStore(s => (params?.subjectId ? s.getById(params.subjectId) : undefined));
 
   // The stored self carries a placeholder name nobody chose; showing it as a filled-in field would
   // invite the user to accept "Myself" as their name.
-  const onboarding = params?.onboarding === true;
   const initialName = existing && !existing.isUser ? existing.displayName : '';
 
   const [name, setName] = useState(initialName);
@@ -98,6 +102,10 @@ export const AddSubjectScreen: React.FC = () => {
           placeholder="HH:MM"
           keyboardType="numbers-and-punctuation"
         />
+        {/* Directly under the field it describes. Sitting below the gender row instead, it read as
+            a note about gender — so the one field that IS optional looked required, and the one
+            that is required looked optional. */}
+        <Text style={styles.hint}>{t('addSubject.hint')}</Text>
         <Text style={styles.label}>{t('addSubject.gender')}</Text>
         <View style={styles.genderRow}>
           {(['female', 'male'] as const).map(g => (
@@ -111,11 +119,18 @@ export const AddSubjectScreen: React.FC = () => {
             </Pressable>
           ))}
         </View>
-        <Text style={styles.hint}>{t('addSubject.hint')}</Text>
       </ScrollView>
 
       <View style={styles.footer}>
+        {/* Names what is still missing. A dead button that will not say why is the reason the
+            optional field got blamed for the required one. */}
+        {!complete ? <Text style={styles.hint}>{t('addSubject.required')}</Text> : null}
         <PrimaryButton label={t('addSubject.save')} onPress={onSave} disabled={!complete} />
+        {onboarding ? (
+          <Pressable style={styles.later} onPress={deferProfile} hitSlop={8}>
+            <Text style={styles.laterLabel}>{t('addSubject.later')}</Text>
+          </Pressable>
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -180,5 +195,7 @@ const styles = StyleSheet.create({
   genderLabelActive: { color: colors.violetSoft },
   hint: { ...typography.caption, color: colors.textMuted, lineHeight: 18 },
   intro: { ...typography.body, color: colors.textSecondary, lineHeight: 22 },
-  footer: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
+  footer: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, gap: spacing.sm },
+  later: { alignItems: 'center', paddingVertical: spacing.md },
+  laterLabel: { ...typography.body, color: colors.textMuted },
 });

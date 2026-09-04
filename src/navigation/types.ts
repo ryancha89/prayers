@@ -12,11 +12,15 @@ export type RootStackParamList = {
   CounselorDetail: { counselorId: string };
   CounselingSubject: undefined;
   CounselingTopic: undefined;
+  /** `subjectId` edits an existing person (including `'self'`); absent creates a new one. */
+  AddSubject: { subjectId?: string } | undefined;
   /**
-   * `subjectId` edits an existing person (including `'self'`); absent creates a new one.
-   * `onboarding` is the first-run pass over `self`: no way back, because there is nothing behind it.
+   * First run over `self`. A SEPARATE ROUTE from AddSubject even though it renders the same form:
+   * they were one name before, so the two could not both be registered, and a "fill in your
+   * details" navigation from inside the app popped the whole stack back to the first-run screen
+   * instead of opening a modal.
    */
-  AddSubject: { subjectId?: string; onboarding?: boolean } | undefined;
+  ProfileSetup: undefined;
   /** Loading screen that boots the (mock) Unity room, spec §17. */
   UnityEntry: {
     counselorId: string;

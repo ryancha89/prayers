@@ -24,6 +24,16 @@ export const hasBirthData = (s?: CounselingSubject): boolean =>
 
 interface SubjectsState {
   self: CounselingSubject;
+  /**
+   * The player chose "later" at first run.
+   *
+   * Persisted, and deliberately so: asking again on every launch is nagging, and the app has a
+   * second gate that catches this properly — the counselor screen refuses a consultation with no
+   * chart and routes to the form. Cleared the moment `self` gets birth data, so it can never
+   * outlive what it was deferring.
+   */
+  profileDeferred: boolean;
+  deferProfile: () => void;
   subjects: CounselingSubject[]; // saved people (excludes self)
   addSubject: (s: Omit<CounselingSubject, 'id' | 'isUser'>) => CounselingSubject;
   updateSubject: (id: string, patch: Partial<Omit<CounselingSubject, 'id' | 'isUser'>>) => void;
@@ -40,6 +50,8 @@ export const useSubjectsStore = create<SubjectsState>()(
   persist(
     (set, get) => ({
       self: SELF_DEFAULT,
+      profileDeferred: false,
+      deferProfile: () => set({ profileDeferred: true }),
       subjects: [
         // Gender is part of the seed because it is part of a usable subject: without it these two
         // would sit in the picker looking complete and then send the player to a form.
@@ -54,7 +66,7 @@ export const useSubjectsStore = create<SubjectsState>()(
       updateSubject: (id, patch) =>
         set(state =>
           id === 'self'
-            ? { self: { ...state.self, ...patch } }
+            ? { self: { ...state.self, ...patch }, profileDeferred: false }
             : {
                 subjects: state.subjects.map(s => (s.id === id ? { ...s, ...patch } : s)),
               },
@@ -68,7 +80,11 @@ export const useSubjectsStore = create<SubjectsState>()(
       storage: createJSONStorage(() => AsyncStorage),
       // `self` is persisted now: it carries the account holder's own birth data, which is the
       // whole point of making it editable.
-      partialize: state => ({ self: state.self, subjects: state.subjects }),
+      partialize: state => ({
+        self: state.self,
+        subjects: state.subjects,
+        profileDeferred: state.profileDeferred,
+      }),
     },
   ),
 );

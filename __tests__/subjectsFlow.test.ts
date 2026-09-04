@@ -80,3 +80,29 @@ describe('seeded people', () => {
     }
   });
 });
+
+describe('deferring the first run', () => {
+  beforeEach(() => {
+    reset();
+    useSubjectsStore.setState({ profileDeferred: false });
+  });
+
+  it('lets the app past first run without birth data', () => {
+    useSubjectsStore.getState().deferProfile();
+    const { self, profileDeferred } = useSubjectsStore.getState();
+    expect(profileDeferred).toBe(true);
+    // Deferred, NOT satisfied: everything that needs a chart must still say so.
+    expect(hasBirthData(self)).toBe(false);
+  });
+
+  it('clears itself the moment the details are actually given', () => {
+    useSubjectsStore.getState().deferProfile();
+    useSubjectsStore
+      .getState()
+      .updateSubject('self', { birthDate: '1995-06-15', gender: 'female' });
+
+    // A deferral that outlived what it deferred would leave first run unreachable while the app
+    // still could not read a chart.
+    expect(useSubjectsStore.getState().profileDeferred).toBe(false);
+  });
+});

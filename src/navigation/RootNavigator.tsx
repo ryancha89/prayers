@@ -27,7 +27,10 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  */
 export const RootNavigator: React.FC = () => {
   const self = useSubjectsStore(s => s.self);
-  const needsProfile = !hasBirthData(self);
+  const deferred = useSubjectsStore(s => s.profileDeferred);
+  // "Later" is honoured, but never silently: the counselor screen still refuses a consultation
+  // with no chart and routes here, so deferring costs browsing nothing and hides nothing.
+  const needsProfile = !hasBirthData(self) && !deferred;
 
   return (
   <Stack.Navigator
@@ -37,26 +40,20 @@ export const RootNavigator: React.FC = () => {
       animation: 'slide_from_right',
     }}>
     {needsProfile ? (
-      <Stack.Screen
-        name="AddSubject"
-        component={AddSubjectScreen}
-        initialParams={{ subjectId: 'self', onboarding: true }}
-        options={{ animation: 'fade' }}
-      />
+      <Stack.Screen name="ProfileSetup" component={AddSubjectScreen} options={{ animation: 'fade' }} />
     ) : null}
     <Stack.Screen name="Tabs" component={BottomTabNavigator} />
     <Stack.Screen name="CounselorDetail" component={CounselorDetailScreen} />
     <Stack.Screen name="CounselingSubject" component={CounselingSubjectScreen} />
     <Stack.Screen name="CounselingTopic" component={CounselingTopicScreen} />
-    {/* The same screen as a modal, for every later edit. Declared once the first run is past, so
-        the two never collide as duplicate route names. */}
-    {needsProfile ? null : (
-      <Stack.Screen
-        name="AddSubject"
-        component={AddSubjectScreen}
-        options={{ presentation: 'modal' }}
-      />
-    )}
+    {/* The same form as a modal, for every later edit — including from inside the consultation
+        flow, which is why it is ALWAYS registered now. While it shared a name with the first-run
+        screen it could not be, and navigating to it popped the stack back to first run. */}
+    <Stack.Screen
+      name="AddSubject"
+      component={AddSubjectScreen}
+      options={{ presentation: 'modal' }}
+    />
     <Stack.Screen
       name="UnityEntry"
       component={UnityEntryScreen}
