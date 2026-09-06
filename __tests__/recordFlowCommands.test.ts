@@ -122,6 +122,8 @@ test('records a full consultation as bridge commands', () => {
       record({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey } });
       engine.onSpeakDone(cacheKey);
     },
+    prefetchText: (text, cacheKey) =>
+      record({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey, prefetch: true } }),
     stopSpeak: () => record({ type: 'STAGE_STOP_SPEAK' }),
     askOracle: (payload: OracleAskPayload) => record({ type: 'ORACLE_ASK', payload }),
     exit: () => record({ type: 'SESSION_END' }),
@@ -193,9 +195,12 @@ test('records a full consultation as bridge commands', () => {
   expect(phases[0]).toBe('P01');
   expect(phases).toContain('P05');
   expect(phases).toContain('P11');
-  expect(phases).toContain('P18');
+  expect(phases).toContain('P17');
   expect(phases).toContain('P20');
   expect(phases).not.toContain('P03');
+  // The fixed-months line (P15) and the report card (P18) are stepped over.
+  expect(phases).not.toContain('P15');
+  expect(phases).not.toContain('P18');
   expect(parsed.some(e => e.type === 'ORACLE_ASK')).toBe(true);
 
   // The screens the walk actually puts up. Asserted rather than merely written,
@@ -204,9 +209,10 @@ test('records a full consultation as bridge commands', () => {
   const screens = uiLog.map(s => s.screen);
   expect(screens).toContain('questionBox');
   expect(screens).toContain('thinking');
-  expect(screens).toContain('report');
+  expect(screens).not.toContain('report');
   expect(screens).toContain('loop');
-  expect(uiLog.some(s => s.reportRows.length > 0)).toBe(true);
+  // P18 is skipped, so no UI snapshot ever carries report rows.
+  expect(uiLog.some(s => s.reportRows.length > 0)).toBe(false);
 
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(

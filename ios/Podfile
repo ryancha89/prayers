@@ -14,6 +14,23 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
+# @azesmway/react-native-unity vendors UnityFramework from its own ios/ folder and
+# relies on a podspec prepare_command to copy it there from unity/builds/ios.
+# CocoaPods does not run prepare_command for local (:path) pods, and every
+# `yarn install` wipes the copy anyway, so do the copy here on each pod install.
+pre_install do |installer|
+  unity_src = File.expand_path('../unity/builds/ios', __dir__)
+  pod_ios = File.expand_path('../node_modules/@azesmway/react-native-unity/ios', __dir__)
+  if Dir.exist?(unity_src) && Dir.exist?(pod_ios)
+    Dir.glob(File.join(unity_src, 'UnityFramework.*')).each do |fw|
+      dest = File.join(pod_ios, File.basename(fw))
+      FileUtils.rm_rf(dest)
+      FileUtils.cp_r(fw, dest)
+      Pod::UI.puts "[unity] Copied #{File.basename(fw)} into react-native-unity pod".green
+    end
+  end
+end
+
 target 'prayers' do
   config = use_native_modules!
 

@@ -10,7 +10,7 @@
  * It is presentational: every decision (which surface, what text, when the beat
  * ends) belongs to `ConsultationEngine`. This file only knows how it looks.
  */
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -164,18 +164,31 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
 };
 
 /** The free-chat transcript. A staged phase speaks one line through the card and
- *  moves on; a conversation has to stay readable. */
-const Transcript: React.FC<{ state: FlowState }> = ({ state }) => (
-  <ScrollView style={styles.transcript} contentContainerStyle={styles.transcriptBody}>
-    {state.transcript.map((m, i) => (
-      <View
-        key={`${i}-${m.role}`}
-        style={[styles.bubble, m.role === 'user' ? styles.bubbleUser : styles.bubbleCounselor]}>
-        <Text style={m.role === 'user' ? styles.bubbleTextUser : styles.bubbleText}>{m.text}</Text>
-      </View>
-    ))}
-  </ScrollView>
-);
+ *  moves on; a conversation has to stay readable.
+ *
+ *  It follows the voice. The engine reveals an answer chunk by chunk as each is
+ *  spoken, so the newest bubble grows while the counselor talks — and every
+ *  growth spurt changes the content size, which is the cue to scroll to the
+ *  end. Without it the bubble grew below the fold and the player read the first
+ *  sentence while hearing the fourth. */
+const Transcript: React.FC<{ state: FlowState }> = ({ state }) => {
+  const scroll = useRef<ScrollView>(null);
+  return (
+    <ScrollView
+      ref={scroll}
+      style={styles.transcript}
+      contentContainerStyle={styles.transcriptBody}
+      onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}>
+      {state.transcript.map((m, i) => (
+        <View
+          key={`${i}-${m.role}`}
+          style={[styles.bubble, m.role === 'user' ? styles.bubbleUser : styles.bubbleCounselor]}>
+          <Text style={m.role === 'user' ? styles.bubbleTextUser : styles.bubbleText}>{m.text}</Text>
+        </View>
+      ))}
+    </ScrollView>
+  );
+};
 
 const Report: React.FC<{ state: FlowState }> = ({ state }) => {
   const report = state.report!;
@@ -244,14 +257,23 @@ const styles = StyleSheet.create({
   },
   choiceText: { ...typography.bodyStrong, color: colors.textPrimary },
 
+  // Sits over the live Unity scene (gold sigils, glyphs), so a 16%-alpha violet pill with violet
+  // caption text was unreadable — near-opaque dark ground, violet rim, white body text instead.
   suggestion: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.violetDim,
+    backgroundColor: 'rgba(18, 18, 26, 0.94)',
     borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.violetSoft,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+    shadowColor: '#000',
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
   },
-  suggestionText: { ...typography.caption, color: colors.violetSoft },
+  suggestionText: { ...typography.body, color: colors.textPrimary },
 
   transcript: { maxHeight: 320 },
   transcriptBody: { gap: spacing.sm, paddingBottom: spacing.sm },

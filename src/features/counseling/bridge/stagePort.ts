@@ -22,6 +22,9 @@ export function createStagePort(bridge: UnityBridge, onExit: () => void): StageP
     speakText(text: string, cacheKey: string) {
       bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey } });
     },
+    prefetchText(text: string, cacheKey: string) {
+      bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey, prefetch: true } });
+    },
     stopSpeak() {
       bridge.sendEvent({ type: 'STAGE_STOP_SPEAK' });
     },
@@ -78,6 +81,7 @@ export function createMockStagePort(deps: {
     speakText(_text, cacheKey) {
       setTimeout(() => deps.onSpeakDone(cacheKey), 0);
     },
+    prefetchText() {},
     stopSpeak() {},
     askOracle(payload) {
       ask(payload.question, payload.loop === true);

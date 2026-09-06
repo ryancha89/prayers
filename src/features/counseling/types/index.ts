@@ -116,6 +116,8 @@ export interface StageSpeakPayload {
   text?: string;
   cacheKey?: string;
   topic?: string;
+  /** Synthesise and cache only — no playback, no SPEAK_DONE. */
+  prefetch?: boolean;
 }
 
 /** RN asks for the reading. The answer comes back as one ORACLE_RESULT. */

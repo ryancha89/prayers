@@ -137,5 +137,6 @@ function emptyish(): FlowState {
     suggestion: '',
     topic: '',
     finished: false,
+  pending: false,
   };
 }

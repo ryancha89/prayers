@@ -83,6 +83,10 @@ class StageDouble implements StagePort {
     this.spoken.push(cacheKey);
     if (this.autoFinishSpeech) this.engine.onSpeakDone(cacheKey);
   }
+  prefetched: string[] = [];
+  prefetchText(_text: string, cacheKey: string) {
+    this.prefetched.push(cacheKey);
+  }
   stopSpeak() {}
   askOracle(p: OracleAskPayload) {
     this.asks.push(p);
@@ -255,4 +259,101 @@ test('both halves of the session reach the history', () => {
 
   expect(user).toContain('내 질문');
   expect(counselor.length).toBeGreaterThan(0);
+});
+
+/** Drive a session into the loop and send one follow-up question. */
+function intoLoop(stage: StageDouble, engine: ConsultationEngine, sched: FakeScheduler) {
+  // Recorded takes finish on their own on the way in; only the loop's takes are
+  // held open, so the tests below can step the delivery a chunk at a time.
+  stage.autoFinishSpeech = true;
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('질문');
+  engine.onOracleResult({
+    ok: true,
+    followup: '',
+    beats: [
+      { phaseId: 'P11', lines: ['하나'] },
+      { phaseId: 'P14', lines: ['둘'] },
+      { phaseId: 'P17', lines: ['셋'] },
+      { phaseId: 'P19', lines: ['넷'] },
+    ],
+  });
+  sched.advance(300_000);
+  expect(engine.getState().screen).toBe('loop');
+  stage.autoFinishSpeech = false;
+  engine.submitQuestion('추가 질문');
+  // The "one moment" line is out; let it finish so the answer may start.
+  stage.spoken.forEach(key => engine.onSpeakDone(key));
+}
+
+const LONG_ANSWER =
+  '어머나, 정말 재미있는 사주네요! 재물이 넘실넘실 넘치는데 끌어다 쓸 도구가 없는 형국이에요. ' +
+  '그래서 식상을 채우면 흐름이 훨씬 매끄러워질 수 있어요.\n\n' +
+  '지금 30대 대운인 임신 대운이 물의 기운을 보태 주고 있으니 슬슬 도구를 써 봐도 괜찮은 때예요.';
+
+test('a loop answer is revealed chunk by chunk, in step with the voice', () => {
+  const { sched, stage, engine } = build();
+  intoLoop(stage, engine, sched);
+
+  const before = engine.getState().transcript.length;
+  engine.onOracleResult({
+    ok: true,
+    loop: true,
+    followup: '',
+    beats: [{ phaseId: 'loop', lines: [LONG_ANSWER] }],
+  });
+
+  // Every chunk was warmed the moment the answer arrived, under the keys the
+  // takes will be asked for.
+  expect(stage.prefetched).toEqual(
+    expect.arrayContaining(['loop_1.0', 'loop_1.1', 'loop_1.2']),
+  );
+
+  // Only the opening sentence is on screen while it is being spoken.
+  let transcript = engine.getState().transcript;
+  expect(transcript).toHaveLength(before + 1);
+  expect(transcript[before]).toEqual({ role: 'counselor', text: '어머나, 정말 재미있는 사주네요!' });
+  expect(stage.spoken[stage.spoken.length - 1]).toBe('loop_1.0');
+
+  // Its take ends → the next chunk is spoken and the SAME bubble grows.
+  engine.onSpeakDone('loop_1.0');
+  transcript = engine.getState().transcript;
+  expect(transcript).toHaveLength(before + 1);
+  expect(transcript[before].text.startsWith('어머나, 정말 재미있는 사주네요! 재물이')).toBe(true);
+  expect(stage.spoken[stage.spoken.length - 1]).toBe('loop_1.1');
+
+  // The paragraph break the model wrote survives the re-assembly.
+  engine.onSpeakDone('loop_1.1');
+  transcript = engine.getState().transcript;
+  expect(transcript[before].text).toContain('\n\n지금 30대 대운인');
+  expect(stage.spoken[stage.spoken.length - 1]).toBe('loop_1.2');
+
+  engine.onSpeakDone('loop_1.2');
+  expect(engine.getState().transcript[before].text.endsWith('괜찮은 때예요.')).toBe(true);
+  // Nothing more is asked for after the last chunk.
+  expect(stage.spoken.filter(k => k.startsWith('loop_1.')).length).toBe(3);
+});
+
+test('asking again mid-answer shows the rest of the answer at once', () => {
+  const { sched, stage, engine } = build();
+  intoLoop(stage, engine, sched);
+  const row = engine.getState().transcript.length;
+  engine.onOracleResult({
+    ok: true,
+    loop: true,
+    followup: '',
+    beats: [{ phaseId: 'loop', lines: [LONG_ANSWER] }],
+  });
+  expect(engine.getState().transcript[row].text).toBe('어머나, 정말 재미있는 사주네요!');
+
+  engine.submitQuestion('다른 질문');
+  const transcript = engine.getState().transcript;
+  // The whole answer is there, above the new question.
+  expect(transcript[row].text.endsWith('괜찮은 때예요.')).toBe(true);
+  expect(transcript[row + 1]).toEqual({ role: 'user', text: '다른 질문' });
+  // A late SPEAK_DONE for the abandoned answer speaks nothing further.
+  const spokenBefore = stage.spoken.length;
+  engine.onSpeakDone('loop_1.0');
+  expect(stage.spoken.length).toBe(spokenBefore);
 });

@@ -25,6 +25,7 @@ const base: FlowState = {
   suggestion: '',
   topic: '',
   finished: false,
+    pending: false,
 };
 
 const noop = () => {};

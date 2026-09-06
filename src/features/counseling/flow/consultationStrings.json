@@ -44,6 +44,16 @@
     "en": "health fortune",
     "vi": "sức khoẻ"
   },
+  "consult_topic_relationships": {
+    "ko": "인간관계운",
+    "en": "relationships",
+    "vi": "chuyện quan hệ"
+  },
+  "consult_topic_life": {
+    "ko": "인생운",
+    "en": "life fortune",
+    "vi": "vận trình"
+  },
   "consult_p01_l0": {
     "ko": "안녕하세요.",
     "en": "Hello.",
@@ -115,14 +125,14 @@
     "vi": "Kinh doanh / đầu tư"
   },
   "consult_p05_l0": {
-    "ko": "무엇이 궁금하신가요?",
-    "en": "What would you like to ask me?",
-    "vi": "Con muốn hỏi ta điều gì?"
+    "ko": "편하게 말씀해 주세요.",
+    "en": "Feel free to ask me anything.",
+    "vi": "Con cứ hỏi ta thoải mái nhé."
   },
   "consult_p06_l0": {
-    "ko": "알겠습니다. 올해 {0}의 흐름이 궁금하신 거군요.",
-    "en": "I see. You would like to know about the flow of your {0} this year.",
-    "vi": "Tôi hiểu rồi. Bạn muốn biết dòng chảy {0} của mình năm nay."
+    "ko": "알겠습니다. {0}의 흐름이 궁금하신 거군요.",
+    "en": "I see. You would like to know about the flow of your {0}.",
+    "vi": "Ta hiểu rồi. Con muốn biết dòng chảy {0} của mình."
   },
   "consult_p06_l1": {
     "ko": "사주를 자세히 살펴보겠습니다.",
@@ -145,14 +155,14 @@
     "vi": "Chỗ cân bằng ngũ hành này của bạn đặc biệt quan trọng."
   },
   "consult_p10_l0": {
-    "ko": "아... 이 부분이 올해 {0}과 바로 연결됩니다.",
-    "en": "Ah... this part connects directly to your {0} this year.",
-    "vi": "À... chỗ này nối thẳng vào {0} năm nay của bạn."
+    "ko": "아... 이 부분이 {0}과 바로 연결됩니다.",
+    "en": "Ah... this part connects directly to your {0}.",
+    "vi": "À... phần này nối thẳng với {0} của con."
   },
   "consult_p11_l0": {
-    "ko": "올해 {0}은 약하지 않습니다.",
-    "en": "Your {0} this year is not weak.",
-    "vi": "{0} năm nay của bạn không yếu."
+    "ko": "{0}은 약하지 않습니다.",
+    "en": "Your {0} is not weak.",
+    "vi": "{0} của con không hề yếu."
   },
   "consult_p11_l1": {
     "ko": "오히려 새로운 수입원을 만들 기회가 보입니다.",
@@ -160,9 +170,9 @@
     "vi": "Thật ra còn có cơ hội mở thêm một nguồn thu mới."
   },
   "consult_p12_l0": {
-    "ko": "한 가지 여쭙고 싶습니다. 올해 새로 시작하거나 투자할 계획이 있으신가요?",
-    "en": "There is one thing I want to ask. Are you thinking about starting something new or investing this year?",
-    "vi": "Có một điều tôi muốn hỏi. Năm nay bạn có định làm gì mới, hay đầu tư gì không?"
+    "ko": "한 가지 여쭙고 싶습니다. 새로 시작하거나 투자할 계획이 있으신가요?",
+    "en": "Let me ask one thing. Do you have plans to start something new or to invest?",
+    "vi": "Ta muốn hỏi một điều. Con có dự định bắt đầu việc mới hay đầu tư không?"
   },
   "consult_p12_c0": {
     "ko": "창업을 생각 중입니다",
@@ -205,9 +215,9 @@
     "vi": "Nếu là đầu tư thì tôi phải xem kỹ hơn một chút."
   },
   "consult_p13_invest_l1": {
-    "ko": "올해는 돈이 빠르게 움직입니다. 양쪽 방향 모두로요.",
-    "en": "Money moves quickly for you this year — quickly in both directions.",
-    "vi": "Tiền của bạn năm nay đi nhanh — nhanh cả hai chiều."
+    "ko": "이 시기에는 돈이 빠르게 움직입니다. 양쪽 방향 모두로요.",
+    "en": "In this period money moves fast, in both directions.",
+    "vi": "Thời kỳ này tiền chuyển động nhanh, theo cả hai hướng."
   },
   "consult_p13_side_l0": {
     "ko": "부수입이라... 사주와 잘 맞습니다.",
@@ -230,14 +240,14 @@
     "vi": "Nhưng lá số cho thấy cơ hội sẽ tự tìm tới — đừng để nó đi ngang qua."
   },
   "consult_p14_l0": {
-    "ko": "사주를 보면 올해는...",
-    "en": "Looking at your Saju, this year is better suited to...",
-    "vi": "Nhìn vào lá số, năm nay hợp với..."
+    "ko": "사주를 보면 이 시기는...",
+    "en": "Looking at your Saju, this period is...",
+    "vi": "Nhìn vào tứ trụ, thời kỳ này..."
   },
   "consult_p14_business_l0": {
-    "ko": "사주로 보면 올해 시작할 수 있습니다. 다만 작게 시작하십시오.",
-    "en": "Looking at your Saju, you can start this year — but start small.",
-    "vi": "Nhìn vào lá số, năm nay bạn khởi sự được — nhưng hãy bắt đầu nhỏ."
+    "ko": "사주로 보면 시작할 수 있습니다. 다만 작게 시작하십시오.",
+    "en": "Your Saju says you can begin, but begin small.",
+    "vi": "Theo tứ trụ, con có thể bắt đầu, nhưng hãy bắt đầu nhỏ."
   },
   "consult_p14_business_l1": {
     "ko": "일간에 뿌리가 있어 압박은 견딥니다. 부족한 것은 여유 자금입니다.",
@@ -245,9 +255,9 @@
     "vi": "Nhật can của bạn có gốc nên chịu được sức ép; cái thiếu là khoản dự phòng."
   },
   "consult_p14_invest_l0": {
-    "ko": "사주로 보면 올해는 투자를 나누어야 합니다.",
-    "en": "Looking at your Saju, you should split your investment this year.",
-    "vi": "Nhìn vào lá số, năm nay bạn nên chia nhỏ khoản đầu tư."
+    "ko": "사주로 보면 이 시기는 투자를 나누어야 합니다.",
+    "en": "Your Saju says this period calls for splitting your investments.",
+    "vi": "Theo tứ trụ, thời kỳ này nên chia nhỏ đầu tư."
   },
   "consult_p14_invest_l1": {
     "ko": "한 곳에 몰지 마십시오. 재물의 흐름이 계절 따라 오르내립니다.",
@@ -265,9 +275,9 @@
     "vi": "Cái bạn cần là thứ vẫn chạy được cả khi bạn đang bận."
   },
   "consult_p14_none_l0": {
-    "ko": "사주로 보면 올해는 지키고 준비하는 해입니다.",
-    "en": "Looking at your Saju, this year is for holding and preparing.",
-    "vi": "Nhìn vào lá số, năm nay bạn nên giữ và chuẩn bị."
+    "ko": "사주로 보면 이 시기는 지키고 준비하는 때입니다.",
+    "en": "Your Saju says this is a period for holding and preparing.",
+    "vi": "Theo tứ trụ, đây là thời kỳ giữ gìn và chuẩn bị."
   },
   "consult_p14_none_l1": {
     "ko": "기회는 연중반에 옵니다. 그때 현금이 있으면 유리합니다.",
@@ -305,9 +315,9 @@
     "vi": "Khi nào tôi nên ra tay?"
   },
   "consult_p17_l0": {
-    "ko": "올해 {0}을 정리하자면...",
-    "en": "To summarize your {0} this year...",
-    "vi": "Tóm lại, {0} năm nay của bạn..."
+    "ko": "{0}을 정리하자면...",
+    "en": "To sum up your {0}...",
+    "vi": "Tóm lại về {0} của con..."
   },
   "consult_p17_l1": {
     "ko": "한 번에 큰돈을 노리기보다, 새로운 수입원을 만드는 쪽이 더 강한 기회입니다.",
@@ -315,9 +325,9 @@
     "vi": "Thay vì cố kiếm một khoản thật lớn ngay, cơ hội mạnh hơn nằm ở chỗ gây dựng một nguồn thu mới."
   },
   "consult_p17_business_l0": {
-    "ko": "올해 {0}을 정리하자면...",
-    "en": "To summarize your {0} this year...",
-    "vi": "Tóm lại, {0} năm nay của bạn..."
+    "ko": "{0}을 정리하자면...",
+    "en": "To sum up your {0}...",
+    "vi": "Tóm lại về {0} của con..."
   },
   "consult_p17_business_l1": {
     "ko": "시작할 수 있습니다. 다만 작게 열고, 물러설 길은 남겨 두십시오.",
@@ -325,19 +335,19 @@
     "vi": "Bạn mở được — nhưng hãy mở nhỏ, và luôn giữ một đường lui."
   },
   "consult_p17_invest_l0": {
-    "ko": "올해 {0}을 정리하자면...",
-    "en": "To summarize your {0} this year...",
-    "vi": "Tóm lại, {0} năm nay của bạn..."
+    "ko": "{0}을 정리하자면...",
+    "en": "To sum up your {0}...",
+    "vi": "Tóm lại về {0} của con..."
   },
   "consult_p17_invest_l1": {
-    "ko": "나누어 천천히 가는 편이 낫습니다. 올해는 크게 거는 해가 아닙니다.",
-    "en": "Splitting it and moving slowly beats one decisive bet — this is not your year to gamble.",
-    "vi": "Chia nhỏ và đi chậm sẽ hơn một cú dứt điểm — năm nay của bạn không hợp đánh cược."
+    "ko": "나누어 천천히 가는 편이 낫습니다. 지금은 크게 거는 때가 아닙니다.",
+    "en": "Better to split it and go slowly. This is not the time for a big bet.",
+    "vi": "Nên chia nhỏ và đi chậm. Lúc này không phải lúc đặt cược lớn."
   },
   "consult_p17_side_l0": {
-    "ko": "올해 {0}을 정리하자면...",
-    "en": "To summarize your {0} this year...",
-    "vi": "Tóm lại, {0} năm nay của bạn..."
+    "ko": "{0}을 정리하자면...",
+    "en": "To sum up your {0}...",
+    "vi": "Tóm lại về {0} của con..."
   },
   "consult_p17_side_l1": {
     "ko": "작지만 꾸준한 수입이 한 번의 큰돈보다 멀리 데려다줍니다.",
@@ -345,14 +355,14 @@
     "vi": "Một nguồn thu nhỏ mà đều sẽ đưa bạn đi xa hơn một khoản lớn mà một lần."
   },
   "consult_p17_none_l0": {
-    "ko": "올해 {0}을 정리하자면...",
-    "en": "To summarize your {0} this year...",
-    "vi": "Tóm lại, {0} năm nay của bạn..."
+    "ko": "{0}을 정리하자면...",
+    "en": "To sum up your {0}...",
+    "vi": "Tóm lại về {0} của con..."
   },
   "consult_p17_none_l1": {
-    "ko": "아직 결정하지 않아도 됩니다. 올해의 일은 기회가 왔을 때 준비되어 있는 것입니다.",
-    "en": "There is no need to decide yet. This year's work is being ready when the opening comes.",
-    "vi": "Chưa cần vội quyết. Việc của năm nay là chuẩn bị cho lúc cơ hội tới."
+    "ko": "아직 결정하지 않아도 됩니다. 기회가 왔을 때 준비되어 있는 것이 중요합니다.",
+    "en": "You do not have to decide yet. What matters is being ready when the chance comes.",
+    "vi": "Con chưa cần quyết định. Điều quan trọng là sẵn sàng khi cơ hội đến."
   },
   "consult_p18_l0": {
     "ko": "2026 {0}",
@@ -690,9 +700,9 @@
     "vi": "Muốn thăng tiến thì phải xem quan tinh của bạn."
   },
   "consult_p13_career_grow_l1": {
-    "ko": "올해 귀인이 있으니, 보이지 않는 자리에 서 있지 마십시오.",
-    "en": "This year a backer is present — do not stand where they cannot see you.",
-    "vi": "Năm nay có người nâng đỡ bạn — đừng đứng khuất chỗ họ không thấy."
+    "ko": "귀인이 있으니, 보이지 않는 자리에 서 있지 마십시오.",
+    "en": "A helpful person is near, so do not stand where you cannot be seen.",
+    "vi": "Có quý nhân bên cạnh, nên đừng đứng ở nơi không ai thấy."
   },
   "consult_p13_career_start_l0": {
     "ko": "구직 중이라면 너무 넓게 뿌리지 마십시오.",

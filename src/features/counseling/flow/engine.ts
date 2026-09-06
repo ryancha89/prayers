@@ -28,6 +28,7 @@ import {
   PhaseUi,
 } from './types';
 import { phases as allPhases, indexOf, loc, format } from './flowData';
+import { splitReading, joinChunks, type ReadingChunk } from './splitReading';
 import { ui } from './strings';
 import type { Lang } from '../../../shared/i18n';
 import type {
@@ -57,10 +58,21 @@ const REPORT_HOLD_MULTIPLIER = 2.2;
  * in, so two pickers in front of the input contradict it. P12/P16 are skipped
  * because they cannot change the answer — the whole walk spends ONE AI turn.
  */
-const SKIP_PHASES = ['P03', 'P04', 'P12', 'P16'];
+// P15 is skipped: its line ("pay attention to June through September") is the doc's example
+// dialogue, fixed in the string table, and never fed by the reading — every session heard the
+// same months. P18 is the report card — four scored bars and a "notable period". It is skipped:
+// the bars were chart-derived numbers the model was told to write around, and the reading is
+// better heard than graded. The closing message (P19) follows the summary (P17) directly.
+// P13 reacts to the answer given at P12 ("then the situation is a little
+// different"); with P12 skipped it has nothing to react to, so it goes too.
+const SKIP_PHASES = ['P03', 'P04', 'P12', 'P13', 'P15', 'P16', 'P18'];
 
 /** Phases that exist only to cover the wait for the server. */
 const COVER_PHASES = ['P06', 'P07', 'P08', 'P09', 'P10'];
+
+/** How many `loop.wait.N` lines strings.ts carries per language. */
+const WAIT_LINES = 4;
+type UiKey = Parameters<typeof ui>[0];
 
 /** The last spoken reading beat; the free-chat loop takes over after it. */
 const LOOP_AFTER_PHASE = 'P19';
@@ -92,6 +104,9 @@ export interface StagePort {
   speakClip(locKeys: string[], topic: string, cacheKey: string): void;
   /** An AI-written line: Unity synthesises it and files it under `cacheKey`. */
   speakText(text: string, cacheKey: string): void;
+  /** Synthesise ahead of time, without playing and without a SPEAK_DONE, so a
+   *  later speakText under the same `cacheKey` starts instantly. */
+  prefetchText(text: string, cacheKey: string): void;
   stopSpeak(): void;
   askOracle(payload: OracleAskPayload): void;
   exit(): void;
@@ -160,6 +175,8 @@ export interface FlowState {
   suggestion: string;
   topic: string;
   finished: boolean;
+  /** A free-chat question is out and the answer has not come back yet. */
+  pending: boolean;
 }
 
 const emptyState: FlowState = {
@@ -176,6 +193,7 @@ const emptyState: FlowState = {
   suggestion: '',
   topic: '',
   finished: false,
+  pending: false,
 };
 
 export interface EngineOptions {
@@ -226,6 +244,24 @@ export class ConsultationEngine {
 
   private inLoop = false;
   private loopTurns = 0;
+  /** Set by askLoop, cleared by the answer. A result that arrives while this is
+   *  false belongs to another engine — the room screen behind this one in the
+   *  navigation stack is still mounted and still subscribed to the bridge, and
+   *  it used to answer OUR question too: two STAGE_SPEAKs, two TTS fetches, and
+   *  its STAGE_THINKING(off) killed the thinking pose the moment the ask went out. */
+  private loopPending = false;
+  /** Which "one moment" line was used last, so two turns in a row never repeat it. */
+  private lastWait = -1;
+  /** A loop answer mid-delivery: spoken and revealed one chunk at a time, so the
+   *  bubble grows with the voice instead of landing whole seconds before it. */
+  private answerWalk: {
+    key: string;
+    chunks: ReadingChunk[];
+    /** Next chunk to speak. */
+    next: number;
+    /** Index of the growing bubble in `transcript`, -1 before the first chunk. */
+    row: number;
+  } | null = null;
 
   constructor(opts: EngineOptions) {
     this.opts = opts;
@@ -272,6 +308,8 @@ export class ConsultationEngine {
     this.reportData = null;
     this.inLoop = false;
     this.loopTurns = 0;
+    this.loopPending = false;
+    this.answerWalk = null;
     this.running = true;
     this.index = -1;
     this.state = { ...emptyState, topic: this.topic };
@@ -693,10 +731,14 @@ export class ConsultationEngine {
   /* ── The reading arrives ──────────────────────────────────────────────── */
 
   onOracleResult(payload: OracleResultPayload) {
+    // Every mounted room hears every ORACLE_RESULT; only the engine that asked
+    // may act on it (see loopPending).
+    if (!this.running) return;
     if (payload.loop) {
       this.onLoopResult(payload);
       return;
     }
+    if (!this.oraclePending) return;
     this.oraclePending = false;
     this.oracleError = payload.ok ? null : (payload.error ?? 'connection');
     this.followup = payload.followup ?? '';
@@ -730,26 +772,56 @@ export class ConsultationEngine {
       // table, so this one is synthesised like the reading beats are.
       this.speak(() => this.stage.speakText(intro, 'loop_intro'), 'loop_intro');
     }
+    // The "one moment" lines are spoken the instant a question goes out, so
+    // they have to be in memory already — synthesising them then would put the
+    // same 2-3 s of silence in front of them that they exist to cover.
+    for (let i = 0; i < WAIT_LINES; i++) {
+      const line = ui(`loop.wait.${i}` as UiKey, this.lang);
+      if (line) this.stage.prefetchText(line, `loop_wait_${i}`);
+    }
+  }
+
+  /** A different "one moment" line each turn — never the same one twice running. */
+  private pickWait(): { text: string; key: string } {
+    let i = Math.floor(Math.random() * WAIT_LINES);
+    if (i === this.lastWait) i = (i + 1) % WAIT_LINES;
+    this.lastWait = i;
+    return { text: ui(`loop.wait.${i}` as UiKey, this.lang), key: `loop_wait_${i}` };
   }
 
   private askLoop(text: string) {
+    // The player moved on mid-answer. The rest of what she was saying goes into
+    // the transcript at once — unspoken, but not lost.
+    this.flushAnswerWalk();
     this.loopTurns += 1;
+    this.loopPending = true;
     this.appendTranscript('user', text);
     this.opts.onUserLine?.(text);
-    this.patch({ inputEnabled: false, suggestion: '' });
+    this.patch({ inputEnabled: false, suggestion: '', pending: true });
     // He takes the question in before he starts thinking about it.
     this.stageBeat('LOOP_ASK', 'Agreeing');
     this.stage.thinking(true);
     this.stage.askOracle({ question: text, topic: this.topic, scope: this.scope, loop: true });
+    // The answer is 15-20 s away. Rather than a typing indicator, the counselor
+    // says so — a short prefetched line, spoken at once, so the wait reads as
+    // her thinking rather than the app hanging.
+    const wait = this.pickWait();
+    if (wait.text) {
+      this.appendTranscript('counselor', wait.text);
+      this.speak(() => this.stage.speakText(wait.text, wait.key), wait.key);
+    }
   }
 
   private onLoopResult(payload: OracleResultPayload) {
+    if (!this.inLoop || !this.loopPending) return;
+    this.loopPending = false;
     this.stage.thinking(false);
     const text = (payload.beats?.[0]?.lines ?? []).join('\n');
     if (!payload.ok || !text) {
       this.patch({
         inputEnabled: true,
         suggestion: this.followup,
+        pending: false,
       });
       this.appendTranscript(
         'counselor',
@@ -759,16 +831,72 @@ export class ConsultationEngine {
     }
     this.followup = payload.followup ?? '';
     this.stageBeat('LOOP_ANSWER', 'Explaining');
-    this.appendTranscript('counselor', text);
     this.opts.onCounselorLine?.(text);
-    this.patch({ inputEnabled: true, suggestion: this.followup });
-    this.speak(() => this.stage.speakText(text, `loop_${this.loopTurns}`), `loop_${this.loopTurns}`);
+    this.patch({ inputEnabled: true, suggestion: this.followup, pending: false });
+
+    // The answer is not dropped into the transcript whole. It is spoken a chunk
+    // at a time — first chunk a single sentence, the rest ~110 characters — and
+    // each chunk is REVEALED as its voice is asked for, so the bubble grows with
+    // the speech and the transcript scrolls along with it. A 600-character
+    // answer landing in one frame and the voice arriving four seconds later
+    // was the "she talks late" report; the text was early, not the voice late.
+    const key = `loop_${this.loopTurns}`;
+    const chunks = splitReading(text);
+    // Warm every chunk NOW, while the "one moment" line is still being said:
+    // the first clip is usually in memory by the time she finishes it, and the
+    // later ones land while the earlier ones play.
+    chunks.forEach((c, i) => this.stage.prefetchText(c.text, `${key}.${i}`));
+    this.answerWalk = { key, chunks, next: 0, row: -1 };
+    // If the "one moment" line is still being said, let it finish: cutting her
+    // off mid-word to start the answer sounds worse than a beat of pause.
+    this.afterSpeech(() => this.speakNextChunk());
+  }
+
+  /** Speak (and show) the next chunk of the answer being delivered; the take's
+   *  SPEAK_DONE brings the one after it. */
+  private speakNextChunk() {
+    const walk = this.answerWalk;
+    if (!walk || !this.inLoop || !this.running) return;
+    if (walk.next >= walk.chunks.length) {
+      this.answerWalk = null;
+      return;
+    }
+    const i = walk.next;
+    walk.next += 1;
+    this.revealChunks(walk, i + 1);
+    const chunkKey = `${walk.key}.${i}`;
+    this.speak(() => this.stage.speakText(walk.chunks[i].text, chunkKey), chunkKey);
+    this.afterSpeech(() => this.speakNextChunk());
+  }
+
+  /** Show the first `count` chunks of the walk in its bubble (creating it on the
+   *  first call). Idempotent for chunks already shown. */
+  private revealChunks(walk: NonNullable<ConsultationEngine['answerWalk']>, count: number) {
+    const shown = joinChunks(walk.chunks.slice(0, count));
+    if (walk.row < 0) {
+      this.appendTranscript('counselor', shown);
+      walk.row = this.state.transcript.length - 1;
+      return;
+    }
+    const transcript = this.state.transcript.slice();
+    transcript[walk.row] = { role: 'counselor', text: shown };
+    this.patch({ transcript });
+  }
+
+  /** Stop delivering the current answer and show whatever of it was still to come. */
+  private flushAnswerWalk() {
+    const walk = this.answerWalk;
+    if (!walk) return;
+    this.answerWalk = null;
+    this.revealChunks(walk, walk.chunks.length);
+    this.speakDoneWaiter = null;
   }
 
   /** Leave the loop through P20 — a FORWARD jump, so the standing VFX survive
    *  and the farewell always plays. */
   endLoop() {
     if (!this.inLoop) return;
+    this.flushAnswerWalk();
     this.inLoop = false;
     this.patch({ screen: 'none', inputEnabled: false, suggestion: '' });
     this.goTo('P20');
@@ -783,6 +911,7 @@ export class ConsultationEngine {
   private finish() {
     if (!this.running) return;
     this.running = false;
+    this.answerWalk = null;
     this.clearTimer();
     this.stage.stopSpeak();
     this.patch({ finished: true, screen: 'none', inputEnabled: false, canTap: false });

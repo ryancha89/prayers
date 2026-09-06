@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, spacing, typography } from '../../../shared/theme';
@@ -112,7 +112,15 @@ export const UnityEntryScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.orb, { backgroundColor: counselor?.accent ?? colors.violet }]} />
+      {counselor?.avatarImage ?? counselor?.cardImage ? (
+        <Image
+          source={(counselor?.avatarImage ?? counselor?.cardImage)!}
+          style={styles.portrait}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={[styles.orb, { backgroundColor: counselor?.accent ?? colors.violet }]} />
+      )}
       <ActivityIndicator color={colors.violetSoft} style={styles.spinner} />
       <Text style={styles.title}>{t('unity.preparing')}</Text>
       <Text style={styles.subtitle}>
@@ -125,6 +133,7 @@ export const UnityEntryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   orb: { width: 120, height: 120, borderRadius: 60, opacity: 0.6, marginBottom: spacing.xxl },
+  portrait: { width: 160, height: 160, borderRadius: 80, marginBottom: spacing.xxl },
   spinner: { marginBottom: spacing.lg },
   title: { ...typography.h3, color: colors.textPrimary },
   subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center', paddingHorizontal: spacing.xxl },

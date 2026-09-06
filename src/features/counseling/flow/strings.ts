@@ -20,6 +20,10 @@ const KO: Bundle = {
   'question.consult': '상담 받기',
   'tap.continue': '탭하여 계속',
   'thinking': '사주를 살펴보는 중',
+  'loop.wait.0': '잠시만요, 그 부분을 사주에서 다시 한 번 살펴볼게요.',
+  'loop.wait.1': '음, 좋은 질문이에요. 잠깐만 생각해 볼게요.',
+  'loop.wait.2': '네, 기둥을 찬찬히 다시 들여다보고 있어요. 조금만 기다려 주세요.',
+  'loop.wait.3': '잠깐만요, 흐름을 한 번 더 읽어볼게요.',
 };
 
 const EN: Bundle = {
@@ -31,6 +35,10 @@ const EN: Bundle = {
   'question.consult': 'Consult',
   'tap.continue': 'Tap to continue',
   'thinking': 'Reading your chart',
+  'loop.wait.0': 'One moment, let me look at that part of your chart again.',
+  'loop.wait.1': 'Mm, good question. Give me a second to think.',
+  'loop.wait.2': 'Let me go over the pillars once more. Just a moment.',
+  'loop.wait.3': 'Hold on, I want to read the flow one more time.',
 };
 
 const JA: Bundle = {
@@ -42,6 +50,10 @@ const JA: Bundle = {
   'question.consult': '相談する',
   'tap.continue': 'タップして続ける',
   thinking: '命式を読んでいます',
+  'loop.wait.0': '少し待ってくださいね、命式のその部分をもう一度見てみます。',
+  'loop.wait.1': 'うん、いい質問ですね。少し考えさせてください。',
+  'loop.wait.2': '柱をもう一度ゆっくり見直しています。少しだけお待ちください。',
+  'loop.wait.3': 'ちょっと待ってください、流れをもう一度読んでみます。',
 };
 
 const ZH_CN: Bundle = {
@@ -53,6 +65,10 @@ const ZH_CN: Bundle = {
   'question.consult': '开始咨询',
   'tap.continue': '点一下继续',
   thinking: '正在看你的命盘',
+  'loop.wait.0': '稍等一下，我再看看命盘里的这一部分。',
+  'loop.wait.1': '嗯，好问题。让我想一想。',
+  'loop.wait.2': '我再仔细看一遍四柱，请稍等。',
+  'loop.wait.3': '等一下，我再把这股走势读一遍。',
 };
 
 const ZH_TW: Bundle = {
@@ -64,6 +80,10 @@ const ZH_TW: Bundle = {
   'question.consult': '開始諮詢',
   'tap.continue': '點一下繼續',
   thinking: '正在看你的命盤',
+  'loop.wait.0': '稍等一下，我再看看命盤裡的這一部分。',
+  'loop.wait.1': '嗯，好問題。讓我想一想。',
+  'loop.wait.2': '我再仔細看一遍四柱，請稍等。',
+  'loop.wait.3': '等一下，我再把這股走勢讀一遍。',
 };
 
 const VI: Bundle = {
@@ -75,6 +95,10 @@ const VI: Bundle = {
   'question.consult': 'Xin thầy xem',
   'tap.continue': 'Chạm để đi tiếp',
   thinking: 'Đang xem lá số của con',
+  'loop.wait.0': 'Con chờ ta một chút, ta xem lại chỗ đó trong lá số.',
+  'loop.wait.1': 'Ừm, câu hỏi hay đấy. Để ta nghĩ một lát.',
+  'loop.wait.2': 'Ta đang xem lại bốn trụ cho kỹ. Con đợi ta chút nhé.',
+  'loop.wait.3': 'Khoan đã, ta đọc lại mạch vận này một lần nữa.',
 };
 
 // These eight are RN's own copy, so RN carries all six languages for them. The room's other lines
