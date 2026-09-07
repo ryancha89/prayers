@@ -1,3 +1,8 @@
+> ⚠️ **Written against a different checkout** (`/Users/namaste/git/saju_fullstack/…`). Useful as
+> background, but it describes code this repo does not have — `EndpointOverride`,
+> `SpeakChunkedText`, `HoldChunk`, an OpenAI TTS provider, and a Leda-regenerated ko voice set.
+> For what is actually here, see **`RN_CONSULTATION_UI.md`** and the README's Voice section.
+
 # Prayers ↔ Unity ↔ Rails 연동 플로우 정리
 
 RN 앱(prayers)이 Unity 상담방(saju_world_unity)을 UaaL로 임베딩하고, 백엔드는

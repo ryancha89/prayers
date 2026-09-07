@@ -112,6 +112,10 @@ export interface StageSpeakPayload {
   mode: 'clip' | 'tts';
   /** clip mode: the loc keys of the fixed lines. */
   locKeys?: string[];
+  /** clip mode: those same lines already resolved here, one per key, for a key
+   *  with no recording. Unity's own string table covers three of the app's six
+   *  languages, so it cannot resolve ja or either Chinese on its own. */
+  texts?: string[];
   /** tts mode: the text to synthesise, and the cache key it is filed under. */
   text?: string;
   cacheKey?: string;

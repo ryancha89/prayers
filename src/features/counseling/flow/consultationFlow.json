@@ -195,7 +195,7 @@
       "situation": "The player enters a natural-language question related to the selected topic.",
       "speakerLocKey": "consult_speaker_counselor",
       "lines": [
-        "Feel free to ask me anything."
+        "What would you like to ask me?"
       ],
       "lineLocKeys": [
         "consult_p05_l0"
@@ -225,7 +225,7 @@
       "situation": "The counselor processes the user's question before beginning the Saju reading.",
       "speakerLocKey": "consult_speaker_counselor",
       "lines": [
-        "I see. You would like to know about the flow of your {0}.",
+        "I see. You would like to know about the flow of your {0} this year.",
         "Let me take a closer look at your Saju."
       ],
       "lineLocKeys": [
@@ -364,7 +364,7 @@
       "situation": "The player's Saju is connected with the current year's energy.",
       "speakerLocKey": "consult_speaker_counselor",
       "lines": [
-        "Ah... this part connects directly to your {0}."
+        "Ah... this part connects directly to your {0} this year."
       ],
       "lineLocKeys": [
         "consult_p10_l0"
@@ -397,7 +397,7 @@
       "situation": "The counselor gives the first meaningful interpretation.",
       "speakerLocKey": "consult_speaker_counselor",
       "lines": [
-        "Your {0} is not weak.",
+        "Your {0} this year is not weak.",
         "In fact, there may be opportunities to create a new source of income."
       ],
       "lineLocKeys": [
@@ -427,7 +427,7 @@
       "situation": "The counselor asks about the player's real-life situation.",
       "speakerLocKey": "consult_speaker_counselor",
       "lines": [
-        "Let me ask one thing. Do you have plans to start something new or to invest?"
+        "There is one thing I want to ask. Are you thinking about starting something new or investing this year?"
       ],
       "lineLocKeys": [
         "consult_p12_l0"
@@ -769,7 +769,7 @@
       "situation": "The counselor performs a more targeted analysis based on the player's answer.",
       "speakerLocKey": "consult_speaker_counselor",
       "lines": [
-        "Looking at your Saju, this period is..."
+        "Looking at your Saju, this year is better suited to..."
       ],
       "lineLocKeys": [
         "consult_p14_l0"
@@ -955,7 +955,7 @@
       "situation": "The counselor summarizes the personalized interpretation and advice.",
       "speakerLocKey": "consult_speaker_counselor",
       "lines": [
-        "To sum up your {0}...",
+        "To summarize your {0} this year...",
         "Rather than trying to make a large amount of money all at once, the stronger opportunity is to build a new source of income."
       ],
       "lineLocKeys": [

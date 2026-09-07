@@ -29,6 +29,7 @@ import {
 } from './types';
 import { phases as allPhases, indexOf, loc, format } from './flowData';
 import { splitReading, joinChunks, type ReadingChunk } from './splitReading';
+import { devlog } from '../../../shared/devlog';
 import { ui } from './strings';
 import type { Lang } from '../../../shared/i18n';
 import type {
@@ -49,6 +50,9 @@ const MAX_HOLD_MS = 9000;
 const TAIL_MS = 700;
 /** How often a cover phase re-checks whether the reading has landed. */
 const COVER_POLL_MS = 200;
+
+/** The wait line's cache key. Not a phase id, because the wait is not a phase. */
+const THINKING_KEY = 'THINKING';
 /** The report card carries more text, so its hold is multiplied. */
 const REPORT_HOLD_MULTIPLIER = 2.2;
 
@@ -100,8 +104,14 @@ export interface StagePort {
   thinking(on: boolean): void;
   /** A fixed line: Unity looks up the recording by loc key. `cacheKey` is what
    *  SPEAK_DONE comes back under, so it must be the same key the engine is
-   *  waiting on — a take that reports under a different name never unblocks. */
-  speakClip(locKeys: string[], topic: string, cacheKey: string): void;
+   *  waiting on — a take that reports under a different name never unblocks.
+   *
+   *  `texts` is the same line already resolved here, one per key, for the case
+   *  where no take exists and Unity has to have it synthesised. Unity used to
+   *  look that text up in its own string table, which holds three of the app's
+   *  six languages: a Japanese player got a Japanese subtitle read aloud in
+   *  English. The copy lives in this package, so it is sent from here. */
+  speakClip(locKeys: string[], topic: string, cacheKey: string, texts?: string[]): void;
   /** An AI-written line: Unity synthesises it and files it under `cacheKey`. */
   speakText(text: string, cacheKey: string): void;
   /** Synthesise ahead of time, without playing and without a SPEAK_DONE, so a
@@ -252,6 +262,13 @@ export class ConsultationEngine {
   private loopPending = false;
   /** Which "one moment" line was used last, so two turns in a row never repeat it. */
   private lastWait = -1;
+  /** A reading beat mid-delivery. Same idea as `answerWalk` but the text lives
+   *  on the phase card rather than in the transcript: P11/P14/P17/P19 used to
+   *  drop the whole beat on screen and then send all of it to TTS in one go,
+   *  which read as "she talks four seconds late" and silently lost anything
+   *  past the server's 800-character cap. */
+  private readingWalk: { key: string; chunks: ReadingChunk[]; next: number } | null = null;
+
   /** A loop answer mid-delivery: spoken and revealed one chunk at a time, so the
    *  bubble grows with the voice instead of landing whole seconds before it. */
   private answerWalk: {
@@ -375,6 +392,9 @@ export class ConsultationEngine {
     }
 
     this.index = i;
+    // Leaving a phase abandons whatever of its beat was still to be said; a
+    // stale walk would otherwise keep writing chunks onto the NEXT phase's card.
+    this.readingWalk = null;
     const p = this.phases[i];
     if (!p) {
       this.advance();
@@ -420,19 +440,28 @@ export class ConsultationEngine {
       // phases is the doc's "Example Dialogue" — a placeholder for the SHAPE of
       // an answer, never the answer.
       const text = reading.join('\n');
+      const chunks = splitReading(text);
       this.patch({
         phaseId: p.id,
         screen: p.ui,
         speaker,
-        line: text,
+        // Only the first chunk to begin with; the rest arrive as they are said.
+        line: joinChunks(chunks.slice(0, 1)),
         choices: [],
         canTap: true,
         inputEnabled: false,
         notice: null,
         report: p.ui === 'report' ? this.reportData : null,
       });
+      // onCounselorLine is the whole beat: it feeds the history row, not the card.
       this.opts.onCounselorLine?.(text);
-      this.speak(() => this.stage.speakText(text, p.id), p.id);
+      // Warm the rest while the first is being said. The first cannot be warmed
+      // by anyone — it is the only one the player waits on.
+      this.readingWalk = { key: p.id, chunks, next: 1 };
+      for (let i = 1; i < chunks.length; i += 1) {
+        this.stage.prefetchText(chunks[i].text, `${p.id}#${i}`);
+      }
+      this.speak(() => this.stage.speakText(chunks[0].text, `${p.id}#0`), `${p.id}#0`);
       return;
     }
 
@@ -449,9 +478,12 @@ export class ConsultationEngine {
       break;
     }
 
-    const body = (lines ?? [])
-      .map((fallback, i) => this.withTopic(loc(keys?.[i] ?? '', this.lang, fallback)))
-      .join('\n');
+    // Kept per line, not only joined: the card shows one paragraph, but the voice says one
+    // line at a time and a line with no take needs its own text to synthesise.
+    const spoken = (lines ?? []).map((fallback, i) =>
+      this.withTopic(loc(keys?.[i] ?? '', this.lang, fallback)),
+    );
+    const body = spoken.join('\n');
 
     this.patch({
       phaseId: p.id,
@@ -470,7 +502,7 @@ export class ConsultationEngine {
     // Spoken with the SAME keys the line was resolved from, variant included,
     // so a recorded take and the text on screen can never drift apart.
     if (keys && keys.length > 0) {
-      this.speak(() => this.stage.speakClip(keys, this.topic, p.id), p.id);
+      this.speak(() => this.stage.speakClip(keys, this.topic, p.id, spoken), p.id);
     }
   }
 
@@ -560,6 +592,10 @@ export class ConsultationEngine {
   onSpeakDone(cacheKey: string) {
     if (this.speaking && this.speaking !== cacheKey) return;
     this.speaking = null;
+    // A reading beat still has chunks to say. Take the take, leave the phase's
+    // waiter queued — autoAdvance registered it before the first chunk was even
+    // spoken, and running it here would cut the beat off after one sentence.
+    if (this.speakNextReadingChunk()) return;
     const waiter = this.speakDoneWaiter;
     this.speakDoneWaiter = null;
     waiter?.();
@@ -578,7 +614,20 @@ export class ConsultationEngine {
   /** Tap-to-continue on a dialogue beat. */
   tap() {
     if (!this.running || !this.state.canTap) return;
+    // Mid-reading, the first tap finishes the beat rather than skipping it: the
+    // card only holds what has been spoken so far, so advancing here would throw
+    // away text the player never saw.
+    if (this.flushReadingWalk()) {
+      this.clearTimer();
+      const p = this.current();
+      if (p) this.autoAdvance(p);
+      return;
+    }
     this.clearTimer();
+    // Marked, because from the bridge log alone a tap is indistinguishable from a bug: both look
+    // like a line that started and never reported SPEAK_DONE. qa_session.py was reporting the
+    // player's own impatience as two failures per session until this line existed.
+    devlog(`[flow] tap skips ${this.state.phaseId} mid-line`);
     this.speaking = null;
     this.stage.stopSpeak();
     this.advance();
@@ -658,16 +707,29 @@ export class ConsultationEngine {
     // Say that the wait is a wait. Without this the card from the last cover
     // phase just sat there, and a 5-30 s hold looked exactly like a crash.
     const p = this.phases[i];
+    const waiting = loc('consult_thinking', this.lang, ui('thinking', this.lang));
     this.patch({
       screen: 'thinking',
       speaker: loc(p?.speakerLocKey ?? '', this.lang, this.state.speaker),
-      line: loc('consult_thinking', this.lang, ui('thinking', this.lang)),
+      line: waiting,
       choices: [],
       canTap: false,
       inputEnabled: false,
       notice: null,
     });
     this.stage.thinking(true);
+
+    // ...and SAY it. The card carries the counselor's own name and her line, so on screen she is
+    // plainly speaking; she just never made a sound. This is the longest silence in the session —
+    // the 5-30 s the reading takes — and the one place the player has nothing to do but watch her,
+    // which is why it reads as the room having broken rather than as a pause.
+    //
+    // Nothing waits on this one: the poll below is driven by the oracle, not by SPEAK_DONE, and the
+    // reading cutting the line off mid-word is the right outcome when it lands early.
+    this.speak(
+      () => this.stage.speakClip(['consult_thinking'], this.topic, THINKING_KEY, [waiting]),
+      THINKING_KEY,
+    );
 
     const poll = () => {
       if (!this.running) return;
@@ -852,6 +914,40 @@ export class ConsultationEngine {
     this.afterSpeech(() => this.speakNextChunk());
   }
 
+  /** Say the next chunk of the reading beat on screen and grow the card to
+   *  match. Returns false when there is nothing left, which is what tells
+   *  onSpeakDone the phase may now be released. */
+  private speakNextReadingChunk(): boolean {
+    const walk = this.readingWalk;
+    if (!walk || !this.running) return false;
+    if (walk.next >= walk.chunks.length) {
+      this.readingWalk = null;
+      return false;
+    }
+    const i = walk.next;
+    walk.next += 1;
+    this.patch({ line: joinChunks(walk.chunks.slice(0, i + 1)) });
+    const key = `${walk.key}#${i}`;
+    this.speak(() => this.stage.speakText(walk.chunks[i].text, key), key);
+    return true;
+  }
+
+  /** Put the rest of the reading beat on the card at once and stop speaking it.
+   *  A tap mid-beat means "show me the rest", not "throw the rest away". */
+  private flushReadingWalk(): boolean {
+    const walk = this.readingWalk;
+    if (!walk || walk.next >= walk.chunks.length) {
+      this.readingWalk = null;
+      return false;
+    }
+    this.readingWalk = null;
+    this.patch({ line: joinChunks(walk.chunks) });
+    this.speaking = null;
+    this.speakDoneWaiter = null;
+    this.stage.stopSpeak();
+    return true;
+  }
+
   /** Speak (and show) the next chunk of the answer being delivered; the take's
    *  SPEAK_DONE brings the one after it. */
   private speakNextChunk() {
@@ -912,6 +1008,7 @@ export class ConsultationEngine {
     if (!this.running) return;
     this.running = false;
     this.answerWalk = null;
+    this.readingWalk = null;
     this.clearTimer();
     this.stage.stopSpeak();
     this.patch({ finished: true, screen: 'none', inputEnabled: false, canTap: false });

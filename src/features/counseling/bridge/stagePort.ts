@@ -16,8 +16,11 @@ export function createStagePort(bridge: UnityBridge, onExit: () => void): StageP
     thinking(on: boolean) {
       bridge.sendEvent({ type: 'STAGE_THINKING', payload: { on } });
     },
-    speakClip(locKeys: string[], topic: string, cacheKey: string) {
-      bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'clip', locKeys, topic, cacheKey } });
+    speakClip(locKeys: string[], topic: string, cacheKey: string, texts?: string[]) {
+      bridge.sendEvent({
+        type: 'STAGE_SPEAK',
+        payload: { mode: 'clip', locKeys, topic, cacheKey, texts },
+      });
     },
     speakText(text: string, cacheKey: string) {
       bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey } });
@@ -75,7 +78,7 @@ export function createMockStagePort(deps: {
     thinking() {},
     // No audio, so every take is "already finished" — the engine then paces the
     // beat off its own reading estimate, exactly as it does for a silent line.
-    speakClip(_keys, _topic, cacheKey) {
+    speakClip(_keys, _topic, cacheKey, _texts) {
       setTimeout(() => deps.onSpeakDone(cacheKey), 0);
     },
     speakText(_text, cacheKey) {

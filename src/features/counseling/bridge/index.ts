@@ -40,9 +40,9 @@ export const isNativeUnity = hasNativeUnity;
  *     python3 Tools/LocalLlmBridge/local_llm_bridge.py       # :4002
  *     (cd saju_server && bundle exec rails server -p 4000)   # :4000
  *
- * Known gap: POST /api/v1/game/tts does not exist on :4000 (only the stub answered it), so the
- * reading is silent. ConsultationTts degrades to silence rather than failing, so nothing else
- * breaks.
+ * Voice: ConsultationTts posts to /api/v1/prayers/tts (the only tts route Rails has — it used to
+ * ask for /api/v1/game/tts, which 404s, and degraded to silence rather than erroring). It still
+ * needs GEMINI_API_KEY in saju_server/.env; without one the room is silent but nothing breaks.
  *
  * The stub is still there (`Tools/FakeSajuServer/fake_saju_server.py`, :4001) for offline work and
  * for its failure modes (essay / partial / error / noticket / slow), which :4000 cannot be asked

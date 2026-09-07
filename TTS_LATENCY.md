@@ -1,3 +1,8 @@
+> ⚠️ **Written against a different checkout** (`/Users/namaste/git/saju_fullstack/…`). The
+> diagnosis of where TTS time goes is still right; the file paths and several of the fixes it
+> describes (`SpeakChunkedText`, `IsFetching`, `HoldChunk`, the OpenAI provider) do not exist in
+> this repo. See the README's Voice section for what this checkout does.
+
 # AI 답변 → 목소리가 느린 이유와 고치는 곳 (코드로 따라가기)
 
 "답변 텍스트는 떴는데 목소리가 몇 초 뒤에 나온다"를 개선하려면 어디를 만져야 하는지,

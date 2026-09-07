@@ -63,6 +63,9 @@ class StageDouble implements StagePort {
   exited = false;
   /** Set false to make a take hang, the way a long TTS reply does. */
   autoFinishSpeech = true;
+  /** Hang only the takes whose key starts with this — lets a test step ONE beat
+   *  by hand while the cover phases before it still pace themselves. */
+  holdPrefix: string | null = null;
   private engine!: ConsultationEngine;
 
   bind(engine: ConsultationEngine) {
@@ -75,13 +78,16 @@ class StageDouble implements StagePort {
   thinking(on: boolean) {
     this.thinkingCalls.push(on);
   }
+  private holds(cacheKey: string) {
+    return !this.autoFinishSpeech || (this.holdPrefix !== null && cacheKey.startsWith(this.holdPrefix));
+  }
   speakClip(_keys: string[], _topic: string, cacheKey: string) {
     this.spoken.push(cacheKey);
-    if (this.autoFinishSpeech) this.engine.onSpeakDone(cacheKey);
+    if (!this.holds(cacheKey)) this.engine.onSpeakDone(cacheKey);
   }
   speakText(_text: string, cacheKey: string) {
     this.spoken.push(cacheKey);
-    if (this.autoFinishSpeech) this.engine.onSpeakDone(cacheKey);
+    if (!this.holds(cacheKey)) this.engine.onSpeakDone(cacheKey);
   }
   prefetched: string[] = [];
   prefetchText(_text: string, cacheKey: string) {
@@ -333,6 +339,82 @@ test('a loop answer is revealed chunk by chunk, in step with the voice', () => {
   expect(engine.getState().transcript[before].text.endsWith('괜찮은 때예요.')).toBe(true);
   // Nothing more is asked for after the last chunk.
   expect(stage.spoken.filter(k => k.startsWith('loop_1.')).length).toBe(3);
+});
+
+test('a reading beat is revealed chunk by chunk, and holds the phase until it is all said', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('올해 재물운이 어떤가요?');
+
+  // Step P11's takes by hand — the point is that the card grows one take at a
+  // time — while the cover phases before it still pace themselves.
+  stage.holdPrefix = 'P11#';
+  engine.onOracleResult({
+    ok: true,
+    followup: '',
+    beats: [
+      { phaseId: 'P11', lines: [LONG_ANSWER] },
+      { phaseId: 'P19', lines: ['마무리입니다.'] },
+    ],
+  });
+  sched.advance(120_000);
+
+  expect(stage.phaseIds).toContain('P11');
+
+  // Everything after the opener is warmed while the opener is being said. The
+  // whole beat used to go to TTS in one request, which the server truncates at
+  // 800 characters — anything past that was on the card and never spoken.
+  expect(stage.prefetched).toEqual(expect.arrayContaining(['P11#1', 'P11#2']));
+
+  // Only the first sentence is on the card, and it is the one being spoken.
+  expect(engine.getState().line).toBe('어머나, 정말 재미있는 사주네요!');
+  expect(stage.spoken[stage.spoken.length - 1]).toBe('P11#0');
+
+  // The dwell has long since elapsed, but the phase must not move on until the
+  // beat has actually been said — the card is still holding two thirds of it.
+  sched.advance(120_000);
+  expect(engine.getState().phaseId).toBe('P11');
+
+  engine.onSpeakDone('P11#0');
+  expect(engine.getState().line.startsWith('어머나, 정말 재미있는 사주네요! 재물이')).toBe(true);
+  expect(stage.spoken[stage.spoken.length - 1]).toBe('P11#1');
+
+  engine.onSpeakDone('P11#1');
+  expect(engine.getState().line).toContain('\n\n지금 30대 대운인');
+  expect(stage.spoken[stage.spoken.length - 1]).toBe('P11#2');
+
+  // Last take done → the beat is whole, and only now may the phase be released.
+  engine.onSpeakDone('P11#2');
+  expect(engine.getState().line.endsWith('괜찮은 때예요.')).toBe(true);
+  expect(stage.spoken.filter(k => k.startsWith('P11#')).length).toBe(3);
+  sched.advance(10_000);
+  expect(engine.getState().phaseId).not.toBe('P11');
+});
+
+test('tapping mid-reading shows the rest of the beat instead of skipping it', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('질문');
+  stage.holdPrefix = 'P11#';
+  engine.onOracleResult({
+    ok: true,
+    followup: '',
+    beats: [{ phaseId: 'P11', lines: [LONG_ANSWER] }],
+  });
+  sched.advance(120_000);
+  expect(engine.getState().line).toBe('어머나, 정말 재미있는 사주네요!');
+
+  // First tap completes the beat and stays on the phase: the card only holds
+  // what has been spoken, so advancing here would bin text nobody has read.
+  engine.tap();
+  expect(engine.getState().phaseId).toBe('P11');
+  expect(engine.getState().line.endsWith('괜찮은 때예요.')).toBe(true);
+
+  // Second tap moves on, the way a tap always did.
+  engine.tap();
+  expect(engine.getState().phaseId).not.toBe('P11');
 });
 
 test('asking again mid-answer shows the rest of the answer at once', () => {

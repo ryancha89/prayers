@@ -1,3 +1,7 @@
+> ⚠️ **Stale.** This describes the `AiNpcHouse` / `COUNSELOR_RESPONSE` era, before the consultation
+> UI moved to React Native. The current split and wire contract are in **`RN_CONSULTATION_UI.md`**.
+> Kept for the UaaL export steps, which are still accurate.
+
 # Unity 상담방 연동 가이드 (prayers ↔ saju_world_unity)
 
 RN 앱(prayers)에 Unity 상담방(`AiNpcHouse` 씬)을 Unity-as-a-Library(UaaL)로 임베딩하는 구성.
