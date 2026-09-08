@@ -532,3 +532,62 @@ test('a take that never reports still gives the turn back', () => {
   const transcript = engine.getState().transcript;
   expect(transcript[transcript.length - 1].text).toContain('세 번째 문장은 여기서 끝난다.');
 });
+
+/**
+ * Changing language mid-consultation must change what is on screen.
+ *
+ * It deliberately does not restart the session — and for a long time that meant it did not redraw
+ * anything either. Switching to Chinese left the English speaker and line exactly where they were,
+ * above a bubble that had fallen back to Korean, above a "tap to continue" that WAS Chinese: three
+ * languages on one card, none of them a translation bug.
+ */
+test('switching language redraws the card that is already on screen', () => {
+  const { sched, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+
+  const ko = engine.getState();
+  expect(ko.speaker).toBe('상담사');
+
+  engine.setLang('en');
+  const en = engine.getState();
+  expect(en.speaker).toBe('Counselor');
+  expect(en.line).not.toBe(ko.line);
+  // Same place in the walk — a language change is not a restart.
+  expect(en.phaseId).toBe(ko.phaseId);
+  expect(en.screen).toBe(ko.screen);
+
+  engine.setLang('ko');
+  expect(engine.getState().speaker).toBe('상담사');
+});
+
+/**
+ * The room's own table carries ko/en/vi only — it is generated from Unity's LocalizationData.asset,
+ * which has those three columns and no others. A language outside it falls back through `loc`, and
+ * the point of this test is that the fallback is CONSISTENT rather than per-string: every piece of
+ * room copy lands in the same language, so the card cannot be half Korean and half English.
+ */
+test('an unsupported language falls back as a whole card, not string by string', () => {
+  const { sched, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+
+  engine.setLang('zh-CN');
+  const zh = engine.getState();
+  engine.setLang('ko');
+  const ko = engine.getState();
+
+  expect(zh.speaker).toBe(ko.speaker);
+  expect(zh.line).toBe(ko.line);
+});
+
+/** A language change must not make the counselor say her line a second time. */
+test('switching language does not re-speak the line', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+
+  const before = stage.spoken.length;
+  engine.setLang('en');
+  expect(stage.spoken.length).toBe(before);
+});

@@ -312,7 +312,47 @@ export class ConsultationEngine {
   }
 
   setLang(lang: Lang) {
+    if (lang === this.lang) return;
     this.lang = lang;
+    this.relocalize();
+  }
+
+  /**
+   * Put the room's own copy back on screen in the language now selected.
+   *
+   * Changing language mid-consultation deliberately does not restart the session, and for a long
+   * time that meant it did not change anything already drawn either: the speaker and the line kept
+   * whatever language they were resolved in when the phase opened. Switching to Chinese left an
+   * English "Counselor / Welcome…" above a Korean bubble above a Chinese "tap to continue" — three
+   * languages on one card, none of which was a translation bug.
+   *
+   * Re-derives, never re-runs the phase: show() also speaks, and a language change must not make
+   * the counselor say her line again.
+   *
+   * The TRANSCRIPT is deliberately left alone. Most of it is the model's own words in the language
+   * they were asked in; re-resolving the few room lines mixed among them would translate half a
+   * conversation and leave the other half, which reads worse than a consistent record of what was
+   * actually said.
+   */
+  private relocalize() {
+    if (!this.running) return;
+    const p = this.phases[this.index];
+    if (!p) return;
+    const patch: Partial<FlowState> = {
+      speaker: loc(p.speakerLocKey, this.lang, this.state.speaker),
+    };
+    // A reading beat's text is the AI's, not the asset's — only its speaker label is ours.
+    const reading = this.beats[p.id];
+    if (!reading || reading.length === 0) {
+      const { body } = this.linesOf(p);
+      if (body) patch.line = body;
+      if (p.ui === 'choices') patch.choices = this.choicesOf(p);
+    }
+    if (this.state.notice) {
+      patch.notice = this.noticeView();
+      patch.speaker = loc('consult_speaker_counselor', this.lang, this.state.speaker);
+    }
+    this.patch(patch);
   }
 
   private patch(next: Partial<FlowState>) {
@@ -474,25 +514,7 @@ export class ConsultationEngine {
       return;
     }
 
-    // A branch variant replaces the phase's own lines wholesale (doc phase 13).
-    // First match wins, so the most specific tag is listed first.
-    let lines = p.lines;
-    let keys = p.lineLocKeys;
-    for (const v of p.variants ?? []) {
-      if (!v.branchTag || !this.branches.includes(v.branchTag)) continue;
-      // A choices-only variant must not blank the card.
-      if (!v.lines || v.lines.length === 0) continue;
-      lines = v.lines;
-      keys = v.lineLocKeys;
-      break;
-    }
-
-    // Kept per line, not only joined: the card shows one paragraph, but the voice says one
-    // line at a time and a line with no take needs its own text to synthesise.
-    const spoken = (lines ?? []).map((fallback, i) =>
-      this.withTopic(loc(keys?.[i] ?? '', this.lang, fallback)),
-    );
-    const body = spoken.join('\n');
+    const { keys, spoken, body } = this.linesOf(p);
 
     this.patch({
       phaseId: p.id,
@@ -513,6 +535,34 @@ export class ConsultationEngine {
     if (keys && keys.length > 0) {
       this.speak(() => this.stage.speakClip(keys, this.topic, p.id, spoken), p.id);
     }
+  }
+
+  /**
+   * The phase's spoken lines, resolved in the CURRENT language.
+   *
+   * Split out of show() because it is the half that has no side effects: relocalize() needs the
+   * text again after a language change and must not also re-speak the line.
+   */
+  private linesOf(p: ConsultationPhase) {
+    // A branch variant replaces the phase's own lines wholesale (doc phase 13).
+    // First match wins, so the most specific tag is listed first.
+    let lines = p.lines;
+    let keys = p.lineLocKeys;
+    for (const v of p.variants ?? []) {
+      if (!v.branchTag || !this.branches.includes(v.branchTag)) continue;
+      // A choices-only variant must not blank the card.
+      if (!v.lines || v.lines.length === 0) continue;
+      lines = v.lines;
+      keys = v.lineLocKeys;
+      break;
+    }
+
+    // Kept per line, not only joined: the card shows one paragraph, but the voice says one
+    // line at a time and a line with no take needs its own text to synthesise.
+    const spoken = (lines ?? []).map((fallback, i) =>
+      this.withTopic(loc(keys?.[i] ?? '', this.lang, fallback)),
+    );
+    return { keys, spoken, body: spoken.join('\n') };
   }
 
   private choicesOf(p: ConsultationPhase): ChoiceView[] {
@@ -766,12 +816,6 @@ export class ConsultationEngine {
   private showNotice(readingIndex: number) {
     this.stage.thinking(false);
     this.stageBeat('NOTICE', 'HeadShake');
-    const key =
-      this.oracleError === 'no_chart'
-        ? 'consult_no_chart_body'
-        : this.oracleError === 'upstream'
-          ? 'consult_upstream_body'
-          : 'consult_disconnect_body';
     this.pendingRetryIndex = readingIndex;
     this.patch({
       screen: 'notice',
@@ -780,12 +824,24 @@ export class ConsultationEngine {
       choices: [],
       canTap: false,
       inputEnabled: false,
-      notice: {
-        body: loc(key, this.lang, ''),
-        retryLabel: loc('consult_retry', this.lang, 'Retry'),
-        leaveLabel: loc('consult_leave_room', this.lang, 'Leave'),
-      },
+      notice: this.noticeView(),
     });
+  }
+
+  /** The notice card's copy, in the current language. Built from `oracleError`, which outlives the
+   *  patch, so relocalize() can rebuild it without knowing why it was shown. */
+  private noticeView(): NoticeView {
+    const key =
+      this.oracleError === 'no_chart'
+        ? 'consult_no_chart_body'
+        : this.oracleError === 'upstream'
+          ? 'consult_upstream_body'
+          : 'consult_disconnect_body';
+    return {
+      body: loc(key, this.lang, ''),
+      retryLabel: loc('consult_retry', this.lang, 'Retry'),
+      leaveLabel: loc('consult_leave_room', this.lang, 'Leave'),
+    };
   }
 
   private pendingRetryIndex = -1;
