@@ -439,3 +439,96 @@ test('asking again mid-answer shows the rest of the answer at once', () => {
   engine.onSpeakDone('loop_1.0');
   expect(stage.spoken.length).toBe(spokenBefore);
 });
+
+/**
+ * The turn belongs to the counselor until she has finished saying her answer.
+ *
+ * Reported from a real session: the player asked a question, one short line appeared, the
+ * suggestion chip was live, they tapped it — and the long answer arrived AFTER their next question,
+ * unspoken. Nothing was broken in the delivery. The room had simply opened the input the moment the
+ * payload landed, while the answer still had several seconds of chunks to go, and askLoop's
+ * flushAnswerWalk then dumped the remainder in silently, which is what it is supposed to do for a
+ * player who chose to move on.
+ */
+test('the input stays shut while the counselor is still delivering the answer', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('질문');
+  engine.onOracleResult({
+    ok: true, followup: '다음 질문',
+    beats: [
+      { phaseId: 'P11', lines: ['하나'] }, { phaseId: 'P14', lines: ['둘'] },
+      { phaseId: 'P17', lines: ['셋'] }, { phaseId: 'P19', lines: ['넷'] },
+    ],
+  });
+  sched.advance(300_000);
+
+  // Hold the answer's own takes so the walk advances only when this test says so.
+  stage.holdPrefix = 'loop_1.';
+  engine.submitQuestion('추가 질문');
+
+  const long =
+    '지금 이직 자체는 괜찮아. 다만 올해는 관성이 강해서 책임이 먼저 커지는 흐름이야. ' +
+    '수입은 그 뒤를 따라오니 조건을 문서로 남겨야 해. 서두르면 지출이 같이 커진다. ' +
+    '가을 무렵에 한 번 더 점검하면 좋겠어. 그때 다시 이야기해 보자.';
+  engine.onOracleResult({
+    ok: true, loop: true, followup: '또 다른 질문',
+    beats: [{ phaseId: 'loop', lines: [long] }],
+  });
+
+  const chunkKeys = () => stage.spoken.filter(k => k.startsWith('loop_1.'));
+  expect(chunkKeys().length).toBe(1);          // she has started, and only started
+  expect(engine.getState().inputEnabled).toBe(false);
+  expect(engine.getState().suggestion).toBe('');
+  expect(engine.getState().pending).toBe(false); // the WAITING is over; the turn is not
+
+  // Walk the rest of the answer, checking the door stays shut on every chunk but the last.
+  for (let guard = 0; guard < 20; guard++) {
+    const before = chunkKeys().length;
+    engine.onSpeakDone(chunkKeys()[before - 1]);
+    if (chunkKeys().length === before) break;   // nothing new started: that was the last one
+    expect(engine.getState().inputEnabled).toBe(false);
+  }
+
+  expect(engine.getState().inputEnabled).toBe(true);
+  expect(engine.getState().suggestion).toBe('또 다른 질문');
+});
+
+/**
+ * `speak()` has no timeout — it hands a take to Unity and waits for SPEAK_DONE, and TTS degrades to
+ * silence rather than to an error. Holding the turn until she finishes means a take that is never
+ * reported would leave the player at a dead text box, so the walk carries a deadline.
+ */
+test('a take that never reports still gives the turn back', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('질문');
+  engine.onOracleResult({
+    ok: true, followup: '다음 질문',
+    beats: [
+      { phaseId: 'P11', lines: ['하나'] }, { phaseId: 'P14', lines: ['둘'] },
+      { phaseId: 'P17', lines: ['셋'] }, { phaseId: 'P19', lines: ['넷'] },
+    ],
+  });
+  sched.advance(300_000);
+
+  stage.holdPrefix = 'loop_1.';
+  engine.submitQuestion('추가 질문');
+  const long = '한 문장. 두 번째 문장이고 조금 더 길다. 세 번째 문장은 여기서 끝난다.';
+  engine.onOracleResult({
+    ok: true, loop: true, followup: '또 다른 질문',
+    beats: [{ phaseId: 'loop', lines: [long] }],
+  });
+
+  expect(engine.getState().inputEnabled).toBe(false);
+
+  // Nobody ever calls onSpeakDone. The guard is the only thing left.
+  sched.advance(120_000);
+
+  expect(engine.getState().inputEnabled).toBe(true);
+  // And the rest of what she was saying is on screen rather than lost.
+  const transcript = engine.getState().transcript;
+  expect(transcript[transcript.length - 1].text).toContain('세 번째 문장은 여기서 끝난다.');
+});

@@ -42,6 +42,12 @@ import type {
 
 /** Reading speed in characters per second. Lower = each line is held longer. */
 const CHARS_PER_SECOND = 13;
+/** How much longer than the reading estimate an answer is allowed to take before the guard in
+ *  armAnswerGuard gives the turn back anyway. Generous on purpose: it is a lock-breaker, not a
+ *  pacer, and cutting a counselor off because TTS ran slow would be a worse bug than the one it
+ *  exists to prevent. */
+const ANSWER_GUARD_SLACK = 3;
+const ANSWER_GUARD_MIN_MS = 20000;
 /** Minimum hold, even for a two-word line. */
 const MIN_HOLD_MS = 1800;
 /** Maximum hold, so an unusually long line does not freeze the screen. */
@@ -234,6 +240,9 @@ export class ConsultationEngine {
   private index = -1;
   private running = false;
   private timer: number | null = null;
+  /** The answer walk's lock-breaker. Its own handle, not `timer`: that one belongs to phase
+   *  advance, and sharing it would have a phase timer cancel the guard or the reverse. */
+  private answerGuard: number | null = null;
 
   /** Branch tags collected so far — the reading layer reads these. */
   private branches: string[] = [];
@@ -894,7 +903,14 @@ export class ConsultationEngine {
     this.followup = payload.followup ?? '';
     this.stageBeat('LOOP_ANSWER', 'Explaining');
     this.opts.onCounselorLine?.(text);
-    this.patch({ inputEnabled: true, suggestion: this.followup, pending: false });
+    // `pending` ends here — the waiting is over — but the TURN does not. The answer is delivered a
+    // chunk at a time over the next several seconds, so opening the input and the suggestion chip
+    // now would invite the player to speak while the counselor is still mid-sentence. They did:
+    // one short line on screen, the chip live, tap, and the rest of the answer arrived behind their
+    // next question — and askLoop's flushAnswerWalk dumped it in unspoken, exactly as designed for
+    // a player who MEANT to move on. Nobody meant to. The room asked them to.
+    // Handed back in releaseTurn(), when she has actually finished.
+    this.patch({ pending: false });
 
     // The answer is not dropped into the transcript whole. It is spoken a chunk
     // at a time — first chunk a single sentence, the rest ~110 characters — and
@@ -909,6 +925,7 @@ export class ConsultationEngine {
     // later ones land while the earlier ones play.
     chunks.forEach((c, i) => this.stage.prefetchText(c.text, `${key}.${i}`));
     this.answerWalk = { key, chunks, next: 0, row: -1 };
+    this.armAnswerGuard(text);
     // If the "one moment" line is still being said, let it finish: cutting her
     // off mid-word to start the answer sounds worse than a beat of pause.
     this.afterSpeech(() => this.speakNextChunk());
@@ -955,6 +972,7 @@ export class ConsultationEngine {
     if (!walk || !this.inLoop || !this.running) return;
     if (walk.next >= walk.chunks.length) {
       this.answerWalk = null;
+      this.releaseTurn();
       return;
     }
     const i = walk.next;
@@ -986,6 +1004,50 @@ export class ConsultationEngine {
     this.answerWalk = null;
     this.revealChunks(walk, walk.chunks.length);
     this.speakDoneWaiter = null;
+    this.releaseTurn();
+  }
+
+  /**
+   * Hand the turn back: the counselor has finished saying her answer.
+   *
+   * Every way an answer can end comes through here — the last chunk spoken, a flush because the
+   * player asked something new, or the guard below firing. Callers that mean to keep the input shut
+   * (askLoop, endLoop) patch it closed after, which is why this does not try to be clever about
+   * who is asking.
+   */
+  private releaseTurn() {
+    this.clearAnswerGuard();
+    if (!this.inLoop || !this.running) return;
+    this.patch({ inputEnabled: true, suggestion: this.followup });
+  }
+
+  /**
+   * The room must never be able to lock.
+   *
+   * `speak()` has no timeout: it hands a take to Unity and waits for SPEAK_DONE. Nothing guarantees
+   * that ever arrives — TTS degrades to silence rather than to an error, and a take that is never
+   * reported leaves speakDoneWaiter holding the walk forever. That used to be harmless because the
+   * input was already open; now that the turn is held until she finishes, a lost take would be a
+   * player staring at a disabled text box with nothing to do.
+   *
+   * So the walk gets a deadline: the answer's own reading estimate with generous slack, after which
+   * the rest is shown at once and the turn goes back regardless. It should never fire.
+   */
+  private armAnswerGuard(text: string) {
+    this.clearAnswerGuard();
+    const readMs = (text.length / CHARS_PER_SECOND) * 1000;
+    const budget = Math.max(readMs * ANSWER_GUARD_SLACK, ANSWER_GUARD_MIN_MS);
+    this.answerGuard = this.sched.set(() => {
+      this.answerGuard = null;
+      this.flushAnswerWalk();
+    }, budget);
+  }
+
+  private clearAnswerGuard() {
+    if (this.answerGuard !== null) {
+      this.sched.clear(this.answerGuard);
+      this.answerGuard = null;
+    }
   }
 
   /** Leave the loop through P20 — a FORWARD jump, so the standing VFX survive
