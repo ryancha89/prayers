@@ -200,17 +200,17 @@
     "zh-TW": "事業 / 投資"
   },
   "consult_p05_l0": {
-    "ko": "무엇이 궁금하신가요?",
-    "en": "What would you like to ask me?",
-    "vi": "Con muốn hỏi ta điều gì?",
+    "ko": "편하게 말씀해 주세요.",
+    "en": "Feel free to ask me anything.",
+    "vi": "Con cứ hỏi ta thoải mái nhé.",
     "ja": "どうぞ気楽にお話しください。",
     "zh-CN": "请放心地说吧。",
     "zh-TW": "請放心地說吧。"
   },
   "consult_p06_l0": {
-    "ko": "알겠습니다. 올해 {0}의 흐름이 궁금하신 거군요.",
-    "en": "I see. You would like to know about the flow of your {0} this year.",
-    "vi": "Tôi hiểu rồi. Bạn muốn biết dòng chảy {0} của mình năm nay.",
+    "ko": "알겠습니다. {0}의 흐름이 궁금하신 거군요.",
+    "en": "I see. You would like to know about the flow of your {0}.",
+    "vi": "Ta hiểu rồi. Con muốn biết dòng chảy {0} của mình.",
     "ja": "わかりました。{0}の流れが気になるのですね。",
     "zh-CN": "我明白了。您想知道{0}的走向。",
     "zh-TW": "我明白了。您想知道{0}的走向。"
@@ -248,17 +248,17 @@
     "zh-TW": "五行的這個平衡尤其重要。"
   },
   "consult_p10_l0": {
-    "ko": "아... 이 부분이 올해 {0}과 바로 연결됩니다.",
-    "en": "Ah... this part connects directly to your {0} this year.",
-    "vi": "À... chỗ này nối thẳng vào {0} năm nay của bạn.",
+    "ko": "아... 이 부분이 {0}과 바로 연결됩니다.",
+    "en": "Ah... this part connects directly to your {0}.",
+    "vi": "À... phần này nối thẳng với {0} của con.",
     "ja": "ああ… この部分が{0}に直に繋がっています。",
     "zh-CN": "啊…… 这一部分与{0}直接相连。",
     "zh-TW": "啊…… 這一部分與{0}直接相連。"
   },
   "consult_p11_l0": {
-    "ko": "올해 {0}은 약하지 않습니다.",
-    "en": "Your {0} this year is not weak.",
-    "vi": "{0} năm nay của bạn không yếu.",
+    "ko": "{0}은 약하지 않습니다.",
+    "en": "Your {0} is not weak.",
+    "vi": "{0} của con không hề yếu.",
     "ja": "{0}は弱くありません。",
     "zh-CN": "您的{0}并不弱。",
     "zh-TW": "您的{0}並不弱。"
@@ -272,9 +272,9 @@
     "zh-TW": "反而能看到開創新收入來源的機會。"
   },
   "consult_p12_l0": {
-    "ko": "한 가지 여쭙고 싶습니다. 올해 새로 시작하거나 투자할 계획이 있으신가요?",
-    "en": "There is one thing I want to ask. Are you thinking about starting something new or investing this year?",
-    "vi": "Có một điều tôi muốn hỏi. Năm nay bạn có định làm gì mới, hay đầu tư gì không?",
+    "ko": "한 가지 여쭙고 싶습니다. 새로 시작하거나 투자할 계획이 있으신가요?",
+    "en": "Let me ask one thing. Do you have plans to start something new or to invest?",
+    "vi": "Ta muốn hỏi một điều. Con có dự định bắt đầu việc mới hay đầu tư không?",
     "ja": "一つお伺いします。新しく始める、あるいは投資するご予定はありますか？",
     "zh-CN": "想请教一件事。您有打算开始新的事，或是进行投资吗？",
     "zh-TW": "想請教一件事。您有打算開始新的事，或是進行投資嗎？"
@@ -344,9 +344,9 @@
     "zh-TW": "若是投資，就需要看得更細一些。"
   },
   "consult_p13_invest_l1": {
-    "ko": "올해는 돈이 빠르게 움직입니다. 양쪽 방향 모두로요.",
-    "en": "Money moves quickly for you this year — quickly in both directions.",
-    "vi": "Tiền của bạn năm nay đi nhanh — nhanh cả hai chiều.",
+    "ko": "이 시기에는 돈이 빠르게 움직입니다. 양쪽 방향 모두로요.",
+    "en": "In this period money moves fast, in both directions.",
+    "vi": "Thời kỳ này tiền chuyển động nhanh, theo cả hai hướng.",
     "ja": "この時期はお金が速く動きます。それも両方向にです。",
     "zh-CN": "这个时期钱走得快，而且是两个方向都快。",
     "zh-TW": "這個時期錢走得快，而且是兩個方向都快。"
@@ -384,17 +384,17 @@
     "zh-TW": "只是機會會來，別讓它白白錯過。"
   },
   "consult_p14_l0": {
-    "ko": "사주를 보면 올해는...",
-    "en": "Looking at your Saju, this year is better suited to...",
-    "vi": "Nhìn vào lá số, năm nay hợp với...",
+    "ko": "사주를 보면 이 시기는...",
+    "en": "Looking at your Saju, this period is...",
+    "vi": "Nhìn vào tứ trụ, thời kỳ này...",
     "ja": "四柱を見ますと、この時期は…",
     "zh-CN": "从四柱来看，这个时期是……",
     "zh-TW": "從四柱來看，這個時期是……"
   },
   "consult_p14_business_l0": {
-    "ko": "사주로 보면 올해 시작할 수 있습니다. 다만 작게 시작하십시오.",
-    "en": "Looking at your Saju, you can start this year — but start small.",
-    "vi": "Nhìn vào lá số, năm nay bạn khởi sự được — nhưng hãy bắt đầu nhỏ.",
+    "ko": "사주로 보면 시작할 수 있습니다. 다만 작게 시작하십시오.",
+    "en": "Your Saju says you can begin, but begin small.",
+    "vi": "Theo tứ trụ, con có thể bắt đầu, nhưng hãy bắt đầu nhỏ.",
     "ja": "四柱で見れば始められます。ただし小さく始めてください。",
     "zh-CN": "从四柱看是可以开始的，但请从小处着手。",
     "zh-TW": "從四柱看是可以開始的，但請從小處著手。"
@@ -408,9 +408,9 @@
     "zh-TW": "日干有根，壓力承受得住；缺的是餘裕的資金。"
   },
   "consult_p14_invest_l0": {
-    "ko": "사주로 보면 올해는 투자를 나누어야 합니다.",
-    "en": "Looking at your Saju, you should split your investment this year.",
-    "vi": "Nhìn vào lá số, năm nay bạn nên chia nhỏ khoản đầu tư.",
+    "ko": "사주로 보면 이 시기는 투자를 나누어야 합니다.",
+    "en": "Your Saju says this period calls for splitting your investments.",
+    "vi": "Theo tứ trụ, thời kỳ này nên chia nhỏ đầu tư.",
     "ja": "四柱で見ると、この時期は投資を分けるべきです。",
     "zh-CN": "从四柱看，这个时期该把投资分散开。",
     "zh-TW": "從四柱看，這個時期該把投資分散開。"
@@ -440,9 +440,9 @@
     "zh-TW": "您需要的是忙碌時仍能自行運轉的東西。"
   },
   "consult_p14_none_l0": {
-    "ko": "사주로 보면 올해는 지키고 준비하는 해입니다.",
-    "en": "Looking at your Saju, this year is for holding and preparing.",
-    "vi": "Nhìn vào lá số, năm nay bạn nên giữ và chuẩn bị.",
+    "ko": "사주로 보면 이 시기는 지키고 준비하는 때입니다.",
+    "en": "Your Saju says this is a period for holding and preparing.",
+    "vi": "Theo tứ trụ, đây là thời kỳ giữ gìn và chuẩn bị.",
     "ja": "四柱で見ると、この時期は守り、備える時です。",
     "zh-CN": "从四柱看，这个时期是守成与准备的时候。",
     "zh-TW": "從四柱看，這個時期是守成與準備的時候。"
@@ -504,9 +504,9 @@
     "zh-TW": "我該在什麼時候行動？"
   },
   "consult_p17_l0": {
-    "ko": "올해 {0}을 정리하자면...",
-    "en": "To summarize your {0} this year...",
-    "vi": "Tóm lại, {0} năm nay của bạn...",
+    "ko": "{0}을 정리하자면...",
+    "en": "To sum up your {0}...",
+    "vi": "Tóm lại về {0} của con...",
     "ja": "{0}をまとめますと…",
     "zh-CN": "把{0}归纳起来……",
     "zh-TW": "把{0}歸納起來……"
@@ -520,9 +520,9 @@
     "zh-TW": "比起一次賺一大筆，開創新的收入來源才是更強的機會。"
   },
   "consult_p17_business_l0": {
-    "ko": "올해 {0}을 정리하자면...",
-    "en": "To summarize your {0} this year...",
-    "vi": "Tóm lại, {0} năm nay của bạn...",
+    "ko": "{0}을 정리하자면...",
+    "en": "To sum up your {0}...",
+    "vi": "Tóm lại về {0} của con...",
     "ja": "{0}をまとめますと…",
     "zh-CN": "把{0}归纳起来……",
     "zh-TW": "把{0}歸納起來……"
@@ -536,25 +536,25 @@
     "zh-TW": "可以起步，但要開小口，並且留好退路。"
   },
   "consult_p17_invest_l0": {
-    "ko": "올해 {0}을 정리하자면...",
-    "en": "To summarize your {0} this year...",
-    "vi": "Tóm lại, {0} năm nay của bạn...",
+    "ko": "{0}을 정리하자면...",
+    "en": "To sum up your {0}...",
+    "vi": "Tóm lại về {0} của con...",
     "ja": "{0}をまとめますと…",
     "zh-CN": "把{0}归纳起来……",
     "zh-TW": "把{0}歸納起來……"
   },
   "consult_p17_invest_l1": {
-    "ko": "나누어 천천히 가는 편이 낫습니다. 올해는 크게 거는 해가 아닙니다.",
-    "en": "Splitting it and moving slowly beats one decisive bet — this is not your year to gamble.",
-    "vi": "Chia nhỏ và đi chậm sẽ hơn một cú dứt điểm — năm nay của bạn không hợp đánh cược.",
+    "ko": "나누어 천천히 가는 편이 낫습니다. 지금은 크게 거는 때가 아닙니다.",
+    "en": "Better to split it and go slowly. This is not the time for a big bet.",
+    "vi": "Nên chia nhỏ và đi chậm. Lúc này không phải lúc đặt cược lớn.",
     "ja": "分けて、ゆっくり進む方が良いです。今は大きく賭ける時ではありません。",
     "zh-CN": "分开来慢慢走比较好，现在不是重注的时候。",
     "zh-TW": "分開來慢慢走比較好，現在不是重注的時候。"
   },
   "consult_p17_side_l0": {
-    "ko": "올해 {0}을 정리하자면...",
-    "en": "To summarize your {0} this year...",
-    "vi": "Tóm lại, {0} năm nay của bạn...",
+    "ko": "{0}을 정리하자면...",
+    "en": "To sum up your {0}...",
+    "vi": "Tóm lại về {0} của con...",
     "ja": "{0}をまとめますと…",
     "zh-CN": "把{0}归纳起来……",
     "zh-TW": "把{0}歸納起來……"
@@ -568,17 +568,17 @@
     "zh-TW": "小而不斷的收入，比一次的大錢帶您走得更遠。"
   },
   "consult_p17_none_l0": {
-    "ko": "올해 {0}을 정리하자면...",
-    "en": "To summarize your {0} this year...",
-    "vi": "Tóm lại, {0} năm nay của bạn...",
+    "ko": "{0}을 정리하자면...",
+    "en": "To sum up your {0}...",
+    "vi": "Tóm lại về {0} của con...",
     "ja": "{0}をまとめますと…",
     "zh-CN": "把{0}归纳起来……",
     "zh-TW": "把{0}歸納起來……"
   },
   "consult_p17_none_l1": {
-    "ko": "아직 결정하지 않아도 됩니다. 올해의 일은 기회가 왔을 때 준비되어 있는 것입니다.",
-    "en": "There is no need to decide yet. This year's work is being ready when the opening comes.",
-    "vi": "Chưa cần vội quyết. Việc của năm nay là chuẩn bị cho lúc cơ hội tới.",
+    "ko": "아직 결정하지 않아도 됩니다. 기회가 왔을 때 준비되어 있는 것이 중요합니다.",
+    "en": "You do not have to decide yet. What matters is being ready when the chance comes.",
+    "vi": "Con chưa cần quyết định. Điều quan trọng là sẵn sàng khi cơ hội đến.",
     "ja": "まだ決めなくても構いません。機会が来た時に備えができていることが大事です。",
     "zh-CN": "现在还不必决定。要紧的是机会来时您已准备好。",
     "zh-TW": "現在還不必決定。要緊的是機會來時您已準備好。"
@@ -1120,9 +1120,9 @@
     "zh-TW": "要升遷，就得看官星。"
   },
   "consult_p13_career_grow_l1": {
-    "ko": "올해 귀인이 있으니, 보이지 않는 자리에 서 있지 마십시오.",
-    "en": "This year a backer is present — do not stand where they cannot see you.",
-    "vi": "Năm nay có người nâng đỡ bạn — đừng đứng khuất chỗ họ không thấy.",
+    "ko": "귀인이 있으니, 보이지 않는 자리에 서 있지 마십시오.",
+    "en": "A helpful person is near, so do not stand where you cannot be seen.",
+    "vi": "Có quý nhân bên cạnh, nên đừng đứng ở nơi không ai thấy.",
     "ja": "貴人がおりますから、見えない場所に立たないでください。",
     "zh-CN": "贵人就在近处，别站在看不见的地方。",
     "zh-TW": "貴人就在近處，別站在看不見的地方。"
