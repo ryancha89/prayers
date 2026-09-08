@@ -9,6 +9,7 @@
  */
 import { ConsultationEngine, Scheduler, StagePort } from '../src/features/counseling/flow/engine';
 import type { OracleAskPayload, StagePhasePayload } from '../src/features/counseling/types';
+import type { Lang } from '../src/shared/i18n';
 
 /** Fake time: every timer is queued and fired by hand, so a 9-second dwell
  *  costs nothing and the test never races the real clock. */
@@ -562,23 +563,34 @@ test('switching language redraws the card that is already on screen', () => {
 });
 
 /**
- * The room's own table carries ko/en/vi only — it is generated from Unity's LocalizationData.asset,
- * which has those three columns and no others. A language outside it falls back through `loc`, and
- * the point of this test is that the fallback is CONSISTENT rather than per-string: every piece of
- * room copy lands in the same language, so the card cannot be half Korean and half English.
+ * The room speaks all six languages the app ships.
+ *
+ * It carried ko/en/vi for a long time, because it is generated from Unity's LocalizationData.asset
+ * and that asset had three columns. `loc` walks lang → ko → en, so a Chinese player got a Korean
+ * consultation — including the shape hint that is appended to the question, which is how a Korean
+ * instruction ended up steering the model's reply language too.
+ *
+ * This is the test that would have caught it: not "does the fallback behave" but "is there anything
+ * to fall back FROM".
  */
-test('an unsupported language falls back as a whole card, not string by string', () => {
-  const { sched, engine } = build();
-  engine.begin();
-  sched.advance(60_000);
+test('the room speaks every language the app offers', () => {
+  const langs: Lang[] = ['ko', 'en', 'vi', 'ja', 'zh-CN', 'zh-TW'];
+  const seen = new Map<Lang, string>();
 
-  engine.setLang('zh-CN');
-  const zh = engine.getState();
-  engine.setLang('ko');
-  const ko = engine.getState();
+  for (const lang of langs) {
+    const { sched, engine } = build();
+    engine.begin();
+    sched.advance(60_000);
+    engine.setLang(lang);
+    const s = engine.getState();
+    expect(s.speaker).not.toBe('');
+    expect(s.line).not.toBe('');
+    seen.set(lang, s.speaker + '␟' + s.line);
+  }
 
-  expect(zh.speaker).toBe(ko.speaker);
-  expect(zh.line).toBe(ko.line);
+  // Six distinct renderings — a language that silently resolved to another's text would collide
+  // here, which is exactly the failure this replaces.
+  expect(new Set(seen.values()).size).toBe(langs.length);
 });
 
 /** A language change must not make the counselor say her line a second time. */

@@ -2,946 +2,1513 @@
   "consult_house_sign": {
     "ko": "사주 집",
     "en": "House of Four Pillars",
-    "vi": "Nhà Tứ Trụ"
+    "vi": "Nhà Tứ Trụ",
+    "ja": "四柱の館",
+    "zh-CN": "四柱之馆",
+    "zh-TW": "四柱之館"
   },
   "consult_house_enter": {
     "ko": "들어가기",
     "en": "Enter",
-    "vi": "Vào xem bói"
+    "vi": "Vào xem bói",
+    "ja": "入る",
+    "zh-CN": "进入",
+    "zh-TW": "進入"
   },
   "consult_sit_prompt": {
     "ko": "앉아서 상담 받기",
     "en": "Sit down for a reading",
-    "vi": "Ngồi xuống xem bói"
+    "vi": "Ngồi xuống xem bói",
+    "ja": "座って鑑定を受ける",
+    "zh-CN": "落座接受占卜",
+    "zh-TW": "落座接受占卜"
   },
   "consult_speaker_counselor": {
     "ko": "상담사",
     "en": "Counselor",
-    "vi": "Thầy"
+    "vi": "Thầy",
+    "ja": "相談員",
+    "zh-CN": "咨询师",
+    "zh-TW": "諮詢師"
   },
   "consult_topic_wealth": {
     "ko": "재물운",
     "en": "wealth fortune",
-    "vi": "tài lộc"
+    "vi": "tài lộc",
+    "ja": "金運",
+    "zh-CN": "财运",
+    "zh-TW": "財運"
   },
   "consult_topic_love": {
     "ko": "애정운",
     "en": "love fortune",
-    "vi": "tình duyên"
+    "vi": "tình duyên",
+    "ja": "恋愛運",
+    "zh-CN": "爱情运",
+    "zh-TW": "愛情運"
   },
   "consult_topic_business": {
     "ko": "사업운",
     "en": "business fortune",
-    "vi": "kinh doanh"
+    "vi": "kinh doanh",
+    "ja": "事業運",
+    "zh-CN": "事业运",
+    "zh-TW": "事業運"
   },
   "consult_topic_career": {
     "ko": "직업운",
     "en": "career fortune",
-    "vi": "sự nghiệp"
+    "vi": "sự nghiệp",
+    "ja": "仕事運",
+    "zh-CN": "职业运",
+    "zh-TW": "職業運"
   },
   "consult_topic_health": {
     "ko": "건강운",
     "en": "health fortune",
-    "vi": "sức khoẻ"
+    "vi": "sức khoẻ",
+    "ja": "健康運",
+    "zh-CN": "健康运",
+    "zh-TW": "健康運"
   },
   "consult_topic_relationships": {
     "ko": "인간관계운",
     "en": "relationships",
-    "vi": "chuyện quan hệ"
+    "vi": "chuyện quan hệ",
+    "ja": "対人運",
+    "zh-CN": "人际关系",
+    "zh-TW": "人際關係"
   },
   "consult_topic_life": {
     "ko": "인생운",
     "en": "life fortune",
-    "vi": "vận trình"
+    "vi": "vận trình",
+    "ja": "人生運",
+    "zh-CN": "人生运",
+    "zh-TW": "人生運"
   },
   "consult_p01_l0": {
     "ko": "안녕하세요.",
     "en": "Hello.",
-    "vi": "Chào thầy."
+    "vi": "Chào thầy.",
+    "ja": "こんにちは。",
+    "zh-CN": "您好。",
+    "zh-TW": "您好。"
   },
   "consult_p02_l0": {
     "ko": "어서 오세요. 오늘은 무엇이 궁금하신가요?",
     "en": "Welcome. What would you like to know today?",
-    "vi": "Mời ngồi. Hôm nay bạn muốn biết điều gì?"
+    "vi": "Mời ngồi. Hôm nay bạn muốn biết điều gì?",
+    "ja": "ようこそ。今日は何が気になりますか？",
+    "zh-CN": "欢迎。今天想了解什么呢？",
+    "zh-TW": "歡迎。今天想了解什麼呢？"
   },
   "consult_p03_l0": {
     "ko": "인생의 어느 부분을 봐 드릴까요?",
     "en": "Which area of your life would you like me to read?",
-    "vi": "Bạn muốn tôi xem phần nào trong đời mình?"
+    "vi": "Bạn muốn tôi xem phần nào trong đời mình?",
+    "ja": "人生のどの部分を見ましょうか？",
+    "zh-CN": "想让我看人生的哪一部分呢？",
+    "zh-TW": "想讓我看人生的哪一部分呢？"
   },
   "consult_p03_c0": {
     "ko": "재물운",
     "en": "Wealth Fortune",
-    "vi": "Tài lộc"
+    "vi": "Tài lộc",
+    "ja": "金運",
+    "zh-CN": "财运",
+    "zh-TW": "財運"
   },
   "consult_p03_c1": {
     "ko": "애정운",
     "en": "Love Fortune",
-    "vi": "Tình duyên"
+    "vi": "Tình duyên",
+    "ja": "恋愛運",
+    "zh-CN": "爱情运",
+    "zh-TW": "愛情運"
   },
   "consult_p03_c2": {
     "ko": "사업운",
     "en": "Business Fortune",
-    "vi": "Kinh doanh"
+    "vi": "Kinh doanh",
+    "ja": "事業運",
+    "zh-CN": "事业运",
+    "zh-TW": "事業運"
   },
   "consult_p03_c3": {
     "ko": "직업운",
     "en": "Career Fortune",
-    "vi": "Sự nghiệp"
+    "vi": "Sự nghiệp",
+    "ja": "仕事運",
+    "zh-CN": "职业运",
+    "zh-TW": "職業運"
   },
   "consult_p03_c4": {
     "ko": "건강운",
     "en": "Health Fortune",
-    "vi": "Sức khoẻ"
+    "vi": "Sức khoẻ",
+    "ja": "健康運",
+    "zh-CN": "健康运",
+    "zh-TW": "健康運"
   },
   "consult_p04_l0": {
     "ko": "알겠습니다. {0}을 얼마나 깊이 보고 싶으신가요?",
     "en": "I see. How deeply would you like to explore your {0}?",
-    "vi": "Tôi hiểu rồi. Bạn muốn xem {0} sâu tới đâu?"
+    "vi": "Tôi hiểu rồi. Bạn muốn xem {0} sâu tới đâu?",
+    "ja": "わかりました。{0}をどこまで深く見ましょうか？",
+    "zh-CN": "我明白了。想把{0}看得多深呢？",
+    "zh-TW": "我明白了。想把{0}看得多深呢？"
   },
   "consult_p04_c0": {
     "ko": "평생 {0}",
     "en": "Lifetime {0}",
-    "vi": "{0} cả đời"
+    "vi": "{0} cả đời",
+    "ja": "生涯の{0}",
+    "zh-CN": "一生的{0}",
+    "zh-TW": "一生的{0}"
   },
   "consult_p04_c1": {
     "ko": "올해 {0}",
     "en": "{0} this year",
-    "vi": "{0} năm nay"
+    "vi": "{0} năm nay",
+    "ja": "今年の{0}",
+    "zh-CN": "今年的{0}",
+    "zh-TW": "今年的{0}"
   },
   "consult_p04_c2": {
     "ko": "이번 달 {0}",
     "en": "{0} this month",
-    "vi": "{0} tháng này"
+    "vi": "{0} tháng này",
+    "ja": "今月の{0}",
+    "zh-CN": "本月的{0}",
+    "zh-TW": "本月的{0}"
   },
   "consult_p04_c3": {
     "ko": "기회의 시기",
     "en": "Timing of opportunities",
-    "vi": "Thời điểm cơ hội"
+    "vi": "Thời điểm cơ hội",
+    "ja": "好機の時期",
+    "zh-CN": "机会的时机",
+    "zh-TW": "機會的時機"
   },
   "consult_p04_c4": {
     "ko": "사업 / 투자",
     "en": "Business / investment",
-    "vi": "Kinh doanh / đầu tư"
+    "vi": "Kinh doanh / đầu tư",
+    "ja": "事業 / 投資",
+    "zh-CN": "事业 / 投资",
+    "zh-TW": "事業 / 投資"
   },
   "consult_p05_l0": {
-    "ko": "편하게 말씀해 주세요.",
-    "en": "Feel free to ask me anything.",
-    "vi": "Con cứ hỏi ta thoải mái nhé."
+    "ko": "무엇이 궁금하신가요?",
+    "en": "What would you like to ask me?",
+    "vi": "Con muốn hỏi ta điều gì?",
+    "ja": "どうぞ気楽にお話しください。",
+    "zh-CN": "请放心地说吧。",
+    "zh-TW": "請放心地說吧。"
   },
   "consult_p06_l0": {
-    "ko": "알겠습니다. {0}의 흐름이 궁금하신 거군요.",
-    "en": "I see. You would like to know about the flow of your {0}.",
-    "vi": "Ta hiểu rồi. Con muốn biết dòng chảy {0} của mình."
+    "ko": "알겠습니다. 올해 {0}의 흐름이 궁금하신 거군요.",
+    "en": "I see. You would like to know about the flow of your {0} this year.",
+    "vi": "Tôi hiểu rồi. Bạn muốn biết dòng chảy {0} của mình năm nay.",
+    "ja": "わかりました。{0}の流れが気になるのですね。",
+    "zh-CN": "我明白了。您想知道{0}的走向。",
+    "zh-TW": "我明白了。您想知道{0}的走向。"
   },
   "consult_p06_l1": {
     "ko": "사주를 자세히 살펴보겠습니다.",
     "en": "Let me take a closer look at your Saju.",
-    "vi": "Để tôi xem kỹ lá số của bạn."
+    "vi": "Để tôi xem kỹ lá số của bạn.",
+    "ja": "四柱を詳しく見てみましょう。",
+    "zh-CN": "让我仔细看看您的四柱。",
+    "zh-TW": "讓我仔細看看您的四柱。"
   },
   "consult_p07_l0": {
     "ko": "사주 네 기둥을 보겠습니다.",
     "en": "Let me examine your Four Pillars.",
-    "vi": "Để tôi xem Tứ Trụ của bạn."
+    "vi": "Để tôi xem Tứ Trụ của bạn.",
+    "ja": "四柱の四つの柱を見ていきます。",
+    "zh-CN": "我来看看四柱的四根柱子。",
+    "zh-TW": "我來看看四柱的四根柱子。"
   },
   "consult_p08_l0": {
     "ko": "사주가 무엇을 말하는지 봅시다.",
     "en": "Let's see what your Saju reveals.",
-    "vi": "Xem lá số của bạn nói gì nào."
+    "vi": "Xem lá số của bạn nói gì nào.",
+    "ja": "四柱が何を語っているか見てみましょう。",
+    "zh-CN": "来看看四柱在说什么。",
+    "zh-TW": "來看看四柱在說什麼。"
   },
   "consult_p09_l0": {
     "ko": "오행의 이 균형이 특히 중요합니다.",
     "en": "This part of your elemental balance is especially important.",
-    "vi": "Chỗ cân bằng ngũ hành này của bạn đặc biệt quan trọng."
+    "vi": "Chỗ cân bằng ngũ hành này của bạn đặc biệt quan trọng.",
+    "ja": "五行のこの均衡がとりわけ重要です。",
+    "zh-CN": "五行的这个平衡尤其重要。",
+    "zh-TW": "五行的這個平衡尤其重要。"
   },
   "consult_p10_l0": {
-    "ko": "아... 이 부분이 {0}과 바로 연결됩니다.",
-    "en": "Ah... this part connects directly to your {0}.",
-    "vi": "À... phần này nối thẳng với {0} của con."
+    "ko": "아... 이 부분이 올해 {0}과 바로 연결됩니다.",
+    "en": "Ah... this part connects directly to your {0} this year.",
+    "vi": "À... chỗ này nối thẳng vào {0} năm nay của bạn.",
+    "ja": "ああ… この部分が{0}に直に繋がっています。",
+    "zh-CN": "啊…… 这一部分与{0}直接相连。",
+    "zh-TW": "啊…… 這一部分與{0}直接相連。"
   },
   "consult_p11_l0": {
-    "ko": "{0}은 약하지 않습니다.",
-    "en": "Your {0} is not weak.",
-    "vi": "{0} của con không hề yếu."
+    "ko": "올해 {0}은 약하지 않습니다.",
+    "en": "Your {0} this year is not weak.",
+    "vi": "{0} năm nay của bạn không yếu.",
+    "ja": "{0}は弱くありません。",
+    "zh-CN": "您的{0}并不弱。",
+    "zh-TW": "您的{0}並不弱。"
   },
   "consult_p11_l1": {
     "ko": "오히려 새로운 수입원을 만들 기회가 보입니다.",
     "en": "In fact, there may be opportunities to create a new source of income.",
-    "vi": "Thật ra còn có cơ hội mở thêm một nguồn thu mới."
+    "vi": "Thật ra còn có cơ hội mở thêm một nguồn thu mới.",
+    "ja": "むしろ新しい収入源をつくる機会が見えます。",
+    "zh-CN": "反而能看到开创新收入来源的机会。",
+    "zh-TW": "反而能看到開創新收入來源的機會。"
   },
   "consult_p12_l0": {
-    "ko": "한 가지 여쭙고 싶습니다. 새로 시작하거나 투자할 계획이 있으신가요?",
-    "en": "Let me ask one thing. Do you have plans to start something new or to invest?",
-    "vi": "Ta muốn hỏi một điều. Con có dự định bắt đầu việc mới hay đầu tư không?"
+    "ko": "한 가지 여쭙고 싶습니다. 올해 새로 시작하거나 투자할 계획이 있으신가요?",
+    "en": "There is one thing I want to ask. Are you thinking about starting something new or investing this year?",
+    "vi": "Có một điều tôi muốn hỏi. Năm nay bạn có định làm gì mới, hay đầu tư gì không?",
+    "ja": "一つお伺いします。新しく始める、あるいは投資するご予定はありますか？",
+    "zh-CN": "想请教一件事。您有打算开始新的事，或是进行投资吗？",
+    "zh-TW": "想請教一件事。您有打算開始新的事，或是進行投資嗎？"
   },
   "consult_p12_c0": {
     "ko": "창업을 생각 중입니다",
     "en": "Start a business",
-    "vi": "Tôi định khởi nghiệp"
+    "vi": "Tôi định khởi nghiệp",
+    "ja": "起業を考えています",
+    "zh-CN": "正在考虑创业",
+    "zh-TW": "正在考慮創業"
   },
   "consult_p12_c1": {
     "ko": "투자를 고민 중입니다",
     "en": "Consider investing",
-    "vi": "Tôi đang cân nhắc đầu tư"
+    "vi": "Tôi đang cân nhắc đầu tư",
+    "ja": "投資を迷っています",
+    "zh-CN": "正在考虑投资",
+    "zh-TW": "正在考慮投資"
   },
   "consult_p12_c2": {
     "ko": "부수입을 만들고 싶습니다",
     "en": "Create a side income",
-    "vi": "Tôi muốn có thêm nguồn thu phụ"
+    "vi": "Tôi muốn có thêm nguồn thu phụ",
+    "ja": "副収入をつくりたい",
+    "zh-CN": "想创造副收入",
+    "zh-TW": "想創造副收入"
   },
   "consult_p12_c3": {
     "ko": "특별한 계획은 없습니다",
     "en": "No specific plans",
-    "vi": "Chưa có dự định gì cụ thể"
+    "vi": "Chưa có dự định gì cụ thể",
+    "ja": "特に予定はありません",
+    "zh-CN": "没有特别的打算",
+    "zh-TW": "沒有特別的打算"
   },
   "consult_p13_l0": {
     "ko": "그렇다면 상황이 조금 다릅니다.",
     "en": "Then the situation is a little different.",
-    "vi": "Vậy thì tình hình hơi khác một chút."
+    "vi": "Vậy thì tình hình hơi khác một chút.",
+    "ja": "それでしたら、状況が少し変わります。",
+    "zh-CN": "那样的话，情况就有些不同了。",
+    "zh-TW": "那樣的話，情況就有些不同了。"
   },
   "consult_p13_business_l0": {
     "ko": "창업이라면 이야기가 조금 달라집니다.",
     "en": "If it's a business, then the situation is a little different.",
-    "vi": "Nếu là khởi nghiệp thì tình hình hơi khác đấy."
+    "vi": "Nếu là khởi nghiệp thì tình hình hơi khác đấy.",
+    "ja": "起業となると、話が少し変わります。",
+    "zh-CN": "若是创业，情况就有些不同了。",
+    "zh-TW": "若是創業，情況就有些不同了。"
   },
   "consult_p13_business_l1": {
     "ko": "재성이 움직이지만, 그 무게를 본인이 지는 형태입니다.",
     "en": "Your wealth pillar is active — but active in a way that puts the weight on you.",
-    "vi": "Trụ tài của bạn có động, nhưng động theo hướng bạn phải tự đứng ra gánh."
+    "vi": "Trụ tài của bạn có động, nhưng động theo hướng bạn phải tự đứng ra gánh.",
+    "ja": "財星は動きますが、その重さをご自身が背負う形です。",
+    "zh-CN": "财星在动，但那份重量是由您自己扛着的。",
+    "zh-TW": "財星在動，但那份重量是由您自己扛著的。"
   },
   "consult_p13_invest_l0": {
     "ko": "투자라면 조금 더 자세히 봐야 합니다.",
     "en": "If it's investing, I need to look more carefully.",
-    "vi": "Nếu là đầu tư thì tôi phải xem kỹ hơn một chút."
+    "vi": "Nếu là đầu tư thì tôi phải xem kỹ hơn một chút.",
+    "ja": "投資でしたら、もう少し細かく見る必要があります。",
+    "zh-CN": "若是投资，就需要看得更细一些。",
+    "zh-TW": "若是投資，就需要看得更細一些。"
   },
   "consult_p13_invest_l1": {
-    "ko": "이 시기에는 돈이 빠르게 움직입니다. 양쪽 방향 모두로요.",
-    "en": "In this period money moves fast, in both directions.",
-    "vi": "Thời kỳ này tiền chuyển động nhanh, theo cả hai hướng."
+    "ko": "올해는 돈이 빠르게 움직입니다. 양쪽 방향 모두로요.",
+    "en": "Money moves quickly for you this year — quickly in both directions.",
+    "vi": "Tiền của bạn năm nay đi nhanh — nhanh cả hai chiều.",
+    "ja": "この時期はお金が速く動きます。それも両方向にです。",
+    "zh-CN": "这个时期钱走得快，而且是两个方向都快。",
+    "zh-TW": "這個時期錢走得快，而且是兩個方向都快。"
   },
   "consult_p13_side_l0": {
     "ko": "부수입이라... 사주와 잘 맞습니다.",
     "en": "A side income... that suits your chart.",
-    "vi": "Một nguồn thu phụ à... cái đó hợp với lá số của bạn."
+    "vi": "Một nguồn thu phụ à... cái đó hợp với lá số của bạn.",
+    "ja": "副収入ですか… 命式によく合っています。",
+    "zh-CN": "副收入啊…… 与您的命盘很相合。",
+    "zh-TW": "副收入啊…… 與您的命盤很相合。"
   },
   "consult_p13_side_l1": {
     "ko": "재물이 큰 한 줄기보다 여러 작은 줄기로 들어옵니다.",
     "en": "Your wealth arrives as several small streams rather than one large one.",
-    "vi": "Tài của bạn ăn về nhiều dòng nhỏ hơn là một dòng lớn."
+    "vi": "Tài của bạn ăn về nhiều dòng nhỏ hơn là một dòng lớn.",
+    "ja": "財は大きな一筋よりも、いくつもの細い筋で入ってきます。",
+    "zh-CN": "财不是一条大流，而是分成几条小流进来。",
+    "zh-TW": "財不是一條大流，而是分成幾條小流進來。"
   },
   "consult_p13_none_l0": {
     "ko": "특별한 계획이 없어도 괜찮습니다.",
     "en": "Having no specific plan is fine.",
-    "vi": "Chưa có dự định gì cũng không sao."
+    "vi": "Chưa có dự định gì cũng không sao.",
+    "ja": "特に予定がなくても大丈夫です。",
+    "zh-CN": "没有特别的打算也没关系。",
+    "zh-TW": "沒有特別的打算也沒關係。"
   },
   "consult_p13_none_l1": {
     "ko": "다만 기회가 찾아올 것이니, 지나가게 두지는 마십시오.",
     "en": "But your chart says the opportunity will come to you — do not let it pass by.",
-    "vi": "Nhưng lá số cho thấy cơ hội sẽ tự tìm tới — đừng để nó đi ngang qua."
+    "vi": "Nhưng lá số cho thấy cơ hội sẽ tự tìm tới — đừng để nó đi ngang qua.",
+    "ja": "ただ機会は訪れますから、通り過ぎさせないでください。",
+    "zh-CN": "只是机会会来，别让它白白错过。",
+    "zh-TW": "只是機會會來，別讓它白白錯過。"
   },
   "consult_p14_l0": {
-    "ko": "사주를 보면 이 시기는...",
-    "en": "Looking at your Saju, this period is...",
-    "vi": "Nhìn vào tứ trụ, thời kỳ này..."
+    "ko": "사주를 보면 올해는...",
+    "en": "Looking at your Saju, this year is better suited to...",
+    "vi": "Nhìn vào lá số, năm nay hợp với...",
+    "ja": "四柱を見ますと、この時期は…",
+    "zh-CN": "从四柱来看，这个时期是……",
+    "zh-TW": "從四柱來看，這個時期是……"
   },
   "consult_p14_business_l0": {
-    "ko": "사주로 보면 시작할 수 있습니다. 다만 작게 시작하십시오.",
-    "en": "Your Saju says you can begin, but begin small.",
-    "vi": "Theo tứ trụ, con có thể bắt đầu, nhưng hãy bắt đầu nhỏ."
+    "ko": "사주로 보면 올해 시작할 수 있습니다. 다만 작게 시작하십시오.",
+    "en": "Looking at your Saju, you can start this year — but start small.",
+    "vi": "Nhìn vào lá số, năm nay bạn khởi sự được — nhưng hãy bắt đầu nhỏ.",
+    "ja": "四柱で見れば始められます。ただし小さく始めてください。",
+    "zh-CN": "从四柱看是可以开始的，但请从小处着手。",
+    "zh-TW": "從四柱看是可以開始的，但請從小處著手。"
   },
   "consult_p14_business_l1": {
     "ko": "일간에 뿌리가 있어 압박은 견딥니다. 부족한 것은 여유 자금입니다.",
     "en": "Your day stem has a root, so you can take the pressure; what is missing is a reserve.",
-    "vi": "Nhật can của bạn có gốc nên chịu được sức ép; cái thiếu là khoản dự phòng."
+    "vi": "Nhật can của bạn có gốc nên chịu được sức ép; cái thiếu là khoản dự phòng.",
+    "ja": "日干に根がありますので圧力には耐えます。足りないのは余裕資金です。",
+    "zh-CN": "日干有根，压力承受得住；缺的是余裕的资金。",
+    "zh-TW": "日干有根，壓力承受得住；缺的是餘裕的資金。"
   },
   "consult_p14_invest_l0": {
-    "ko": "사주로 보면 이 시기는 투자를 나누어야 합니다.",
-    "en": "Your Saju says this period calls for splitting your investments.",
-    "vi": "Theo tứ trụ, thời kỳ này nên chia nhỏ đầu tư."
+    "ko": "사주로 보면 올해는 투자를 나누어야 합니다.",
+    "en": "Looking at your Saju, you should split your investment this year.",
+    "vi": "Nhìn vào lá số, năm nay bạn nên chia nhỏ khoản đầu tư.",
+    "ja": "四柱で見ると、この時期は投資を分けるべきです。",
+    "zh-CN": "从四柱看，这个时期该把投资分散开。",
+    "zh-TW": "從四柱看，這個時期該把投資分散開。"
   },
   "consult_p14_invest_l1": {
     "ko": "한 곳에 몰지 마십시오. 재물의 흐름이 계절 따라 오르내립니다.",
     "en": "Do not put it all in one place: your wealth flow rises and falls with the season.",
-    "vi": "Đừng dồn vào một chỗ: dòng tài của bạn năm nay lên xuống theo mùa."
+    "vi": "Đừng dồn vào một chỗ: dòng tài của bạn năm nay lên xuống theo mùa.",
+    "ja": "一箇所に寄せないでください。財の流れは季節につれて上下します。",
+    "zh-CN": "别集中在一处，财的流向会随季节起伏。",
+    "zh-TW": "別集中在一處，財的流向會隨季節起伏。"
   },
   "consult_p14_side_l0": {
     "ko": "사주로 보면 꾸준한 흐름이 한 번의 큰 것보다 강합니다.",
     "en": "Looking at your Saju, a steady stream will be stronger than one big win.",
-    "vi": "Nhìn vào lá số, một nguồn thu đều đặn sẽ mạnh hơn một cú lớn."
+    "vi": "Nhìn vào lá số, một nguồn thu đều đặn sẽ mạnh hơn một cú lớn.",
+    "ja": "四柱を見ますと、絶え間ない流れの方が一度の大きな当たりより強いです。",
+    "zh-CN": "从四柱看，细水长流比一次大赚更有力。",
+    "zh-TW": "從四柱看，細水長流比一次大賺更有力。"
   },
   "consult_p14_side_l1": {
     "ko": "바쁠 때도 계속 굴러가는 것이 필요합니다.",
     "en": "What you need is something that keeps working while you are busy.",
-    "vi": "Cái bạn cần là thứ vẫn chạy được cả khi bạn đang bận."
+    "vi": "Cái bạn cần là thứ vẫn chạy được cả khi bạn đang bận.",
+    "ja": "忙しい時にも回り続けるものが必要です。",
+    "zh-CN": "您需要的是忙碌时仍能自行运转的东西。",
+    "zh-TW": "您需要的是忙碌時仍能自行運轉的東西。"
   },
   "consult_p14_none_l0": {
-    "ko": "사주로 보면 이 시기는 지키고 준비하는 때입니다.",
-    "en": "Your Saju says this is a period for holding and preparing.",
-    "vi": "Theo tứ trụ, đây là thời kỳ giữ gìn và chuẩn bị."
+    "ko": "사주로 보면 올해는 지키고 준비하는 해입니다.",
+    "en": "Looking at your Saju, this year is for holding and preparing.",
+    "vi": "Nhìn vào lá số, năm nay bạn nên giữ và chuẩn bị.",
+    "ja": "四柱で見ると、この時期は守り、備える時です。",
+    "zh-CN": "从四柱看，这个时期是守成与准备的时候。",
+    "zh-TW": "從四柱看，這個時期是守成與準備的時候。"
   },
   "consult_p14_none_l1": {
     "ko": "기회는 연중반에 옵니다. 그때 현금이 있으면 유리합니다.",
     "en": "The opening comes mid-year; having cash ready then is the advantage.",
-    "vi": "Cơ hội tới vào giữa năm; lúc đó có sẵn tiền mặt là lợi thế."
+    "vi": "Cơ hội tới vào giữa năm; lúc đó có sẵn tiền mặt là lợi thế.",
+    "ja": "機会は年の半ばに来ます。その時に現金があると有利です。",
+    "zh-CN": "机会在年中来临，那时手上有现金就占优势。",
+    "zh-TW": "機會在年中來臨，那時手上有現金就佔優勢。"
   },
   "consult_p15_l0": {
     "ko": "특히 6월부터 9월까지의 시기를 주의 깊게 보십시오.",
     "en": "Pay particular attention to the period from June to September.",
-    "vi": "Đặc biệt để ý giai đoạn từ tháng 6 đến tháng 9."
+    "vi": "Đặc biệt để ý giai đoạn từ tháng 6 đến tháng 9.",
+    "ja": "特に六月から九月までの時期を注意深くご覧ください。",
+    "zh-CN": "请特别留意六月到九月这段时期。",
+    "zh-TW": "請特別留意六月到九月這段時期。"
   },
   "consult_p16_l0": {
     "ko": "조금 더 깊이 봐 드릴까요?",
     "en": "Would you like me to look a little deeper into this?",
-    "vi": "Bạn có muốn tôi xem sâu thêm một chút không?"
+    "vi": "Bạn có muốn tôi xem sâu thêm một chút không?",
+    "ja": "もう少し深く見てみましょうか？",
+    "zh-CN": "要我再看得深一些吗？",
+    "zh-TW": "要我再看得深一些嗎？"
   },
   "consult_p16_c0": {
     "ko": "돈을 어떻게 더 모을 수 있을까요?",
     "en": "How can I save more money?",
-    "vi": "Làm sao để giữ được tiền?"
+    "vi": "Làm sao để giữ được tiền?",
+    "ja": "どうすればもっとお金を貯められますか？",
+    "zh-CN": "我该怎么才能存下更多钱？",
+    "zh-TW": "我該怎麼才能存下更多錢？"
   },
   "consult_p16_c1": {
     "ko": "투자를 해야 할까요?",
     "en": "Should I invest?",
-    "vi": "Tôi có nên đầu tư không?"
+    "vi": "Tôi có nên đầu tư không?",
+    "ja": "投資はすべきでしょうか？",
+    "zh-CN": "我该投资吗？",
+    "zh-TW": "我該投資嗎？"
   },
   "consult_p16_c2": {
     "ko": "창업을 해야 할까요?",
     "en": "Should I start a business?",
-    "vi": "Tôi có nên khởi nghiệp không?"
+    "vi": "Tôi có nên khởi nghiệp không?",
+    "ja": "起業はすべきでしょうか？",
+    "zh-CN": "我该创业吗？",
+    "zh-TW": "我該創業嗎？"
   },
   "consult_p16_c3": {
     "ko": "언제 움직여야 할까요?",
     "en": "When should I act?",
-    "vi": "Khi nào tôi nên ra tay?"
+    "vi": "Khi nào tôi nên ra tay?",
+    "ja": "いつ動くべきでしょうか？",
+    "zh-CN": "我该在什么时候行动？",
+    "zh-TW": "我該在什麼時候行動？"
   },
   "consult_p17_l0": {
-    "ko": "{0}을 정리하자면...",
-    "en": "To sum up your {0}...",
-    "vi": "Tóm lại về {0} của con..."
+    "ko": "올해 {0}을 정리하자면...",
+    "en": "To summarize your {0} this year...",
+    "vi": "Tóm lại, {0} năm nay của bạn...",
+    "ja": "{0}をまとめますと…",
+    "zh-CN": "把{0}归纳起来……",
+    "zh-TW": "把{0}歸納起來……"
   },
   "consult_p17_l1": {
     "ko": "한 번에 큰돈을 노리기보다, 새로운 수입원을 만드는 쪽이 더 강한 기회입니다.",
     "en": "Rather than trying to make a large amount of money all at once, the stronger opportunity is to build a new source of income.",
-    "vi": "Thay vì cố kiếm một khoản thật lớn ngay, cơ hội mạnh hơn nằm ở chỗ gây dựng một nguồn thu mới."
+    "vi": "Thay vì cố kiếm một khoản thật lớn ngay, cơ hội mạnh hơn nằm ở chỗ gây dựng một nguồn thu mới.",
+    "ja": "一度に大金を狙うよりも、新しい収入源をつくる方が強い機会です。",
+    "zh-CN": "比起一次赚一大笔，开创新的收入来源才是更强的机会。",
+    "zh-TW": "比起一次賺一大筆，開創新的收入來源才是更強的機會。"
   },
   "consult_p17_business_l0": {
-    "ko": "{0}을 정리하자면...",
-    "en": "To sum up your {0}...",
-    "vi": "Tóm lại về {0} của con..."
+    "ko": "올해 {0}을 정리하자면...",
+    "en": "To summarize your {0} this year...",
+    "vi": "Tóm lại, {0} năm nay của bạn...",
+    "ja": "{0}をまとめますと…",
+    "zh-CN": "把{0}归纳起来……",
+    "zh-TW": "把{0}歸納起來……"
   },
   "consult_p17_business_l1": {
     "ko": "시작할 수 있습니다. 다만 작게 열고, 물러설 길은 남겨 두십시오.",
     "en": "You can open the door — but open it a little, and always keep a way back.",
-    "vi": "Bạn mở được — nhưng hãy mở nhỏ, và luôn giữ một đường lui."
+    "vi": "Bạn mở được — nhưng hãy mở nhỏ, và luôn giữ một đường lui.",
+    "ja": "始められます。ただし小さく開いて、退く道は残しておいてください。",
+    "zh-CN": "可以起步，但要开小口，并且留好退路。",
+    "zh-TW": "可以起步，但要開小口，並且留好退路。"
   },
   "consult_p17_invest_l0": {
-    "ko": "{0}을 정리하자면...",
-    "en": "To sum up your {0}...",
-    "vi": "Tóm lại về {0} của con..."
+    "ko": "올해 {0}을 정리하자면...",
+    "en": "To summarize your {0} this year...",
+    "vi": "Tóm lại, {0} năm nay của bạn...",
+    "ja": "{0}をまとめますと…",
+    "zh-CN": "把{0}归纳起来……",
+    "zh-TW": "把{0}歸納起來……"
   },
   "consult_p17_invest_l1": {
-    "ko": "나누어 천천히 가는 편이 낫습니다. 지금은 크게 거는 때가 아닙니다.",
-    "en": "Better to split it and go slowly. This is not the time for a big bet.",
-    "vi": "Nên chia nhỏ và đi chậm. Lúc này không phải lúc đặt cược lớn."
+    "ko": "나누어 천천히 가는 편이 낫습니다. 올해는 크게 거는 해가 아닙니다.",
+    "en": "Splitting it and moving slowly beats one decisive bet — this is not your year to gamble.",
+    "vi": "Chia nhỏ và đi chậm sẽ hơn một cú dứt điểm — năm nay của bạn không hợp đánh cược.",
+    "ja": "分けて、ゆっくり進む方が良いです。今は大きく賭ける時ではありません。",
+    "zh-CN": "分开来慢慢走比较好，现在不是重注的时候。",
+    "zh-TW": "分開來慢慢走比較好，現在不是重注的時候。"
   },
   "consult_p17_side_l0": {
-    "ko": "{0}을 정리하자면...",
-    "en": "To sum up your {0}...",
-    "vi": "Tóm lại về {0} của con..."
+    "ko": "올해 {0}을 정리하자면...",
+    "en": "To summarize your {0} this year...",
+    "vi": "Tóm lại, {0} năm nay của bạn...",
+    "ja": "{0}をまとめますと…",
+    "zh-CN": "把{0}归纳起来……",
+    "zh-TW": "把{0}歸納起來……"
   },
   "consult_p17_side_l1": {
     "ko": "작지만 꾸준한 수입이 한 번의 큰돈보다 멀리 데려다줍니다.",
     "en": "A small steady stream will carry you further than one large one-off sum.",
-    "vi": "Một nguồn thu nhỏ mà đều sẽ đưa bạn đi xa hơn một khoản lớn mà một lần."
+    "vi": "Một nguồn thu nhỏ mà đều sẽ đưa bạn đi xa hơn một khoản lớn mà một lần.",
+    "ja": "小さくとも絶えない収入の方が、一度の大金より遠くまで運んでくれます。",
+    "zh-CN": "小而不断的收入，比一次的大钱带您走得更远。",
+    "zh-TW": "小而不斷的收入，比一次的大錢帶您走得更遠。"
   },
   "consult_p17_none_l0": {
-    "ko": "{0}을 정리하자면...",
-    "en": "To sum up your {0}...",
-    "vi": "Tóm lại về {0} của con..."
+    "ko": "올해 {0}을 정리하자면...",
+    "en": "To summarize your {0} this year...",
+    "vi": "Tóm lại, {0} năm nay của bạn...",
+    "ja": "{0}をまとめますと…",
+    "zh-CN": "把{0}归纳起来……",
+    "zh-TW": "把{0}歸納起來……"
   },
   "consult_p17_none_l1": {
-    "ko": "아직 결정하지 않아도 됩니다. 기회가 왔을 때 준비되어 있는 것이 중요합니다.",
-    "en": "You do not have to decide yet. What matters is being ready when the chance comes.",
-    "vi": "Con chưa cần quyết định. Điều quan trọng là sẵn sàng khi cơ hội đến."
+    "ko": "아직 결정하지 않아도 됩니다. 올해의 일은 기회가 왔을 때 준비되어 있는 것입니다.",
+    "en": "There is no need to decide yet. This year's work is being ready when the opening comes.",
+    "vi": "Chưa cần vội quyết. Việc của năm nay là chuẩn bị cho lúc cơ hội tới.",
+    "ja": "まだ決めなくても構いません。機会が来た時に備えができていることが大事です。",
+    "zh-CN": "现在还不必决定。要紧的是机会来时您已准备好。",
+    "zh-TW": "現在還不必決定。要緊的是機會來時您已準備好。"
   },
   "consult_p18_l0": {
     "ko": "2026 {0}",
     "en": "2026 {0}",
-    "vi": "{0} 2026"
+    "vi": "{0} 2026",
+    "ja": "2026年の{0}",
+    "zh-CN": "2026年{0}",
+    "zh-TW": "2026年{0}"
   },
   "consult_p19_l0": {
     "ko": "한 가지만 기억해 주십시오.",
     "en": "There is one thing I want you to remember.",
-    "vi": "Có một điều tôi muốn bạn nhớ."
+    "vi": "Có một điều tôi muốn bạn nhớ.",
+    "ja": "一つだけ覚えていてください。",
+    "zh-CN": "请您记住一件事。",
+    "zh-TW": "請您記住一件事。"
   },
   "consult_p19_l1": {
     "ko": "기회가 와도 서두를 필요는 없습니다. 준비한 뒤에 움직이는 것이 중요합니다.",
     "en": "You do not need to rush when an opportunity appears. Being prepared before you act is important.",
-    "vi": "Cơ hội tới thì cũng không cần vội. Chuẩn bị xong rồi hãy ra tay — điều đó mới quan trọng."
+    "vi": "Cơ hội tới thì cũng không cần vội. Chuẩn bị xong rồi hãy ra tay — điều đó mới quan trọng.",
+    "ja": "機会が来ても急ぐ必要はありません。備えてから動くことが大切です。",
+    "zh-CN": "机会来了也不必急。备好了再动，这一点很要紧。",
+    "zh-TW": "機會來了也不必急。備好了再動，這一點很要緊。"
   },
   "consult_p20_l0": {
     "ko": "오늘 상담은 여기까지입니다.",
     "en": "That's all for today's consultation.",
-    "vi": "Buổi xem hôm nay đến đây thôi."
+    "vi": "Buổi xem hôm nay đến đây thôi.",
+    "ja": "本日の鑑定はここまでです。",
+    "zh-CN": "今天的咨询就到这里。",
+    "zh-TW": "今天的諮詢就到這裡。"
   },
   "consult_p20_l1": {
     "ko": "다음으로 애정운을 보시겠습니까?",
     "en": "Would you like to explore your love fortune next?",
-    "vi": "Bạn có muốn xem tiếp phần tình duyên không?"
+    "vi": "Bạn có muốn xem tiếp phần tình duyên không?",
+    "ja": "次は恋愛運をご覧になりますか？",
+    "zh-CN": "接下来要看爱情运吗？",
+    "zh-TW": "接下來要看愛情運嗎？"
   },
   "consult_p20_c0": {
     "ko": "애정운 보기",
     "en": "Explore Love Fortune",
-    "vi": "Xem tình duyên"
+    "vi": "Xem tình duyên",
+    "ja": "恋愛運を見る",
+    "zh-CN": "查看爱情运",
+    "zh-TW": "查看愛情運"
   },
   "consult_p20_c1": {
     "ko": "사업운 보기",
     "en": "Explore Business Fortune",
-    "vi": "Xem kinh doanh"
+    "vi": "Xem kinh doanh",
+    "ja": "事業運を見る",
+    "zh-CN": "查看事业运",
+    "zh-TW": "查看事業運"
   },
   "consult_p20_c2": {
     "ko": "나가기",
     "en": "Leave Consultation Room",
-    "vi": "Rời phòng"
+    "vi": "Rời phòng",
+    "ja": "退出する",
+    "zh-CN": "离开咨询室",
+    "zh-TW": "離開諮詢室"
   },
   "consult_tap_continue": {
     "ko": "눌러서 계속",
     "en": "click to continue",
-    "vi": "nhấn để tiếp tục"
+    "vi": "nhấn để tiếp tục",
+    "ja": "タップして続ける",
+    "zh-CN": "点一下继续",
+    "zh-TW": "點一下繼續"
   },
   "consult_question_placeholder": {
     "ko": "무엇이든 물어보세요…",
     "en": "Ask anything…",
-    "vi": "Hỏi bất cứ điều gì…"
+    "vi": "Hỏi bất cứ điều gì…",
+    "ja": "何でもお尋ねください…",
+    "zh-CN": "什么都可以问……",
+    "zh-TW": "什麼都可以問……"
   },
   "consult_shape_hint": {
     "ko": "{0}에 대해 봐 주세요. 1) 2) 3) 4) 번호를 붙여 짧게 네 부분으로 답해 주세요: 1) 첫인상, 2) 심화 분석, 3) 조언 요약, 4) 기억할 한마디.",
     "en": "Read for {0}. Answer in 4 short numbered parts, 1) 2) 3) 4): 1) a first impression, 2) a deeper analysis, 3) the advice summarised, 4) one closing thought to remember.",
-    "vi": "Hãy xem về {0}. Trả lời thành 4 phần ngắn, đánh số 1) 2) 3) 4): 1) nhận định đầu tiên, 2) phân tích sâu hơn, 3) tóm lại lời khuyên, 4) một câu dặn để nhớ."
+    "vi": "Hãy xem về {0}. Trả lời thành 4 phần ngắn, đánh số 1) 2) 3) 4): 1) nhận định đầu tiên, 2) phân tích sâu hơn, 3) tóm lại lời khuyên, 4) một câu dặn để nhớ.",
+    "ja": "{0}について見てください。1) 2) 3) 4) と番号を付けて、短く四つの部分で答えてください：1) 第一印象、2) 踏み込んだ分析、3) 助言のまとめ、4) 覚えておきたい一言。",
+    "zh-CN": "请看{0}。请用 1) 2) 3) 4) 编号，分成简短的四个部分作答：1) 第一印象，2) 深入分析，3) 建议摘要，4) 值得记住的一句话。",
+    "zh-TW": "請看{0}。請用 1) 2) 3) 4) 編號，分成簡短的四個部分作答：1) 第一印象，2) 深入分析，3) 建議摘要，4) 值得記住的一句話。"
   },
   "consult_default_question": {
     "ko": "봐 주세요.",
     "en": "Please give me a reading.",
-    "vi": "Xin thầy xem giúp tôi."
+    "vi": "Xin thầy xem giúp tôi.",
+    "ja": "見てください。",
+    "zh-CN": "请为我看一看。",
+    "zh-TW": "請為我看一看。"
   },
   "consult_reading_failed": {
     "ko": "지금은 봐 드릴 수 없습니다. 잠시 후 다시 시도해 주세요.",
     "en": "I cannot read for you right now. Please try again later.",
-    "vi": "Xin lỗi, lúc này tôi chưa xem được. Bạn thử lại sau nhé."
+    "vi": "Xin lỗi, lúc này tôi chưa xem được. Bạn thử lại sau nhé.",
+    "ja": "今は見て差し上げられません。しばらくしてからもう一度お試しください。",
+    "zh-CN": "现在没法为您看。请稍后再试。",
+    "zh-TW": "現在沒法為您看。請稍後再試。"
   },
   "consult_reading_timeout": {
     "ko": "사주가 복잡합니다. 시간이 더 필요하니 다시 시도해 주세요.",
     "en": "This chart is tangled — I need more time. Please try again.",
-    "vi": "Lá số này rối quá, tôi cần thêm thời gian. Bạn thử lại nhé."
+    "vi": "Lá số này rối quá, tôi cần thêm thời gian. Bạn thử lại nhé.",
+    "ja": "命式が入り組んでいます。もう少し時間が要りますので、もう一度お試しください。",
+    "zh-CN": "这命盘错综复杂，需要更多时间，请再试一次。",
+    "zh-TW": "這命盤錯綜複雜，需要更多時間，請再試一次。"
   },
   "consult_scope_lifetime": {
     "ko": "평생",
     "en": "over a lifetime",
-    "vi": "cả đời"
+    "vi": "cả đời",
+    "ja": "生涯",
+    "zh-CN": "一生",
+    "zh-TW": "一生"
   },
   "consult_scope_year": {
     "ko": "올해",
     "en": "this year",
-    "vi": "năm nay"
+    "vi": "năm nay",
+    "ja": "今年",
+    "zh-CN": "今年",
+    "zh-TW": "今年"
   },
   "consult_scope_month": {
     "ko": "이번 달",
     "en": "this month",
-    "vi": "tháng này"
+    "vi": "tháng này",
+    "ja": "今月",
+    "zh-CN": "本月",
+    "zh-TW": "本月"
   },
   "consult_scope_timing": {
     "ko": "기회의 시기",
     "en": "the timing of openings",
-    "vi": "thời điểm cơ hội"
+    "vi": "thời điểm cơ hội",
+    "ja": "好機の時期",
+    "zh-CN": "机会的时机",
+    "zh-TW": "機會的時機"
   },
   "consult_scope_business": {
     "ko": "사업과 투자",
     "en": "business and investment",
-    "vi": "kinh doanh / đầu tư"
+    "vi": "kinh doanh / đầu tư",
+    "ja": "事業と投資",
+    "zh-CN": "事业与投资",
+    "zh-TW": "事業與投資"
   },
   "consult_no_tickets_title": {
     "ko": "상담사",
     "en": "The counselor",
-    "vi": "Thầy"
+    "vi": "Thầy",
+    "ja": "相談員",
+    "zh-CN": "咨询师",
+    "zh-TW": "諮詢師"
   },
   "consult_no_tickets_body": {
     "ko": "질문 티켓이 없습니다. 티켓이 생기면 다시 오세요.",
     "en": "You have no question tickets left. Come back when you have one and I will read for you.",
-    "vi": "Con đã hết vé hỏi rồi. Khi nào có vé, quay lại đây ta xem cho."
+    "vi": "Con đã hết vé hỏi rồi. Khi nào có vé, quay lại đây ta xem cho.",
+    "ja": "質問チケットがありません。チケットができましたら、またお越しください。",
+    "zh-CN": "您的提问券已用完。有券时再来，我为您看。",
+    "zh-TW": "您的提問券已用完。有券時再來，我為您看。"
   },
   "consult_no_tickets_close": {
     "ko": "알겠습니다",
     "en": "Understood",
-    "vi": "Đã hiểu"
+    "vi": "Đã hiểu",
+    "ja": "わかりました",
+    "zh-CN": "知道了",
+    "zh-TW": "知道了"
   },
   "consult_thinking": {
     "ko": "사주를 좀 더 자세히 살펴보겠습니다",
     "en": "Let me look more closely at your chart",
-    "vi": "Để ta xem kỹ lá số của con"
+    "vi": "Để ta xem kỹ lá số của con",
+    "ja": "命式をもう少し詳しく見てみます",
+    "zh-CN": "让我再仔细看看您的命盘",
+    "zh-TW": "讓我再仔細看看您的命盤"
   },
   "consult_shape_hint_v2": {
     "ko": "{0}에 대해 봐 주세요. 1)부터 7)까지 번호를 붙여 답해 주세요: 1) 첫인상, 2) 심화 분석, 3) 조언 요약, 4) 기억할 한마디, 5) 0-100 점수 항목 정확히 4개를 이름=숫자 형식으로 쉼표로 구분, 6) 짧은 키워드 3개를 쉼표로 구분, 7) 가장 주목할 시기를 짧게.",
     "en": "Read for {0}. Answer in 7 numbered parts, 1) to 7): 1) a first impression, 2) a deeper analysis, 3) the advice summarised, 4) one closing thought to remember, 5) exactly 4 scored aspects from 0-100 as Name=number, comma separated, 6) 3 short keywords, comma separated, 7) the single most notable period, kept short.",
-    "vi": "Hãy xem về {0}. Trả lời thành 7 phần, đánh số 1) đến 7): 1) nhận định đầu tiên, 2) phân tích sâu hơn, 3) tóm lại lời khuyên, 4) một câu dặn để nhớ, 5) đúng 4 mục chấm điểm 0-100 theo dạng Tên=số, cách nhau bằng dấu phẩy, 6) 3 từ khoá ngắn cách nhau bằng dấu phẩy, 7) giai đoạn đáng chú ý nhất, viết ngắn."
+    "vi": "Hãy xem về {0}. Trả lời thành 7 phần, đánh số 1) đến 7): 1) nhận định đầu tiên, 2) phân tích sâu hơn, 3) tóm lại lời khuyên, 4) một câu dặn để nhớ, 5) đúng 4 mục chấm điểm 0-100 theo dạng Tên=số, cách nhau bằng dấu phẩy, 6) 3 từ khoá ngắn cách nhau bằng dấu phẩy, 7) giai đoạn đáng chú ý nhất, viết ngắn.",
+    "ja": "{0}について見てください。1) から 7) まで番号を付けて答えてください：1) 第一印象、2) 踏み込んだ分析、3) 助言のまとめ、4) 覚えておきたい一言、5) 0-100 の点数項目をちょうど4つ、名前=数字 の形でカンマ区切り、6) 短いキーワードを3つカンマ区切り、7) 最も注目すべき時期を短く。",
+    "zh-CN": "请看{0}。请用 1) 到 7) 编号作答：1) 第一印象，2) 深入分析，3) 建议摘要，4) 值得记住的一句话，5) 恰好4个 0-100 的评分项，用 名称=数字 的形式并以逗号分隔，6) 3个简短关键词，以逗号分隔，7) 最值得注意的时期，简短说明。",
+    "zh-TW": "請看{0}。請用 1) 到 7) 編號作答：1) 第一印象，2) 深入分析，3) 建議摘要，4) 值得記住的一句話，5) 恰好4個 0-100 的評分項，用 名稱=數字 的形式並以逗號分隔，6) 3個簡短關鍵詞，以逗號分隔，7) 最值得注意的時期，簡短說明。"
   },
   "consult_shape_hint_v3": {
     "ko": "{0}에 대해 봐 주세요. 1)부터 7)까지 번호를 붙여 답해 주세요: 1) 첫인상, 2) 심화 분석, 3) 조언 요약, 4) 기억할 한마디, 5) 0-100 점수 항목 정확히 4개를 이름=숫자 형식으로 쉼표로 구분, 6) 짧은 키워드 3개를 쉼표로 구분, 7) 가장 주목할 시기를 반드시 이 형식으로: Months=<시작월>-<끝월>; <짧은 설명> (월은 1-12 숫자, 예: Months=6-9; 6월부터 9월까지).",
     "en": "Read for {0}. Answer in 7 numbered parts, 1) to 7): 1) a first impression, 2) a deeper analysis, 3) the advice summarised, 4) one closing thought to remember, 5) exactly 4 scored aspects from 0-100 as Name=number, comma separated, 6) 3 short keywords, comma separated, 7) the single most notable period, in exactly this form: Months=<first>-<last>; <short phrase> (months are numbers 1-12, e.g. Months=6-9; June through September).",
-    "vi": "Hãy xem về {0}. Trả lời thành 7 phần, đánh số 1) đến 7): 1) nhận định đầu tiên, 2) phân tích sâu hơn, 3) tóm lại lời khuyên, 4) một câu dặn để nhớ, 5) đúng 4 mục chấm điểm 0-100 theo dạng Tên=số, cách nhau bằng dấu phẩy, 6) 3 từ khoá ngắn cách nhau bằng dấu phẩy, 7) giai đoạn đáng chú ý nhất, bắt buộc theo dạng: Months=<tháng đầu>-<tháng cuối>; <mô tả ngắn> (tháng là số 1-12, ví dụ Months=6-9; từ tháng 6 đến tháng 9)."
+    "vi": "Hãy xem về {0}. Trả lời thành 7 phần, đánh số 1) đến 7): 1) nhận định đầu tiên, 2) phân tích sâu hơn, 3) tóm lại lời khuyên, 4) một câu dặn để nhớ, 5) đúng 4 mục chấm điểm 0-100 theo dạng Tên=số, cách nhau bằng dấu phẩy, 6) 3 từ khoá ngắn cách nhau bằng dấu phẩy, 7) giai đoạn đáng chú ý nhất, bắt buộc theo dạng: Months=<tháng đầu>-<tháng cuối>; <mô tả ngắn> (tháng là số 1-12, ví dụ Months=6-9; từ tháng 6 đến tháng 9).",
+    "ja": "{0}について見てください。1) から 7) まで番号を付けて答えてください：1) 第一印象、2) 踏み込んだ分析、3) 助言のまとめ、4) 覚えておきたい一言、5) 0-100 の点数項目をちょうど4つ、名前=数字 の形でカンマ区切り、6) 短いキーワードを3つカンマ区切り、7) 最も注目すべき時期を必ずこの形式で：Months=<開始月>-<終了月>; <短い説明>（月は1-12の数字、例：Months=6-9; 六月から九月まで）。",
+    "zh-CN": "请看{0}。请用 1) 到 7) 编号作答：1) 第一印象，2) 深入分析，3) 建议摘要，4) 值得记住的一句话，5) 恰好4个 0-100 的评分项，用 名称=数字 的形式并以逗号分隔，6) 3个简短关键词，以逗号分隔，7) 最值得注意的时期，务必用这个格式：Months=<起始月>-<结束月>; <简短说明>（月份是 1-12 的数字，例：Months=6-9; 六月到九月）。",
+    "zh-TW": "請看{0}。請用 1) 到 7) 編號作答：1) 第一印象，2) 深入分析，3) 建議摘要，4) 值得記住的一句話，5) 恰好4個 0-100 的評分項，用 名稱=數字 的形式並以逗號分隔，6) 3個簡短關鍵詞，以逗號分隔，7) 最值得注意的時期，務必用這個格式：Months=<起始月>-<結束月>; <簡短說明>（月份是 1-12 的數字，例：Months=6-9; 六月到九月）。"
   },
   "consult_period_range": {
     "ko": "{0}월 – {1}월",
     "en": "Months {0} – {1}",
-    "vi": "Tháng {0} – Tháng {1}"
+    "vi": "Tháng {0} – Tháng {1}",
+    "ja": "{0}月 – {1}月",
+    "zh-CN": "{0}月 – {1}月",
+    "zh-TW": "{0}月 – {1}月"
   },
   "consult_no_tickets_mid": {
     "ko": "질문 티켓을 모두 사용하셨습니다. 티켓이 생기면 다시 오세요.",
     "en": "You have used up your question tickets. Come back with one and I will continue the reading.",
-    "vi": "Con đã dùng hết vé hỏi rồi. Khi nào có vé, quay lại đây ta xem tiếp cho."
+    "vi": "Con đã dùng hết vé hỏi rồi. Khi nào có vé, quay lại đây ta xem tiếp cho.",
+    "ja": "質問チケットを使い切りました。チケットができましたら、続きを見て差し上げます。",
+    "zh-CN": "您的提问券已用完。有券时再来，我接着为您看。",
+    "zh-TW": "您的提問券已用完。有券時再來，我接著為您看。"
   },
   "consult_rate_limited": {
     "ko": "너무 빠릅니다. 잠시 후 다시 물어봐 주세요.",
     "en": "You are asking faster than I can read. Give it a moment and ask again.",
-    "vi": "Con hỏi nhanh quá, để ta thở một chút đã. Lát nữa hỏi lại nhé."
+    "vi": "Con hỏi nhanh quá, để ta thở một chút đã. Lát nữa hỏi lại nhé.",
+    "ja": "少し速すぎます。間を置いてもう一度お尋ねください。",
+    "zh-CN": "问得比我看得还快。稍等片刻再问吧。",
+    "zh-TW": "問得比我看得還快。稍等片刻再問吧。"
   },
   "consult_p12_love_l0": {
     "ko": "한 가지 여쭙고 싶습니다. 지금 마음은 어느 단계에 있으신가요?",
     "en": "There is one thing I want to ask. Where does your heart stand right now?",
-    "vi": "Có một điều tôi muốn hỏi. Chuyện tình cảm của bạn hiện giờ đang ở bước nào?"
+    "vi": "Có một điều tôi muốn hỏi. Chuyện tình cảm của bạn hiện giờ đang ở bước nào?",
+    "ja": "一つお伺いします。今、お心はどの段階にありますか？",
+    "zh-CN": "想请教一件事。此刻您的心停在哪个阶段？",
+    "zh-TW": "想請教一件事。此刻您的心停在哪個階段？"
   },
   "consult_p12_love_c0": {
     "ko": "지금 알아가는 사람이 있습니다",
     "en": "I'm getting to know someone",
-    "vi": "Tôi đang tìm hiểu một người"
+    "vi": "Tôi đang tìm hiểu một người",
+    "ja": "今、知り合っている人がいます",
+    "zh-CN": "正在认识一个人",
+    "zh-TW": "正在認識一個人"
   },
   "consult_p12_love_c1": {
     "ko": "그 사람과 더 나아가고 싶습니다",
     "en": "I want to take it further",
-    "vi": "Tôi muốn tiến xa hơn với người ấy"
+    "vi": "Tôi muốn tiến xa hơn với người ấy",
+    "ja": "その人ともっと進みたいです",
+    "zh-CN": "想和那个人再进一步",
+    "zh-TW": "想和那個人再進一步"
   },
   "consult_p12_love_c2": {
     "ko": "얼마 전 관계가 끝났습니다",
     "en": "I just ended a relationship",
-    "vi": "Tôi vừa kết thúc một mối quan hệ"
+    "vi": "Tôi vừa kết thúc một mối quan hệ",
+    "ja": "少し前に関係が終わりました",
+    "zh-CN": "不久前结束了一段关系",
+    "zh-TW": "不久前結束了一段關係"
   },
   "consult_p12_love_c3": {
     "ko": "아직 혼자입니다",
     "en": "I'm still on my own",
-    "vi": "Tôi vẫn đang một mình"
+    "vi": "Tôi vẫn đang một mình",
+    "ja": "まだ一人です",
+    "zh-CN": "我还是一个人",
+    "zh-TW": "我還是一個人"
   },
   "consult_p12_biz_l0": {
     "ko": "한 가지 여쭙고 싶습니다. 사업이 지금 어느 단계에 있으신가요?",
     "en": "There is one thing I want to ask. What stage is your business at?",
-    "vi": "Có một điều tôi muốn hỏi. Việc làm ăn của bạn đang ở giai đoạn nào?"
+    "vi": "Có một điều tôi muốn hỏi. Việc làm ăn của bạn đang ở giai đoạn nào?",
+    "ja": "一つお伺いします。事業は今どの段階にありますか？",
+    "zh-CN": "想请教一件事。您的事业现在处于哪个阶段？",
+    "zh-TW": "想請教一件事。您的事業現在處於哪個階段？"
   },
   "consult_p12_biz_c0": {
     "ko": "새로운 것을 시작하려 합니다",
     "en": "I'm about to open something new",
-    "vi": "Tôi sắp mở một hướng mới"
+    "vi": "Tôi sắp mở một hướng mới",
+    "ja": "新しいことを始めようとしています",
+    "zh-CN": "正要开始新的事",
+    "zh-TW": "正要開始新的事"
   },
   "consult_p12_biz_c1": {
     "ko": "지금 하는 것을 키우고 싶습니다",
     "en": "I want to expand what I have",
-    "vi": "Tôi muốn mở rộng cái đang có"
+    "vi": "Tôi muốn mở rộng cái đang có",
+    "ja": "今やっていることを育てたいです",
+    "zh-CN": "想把现在做的做大",
+    "zh-TW": "想把現在做的做大"
   },
   "consult_p12_biz_c2": {
     "ko": "요즘 잘 풀리지 않습니다",
     "en": "Things have stalled",
-    "vi": "Việc làm ăn đang chững lại"
+    "vi": "Việc làm ăn đang chững lại",
+    "ja": "このところ思うように進みません",
+    "zh-CN": "最近有些停滞",
+    "zh-TW": "最近有些停滯"
   },
   "consult_p12_biz_c3": {
     "ko": "정리를 고민 중입니다",
     "en": "I'm considering stepping back",
-    "vi": "Tôi đang tính chuyện dừng lại"
+    "vi": "Tôi đang tính chuyện dừng lại",
+    "ja": "畳むことを考えています",
+    "zh-CN": "正在考虑收手",
+    "zh-TW": "正在考慮收手"
   },
   "consult_p12_career_l0": {
     "ko": "한 가지 여쭙고 싶습니다. 요즘 일은 어떠신가요?",
     "en": "There is one thing I want to ask. How is your career path these days?",
-    "vi": "Có một điều tôi muốn hỏi. Con đường công việc của bạn dạo này thế nào?"
+    "vi": "Có một điều tôi muốn hỏi. Con đường công việc của bạn dạo này thế nào?",
+    "ja": "一つお伺いします。このところお仕事はいかがですか？",
+    "zh-CN": "想请教一件事。您最近的工作如何？",
+    "zh-TW": "想請教一件事。您最近的工作如何？"
   },
   "consult_p12_career_c0": {
     "ko": "이직을 생각 중입니다",
     "en": "I'm planning to change jobs",
-    "vi": "Tôi định chuyển việc"
+    "vi": "Tôi định chuyển việc",
+    "ja": "転職を考えています",
+    "zh-CN": "正在考虑换工作",
+    "zh-TW": "正在考慮換工作"
   },
   "consult_p12_career_c1": {
     "ko": "승진을 바라고 있습니다",
     "en": "I want to move up",
-    "vi": "Tôi muốn được thăng tiến"
+    "vi": "Tôi muốn được thăng tiến",
+    "ja": "昇進を望んでいます",
+    "zh-CN": "希望能升上去",
+    "zh-TW": "希望能升上去"
   },
   "consult_p12_career_c2": {
     "ko": "일자리를 찾고 있습니다",
     "en": "I'm looking for work",
-    "vi": "Tôi đang tìm việc"
+    "vi": "Tôi đang tìm việc",
+    "ja": "仕事を探しています",
+    "zh-CN": "正在找工作",
+    "zh-TW": "正在找工作"
   },
   "consult_p12_career_c3": {
     "ko": "지금 자리를 지키고 싶습니다",
     "en": "I want to hold my current place",
-    "vi": "Tôi muốn giữ chỗ đang làm"
+    "vi": "Tôi muốn giữ chỗ đang làm",
+    "ja": "今の場所を守りたいです",
+    "zh-CN": "想守住现在的位置",
+    "zh-TW": "想守住現在的位置"
   },
   "consult_p12_health_l0": {
     "ko": "한 가지 여쭙고 싶습니다. 요즘 건강은 어떠신가요?",
     "en": "There is one thing I want to ask. How has your health been lately?",
-    "vi": "Có một điều tôi muốn hỏi. Sức khỏe của bạn gần đây ra sao?"
+    "vi": "Có một điều tôi muốn hỏi. Sức khỏe của bạn gần đây ra sao?",
+    "ja": "一つお伺いします。このところお体はいかがですか？",
+    "zh-CN": "想请教一件事。您最近的身体如何？",
+    "zh-TW": "想請教一件事。您最近的身體如何？"
   },
   "consult_p12_health_c0": {
     "ko": "걱정되는 곳이 있습니다",
     "en": "There's something that worries me",
-    "vi": "Tôi có chỗ đang lo trong người"
+    "vi": "Tôi có chỗ đang lo trong người",
+    "ja": "気になるところがあります",
+    "zh-CN": "有让我担心的地方",
+    "zh-TW": "有讓我擔心的地方"
   },
   "consult_p12_health_c1": {
     "ko": "자주 피곤합니다",
     "en": "I often feel drained",
-    "vi": "Tôi hay thấy mệt mỏi"
+    "vi": "Tôi hay thấy mệt mỏi",
+    "ja": "よく疲れます",
+    "zh-CN": "常常觉得累",
+    "zh-TW": "常常覺得累"
   },
   "consult_p12_health_c2": {
     "ko": "미리 관리하고 싶습니다",
     "en": "I want to prevent trouble early",
-    "vi": "Tôi muốn phòng bệnh từ sớm"
+    "vi": "Tôi muốn phòng bệnh từ sớm",
+    "ja": "早めに整えておきたいです",
+    "zh-CN": "想提早调理好",
+    "zh-TW": "想提早調理好"
   },
   "consult_p12_health_c3": {
     "ko": "괜찮은 편입니다",
     "en": "I feel fine",
-    "vi": "Tôi thấy vẫn ổn"
+    "vi": "Tôi thấy vẫn ổn",
+    "ja": "まずまず良い方です",
+    "zh-CN": "还算不错",
+    "zh-TW": "還算不錯"
   },
   "consult_p13_love_seeing_l0": {
     "ko": "알아가는 중이라면... 이 인연은 자세히 봐야겠군요.",
     "en": "Getting to know someone... then this bond deserves a careful look.",
-    "vi": "Đang tìm hiểu à... vậy thì duyên này cần xem cho kỹ."
+    "vi": "Đang tìm hiểu à... vậy thì duyên này cần xem cho kỹ.",
+    "ja": "知り合っている最中でしたら… この縁は詳しく見た方がよさそうです。",
+    "zh-CN": "正在认识的话…… 这段缘分该细看才行。",
+    "zh-TW": "正在認識的話…… 這段緣分該細看才行。"
   },
   "consult_p13_love_seeing_l1": {
     "ko": "도화가 빛나고 있지만, 빛난다고 오래가는 것은 아닙니다.",
     "en": "Your romance star is bright — but bright does not yet mean lasting.",
-    "vi": "Sao đào hoa của bạn đang sáng, nhưng sáng chưa có nghĩa là bền."
+    "vi": "Sao đào hoa của bạn đang sáng, nhưng sáng chưa có nghĩa là bền.",
+    "ja": "桃花が輝いていますが、輝くことと長続きすることは別です。",
+    "zh-CN": "桃花正亮，但亮不等于长久。",
+    "zh-TW": "桃花正亮，但亮不等於長久。"
   },
   "consult_p13_love_commit_l0": {
     "ko": "더 나아가고 싶다면... 때를 잘 골라야 합니다.",
     "en": "Taking it further... that step needs the right moment.",
-    "vi": "Muốn tiến xa hơn... đó là bước phải chọn đúng lúc."
+    "vi": "Muốn tiến xa hơn... đó là bước phải chọn đúng lúc.",
+    "ja": "さらに進みたいのでしたら… 時をよく選ばなければなりません。",
+    "zh-CN": "想再进一步的话…… 就得挑好时机。",
+    "zh-TW": "想再進一步的話…… 就得挑好時機。"
   },
   "consult_p13_love_commit_l1": {
     "ko": "서두르지 않을수록 인연이 단단해지는 사주입니다.",
     "en": "Your chart says this bond grows stronger when unhurried.",
-    "vi": "Lá số cho thấy tình cảm của bạn bền hơn khi không vội."
+    "vi": "Lá số cho thấy tình cảm của bạn bền hơn khi không vội.",
+    "ja": "急がないほど縁が固くなる命式です。",
+    "zh-CN": "这是越不着急、缘分越牢的命盘。",
+    "zh-TW": "這是越不著急、緣分越牢的命盤。"
   },
   "consult_p13_love_healing_l0": {
     "ko": "끝난 지 얼마 안 됐다면... 먼저 마음이 가라앉아야 합니다.",
     "en": "Just ended... then first the heart must settle.",
-    "vi": "Vừa kết thúc một mối... vậy trước hết phải để lòng lặng lại đã."
+    "vi": "Vừa kết thúc một mối... vậy trước hết phải để lòng lặng lại đã.",
+    "ja": "終わって間もないのでしたら… まず心が静まらなければなりません。",
+    "zh-CN": "刚结束不久的话…… 得先让心静下来。",
+    "zh-TW": "剛結束不久的話…… 得先讓心靜下來。"
   },
   "consult_p13_love_healing_l1": {
     "ko": "옛 인연을 놓아야 새 인연이 다가옵니다.",
     "en": "While the old bond lingers, the new one keeps its distance.",
-    "vi": "Duyên cũ chưa buông hết thì duyên mới chưa dám tới."
+    "vi": "Duyên cũ chưa buông hết thì duyên mới chưa dám tới.",
+    "ja": "古い縁を手放してこそ、新しい縁が近づいてきます。",
+    "zh-CN": "旧缘还牵着，新缘就不肯靠近。",
+    "zh-TW": "舊緣還牽著，新緣就不肯靠近。"
   },
   "consult_p13_love_single_l0": {
     "ko": "혼자라고 해서 나쁜 것은 아닙니다.",
     "en": "Being on your own is not a loss.",
-    "vi": "Đang một mình cũng không hẳn là thiệt đâu."
+    "vi": "Đang một mình cũng không hẳn là thiệt đâu.",
+    "ja": "一人だからといって悪いことではありません。",
+    "zh-CN": "一个人并不是坏事。",
+    "zh-TW": "一個人並不是壞事。"
   },
   "consult_p13_love_single_l1": {
     "ko": "인연이 철따라 오는 사주이니, 문을 제대로 여는 것이 중요합니다.",
     "en": "Your bonds arrive in seasons — what matters is opening the right door.",
-    "vi": "Duyên của bạn đến theo mùa — quan trọng là mở đúng cửa."
+    "vi": "Duyên của bạn đến theo mùa — quan trọng là mở đúng cửa.",
+    "ja": "縁が季節ごとに巡ってくる命式ですから、門を正しく開けることが大事です。",
+    "zh-CN": "您的缘分按季节来，要紧的是把对的那扇门打开。",
+    "zh-TW": "您的緣分按季節來，要緊的是把對的那扇門打開。"
   },
   "consult_p13_biz_new_l0": {
     "ko": "새 시작이라... 기운이 움직이려 하는군요.",
     "en": "Something new... your energy wants to move.",
-    "vi": "Mở hướng mới à... khí của bạn đang muốn động."
+    "vi": "Mở hướng mới à... khí của bạn đang muốn động.",
+    "ja": "新しい始まりですか… 気が動こうとしていますね。",
+    "zh-CN": "新的开始啊…… 气正要动了。",
+    "zh-TW": "新的開始啊…… 氣正要動了。"
   },
   "consult_p13_biz_new_l1": {
     "ko": "다만 뿌리가 있어야 하니, 작고 단단하게 시작하십시오.",
     "en": "But movement needs a root — begin small and firm.",
-    "vi": "Nhưng động phải có gốc — bước đầu nên nhỏ mà chắc."
+    "vi": "Nhưng động phải có gốc — bước đầu nên nhỏ mà chắc.",
+    "ja": "ただし動くには根が要ります。小さく、しっかりと始めてください。",
+    "zh-CN": "但要动就得有根。请小而扎实地起步。",
+    "zh-TW": "但要動就得有根。請小而紮實地起步。"
   },
   "consult_p13_biz_expand_l0": {
     "ko": "확장이라면 일주의 그릇을 봐야 합니다.",
     "en": "Expanding asks how much your day pillar can carry.",
-    "vi": "Mở rộng thì phải xem sức gánh của trụ ngày."
+    "vi": "Mở rộng thì phải xem sức gánh của trụ ngày.",
+    "ja": "広げるとなると、日柱の器を見なければなりません。",
+    "zh-CN": "要扩张，就得看日柱能盛多少。",
+    "zh-TW": "要擴張，就得看日柱能盛多少。"
   },
   "consult_p13_biz_expand_l1": {
     "ko": "그릇만큼이면 오래가고, 넘치면 흔들립니다.",
     "en": "Within your strength it holds; one step too far and it slips.",
-    "vi": "Gánh vừa sức thì bền, quá tay một nhịp là hụt."
+    "vi": "Gánh vừa sức thì bền, quá tay một nhịp là hụt.",
+    "ja": "器の分だけなら長く続き、溢れれば揺らぎます。",
+    "zh-CN": "在器量之内就撑得久，一旦溢出来就会晃。",
+    "zh-TW": "在器量之內就撐得久，一旦溢出來就會晃。"
   },
   "consult_p13_biz_stuck_l0": {
     "ko": "멈췄다고 막힌 것은 아닙니다.",
     "en": "A stall is not a dead end.",
-    "vi": "Chững lại không có nghĩa là tắc hẳn."
+    "vi": "Chững lại không có nghĩa là tắc hẳn.",
+    "ja": "止まったからといって塞がったわけではありません。",
+    "zh-CN": "停下来不等于走到了死路。",
+    "zh-TW": "停下來不等於走到了死路。"
   },
   "consult_p13_biz_stuck_l1": {
     "ko": "운의 계절이 바뀌는 중이니, 지금은 현금을 지키는 것이 먼저입니다.",
     "en": "Your luck is changing season — holding cash matters more than opening more.",
-    "vi": "Vận của bạn đang đổi mùa — lúc này giữ dòng tiền quan trọng hơn mở thêm."
+    "vi": "Vận của bạn đang đổi mùa — lúc này giữ dòng tiền quan trọng hơn mở thêm.",
+    "ja": "運の季節が変わる途中ですから、今は現金を守ることが先です。",
+    "zh-CN": "运正在换季，眼下守住现金比再开口子要紧。",
+    "zh-TW": "運正在換季，眼下守住現金比再開口子要緊。"
   },
   "consult_p13_biz_exit_l0": {
     "ko": "정리를 생각한다면... 한 발 물러서는 것이 판을 지키기도 합니다.",
     "en": "Thinking of stepping back... sometimes one step back keeps the whole board.",
-    "vi": "Tính chuyện dừng... đôi khi lùi một bước là giữ được cả bàn cờ."
+    "vi": "Tính chuyện dừng... đôi khi lùi một bước là giữ được cả bàn cờ.",
+    "ja": "畳むことをお考えなら… 一歩引くことが盤を守ることもあります。",
+    "zh-CN": "若想收手…… 有时退一步反而保住了整盘。",
+    "zh-TW": "若想收手…… 有時退一步反而保住了整盤。"
   },
   "consult_p13_biz_exit_l1": {
     "ko": "운이 끊긴 것이 아니라, 이 구간을 천천히 가야 할 뿐입니다.",
     "en": "Your chart's luck is not cut — this stretch just asks for a slower pace.",
-    "vi": "Lá số của bạn không đứt vận — chỉ là đoạn này cần đi chậm."
+    "vi": "Lá số của bạn không đứt vận — chỉ là đoạn này cần đi chậm.",
+    "ja": "運が切れたのではなく、この区間をゆっくり行けというだけです。",
+    "zh-CN": "运并没有断，只是这一段要走得慢些。",
+    "zh-TW": "運並沒有斷，只是這一段要走得慢些。"
   },
   "consult_p13_career_move_l0": {
     "ko": "이직이라... 문이 살짝 열렸지만 아직 활짝은 아닙니다.",
     "en": "A move... the door is ajar, not yet open.",
-    "vi": "Chuyển việc à... cửa đang hé, nhưng hé chưa phải là mở."
+    "vi": "Chuyển việc à... cửa đang hé, nhưng hé chưa phải là mở.",
+    "ja": "転職ですか… 門は少し開きましたが、まだ大きくはありません。",
+    "zh-CN": "换工作啊…… 门开了一条缝，还没全开。",
+    "zh-TW": "換工作啊…… 門開了一條縫，還沒全開。"
   },
   "consult_p13_career_move_l1": {
     "ko": "때에 맞으면 오르고, 서두르면 처음부터 다시입니다.",
     "en": "On the right beat you rise; one hasty step and you start over.",
-    "vi": "Đi đúng nhịp thì lên, vội một bước thì phải làm lại từ đầu."
+    "vi": "Đi đúng nhịp thì lên, vội một bước thì phải làm lại từ đầu.",
+    "ja": "時に合えば上がり、急げば最初からやり直しです。",
+    "zh-CN": "踩对了节拍就往上走，急了就得从头再来。",
+    "zh-TW": "踩對了節拍就往上走，急了就得從頭再來。"
   },
   "consult_p13_career_grow_l0": {
     "ko": "승진이라면 관성을 봐야 합니다.",
     "en": "For advancement we look at your official star.",
-    "vi": "Muốn thăng tiến thì phải xem quan tinh của bạn."
+    "vi": "Muốn thăng tiến thì phải xem quan tinh của bạn.",
+    "ja": "昇進でしたら官星を見なければなりません。",
+    "zh-CN": "要升迁，就得看官星。",
+    "zh-TW": "要升遷，就得看官星。"
   },
   "consult_p13_career_grow_l1": {
-    "ko": "귀인이 있으니, 보이지 않는 자리에 서 있지 마십시오.",
-    "en": "A helpful person is near, so do not stand where you cannot be seen.",
-    "vi": "Có quý nhân bên cạnh, nên đừng đứng ở nơi không ai thấy."
+    "ko": "올해 귀인이 있으니, 보이지 않는 자리에 서 있지 마십시오.",
+    "en": "This year a backer is present — do not stand where they cannot see you.",
+    "vi": "Năm nay có người nâng đỡ bạn — đừng đứng khuất chỗ họ không thấy.",
+    "ja": "貴人がおりますから、見えない場所に立たないでください。",
+    "zh-CN": "贵人就在近处，别站在看不见的地方。",
+    "zh-TW": "貴人就在近處，別站在看不見的地方。"
   },
   "consult_p13_career_start_l0": {
     "ko": "구직 중이라면 너무 넓게 뿌리지 마십시오.",
     "en": "Searching — then do not scatter too wide.",
-    "vi": "Đang tìm việc thì đừng rải quá rộng."
+    "vi": "Đang tìm việc thì đừng rải quá rộng.",
+    "ja": "お探しの最中でしたら、あまり広く撒かないでください。",
+    "zh-CN": "正在找的话，就别撒得太广。",
+    "zh-TW": "正在找的話，就別撒得太廣。"
   },
   "consult_p13_career_start_l1": {
     "ko": "좁고 깊은 문이 맞는 사주입니다. 오래 가는 한 길이 좋습니다.",
     "en": "Your chart favors a narrow, deep door — one craft that feeds you long.",
-    "vi": "Lá số của bạn hợp cửa hẹp mà sâu — một nghề nuôi được lâu."
+    "vi": "Lá số của bạn hợp cửa hẹp mà sâu — một nghề nuôi được lâu.",
+    "ja": "狭くて深い門が合う命式です。長く続く一筋が良いでしょう。",
+    "zh-CN": "您的命盘合适窄而深的门，一门长久的手艺最好。",
+    "zh-TW": "您的命盤合適窄而深的門，一門長久的手藝最好。"
   },
   "consult_p13_career_stay_l0": {
     "ko": "지금 자리를 지키는 것도 한 수입니다.",
     "en": "Holding your place is also a move.",
-    "vi": "Giữ chỗ đang làm cũng là một nước đi."
+    "vi": "Giữ chỗ đang làm cũng là một nước đi.",
+    "ja": "今の場所を守るのも一手です。",
+    "zh-CN": "守住现在的位置，也是一步棋。",
+    "zh-TW": "守住現在的位置，也是一步棋。"
   },
   "consult_p13_career_stay_l1": {
     "ko": "이 운은 뿌리를 다지는 때이니, 뿌리가 굳어야 다음이 높습니다.",
     "en": "This luck builds the root — and a firm root makes the next step higher.",
-    "vi": "Vận này bồi gốc — gốc chắc rồi thì bước sau mới cao."
+    "vi": "Vận này bồi gốc — gốc chắc rồi thì bước sau mới cao.",
+    "ja": "この運は根を固める時ですから、根が固まってこそ次が高くなります。",
+    "zh-CN": "这一运是扎根的时候，根扎稳了，下一步才站得高。",
+    "zh-TW": "這一運是紮根的時候，根紮穩了，下一步才站得高。"
   },
   "consult_p13_health_issue_l0": {
     "ko": "걱정되는 곳이 있다면... 먼저 몸의 소리를 들으십시오.",
     "en": "Something worrying you... then listen to your body first, and me second.",
-    "vi": "Có chỗ đang lo trong người... vậy nghe cơ thể trước, nghe tôi sau."
+    "vi": "Có chỗ đang lo trong người... vậy nghe cơ thể trước, nghe tôi sau.",
+    "ja": "気になるところがおありなら… まず体の声を聞いてください。",
+    "zh-CN": "若有让您担心的地方…… 请先听身体怎么说。",
+    "zh-TW": "若有讓您擔心的地方…… 請先聽身體怎麼說。"
   },
   "consult_p13_health_issue_l1": {
     "ko": "사주는 약한 곳을 짚을 뿐, 확인은 의원의 몫입니다.",
     "en": "The chart can only point at the weak spot — the one to confirm it is a doctor.",
-    "vi": "Lá số chỉ nhắc được chỗ yếu — người xác nhận phải là thầy thuốc."
+    "vi": "Lá số chỉ nhắc được chỗ yếu — người xác nhận phải là thầy thuốc.",
+    "ja": "命式は弱いところを指すだけで、確かめるのは医者の仕事です。",
+    "zh-CN": "命盘只能指出弱处，确诊是医生的事。",
+    "zh-TW": "命盤只能指出弱處，確診是醫生的事。"
   },
   "consult_p13_health_tired_l0": {
     "ko": "자주 피곤한 것은 기가 새고 있다는 뜻입니다.",
     "en": "Often drained means the energy is leaking.",
-    "vi": "Hay mệt là khí đang hao đấy."
+    "vi": "Hay mệt là khí đang hao đấy.",
+    "ja": "よく疲れるのは、気が漏れているということです。",
+    "zh-CN": "常常觉得累，是气在漏。",
+    "zh-TW": "常常覺得累，是氣在漏。"
   },
   "consult_p13_health_tired_l1": {
     "ko": "일을 하나 줄이고 일찍 주무십시오. 작은 새는 일찍 막으면 병이 되지 않습니다.",
     "en": "Drop one task, sleep one watch earlier — a small leak mended early never becomes illness.",
-    "vi": "Bớt một việc, ngủ sớm một canh — hao nhỏ mà bù sớm thì không thành bệnh."
+    "vi": "Bớt một việc, ngủ sớm một canh — hao nhỏ mà bù sớm thì không thành bệnh.",
+    "ja": "用を一つ減らして、早めにお休みください。小さな漏れは早く塞げば病になりません。",
+    "zh-CN": "少揽一件事，早些睡。小漏早补，就不会成病。",
+    "zh-TW": "少攬一件事，早些睡。小漏早補，就不會成病。"
   },
   "consult_p13_health_prevent_l0": {
     "ko": "미리 지키는 것, 그것이 명을 아는 이의 방법입니다.",
     "en": "Guarding early — that is what those who know their chart do.",
-    "vi": "Phòng từ sớm — đó là cách của người hiểu mệnh."
+    "vi": "Phòng từ sớm — đó là cách của người hiểu mệnh.",
+    "ja": "あらかじめ守ること、それが命を知る者のやり方です。",
+    "zh-CN": "提早守护，正是懂命的人的做法。",
+    "zh-TW": "提早守護，正是懂命的人的做法。"
   },
   "consult_p13_health_prevent_l1": {
     "ko": "몸에도 계절이 있으니, 제철에 다스리면 상하지 않습니다.",
     "en": "Strong or weak, the body has its seasons — tend the right one and little is lost.",
-    "vi": "Thân vượng hay nhược đều có mùa — dưỡng đúng mùa thì ít hao."
+    "vi": "Thân vượng hay nhược đều có mùa — dưỡng đúng mùa thì ít hao.",
+    "ja": "体にも季節がありますから、旬に整えれば損なわれません。",
+    "zh-CN": "身体也有季节，按时调理就不会伤着。",
+    "zh-TW": "身體也有季節，按時調理就不會傷著。"
   },
   "consult_p13_health_fine_l0": {
     "ko": "괜찮다니 다행입니다. 그래도 지켜볼 곳은 있습니다.",
     "en": "Feeling fine is a blessing — still, the chart keeps one spot to watch.",
-    "vi": "Thấy ổn là quý — nhưng lá số vẫn có chỗ phải để mắt."
+    "vi": "Thấy ổn là quý — nhưng lá số vẫn có chỗ phải để mắt.",
+    "ja": "お元気とのこと、何よりです。それでも見ておく場所はあります。",
+    "zh-CN": "身体不错，那最好。不过还是有一处要留意。",
+    "zh-TW": "身體不錯，那最好。不過還是有一處要留意。"
   },
   "consult_p13_health_fine_l1": {
     "ko": "오늘의 건강을 내일 몫까지 미리 쓰지 마십시오.",
     "en": "Do not spend today's health as an advance on tomorrow.",
-    "vi": "Đừng đem cái khỏe hôm nay ra ứng trước cho ngày mai."
+    "vi": "Đừng đem cái khỏe hôm nay ra ứng trước cho ngày mai.",
+    "ja": "今日の健康を、明日の分まで前借りしないでください。",
+    "zh-CN": "别把今天的健康预支到明天。",
+    "zh-TW": "別把今天的健康預支到明天。"
   },
   "consult_p16_love_c0": {
     "ko": "언제 인연을 만날까요?",
     "en": "When will I meet the right one?",
-    "vi": "Khi nào tôi gặp được đúng người?"
+    "vi": "Khi nào tôi gặp được đúng người?",
+    "ja": "いつ縁に出会えますか？",
+    "zh-CN": "我什么时候会遇到对的人？",
+    "zh-TW": "我什麼時候會遇到對的人？"
   },
   "consult_p16_love_c1": {
     "ko": "그 사람과 잘 맞을까요?",
     "en": "Are we a good match?",
-    "vi": "Người ấy có hợp với tôi không?"
+    "vi": "Người ấy có hợp với tôi không?",
+    "ja": "あの人と相性は良いですか？",
+    "zh-CN": "我和那个人合得来吗？",
+    "zh-TW": "我和那個人合得來嗎？"
   },
   "consult_p16_love_c2": {
     "ko": "이 인연을 어떻게 지킬까요?",
     "en": "How do I keep this bond?",
-    "vi": "Làm sao giữ được mối duyên này?"
+    "vi": "Làm sao giữ được mối duyên này?",
+    "ja": "この縁をどう守ればいいですか？",
+    "zh-CN": "这段缘分该怎么守住？",
+    "zh-TW": "這段緣分該怎麼守住？"
   },
   "consult_p16_love_c3": {
     "ko": "잡아야 할까요, 놓아야 할까요?",
     "en": "Should I hold on or let go?",
-    "vi": "Tôi nên giữ hay nên buông?"
+    "vi": "Tôi nên giữ hay nên buông?",
+    "ja": "掴むべきですか、手放すべきですか？",
+    "zh-CN": "我该抓住还是放手？",
+    "zh-TW": "我該抓住還是放手？"
   },
   "consult_p16_biz_c0": {
     "ko": "어느 방향이 맞을까요?",
     "en": "Which direction suits me?",
-    "vi": "Hướng nào đang hợp với tôi?"
+    "vi": "Hướng nào đang hợp với tôi?",
+    "ja": "どの方向が合っていますか？",
+    "zh-CN": "哪个方向适合我？",
+    "zh-TW": "哪個方向適合我？"
   },
   "consult_p16_biz_c1": {
     "ko": "확장해도 될까요?",
     "en": "Should I expand?",
-    "vi": "Tôi có nên mở rộng không?"
+    "vi": "Tôi có nên mở rộng không?",
+    "ja": "広げてもよいでしょうか？",
+    "zh-CN": "我可以扩张吗？",
+    "zh-TW": "我可以擴張嗎？"
   },
   "consult_p16_biz_c2": {
     "ko": "이 동업자를 믿어도 될까요?",
     "en": "Can this partner be trusted?",
-    "vi": "Đối tác này có tin được không?"
+    "vi": "Đối tác này có tin được không?",
+    "ja": "この共同経営者を信じてよいですか？",
+    "zh-CN": "这个合伙人可信吗？",
+    "zh-TW": "這個合夥人可信嗎？"
   },
   "consult_p16_biz_c3": {
     "ko": "언제가 좋은 시기일까요?",
     "en": "When is the favorable moment?",
-    "vi": "Thời điểm nào thì thuận?"
+    "vi": "Thời điểm nào thì thuận?",
+    "ja": "いつが良い時期でしょうか？",
+    "zh-CN": "什么时候是好时机？",
+    "zh-TW": "什麼時候是好時機？"
   },
   "consult_p16_career_c0": {
     "ko": "올해 이직해도 될까요?",
     "en": "Should I change jobs this year?",
-    "vi": "Tôi có nên chuyển việc năm nay?"
+    "vi": "Tôi có nên chuyển việc năm nay?",
+    "ja": "今年、転職してもよいですか？",
+    "zh-CN": "今年可以换工作吗？",
+    "zh-TW": "今年可以換工作嗎？"
   },
   "consult_p16_career_c1": {
     "ko": "승진 운은 어떤가요?",
     "en": "What are my chances of moving up?",
-    "vi": "Cơ hội thăng tiến của tôi ra sao?"
+    "vi": "Cơ hội thăng tiến của tôi ra sao?",
+    "ja": "昇進の運はどうですか？",
+    "zh-CN": "我升迁的运势如何？",
+    "zh-TW": "我升遷的運勢如何？"
   },
   "consult_p16_career_c2": {
     "ko": "어떤 일이 제게 맞을까요?",
     "en": "What work fits my chart?",
-    "vi": "Nghề nào hợp mệnh tôi?"
+    "vi": "Nghề nào hợp mệnh tôi?",
+    "ja": "どんな仕事が私に合いますか？",
+    "zh-CN": "什么工作适合我的命盘？",
+    "zh-TW": "什麼工作適合我的命盤？"
   },
   "consult_p16_career_c3": {
     "ko": "언제 일운이 풀릴까요?",
     "en": "When does my career luck turn?",
-    "vi": "Khi nào vận công việc khởi sắc?"
+    "vi": "Khi nào vận công việc khởi sắc?",
+    "ja": "いつ仕事運が開けますか？",
+    "zh-CN": "我的事业运什么时候转？",
+    "zh-TW": "我的事業運什麼時候轉？"
   },
   "consult_p16_health_c0": {
     "ko": "어디를 가장 조심해야 할까요?",
     "en": "What should I watch most?",
-    "vi": "Tôi cần giữ gìn chỗ nào nhất?"
+    "vi": "Tôi cần giữ gìn chỗ nào nhất?",
+    "ja": "どこを一番気をつけるべきですか？",
+    "zh-CN": "我最该留意哪里？",
+    "zh-TW": "我最該留意哪裡？"
   },
   "consult_p16_health_c1": {
     "ko": "언제를 조심해야 할까요?",
     "en": "Which period needs care?",
-    "vi": "Giai đoạn nào trong năm cần cẩn thận?"
+    "vi": "Giai đoạn nào trong năm cần cẩn thận?",
+    "ja": "いつ気をつけるべきですか？",
+    "zh-CN": "哪个时期需要当心？",
+    "zh-TW": "哪個時期需要當心？"
   },
   "consult_p16_health_c2": {
     "ko": "어떤 습관을 바꿔야 할까요?",
     "en": "What habit should I change?",
-    "vi": "Tôi nên đổi thói quen gì?"
+    "vi": "Tôi nên đổi thói quen gì?",
+    "ja": "どんな習慣を変えるべきですか？",
+    "zh-CN": "我该改掉什么习惯？",
+    "zh-TW": "我該改掉什麼習慣？"
   },
   "consult_p16_health_c3": {
     "ko": "장기적인 기력은 어떤가요?",
     "en": "How is my long-term vitality?",
-    "vi": "Sức bền của tôi về lâu dài thế nào?"
+    "vi": "Sức bền của tôi về lâu dài thế nào?",
+    "ja": "長い目で見た気力はどうですか？",
+    "zh-CN": "我长远的精力如何？",
+    "zh-TW": "我長遠的精力如何？"
   },
   "consult_disconnect_body": {
     "ko": "서버 연결이 끊겨 풀이를 받지 못했습니다. 다시 시도하시겠어요?",
     "en": "The connection to the server was interrupted, so the reading has not arrived. Would you like to try again?",
-    "vi": "Kết nối với máy chủ bị gián đoạn nên tôi chưa nhận được lời giải. Bạn muốn thử lại không?"
+    "vi": "Kết nối với máy chủ bị gián đoạn nên tôi chưa nhận được lời giải. Bạn muốn thử lại không?",
+    "ja": "サーバーとの接続が切れて、鑑定が届きませんでした。もう一度お試しになりますか？",
+    "zh-CN": "与服务器的连接中断了，占卜结果没能送到。要再试一次吗？",
+    "zh-TW": "與伺服器的連線中斷了，占卜結果沒能送到。要再試一次嗎？"
   },
   "consult_retry": {
     "ko": "다시 시도",
     "en": "Try again",
-    "vi": "Thử lại"
+    "vi": "Thử lại",
+    "ja": "もう一度",
+    "zh-CN": "再试一次",
+    "zh-TW": "再試一次"
   },
   "consult_leave_room": {
     "ko": "나가기",
     "en": "Leave the room",
-    "vi": "Rời phòng"
+    "vi": "Rời phòng",
+    "ja": "退出する",
+    "zh-CN": "离开房间",
+    "zh-TW": "離開房間"
   },
   "consult_subject_from_question": {
     "ko": "질문이 말한 그 주제",
     "en": "exactly what the question asks about",
-    "vi": "chính điều người hỏi vừa nói"
+    "vi": "chính điều người hỏi vừa nói",
+    "ja": "質問が指しているその主題",
+    "zh-CN": "问题所指的那个主题",
+    "zh-TW": "問題所指的那個主題"
   },
   "consult_more_deeper": {
     "ko": "더 자세히 말씀해 주세요",
     "en": "Tell me more, master",
-    "vi": "Nói sâu hơn đi thầy"
+    "vi": "Nói sâu hơn đi thầy",
+    "ja": "もっと詳しく教えてください",
+    "zh-CN": "请再说得详细些",
+    "zh-TW": "請再說得詳細些"
   },
   "consult_more_summary": {
     "ko": "그래서 결론이 무엇인가요?",
     "en": "So what does it come to?",
-    "vi": "Vậy tóm lại thì sao ạ?"
+    "vi": "Vậy tóm lại thì sao ạ?",
+    "ja": "それで、結論は何でしょうか？",
+    "zh-CN": "那么，结论是什么？",
+    "zh-TW": "那麼，結論是什麼？"
   },
   "consult_more_remember": {
     "ko": "무엇을 가장 기억해야 할까요?",
     "en": "What should I remember most?",
-    "vi": "Con nên nhớ điều gì nhất?"
+    "vi": "Con nên nhớ điều gì nhất?",
+    "ja": "何を一番覚えておくべきですか？",
+    "zh-CN": "我最该记住什么？",
+    "zh-TW": "我最該記住什麼？"
   },
   "consult_more_report": {
     "ko": "요약 카드를 보여주세요",
     "en": "Show me the summary card",
-    "vi": "Cho con xem bảng tổng kết"
+    "vi": "Cho con xem bảng tổng kết",
+    "ja": "まとめのカードを見せてください",
+    "zh-CN": "给我看看总结卡",
+    "zh-TW": "給我看看總結卡"
   },
   "consult_more_actions": {
     "ko": "그럼 무엇을 해야 하나요?",
     "en": "So what should I do?",
-    "vi": "Vậy con nên làm gì?"
+    "vi": "Vậy con nên làm gì?",
+    "ja": "では、何をすればよいですか？",
+    "zh-CN": "那我该做什么？",
+    "zh-TW": "那我該做什麼？"
   },
   "consult_actions_intro": {
     "ko": "그러면 이렇게 해 보거라:",
     "en": "Then do this:",
-    "vi": "Vậy thì con làm thế này:"
+    "vi": "Vậy thì con làm thế này:",
+    "ja": "それでは、こうしてみなさい：",
+    "zh-CN": "那就这样做吧：",
+    "zh-TW": "那就這樣做吧："
   },
   "consult_shape_hint_v4": {
     "ko": "{0}에 대해 봐 주세요. 답변을 1)부터 9)까지 아홉 부분으로 나누어 주세요. 앞의 네 부분은 앞에 앉은 사람에게 건네는 말입니다. 직접 말을 걸듯이, 각 2-3문장으로, 네 토막이 아니라 하나의 흐름으로 이어지게 해 주세요. 제목도 글머리 기호도 쓰지 말고, 질문을 되풀이하지 마세요. 1) 물어본 것에 사주의 언어로 곧바로 답하기, 2) 왜 그런지, 사주의 어느 자리가 그렇게 만드는지 짚기, 3) 그러면 어떻게 하면 좋은지, 4) 기억할 한마디, 5) 0-100 점수 항목 정확히 4개를 이름=숫자 형식으로 쉼표로 구분, 6) 짧은 키워드 3개를 쉼표로 구분, 7) 가장 주목할 시기를 반드시 Months=<시작>-<끝>; <짧은 설명> 형식으로 (월은 1-12 숫자, 예: Months=6-9; 6월부터 9월까지), 8) 2)와 3)과 4)를 듣기 위해 듣는 사람이 물어볼 짧은 질문 정확히 3개를 그 순서대로, 각 10단어 이내, | 로 구분, 9) 구체적으로 할 일 2~3가지를 | 로 구분.",
     "en": "Read for {0}. Answer in 9 numbered parts, 1) to 9). The first four are the counselor SPEAKING to the person in front of him: address them directly, 2-3 sentences each, running on from one another as one train of thought rather than four separate passages; no headings, no bullet points, do not restate the question. 1) answer what was actually asked, in the chart's own terms, 2) say why it is so, pointing at the place in the chart that makes it so, 3) what to do about it, 4) one short thing to remember, 5) exactly 4 scored aspects from 0-100 as Name=number, comma separated, 6) 3 short keywords, comma separated, 7) the single most notable period, in exactly this form: Months=<first>-<last>; <short phrase> (months are numbers 1-12, e.g. Months=6-9; June through September), 8) exactly 3 short questions the listener would ask to hear parts 2, 3 and 4 in that order, each under 10 words, separated by |, 9) 2 or 3 concrete things to do, separated by |.",
-    "vi": "Hãy xem về {0}. Trả lời thành 9 phần, đánh số 1) đến 9). Bốn phần đầu là LỜI NÓI của thầy với người đang ngồi trước mặt: xưng \"ta\" gọi \"con\", mỗi phần 2-3 câu, nối tiếp nhau như một mạch chuyện chứ không phải bốn đoạn rời; không tiêu đề, không gạch đầu dòng, không lặp lại câu hỏi. 1) trả lời thẳng điều con vừa hỏi, bằng chính chữ của lá số, 2) nói vì sao lại thế, chỉ ra chỗ trong lá số làm nên điều đó, 3) vậy thì nên xoay xở ra sao, 4) một câu dặn ngắn để nhớ, 5) đúng 4 mục chấm điểm 0-100 theo dạng Tên=số, cách nhau bằng dấu phẩy, 6) 3 từ khoá ngắn cách nhau bằng dấu phẩy, 7) giai đoạn đáng chú ý nhất, bắt buộc theo dạng: Months=<tháng đầu>-<tháng cuối>; <mô tả ngắn> (tháng là số 1-12, ví dụ Months=6-9; từ tháng 6 đến tháng 9), 8) đúng 3 câu hỏi ngắn mà người nghe sẽ hỏi để được nghe phần 2, phần 3 và phần 4 theo đúng thứ tự đó, mỗi câu dưới 10 chữ, ngăn cách bằng dấu |, 9) 2 đến 3 việc cụ thể nên làm, ngăn cách bằng dấu |."
+    "vi": "Hãy xem về {0}. Trả lời thành 9 phần, đánh số 1) đến 9). Bốn phần đầu là LỜI NÓI của thầy với người đang ngồi trước mặt: xưng \"ta\" gọi \"con\", mỗi phần 2-3 câu, nối tiếp nhau như một mạch chuyện chứ không phải bốn đoạn rời; không tiêu đề, không gạch đầu dòng, không lặp lại câu hỏi. 1) trả lời thẳng điều con vừa hỏi, bằng chính chữ của lá số, 2) nói vì sao lại thế, chỉ ra chỗ trong lá số làm nên điều đó, 3) vậy thì nên xoay xở ra sao, 4) một câu dặn ngắn để nhớ, 5) đúng 4 mục chấm điểm 0-100 theo dạng Tên=số, cách nhau bằng dấu phẩy, 6) 3 từ khoá ngắn cách nhau bằng dấu phẩy, 7) giai đoạn đáng chú ý nhất, bắt buộc theo dạng: Months=<tháng đầu>-<tháng cuối>; <mô tả ngắn> (tháng là số 1-12, ví dụ Months=6-9; từ tháng 6 đến tháng 9), 8) đúng 3 câu hỏi ngắn mà người nghe sẽ hỏi để được nghe phần 2, phần 3 và phần 4 theo đúng thứ tự đó, mỗi câu dưới 10 chữ, ngăn cách bằng dấu |, 9) 2 đến 3 việc cụ thể nên làm, ngăn cách bằng dấu |.",
+    "ja": "{0}について見てください。答えを 1) から 9) までの九つの部分に分けてください。最初の四つは、目の前に座っている人に語りかける言葉です。直接話しかけるように、それぞれ2-3文で、四つの断片ではなく一つの流れとして続けてください。見出しも箇条書きも使わず、質問を繰り返さないでください。1) 訊かれたことに命式の言葉で直に答える、2) なぜそうなのか、命式のどの位置がそうさせるのかを指す、3) ではどうすればよいか、4) 覚えておく一言、5) 0-100 の点数項目をちょうど4つ、名前=数字 の形でカンマ区切り、6) 短いキーワードを3つカンマ区切り、7) 最も注目すべき時期を必ず Months=<開始>-<終了>; <短い説明> の形式で（月は1-12の数字、例：Months=6-9; 六月から九月まで）、8) 2)と3)と4)を聞くために聞き手が尋ねる短い質問をちょうど3つ、その順に、各10語以内、| で区切る、9) 具体的にすべきことを2〜3つ、| で区切る。",
+    "zh-CN": "请看{0}。请把回答分成 1) 到 9) 九个部分。前四个部分是咨询师对坐在面前的人说的话：直接对他说，每部分2-3句，前后连成一条思路而不是四段各说各的；不要用标题，不要用项目符号，不要重复问题。1) 用命盘自己的语言直接回答所问的事，2) 说明为什么如此，指出命盘中哪一处使它如此，3) 那么该怎么办，4) 值得记住的一句短话，5) 恰好4个 0-100 的评分项，用 名称=数字 的形式并以逗号分隔，6) 3个简短关键词，以逗号分隔，7) 最值得注意的时期，务必用这个格式：Months=<起始>-<结束>; <简短说明>（月份是 1-12 的数字，例：Months=6-9; 六月到九月），8) 恰好3个听者为了听到第2、3、4部分而会提出的简短问题，按那个顺序，每个不超过10个词，用 | 分隔，9) 2到3件具体该做的事，用 | 分隔。",
+    "zh-TW": "請看{0}。請把回答分成 1) 到 9) 九個部分。前四個部分是諮詢師對坐在面前的人說的話：直接對他說，每部分2-3句，前後連成一條思路而不是四段各說各的；不要用標題，不要用項目符號，不要重複問題。1) 用命盤自己的語言直接回答所問的事，2) 說明為什麼如此，指出命盤中哪一處使它如此，3) 那麼該怎麼辦，4) 值得記住的一句短話，5) 恰好4個 0-100 的評分項，用 名稱=數字 的形式並以逗號分隔，6) 3個簡短關鍵詞，以逗號分隔，7) 最值得注意的時期，務必用這個格式：Months=<起始>-<結束>; <簡短說明>（月份是 1-12 的數字，例：Months=6-9; 六月到九月），8) 恰好3個聽者為了聽到第2、3、4部分而會提出的簡短問題，按那個順序，每個不超過10個詞，用 | 分隔，9) 2到3件具體該做的事，用 | 分隔。"
   },
   "consult_no_chart_body": {
     "ko": "아직 사주를 받지 못해 풀이할 수 없습니다. 다시 불러올까요?",
     "en": "Your chart has not reached me yet, so there is nothing for me to read. Shall I look it up again?",
-    "vi": "Ta chưa nhận được lá số của con nên chưa thể luận. Để ta tra lại một lần nữa nhé?"
+    "vi": "Ta chưa nhận được lá số của con nên chưa thể luận. Để ta tra lại một lần nữa nhé?",
+    "ja": "まだ命式が届いておらず、見て差し上げられません。もう一度読み込みましょうか？",
+    "zh-CN": "命盘还没送到，暂时无从看起。要我重新取一次吗？",
+    "zh-TW": "命盤還沒送到，暫時無從看起。要我重新取一次嗎？"
   },
   "consult_no_chart": {
     "ko": "풀이할 사주가 없습니다.",
     "en": "No chart to read yet.",
-    "vi": "Chưa có lá số để luận."
+    "vi": "Chưa có lá số để luận.",
+    "ja": "見るべき命式がありません。",
+    "zh-CN": "还没有可看的命盘。",
+    "zh-TW": "還沒有可看的命盤。"
   },
   "consult_score_earn": {
     "ko": "재물을 버는 힘",
     "en": "Earning power",
-    "vi": "Khả năng kiếm tiền"
+    "vi": "Khả năng kiếm tiền",
+    "ja": "財を得る力",
+    "zh-CN": "赚取财富的力量",
+    "zh-TW": "賺取財富的力量"
   },
   "consult_score_keep": {
     "ko": "재물을 지키는 힘",
     "en": "Holding power",
-    "vi": "Khả năng giữ tiền"
+    "vi": "Khả năng giữ tiền",
+    "ja": "財を守る力",
+    "zh-CN": "守住财富的力量",
+    "zh-TW": "守住財富的力量"
   },
   "consult_score_timing": {
     "ko": "시기",
     "en": "Timing",
-    "vi": "Thời điểm"
+    "vi": "Thời điểm",
+    "ja": "時期",
+    "zh-CN": "时机",
+    "zh-TW": "時機"
   },
   "consult_score_risk": {
     "ko": "위험 관리",
     "en": "Risk control",
-    "vi": "Kiểm soát rủi ro"
+    "vi": "Kiểm soát rủi ro",
+    "ja": "危険の管理",
+    "zh-CN": "风险管理",
+    "zh-TW": "風險管理"
   },
   "consult_shape_scores_given": {
     "ko": "5번은 직접 점수를 매기지 말고 이 줄을 그대로 옮겨 적으세요 — {0} — 그리고 앞의 세 부분은 그 숫자와 맞아떨어지게 쓰세요.",
     "en": "For part 5 do NOT score anything yourself: copy this line exactly — {0} — and make the first three parts agree with those numbers.",
-    "vi": "Phần 5 KHÔNG được tự chấm: hãy chép đúng nguyên văn dòng này — {0} — và ba phần đầu phải nói cho khớp với mấy con số đó."
+    "vi": "Phần 5 KHÔNG được tự chấm: hãy chép đúng nguyên văn dòng này — {0} — và ba phần đầu phải nói cho khớp với mấy con số đó.",
+    "ja": "5番はご自分で点数を付けず、この行をそのまま書き写してください — {0} — そして前の三つの部分はその数字と食い違わないように書いてください。",
+    "zh-CN": "第5部分不要自己评分：请原样抄写这一行 — {0} — 并让前三个部分与这些数字相吻合。",
+    "zh-TW": "第5部分不要自己評分：請原樣抄寫這一行 — {0} — 並讓前三個部分與這些數字相吻合。"
   },
   "consult_upstream_body": {
     "ko": "지금은 풀이를 모으지 못하겠구나. 잠시 뒤에 다시 물어보겠느냐?",
     "en": "I cannot gather the reading right now. Give me a moment and ask again?",
-    "vi": "Ta đang không tụ được khí để luận. Con chờ ta một lát rồi hỏi lại nhé?"
+    "vi": "Ta đang không tụ được khí để luận. Con chờ ta một lát rồi hỏi lại nhé?",
+    "ja": "今は鑑定をまとめられません。少し置いてから、もう一度お尋ねになりますか？",
+    "zh-CN": "眼下没法把卦象汇齐。稍等片刻再问一次好吗？",
+    "zh-TW": "眼下沒法把卦象匯齊。稍等片刻再問一次好嗎？"
   },
   "consult_upstream_failed": {
     "ko": "지금은 풀이할 수 없습니다.",
     "en": "The reading could not be made right now.",
-    "vi": "Chưa luận được lúc này."
+    "vi": "Chưa luận được lúc này.",
+    "ja": "今は鑑定ができません。",
+    "zh-CN": "现在无法为您占卜。",
+    "zh-TW": "現在無法為您占卜。"
   }
 }
