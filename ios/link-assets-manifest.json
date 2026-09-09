@@ -2,6 +2,10 @@
   "migIndex": 1,
   "data": [
     {
+      "path": "src/shared/assets/sounds/prayers_ambient.m4a",
+      "sha1": "6696393f33e189632180936c0644ee5906590d17"
+    },
+    {
       "path": "src/shared/assets/sounds/splash_sound.m4a",
       "sha1": "6ed3bec66f3a9e875ac313a31866b61053f8ebaa"
     }

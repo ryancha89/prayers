@@ -14,6 +14,7 @@
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		D14E31D163966341A8A078D4 /* UnityLifecycle.m in Sources */ = {isa = PBXBuildFile; fileRef = B49997535B81B46293E2F292 /* UnityLifecycle.m */; };
 		D36536069254401685C2FFAE /* splash_sound.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 689E9E97097942948C5F96E4 /* splash_sound.m4a */; };
+		52F6F480E5354BC9ABABC536 /* prayers_ambient.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 55A8A8B3A1154B02B88CF833 /* prayers_ambient.m4a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,7 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = prayers/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		B49997535B81B46293E2F292 /* UnityLifecycle.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = prayers/UnityLifecycle.m; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		55A8A8B3A1154B02B88CF833 /* prayers_ambient.m4a */ = {isa = PBXFileReference; name = "prayers_ambient.m4a"; path = "../src/shared/assets/sounds/prayers_ambient.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +71,7 @@
 			isa = PBXGroup;
 			children = (
 				689E9E97097942948C5F96E4 /* splash_sound.m4a */,
+				55A8A8B3A1154B02B88CF833 /* prayers_ambient.m4a */,
 			);
 			name = Resources;
 			path = "";
@@ -177,6 +180,7 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				117DCE2B56EDA7CB4A355A35 /* PrivacyInfo.xcprivacy in Resources */,
 				D36536069254401685C2FFAE /* splash_sound.m4a in Resources */,
+				52F6F480E5354BC9ABABC536 /* prayers_ambient.m4a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
