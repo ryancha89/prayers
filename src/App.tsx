@@ -12,6 +12,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { colors } from './shared/theme';
 import { RootNavigator } from './navigation/RootNavigator';
 import { SplashScreen } from './shared/components/SplashScreen';
+import { backgroundMusic } from './shared/audio/backgroundMusic';
 
 const queryClient = new QueryClient();
 
@@ -33,16 +34,38 @@ const navigationRef = createNavigationContainerRef<RootStackParamList>();
 /** Screens where embedded Unity (and its BGM) is allowed to be audible. */
 const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry']);
 
-/** Anywhere outside the consultation room — app start, home, cards, whatever —
- *  Unity audio must be dead. Idempotent, safe when Unity never booted. */
-const enforceUnitySilence = () => {
+/** Whether the app's own music may play. The splash has a cue of its own and the two would
+ *  overlap, so nothing starts until it is done. */
+let musicAllowed = false;
+
+/**
+ * One speaker, one owner, decided by the route.
+ *
+ * Inside the room Unity owns the mix — the counselor's track, her voice, the ritual — so the app's
+ * music stops. Everywhere else Unity is silenced (it may still be resident) and the app plays its
+ * own bed, so choosing a counselor is no longer done in silence.
+ *
+ * Idempotent both ways: safe when Unity never booted, and safe to call on every navigation change,
+ * which is exactly how it is wired.
+ */
+const syncAudioToRoute = () => {
   const route = navigationRef.isReady() ? navigationRef.getCurrentRoute() : undefined;
-  if (!route || !UNITY_SCREENS.has(route.name)) nativeUnityBridge.stopAllAudio();
+  const inUnity = !!route && UNITY_SCREENS.has(route.name);
+
+  if (!inUnity) nativeUnityBridge.stopAllAudio();
+
+  if (inUnity || !musicAllowed) backgroundMusic.stop();
+  else backgroundMusic.start();
 };
 
 const App: React.FC = () => {
   const [splashDone, setSplashDone] = useState(false);
-  const onSplashDone = useCallback(() => setSplashDone(true), []);
+  const onSplashDone = useCallback(() => {
+    setSplashDone(true);
+    // The splash chime has finished; the bed can come up under whatever screen is showing.
+    musicAllowed = true;
+    syncAudioToRoute();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -51,8 +74,8 @@ const App: React.FC = () => {
         <NavigationContainer
           ref={navigationRef}
           theme={navTheme}
-          onReady={enforceUnitySilence}
-          onStateChange={enforceUnitySilence}>
+          onReady={syncAudioToRoute}
+          onStateChange={syncAudioToRoute}>
           <RootNavigator />
         </NavigationContainer>
         {/* Overlay splash: the home screen is already mounted beneath, so the
