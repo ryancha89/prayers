@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../../../navigation/types';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
@@ -11,6 +11,7 @@ import { PrimaryButton } from '../../../shared/components/PrimaryButton';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useFavoritesStore } from '../../counselors/store/favoritesStore';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
+import { useSoundStore } from '../../../shared/audio/store';
 import { mockWallet } from '../monetization';
 
 /** Simple profile page mirroring the reference structure (spec §33). */
@@ -19,6 +20,8 @@ export const MyPageScreen: React.FC = () => {
   const t = useT();
   const lang = useLanguageStore(s => s.lang);
   const setLang = useLanguageStore(s => s.setLang);
+  const musicEnabled = useSoundStore(s => s.musicEnabled);
+  const setMusicEnabled = useSoundStore(s => s.setMusicEnabled);
   const [langOpen, setLangOpen] = React.useState(false);
   const savedCount = useSubjectsStore(s => s.subjects.length);
   const favCount = useFavoritesStore(s => s.ids.length);
@@ -90,6 +93,15 @@ export const MyPageScreen: React.FC = () => {
               ))}
             </View>
           )}
+          {/* Background music. A switch, not a link: there is one thing to decide and it takes
+              effect where you are standing, so sending it to a sub-screen would be three taps to
+              answer a yes/no. The music already obeys the hardware silent switch — this is for the
+              player who wants the phone audible and the app quiet. */}
+          <ToggleRow
+            label={t('my.music')}
+            value={musicEnabled}
+            onValueChange={setMusicEnabled}
+          />
           <Row label={t('my.account')} />
           <Row label={t('my.notifications')} />
           <Row label={t('my.terms')} />
@@ -119,6 +131,28 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
  * which is the whole difference between a link and a disclosure — and the reason the language list
  * read as four more settings pages instead of six choices.
  */
+/**
+ * A settings row whose whole answer is a switch. Distinct from `Row` on purpose: a Row promises
+ * that tapping it goes somewhere, and this one promises that tapping changes something here.
+ */
+const ToggleRow: React.FC<{
+  label: string;
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+}> = ({ label, value, onValueChange }) => (
+  <View style={styles.settingRow}>
+    <Text style={styles.settingLabel}>{label}</Text>
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      // The track reads as the app's own, not as the platform's default green.
+      trackColor={{ false: 'rgba(255,255,255,0.18)', true: colors.violet }}
+      thumbColor={colors.textPrimary}
+      ios_backgroundColor="rgba(255,255,255,0.18)"
+    />
+  </View>
+);
+
 const Row: React.FC<{
   label: string;
   value?: string;

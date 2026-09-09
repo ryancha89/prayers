@@ -16,6 +16,7 @@
  * RNSound linked must lose the music, not the app.
  */
 import { AppState, AppStateStatus } from 'react-native';
+import { musicEnabled, useSoundStore } from './store';
 
 let SoundModule: any = null;
 try {
@@ -111,6 +112,12 @@ const ensureLoaded = (then: () => void) => {
   }
 };
 
+/** Stop without the fade — for a switch, where a slow fade reads as "it did not work". */
+const stopNow = () => {
+  clearFade();
+  sound?.stop?.();
+};
+
 const onAppState = (next: AppStateStatus) => {
   if (next === 'active') {
     backgrounded = false;
@@ -131,6 +138,12 @@ const onAppState = (next: AppStateStatus) => {
 export const start = () => {
   wanted = true;
   if (backgrounded) return;
+  // The player's own switch. Checked here rather than at every call site, so a route change, an
+  // app resume and the toggle itself all go through one door.
+  if (!musicEnabled()) {
+    stopNow();
+    return;
+  }
   if (!appStateSub) appStateSub = AppState.addEventListener('change', onAppState);
 
   ensureLoaded(() => {
@@ -169,5 +182,19 @@ export const release = () => {
   sound?.release?.();
   sound = null;
 };
+
+/**
+ * React to the setting being changed while the app is open.
+ *
+ * Subscribing here rather than in a component: the music has no UI of its own, and a screen that
+ * happens to be mounted is the wrong owner of a bed that plays across all of them. `wanted` is
+ * what the ROUTE asked for, so turning the switch back on inside the consultation room correctly
+ * does nothing until the player leaves it.
+ */
+useSoundStore.subscribe((state, prev) => {
+  if (state.musicEnabled === prev.musicEnabled) return;
+  if (!state.musicEnabled) stopNow();
+  else if (wanted) start();
+});
 
 export const backgroundMusic = { start, stop, release };

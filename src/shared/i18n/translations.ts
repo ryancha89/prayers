@@ -115,6 +115,7 @@ export const translations = {
     'my.terms': '약관',
     'my.privacy': '개인정보',
     'my.language': '언어',
+    'my.music': '배경 음악',
   },
   en: {
     'tab.home': 'Home',
@@ -230,6 +231,7 @@ export const translations = {
     'my.terms': 'Terms',
     'my.privacy': 'Privacy',
     'my.language': 'Language',
+    'my.music': 'Background music',
   },
   ja: {
     'tab.home': 'ホーム',
@@ -345,6 +347,7 @@ export const translations = {
     'my.terms': '利用規約',
     'my.privacy': 'プライバシー',
     'my.language': '言語',
+    'my.music': 'BGM',
   },
   'zh-CN': {
     'tab.home': '首页',
@@ -459,6 +462,7 @@ export const translations = {
     'my.terms': '条款',
     'my.privacy': '隐私',
     'my.language': '语言',
+    'my.music': '背景音乐',
   },
   'zh-TW': {
     'tab.home': '首頁',
@@ -573,6 +577,7 @@ export const translations = {
     'my.terms': '條款',
     'my.privacy': '隱私',
     'my.language': '語言',
+    'my.music': '背景音樂',
   },
   vi: {
     'tab.home': 'Trang chính',
@@ -688,6 +693,7 @@ export const translations = {
     'my.terms': 'Điều khoản',
     'my.privacy': 'Riêng tư',
     'my.language': 'Ngôn ngữ',
+    'my.music': 'Nhạc nền',
   },
 } as const;
 
