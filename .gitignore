@@ -85,6 +85,10 @@ yarn-error.log
 # to regenerate anyway.
 unity/builds/
 unity/xcode/
+# Build logs from the export chain. They are what you read when a step fails
+# silently — the Unity export swallows errors and only the log says why — so they
+# are kept on disk and out of the repo. ~1.1 MB each.
+unity/*.log
 
 # Local server secret for dev builds (see devToken.example.ts). Never commit.
 src/features/counseling/api/devToken.ts

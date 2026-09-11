@@ -56,10 +56,13 @@ describe('counselor card art', () => {
       });
   });
 
-  it('serves the two counselors you can actually enter', () => {
-    // These are the only ones with a 3D model, so theirs are the cards a player acts on.
+  it('serves the counselors you can actually enter', () => {
+    // These are the only ones with a 3D model, so theirs are the cards a player acts on. Yunjung
+    // joined them on 2026-09-11 with f_char_003 and a room of her own (ConsultationSolo02) — this
+    // list and Unity's RNBridge.PersonaFor have to gain a counselor in the same change, or the app
+    // offers a name the engine cannot seat.
     const enterable = localizeCounselors('en').filter(c => !c.comingSoon);
-    expect(enterable.map(c => c.id).sort()).toEqual(['jiho', 'yuna']);
+    expect(enterable.map(c => c.id).sort()).toEqual(['jiho', 'yuna', 'yunjung']);
     enterable.forEach(c => expect(c.cardImage).toBeDefined());
   });
 });

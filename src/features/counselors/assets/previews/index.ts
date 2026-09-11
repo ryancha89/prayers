@@ -57,4 +57,10 @@ export const PREVIEW_STRIPS: Record<string, Record<string, ImageSourcePropType>>
     explaining: require('./jiho_explaining.jpg'),
     bless: require('./jiho_bless.jpg'),
   },
+  // One action, because f_char_003 has one gesture clip — and it is filmed in HER room
+  // (ConsultationSolo02), not in the other counselors'. The strip is only ever as honest as the
+  // clip list behind it; add rows here as clips arrive, not before.
+  yunjung: {
+    explaining: require('./yunjung_explaining.jpg'),
+  },
 };

@@ -23,6 +23,7 @@ export const COUNSELOR_CARD_ART: Record<string, ImageSourcePropType> = {
   harin: require('./harin.jpg'),
   doyun: require('./doyun.jpg'),
   jiho: require('./jiho.jpg'),
+  yunjung: require('./yunjung.jpg'),
 };
 
 export const COUNSELOR_AVATAR_ART: Record<string, ImageSourcePropType> = {
@@ -32,4 +33,5 @@ export const COUNSELOR_AVATAR_ART: Record<string, ImageSourcePropType> = {
   harin: require('./harin_avatar.jpg'),
   doyun: require('./doyun_avatar.jpg'),
   jiho: require('./jiho_avatar.jpg'),
+  yunjung: require('./yunjung_avatar.jpg'),
 };

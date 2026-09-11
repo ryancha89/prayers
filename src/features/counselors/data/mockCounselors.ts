@@ -50,6 +50,14 @@ const PREVIEW_ACTIONS: PreviewAction[] = [
   { key: 'nod', ko: '끄덕임', en: 'Nod', ja: 'うなずき', 'zh-CN': '点头', 'zh-TW': '點頭', vi: 'Gật đầu' },
 ];
 
+/**
+ * f_char_003 has exactly two clips: a seated POSE and a talking gesture. So her preview list is one
+ * action long, and that is the honest length — the fallback in the frame renderer would let her
+ * "greet" with an idle, but a button that promises a greeting and plays a still is the same broken
+ * promise the card art was redrawn to fix. Add rows here as clips are delivered.
+ */
+const PREVIEW_ACTIONS_YUNJUNG: PreviewAction[] = [PREVIEW_ACTIONS[3]];
+
 /** m_char_003 blesses instead of nodding. */
 const PREVIEW_ACTIONS_JIHO: PreviewAction[] = [
   ...PREVIEW_ACTIONS.slice(0, 4),
@@ -60,15 +68,16 @@ const PREVIEW_ACTIONS_JIHO: PreviewAction[] = [
  * The characterIds that have a 3D model in ConsultationSolo, and therefore the ones a consultation
  * can actually be held with.
  *
- *   yuna_01 → persona `wood` → f_char_002 (female)
- *   jiho_01 → persona `dosa` → m_char_003 (male)
+ *   yuna_01    → persona `wood`     → f_char_002 (female), ConsultationSolo
+ *   jiho_01    → persona `dosa`     → m_char_003 (male),   ConsultationSolo
+ *   yunjung_01 → persona `coldgirl` → f_char_003 (female), ConsultationSolo02 — her OWN room
  *
  * This list is the counterpart of RNBridge.PersonaFor on the Unity side: adding a counselor means
  * adding it in BOTH places, and the pair is what stops a name being offered before its body exists.
  * Everyone not named here is listed as "coming soon" rather than hidden — the roster stays honest
  * about what is planned without pretending it is ready.
  */
-const BUILT_CHARACTER_IDS = new Set(['yuna_01', 'jiho_01']);
+const BUILT_CHARACTER_IDS = new Set(['yuna_01', 'jiho_01', 'yunjung_01']);
 
 const RAW: RawCounselor[] = [
   {
@@ -498,6 +507,77 @@ const RAW: RawCounselor[] = [
         personality: ['Ấm áp', 'Hay ngẫm', 'Kiên nhẫn'],
         specialties: ['Vận trình', 'Ý nghĩa', 'Trưởng thành'],
         tags: ['#VậnTrình', '#ÝNghĩa', '#TrưởngThành'],
+      },
+    },
+  },
+  {
+    id: 'yunjung',
+    accent: '#B07C9B',
+    category: 'career',
+    isNew: true,
+    characterId: 'yunjung_01',
+    roomId: 'yunjung_room',
+    previewActions: PREVIEW_ACTIONS_YUNJUNG,
+    l10n: {
+      ko: {
+        name: '고윤정',
+        title: '현실을 직시하는 전문가',
+        hook: '돌려 말하지 않습니다. 들으실 준비가 되셨나요?',
+        about:
+          '고윤정은 사주를 위로가 아니라 자료로 읽습니다. 지금 무엇이 사실인지 먼저 정리하고, 그 위에서 고를 수 있는 길을 짚어줍니다.',
+        personality: ['직설적', '냉철함', '현실적'],
+        specialties: ['커리어', '선택', '인생'],
+        tags: ['#커리어', '#직설', '#현실'],
+      },
+      en: {
+        name: 'Go Yunjung',
+        title: 'The one who looks straight at reality',
+        hook: 'I do not soften things. Are you ready to hear it?',
+        about:
+          'Yunjung reads a chart as evidence, not as comfort. She settles what is actually true first, and only then points at the choices that are still open.',
+        personality: ['Direct', 'Clear-eyed', 'Practical'],
+        specialties: ['Career', 'Decisions', 'Life'],
+        tags: ['#Career', '#Straight', '#Reality'],
+      },
+      ja: {
+        name: 'コ・ユンジョン',
+        title: '現実を直視する専門家',
+        hook: '遠回しには言いません。聞く覚悟はありますか。',
+        about:
+          'ユンジョンは四柱を慰めではなく資料として読みます。まず事実を整理し、その上で残されている選択肢を示します。',
+        personality: ['率直', '冷静', '現実的'],
+        specialties: ['仕事', '決断', '人生'],
+        tags: ['#仕事', '#率直', '#現実'],
+      },
+      'zh-CN': {
+        name: '高允祯',
+        title: '直面现实的专家',
+        hook: '我不绕弯子。你准备好听了吗？',
+        about:
+          '允祯把八字当资料读，不当安慰。她先把现在真实的情况理清楚，再指出还能选的路。',
+        personality: ['直接', '冷静', '务实'],
+        specialties: ['事业', '抉择', '人生'],
+        tags: ['#事业', '#直说', '#现实'],
+      },
+      'zh-TW': {
+        name: '高允禎',
+        title: '直面現實的專家',
+        hook: '我不繞彎子。你準備好聽了嗎？',
+        about:
+          '允禎把八字當資料讀，不當安慰。她先把現在真實的情況理清楚，再指出還能選的路。',
+        personality: ['直接', '冷靜', '務實'],
+        specialties: ['事業', '抉擇', '人生'],
+        tags: ['#事業', '#直說', '#現實'],
+      },
+      vi: {
+        name: 'Go Yunjung',
+        title: 'Chuyên gia nhìn thẳng vào thực tế',
+        hook: 'Ta không nói vòng. Con nghe thẳng được chứ?',
+        about:
+          'Yunjung đọc lá số như đọc dữ liệu, không phải như lời an ủi. Cô chốt lại điều gì đang là sự thật trước đã, rồi mới chỉ ra những đường còn chọn được.',
+        personality: ['Thẳng thắn', 'Tỉnh táo', 'Thực tế'],
+        specialties: ['Sự nghiệp', 'Quyết định', 'Vận trình'],
+        tags: ['#SựNghiệp', '#NóiThẳng', '#ThựcTế'],
       },
     },
   },
