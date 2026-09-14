@@ -1,5 +1,5 @@
-import { unityApiBase } from '../bridge';
-import { getDeviceId } from '../../../shared/device/deviceId';
+import { apiBase } from '../../../shared/config/api';
+import { apiHeaders } from '../../auth/api/headers';
 
 /**
  * The player's question-ticket balance.
@@ -35,10 +35,9 @@ export interface TicketBalance {
  */
 export async function fetchTicketBalance(signal?: AbortSignal): Promise<TicketBalance | null> {
   try {
-    const res = await fetch(`${unityApiBase}/api/v1/saju/tickets`, {
-      headers: { 'User-Auth': getDeviceId() },
-      signal,
-    });
+    const headers = await apiHeaders();
+    if (!headers) return null;   // not signed in: unknown, which is not zero — see above
+    const res = await fetch(`${apiBase()}/api/v1/saju/tickets`, { headers, signal });
     if (!res.ok) return null;
 
     const body = await res.json();

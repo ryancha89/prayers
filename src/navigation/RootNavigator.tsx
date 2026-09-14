@@ -10,6 +10,8 @@ import { UnityEntryScreen } from '../features/counseling/screens/UnityEntryScree
 import { CounselingRoomScreen } from '../features/counseling/screens/CounselingRoomScreen';
 import { AddSubjectScreen } from '../features/subjects/screens/AddSubjectScreen';
 import { hasBirthData, useSubjectsStore } from '../features/subjects/store/subjectsStore';
+import { LoginScreen } from '../features/auth/screens/LoginScreen';
+import { useAuthStore } from '../features/auth/store/authStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -26,6 +28,11 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  * back rather than leaving the app in a state it cannot read a chart from.
  */
 export const RootNavigator: React.FC = () => {
+  // SIGN-IN COMES BEFORE THE BIRTH DETAILS, and the order is not cosmetic: the chart is saved
+  // against an account (`/api/v1/saju/save` keys on User-Auth), so asking for a birth date first
+  // would file the answer under whoever the app happened to be at the time — which used to be a
+  // per-device `dev-` id the server only accepts in development.
+  const userAuth = useAuthStore(s => s.userAuth);
   const self = useSubjectsStore(s => s.self);
   const deferred = useSubjectsStore(s => s.profileDeferred);
   // "Later" is honoured, but never silently: the counselor screen still refuses a consultation
@@ -39,7 +46,10 @@ export const RootNavigator: React.FC = () => {
       contentStyle: { backgroundColor: colors.bg },
       animation: 'slide_from_right',
     }}>
-    {needsProfile ? (
+    {userAuth == null ? (
+      <Stack.Screen name="Login" component={LoginScreen} options={{ animation: 'fade' }} />
+    ) : null}
+    {userAuth != null && needsProfile ? (
       <Stack.Screen name="ProfileSetup" component={AddSubjectScreen} options={{ animation: 'fade' }} />
     ) : null}
     <Stack.Screen name="Tabs" component={BottomTabNavigator} />

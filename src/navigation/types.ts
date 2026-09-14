@@ -20,6 +20,8 @@ export type RootStackParamList = {
    * details" navigation from inside the app popped the whole stack back to the first-run screen
    * instead of opening a modal.
    */
+  /** Shown until the app has an account. Registered only while signed out. */
+  Login: undefined;
   ProfileSetup: undefined;
   /** Loading screen that boots the (mock) Unity room, spec §17. */
   UnityEntry: {

@@ -9,7 +9,7 @@ import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useCounselingStore } from '../store/counselingStore';
 import { isNativeUnity, unityApiBase, unityBridge } from '../bridge';
-import { getDeviceId } from '../../../shared/device/deviceId';
+import { getUserAuth } from '../../auth/store/authStore';
 import { UnityToRNEvent } from '../types';
 import { fetchTicketBalance } from '../api/tickets';
 
@@ -91,7 +91,9 @@ export const UnityEntryScreen: React.FC = () => {
       topic,
       apiBase: unityApiBase,
       locale: lang,
-      auth: getDeviceId(),
+      // The ACCOUNT, not the device. Unity forwards this as the User-Auth header, so the reading
+      // the room fetches belongs to whoever is signed in — and follows them to their next phone.
+      auth: getUserAuth() ?? '',
     });
 
     return unsub;

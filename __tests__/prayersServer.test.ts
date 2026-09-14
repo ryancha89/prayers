@@ -12,8 +12,20 @@ jest.mock(
   { virtual: true },
 );
 jest.mock('../src/features/counseling/bridge', () => ({ unityApiBase: 'http://localhost:4000' }));
-jest.mock('../src/shared/device/deviceId', () => ({ getDeviceId: () => 'device-abc' }));
+jest.mock('../src/shared/config/api', () => ({ apiBase: () => 'http://localhost:4000' }));
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
+jest.mock('@react-native-async-storage/async-storage', () => {
+  const store = new Map<string, string>();
+  return {
+    __esModule: true,
+    default: {
+      getItem: async (k: string) => store.get(k) ?? null,
+      setItem: async (k: string, v: string) => void store.set(k, v),
+      removeItem: async (k: string) => void store.delete(k),
+    },
+  };
+});
+
 
 import {
   checkConsultationReadiness,
@@ -23,6 +35,8 @@ import {
   TicketRequiredError,
 } from '../src/features/counseling/api/prayersServer';
 import { MockCounselorAI, ServerCounselorAI } from '../src/features/counseling/api/counselorAI';
+import { signInAsDeveloper } from '../src/features/auth/api/session';
+import { signedOut, storeGameToken } from '../src/features/auth/store/authStore';
 import type { CounselingSubject } from '../src/features/counseling/types';
 
 type FetchMock = jest.Mock<Promise<Response>, [string, RequestInit]>;
@@ -41,6 +55,14 @@ const headersOf = (fn: FetchMock, call = 0) =>
 
 const subject = { id: 's1', displayName: 'Me', isUser: true } as CounselingSubject;
 
+// Every request now rides on an ACCOUNT. Signed in here with a game token already in hand, so
+// `apiHeaders` makes no request of its own and `mock.calls[0]` is still the call under test.
+beforeEach(() => {
+  signInAsDeveloper('dev-test-account');
+  storeGameToken('game-token-abc', Date.now() + 3_600_000);
+});
+afterEach(() => signedOut());
+
 const realFetch = globalThis.fetch;
 afterEach(() => {
   (globalThis as unknown as { fetch: typeof realFetch }).fetch = realFetch;
@@ -58,10 +80,12 @@ describe('fetchTopics', () => {
 
     expect(cards).toEqual([{ key: 'wealth', label: 'Tiền bạc', description: 'Thu nhập.' }]);
     expect(fetchSpy.mock.calls[0][0]).toContain('/api/v1/prayers/topics?language=vi');
-    // Both headers, not one. The static token gets the request through the door; User-Auth only
-    // decides which guest it is once inside.
-    expect(headersOf(fetchSpy)['Saju-Authorization']).toBe('Bearer-test-token');
-    expect(headersOf(fetchSpy)['User-Auth']).toBe('device-abc');
+    // The credential is now the account's own 24h game token, NOT the app-wide shared secret —
+    // that is what lets a release build ship without a secret in the bundle. `User-Auth` still
+    // rides along because several controllers read the uid straight off the header.
+    expect(headersOf(fetchSpy)['Game-Token']).toBe('game-token-abc');
+    expect(headersOf(fetchSpy)['User-Auth']).toBe('dev-test-account');
+    expect(headersOf(fetchSpy)['Saju-Authorization']).toBeUndefined();
   });
 
   it('returns null on a bad response so the screen keeps its own list', async () => {

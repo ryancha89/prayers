@@ -1,5 +1,6 @@
 import { NativeModules, UIManager } from 'react-native';
 import { devlog } from '../../../shared/devlog';
+import { apiBase } from '../../../shared/config/api';
 import { UnityBridge } from '../types';
 import { MockUnityBridge } from './MockUnityBridge';
 import { NativeUnityBridge } from './NativeUnityBridge';
@@ -48,7 +49,15 @@ export const isNativeUnity = hasNativeUnity;
  * for its failure modes (essay / partial / error / noticket / slow), which :4000 cannot be asked
  * to produce on demand.
  */
-export const unityApiBase = __DEV__ ? 'http://localhost:4000' : undefined;
+/**
+ * The host the EMBEDDED PLAYER should call, handed to it in SESSION_INIT.
+ *
+ * Was `__DEV__ ? 'http://localhost:4000' : undefined`, which quietly meant a release build had no
+ * server on either side of the bridge. It is now the same host the app itself uses — one answer,
+ * in `shared/config/api.ts`, so RN and Unity can never disagree about which backend a build talks
+ * to. That disagreement is not theoretical: the two were configured in different files.
+ */
+export const unityApiBase = apiBase();
 
 if (__DEV__) {
   const line = `[unity-bridge] native Unity ${hasNativeUnity ? 'DETECTED' : 'absent — using mock'}`;

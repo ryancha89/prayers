@@ -1,6 +1,5 @@
-import { unityApiBase } from '../bridge';
-import { getDeviceId } from '../../../shared/device/deviceId';
-import { SAJU_ACCESS_TOKEN } from './devToken';
+import { apiBase } from '../../../shared/config/api';
+import { apiHeaders } from '../../auth/api/headers';
 import { devlog } from '../../../shared/devlog';
 import type { Lang } from '../../../shared/i18n';
 
@@ -18,7 +17,9 @@ import type { Lang } from '../../../shared/i18n';
  * User-Auth alone is a 401, which is exactly how Unity's own client learned this.
  */
 
-const BASE = unityApiBase;
+/** Resolved per call rather than captured: a QA build can be pointed at staging at runtime, and a
+ *  module-level constant would hold whatever the host was when this file was first imported. */
+const BASE = () => apiBase();
 
 /** One topic card as the server offers it (step 8 of the 26-08 flow). */
 export interface TopicCard {
@@ -61,39 +62,10 @@ export class TicketRequiredError extends Error {
   }
 }
 
-let warnedAboutToken = false;
 
-/**
- * Null when this build cannot talk to the server at all, so callers skip the request entirely
- * rather than firing one that is certain to 401.
- */
-function authHeaders(): Record<string, string> | null {
-  if (!BASE) return null;
-
-  if (!SAJU_ACCESS_TOKEN) {
-    if (__DEV__ && !warnedAboutToken) {
-      warnedAboutToken = true;
-      const line =
-        '[prayers-api] devToken.ts has no SAJU_ACCESS_TOKEN, so every /api/v1/prayers call would ' +
-        'answer 401 — the room is using the scripted replies, not the server. Copy ' +
-        'devToken.example.ts and paste the value from saju_server/.env.';
-      console.warn(line);
-      // Through devlog too: on a simulator this is the only channel that survives to be read, and
-      // "the counselor sounds canned" is otherwise indistinguishable from the server being down.
-      devlog(line);
-    }
-    return null;
-  }
-
-  return {
-    'Content-Type': 'application/json',
-    'Saju-Authorization': `Bearer-${SAJU_ACCESS_TOKEN}`,
-    'User-Auth': getDeviceId(),
-  };
-}
-
-/** True when a server round-trip is even possible — lets the UI decide before it renders. */
-export const serverAvailable = (): boolean => authHeaders() !== null;
+/** True when a server round-trip is even possible — lets the UI decide before it renders.
+ *  Async now: the credential may have to be fetched (see apiHeaders). */
+export const serverAvailable = async (): Promise<boolean> => (await apiHeaders()) !== null;
 
 /**
  * The topic cards, in the caller's language.
@@ -104,11 +76,11 @@ export const serverAvailable = (): boolean => authHeaders() !== null;
  * is worse than one that is a release behind.
  */
 export async function fetchTopics(lang: Lang, signal?: AbortSignal): Promise<TopicCard[] | null> {
-  const headers = authHeaders();
+  const headers = await apiHeaders();
   if (!headers) return null;
 
   try {
-    const res = await fetch(`${BASE}/api/v1/prayers/topics?language=${encodeURIComponent(lang)}`, {
+    const res = await fetch(`${BASE()}/api/v1/prayers/topics?language=${encodeURIComponent(lang)}`, {
       headers,
       signal,
     });
@@ -178,7 +150,7 @@ export async function saveSajuProfile(
   input: SajuProfileInput,
   signal?: AbortSignal,
 ): Promise<boolean> {
-  const headers = authHeaders();
+  const headers = await apiHeaders();
   if (!headers) return false;
 
   const date = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.birthDate.trim());
@@ -187,7 +159,7 @@ export async function saveSajuProfile(
   const time = input.birthTime ? /^(\d{1,2}):(\d{2})$/.exec(input.birthTime.trim()) : null;
 
   try {
-    const res = await fetch(`${BASE}/api/v1/saju/save`, {
+    const res = await fetch(`${BASE()}/api/v1/saju/save`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -217,11 +189,11 @@ export async function saveSajuProfile(
 export async function checkConsultationReadiness(
   signal?: AbortSignal,
 ): Promise<ConsultationReadiness> {
-  const headers = authHeaders();
+  const headers = await apiHeaders();
   if (!headers) return 'offline';
 
   try {
-    const res = await fetch(`${BASE}/api/v1/saju/me`, { headers, signal });
+    const res = await fetch(`${BASE()}/api/v1/saju/me`, { headers, signal });
     if (!res.ok) return 'offline';
 
     const body = await res.json();
@@ -257,7 +229,7 @@ export interface SendMessageInput {
 export async function sendConsultationMessage(
   input: SendMessageInput,
 ): Promise<ConsultationTurn | null> {
-  const headers = authHeaders();
+  const headers = await apiHeaders();
   if (!headers) return null;
 
   const body = {
@@ -278,7 +250,7 @@ export async function sendConsultationMessage(
 
   let res: Response;
   try {
-    res = await fetch(`${BASE}/api/v1/prayers/consultations/message`, {
+    res = await fetch(`${BASE()}/api/v1/prayers/consultations/message`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
