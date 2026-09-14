@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-08-27",
+  "source": "Saju/Assets/Editor/CounselorCatalogBuilder.cs — sửa ở đó rồi chạy lại menu",
+  "note": "available=false nghĩa là chưa có model/clip; RN nên vẽ thẻ nhưng khoá nút tư vấn.",
+  "cards": [
+    {"id": "sunyeo", "characterId": "yuna_01", "personaId": "wood", "tone": "sunyeo", "room": "ConsultationSolo", "specialty": "general", "defaultTopic": "", "accent": "#C9A227", "available": true, "tagline_vi": "Ngồi xuống kể ta nghe, chuyện gì cũng được."},
+    {"id": "reality", "characterId": "yunjung_01", "personaId": "coldgirl", "tone": "coldgirl", "room": "ConsultationSolo02", "specialty": "career", "defaultTopic": "career", "accent": "#B07C9B", "available": true, "tagline_vi": "Nói thẳng, không vòng vo. Anh chị chịu nghe chứ?"},
+    {"id": "dosa", "characterId": "jiho_01", "personaId": "dosa", "tone": "dosa", "room": "ConsultationSolo", "specialty": "general", "defaultTopic": "", "accent": "#7A6BA8", "available": true, "tagline_vi": "Bế tắc thì ngồi xuống, ta tìm bước kế tiếp cho ra lẽ."},
+    {"id": "love", "characterId": "", "personaId": "water", "tone": "", "room": "", "specialty": "love", "defaultTopic": "love", "accent": "#D9799B", "available": false, "tagline_vi": "Duyên đến duyên đi đều có lúc của nó."},
+    {"id": "wealth", "characterId": "", "personaId": "earth", "tone": "", "room": "", "specialty": "wealth", "defaultTopic": "wealth", "accent": "#C9A227", "available": false, "tagline_vi": "Tiền vào được, giữ lại mới là chuyện phải bàn."},
+    {"id": "career", "characterId": "", "personaId": "handsome", "tone": "", "room": "", "specialty": "career", "defaultTopic": "career", "accent": "#5C8FB8", "available": false, "tagline_vi": "Đi hay ở, năm nay lá số nói gì?"},
+    {"id": "tarot", "characterId": "", "personaId": "jeonuji", "tone": "", "room": "", "specialty": "tarot", "defaultTopic": "", "accent": "#7B5EA7", "available": false, "tagline_vi": "Rút một lá, xem trời đất muốn nói gì."},
+    {"id": "horoscope", "characterId": "", "personaId": "fire", "tone": "", "room": "", "specialty": "horoscope", "defaultTopic": "", "accent": "#4F7FA8", "available": false, "tagline_vi": "Sao chiếu mệnh năm nay nghiêng về đâu."}
+  ]
+}

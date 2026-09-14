@@ -2,6 +2,7 @@ import { CounselorSummary } from '../types';
 import { Lang } from '../../../shared/i18n';
 import { COUNSELOR_AVATAR_ART, COUNSELOR_CARD_ART } from '../assets';
 import { PREVIEW_STRIPS } from '../assets/previews';
+import { builtCharacterIds } from './registry';
 
 /**
  * Mock counselor catalog (spec §47), bilingual (KO default / EN). At least six
@@ -65,19 +66,18 @@ const PREVIEW_ACTIONS_JIHO: PreviewAction[] = [
 ];
 
 /**
- * The characterIds that have a 3D model in ConsultationSolo, and therefore the ones a consultation
- * can actually be held with.
+ * Which counselors can actually hold a consultation — DERIVED, not listed here any more.
  *
- *   yuna_01    → persona `wood`     → f_char_002 (female), ConsultationSolo
- *   jiho_01    → persona `dosa`     → m_char_003 (male),   ConsultationSolo
- *   yunjung_01 → persona `coldgirl` → f_char_003 (female), ConsultationSolo02 — her OWN room
+ * This used to be a hand-written `new Set(['yuna_01', 'jiho_01', 'yunjung_01'])` whose comment said
+ * "adding a counselor means adding it in BOTH places". That was the bug: nothing checked, and by
+ * 14-09 the two lists disagreed — the Unity catalogue had no card at all for Jiho while this app
+ * had been offering him for weeks. The roster now comes from the generated registry, so there is
+ * one list and `counselorRoster.test.ts` fails if this file drifts from it.
  *
- * This list is the counterpart of RNBridge.PersonaFor on the Unity side: adding a counselor means
- * adding it in BOTH places, and the pair is what stops a name being offered before its body exists.
- * Everyone not named here is listed as "coming soon" rather than hidden — the roster stays honest
+ * Everyone not in it stays visible as "coming soon" rather than hidden: the roster stays honest
  * about what is planned without pretending it is ready.
  */
-const BUILT_CHARACTER_IDS = new Set(['yuna_01', 'jiho_01', 'yunjung_01']);
+const BUILT_CHARACTER_IDS = builtCharacterIds;
 
 const RAW: RawCounselor[] = [
   {

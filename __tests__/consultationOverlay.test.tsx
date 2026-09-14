@@ -21,6 +21,8 @@ const base: FlowState = {
   inputEnabled: false,
   notice: null,
   report: null,
+  tone: '',
+  emotion: 'neutral',
   transcript: [],
   suggestion: '',
   topic: '',

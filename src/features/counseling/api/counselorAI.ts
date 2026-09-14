@@ -1,5 +1,6 @@
 import { Lang } from '../../../shared/i18n';
-import { sendConsultationMessage } from './prayersServer';
+import { sendConsultationMessage, type Scene } from './prayersServer';
+import { toneByCharacter } from '../../counselors/data/registry';
 import {
   CounselingSubject,
   CounselingTopic,
@@ -7,6 +8,7 @@ import {
   CounselorCamera,
   CounselorEmotion,
   CounselorResponse,
+  CounselorScene,
 } from '../types';
 
 /**
@@ -310,23 +312,88 @@ export class MockCounselorAI implements CounselorAIService {
 }
 
 /**
- * Which voice the server should answer in, per counselor.
+ * characterId → the tone the server answers in — DERIVED from the generated roster.
  *
- * `setting.tone` picks the system prompt (`role_<tone>_full` + `tone_style_<tone>`) AND keys the
- * session's ChatSummary history — change the tone mid-session and the counselor loses the thread.
- * It is not the counselor's id and not the persona id: sending `wood` gets `Prayers::Catalog`'s
- * default, not Sun-yeo, because it is not a tone the server knows.
+ * It was a hand-written map of two rows here, a hand-written set of playable ids in
+ * `mockCounselors`, and two more hand-written tables on the Unity side. Four answers to one
+ * question, compared by nobody. `wood`'s tone is `sunyeo`, not `wood`, which is exactly the kind of
+ * detail that goes wrong silently: the wrong tone is not an error, it is the counselor answering in
+ * somebody else's voice.
  *
- * Only the two counselors with a 3D model are listed. The rest fall through to the server default,
- * which is correct — a consultation cannot be started with them anyway.
+ * A counselor with no tone in the registry falls through to the server default, which is correct —
+ * a consultation cannot be started with them anyway.
  */
-const TONE_BY_CHARACTER: Record<string, string> = {
-  yuna_01: 'sunyeo',
-  jiho_01: 'dosa',
+export const toneForCharacter = (characterId?: string): string | undefined =>
+  characterId ? toneByCharacter[characterId] : undefined;
+
+/**
+ * The server's 20 tones, mapped into the 5 this app can draw.
+ *
+ * Written out in full rather than derived, because every row is a decision and several of them are
+ * lossy on purpose:
+ *  - `reveal`, `good_news` and `bless` all become `happy`. The difference between them is timing
+ *    and camera, which this app does not have — not a different face.
+ *  - `suspense` becomes `thinking`, not `surprised`: the counselor is holding something back, and
+ *    `surprised` is the face for hearing something, not for withholding it.
+ *  - `sad` and `negative` become `concerned`. There is no sad face in the set, and `neutral` would
+ *    deliver bad news with no weight at all — which is the one reading the room must never give.
+ *  - `card` and `element` are staging tones (a card flip, an element burst) with no facial content;
+ *    they stay `neutral` and the animation does the work.
+ *
+ * A tone missing from this table falls back to neutral/talk rather than throwing: the server's
+ * catalogue can grow without an app release (that is the point of serving it), and an unknown tone
+ * must degrade to a flat delivery, never to a crash mid-reading.
+ */
+const TONE_PERFORMANCE: Record<string, { emotion: CounselorEmotion; animation: CounselorAnimation }> = {
+  neutral: { emotion: 'neutral', animation: 'talk' },
+  emphasis: { emotion: 'neutral', animation: 'talk' },
+  positive: { emotion: 'happy', animation: 'smile' },
+  negative: { emotion: 'concerned', animation: 'concern' },
+  point: { emotion: 'neutral', animation: 'talk' },
+  thinking: { emotion: 'thinking', animation: 'thinking' },
+  concerned: { emotion: 'concerned', animation: 'concern' },
+  reassuring: { emotion: 'happy', animation: 'nod' },
+  good_news: { emotion: 'happy', animation: 'smile' },
+  surprised: { emotion: 'surprised', animation: 'talk' },
+  agree: { emotion: 'happy', animation: 'nod' },
+  disagree: { emotion: 'concerned', animation: 'talk' },
+  sad: { emotion: 'concerned', animation: 'concern' },
+  suspense: { emotion: 'thinking', animation: 'thinking' },
+  reveal: { emotion: 'happy', animation: 'talk' },
+  heart: { emotion: 'happy', animation: 'smile' },
+  bless: { emotion: 'happy', animation: 'smile' },
+  card: { emotion: 'neutral', animation: 'talk' },
+  analysis: { emotion: 'thinking', animation: 'thinking' },
+  element: { emotion: 'neutral', animation: 'talk' },
 };
 
-export const toneForCharacter = (characterId?: string): string | undefined =>
-  characterId ? TONE_BY_CHARACTER[characterId] : undefined;
+export function performanceForTone(tone: string): {
+  emotion: CounselorEmotion;
+  animation: CounselorAnimation;
+} {
+  return TONE_PERFORMANCE[tone] ?? { emotion: 'neutral', animation: 'talk' };
+}
+
+/**
+ * The wire scenes, turned into something the room can perform.
+ *
+ * Scenes with no text are dropped: an empty bubble is not a beat, and one reaching the stage costs
+ * a real hold on screen with nothing on it. Everything else is kept in the server's order — the
+ * order IS the reading.
+ */
+export function scenesToPerformance(scenes: Scene[] | undefined): CounselorScene[] | undefined {
+  if (!scenes || scenes.length === 0) return undefined;
+  const out = scenes
+    .filter(s => typeof s.text === 'string' && s.text.trim().length > 0)
+    .map(s => ({
+      text: s.text.trim(),
+      tone: s.tone || 'neutral',
+      ...performanceForTone(s.tone || 'neutral'),
+      holdMs: typeof s.hold_ms === 'number' && s.hold_ms > 0 ? s.hold_ms : undefined,
+      element: s.element ?? null,
+    }));
+  return out.length > 0 ? out : undefined;
+}
 
 /**
  * The real reading, with the mock behind it.
@@ -359,19 +426,25 @@ export class ServerCounselorAI implements CounselorAIService {
         // `other` is the app's own catch-all and means nothing to Prayers::TopicClassifier; sending
         // it would start the reading on a topic the server has to discard anyway.
         topic: input.topic && input.topic !== 'other' ? input.topic : undefined,
+        // Ask for the break-up. The server charges nothing for it and clients that ignore it get a
+        // byte-identical response, so the only cost of asking is the one turn that needed it.
+        scenes: true,
       });
 
       if (turn) {
+        const scenes = scenesToPerformance(turn.scenes);
+        // The response's own emotion is the FIRST scene's — it is what the counselor's face is
+        // doing when the answer begins. It is still not guessed from the text: no scenes means the
+        // model tagged nothing, and a flat delivery is then the honest reading.
+        const opening = scenes?.[0];
         return {
           id: nextId(),
           text: turn.text,
-          // Deliberately flat. The server sends no emotion, and guessing one from the text would be
-          // this file inventing performance again — the per-sentence direction is what `scenes[]`
-          // carries, and staging that is its own piece of work.
-          emotion: 'neutral',
-          animation: 'talk',
+          emotion: opening?.emotion ?? 'neutral',
+          animation: opening?.animation ?? 'talk',
           camera: turn.followUp ? 'closeUp' : 'default',
           followUp: turn.followUp,
+          scenes,
         };
       }
     }

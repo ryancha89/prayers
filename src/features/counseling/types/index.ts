@@ -44,6 +44,30 @@ export type CounselorAnimation = 'talk' | 'thinking' | 'nod' | 'smile' | 'concer
 
 export type CounselorCamera = 'default' | 'closeUp';
 
+/**
+ * One scene of a reading, as the SERVER broke it up (the 26-08 `scenes[]` contract).
+ *
+ * The split is the server's, not ours. `splitReading` packs ~110 characters when nobody says
+ * otherwise, but when the model tagged its own answer the breaks it chose are the real ones — and
+ * each break carries a tone the room can perform.
+ *
+ * `tone` is kept verbatim next to the app's own `emotion`. The server speaks 20 tones
+ * (`Prayers::Catalog::TONES`) and this app's vocabulary is 5 emotions: mapping is lossy both ways
+ * (`reveal` and `good_news` both land on `happy`), so the original is carried along rather than
+ * thrown away at the first consumer that cannot hold it.
+ */
+export interface CounselorScene {
+  text: string;
+  /** The server's tone, unmapped. One of `Prayers::Catalog::TONES`. */
+  tone: string;
+  emotion: CounselorEmotion;
+  animation: CounselorAnimation;
+  /** How long the server wants this scene held, in ms. Carried, not yet paced on. */
+  holdMs?: number;
+  /** The five-element tag the VFX names are built from (`kim`, `moc`, …), when the server sent one. */
+  element?: string | null;
+}
+
 export interface CounselorResponse {
   id: string;
   text: string;
@@ -52,6 +76,8 @@ export interface CounselorResponse {
   camera: CounselorCamera;
   audioUrl?: string;
   followUp?: boolean;
+  /** Present only when the server broke this answer up and the caller asked for it. */
+  scenes?: CounselorScene[];
 }
 
 /* ---- Unity session payload (spec §40) ---- */
@@ -144,7 +170,16 @@ export type OracleErrorKind =
 export interface OracleResultPayload {
   ok: boolean;
   /** phaseId → the lines that phase speaks (P11/P13/P14/P15/P17/P19). */
-  beats: { phaseId: string; lines: string[] }[];
+  beats: {
+    phaseId: string;
+    lines: string[];
+    /** The server's own scene break-up of these lines, when there is one.
+     *
+     *  NOT part of the Unity mirror: only the RN-side mock stage fills this in, from the
+     *  `/api/v1/prayers` reading. The embedded room answers over v2, which speaks `[Beat]` cues and
+     *  has no scenes — so `RNMessages.cs` needs no matching field and JsonUtility never sees this. */
+    scenes?: CounselorScene[];
+  }[];
   followup: string;
   report?: { rows: { label: string; score: number }[]; keywords: string; period: string };
   threadId?: string;

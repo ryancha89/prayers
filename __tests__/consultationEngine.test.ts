@@ -603,3 +603,121 @@ test('switching language does not re-speak the line', () => {
   engine.setLang('en');
   expect(stage.spoken.length).toBe(before);
 });
+
+/* ── The server's scene break-up, once it reaches a phase ───────────────────
+ *
+ * Only the RN path carries these: the embedded room answers over v2, which speaks `[Beat]` cues and
+ * has no scenes, so every assertion below has a partner that pins the untagged behaviour unchanged.
+ */
+
+/** Three sentences, ~190 characters — comfortably past the 110 the local splitter packs to. */
+const LONG_SCENE =
+  '올해의 큰 흐름부터 봅니다. 재물의 자리가 움직이는 해라 들어오는 돈도 나가는 돈도 함께 커집니다. ' +
+  '그래서 버는 것보다 남기는 쪽에 손을 써야 하는 한 해입니다.';
+
+test('a scene is spoken whole — the server broke the answer, not the character counter', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('질문');
+  sched.advance(120_000);
+  // Hold the takes so the beat stops after its first chunk and can be read.
+  stage.holdPrefix = 'P11';
+
+  engine.onOracleResult({
+    ok: true,
+    followup: '',
+    beats: [
+      {
+        phaseId: 'P11',
+        lines: [LONG_SCENE],
+        scenes: [{ text: LONG_SCENE, tone: 'analysis', emotion: 'thinking', animation: 'thinking' }],
+      },
+    ],
+  });
+  sched.advance(2_000);
+
+  // One scene, one chunk: the whole thing is on the card and being said in one take.
+  expect(engine.getState().line).toBe(LONG_SCENE);
+  expect(stage.spoken.filter(k => k.startsWith('P11#'))).toEqual(['P11#0']);
+});
+
+test('the same beat without scenes is still packed by the local splitter', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('질문');
+  sched.advance(120_000);
+  stage.holdPrefix = 'P11';
+
+  engine.onOracleResult({
+    ok: true,
+    followup: '',
+    beats: [{ phaseId: 'P11', lines: [LONG_SCENE] }],
+  });
+  sched.advance(2_000);
+
+  // The heuristic cuts it: the card opens on one sentence, with more to come.
+  expect(engine.getState().line.length).toBeLessThan(LONG_SCENE.length);
+  expect(engine.getState().line).toBe('올해의 큰 흐름부터 봅니다.');
+});
+
+test('the face follows the scene being spoken, and lets go of it afterwards', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('질문');
+  sched.advance(120_000);
+  stage.holdPrefix = 'P11';
+
+  engine.onOracleResult({
+    ok: true,
+    followup: '',
+    beats: [
+      {
+        phaseId: 'P11',
+        lines: ['먼저 흐름을 봅니다.', '여기서 한 번 걸립니다.'],
+        scenes: [
+          { text: '먼저 흐름을 봅니다.', tone: 'analysis', emotion: 'thinking', animation: 'thinking' },
+          { text: '여기서 한 번 걸립니다.', tone: 'concerned', emotion: 'concerned', animation: 'concern' },
+        ],
+      },
+    ],
+  });
+  sched.advance(2_000);
+
+  expect(engine.getState().tone).toBe('analysis');
+  expect(engine.getState().emotion).toBe('thinking');
+
+  // The take finishes; the next scene brings its own direction with it.
+  engine.onSpeakDone('P11#0');
+  expect(engine.getState().line).toContain('여기서 한 번 걸립니다.');
+  expect(engine.getState().tone).toBe('concerned');
+  expect(engine.getState().emotion).toBe('concerned');
+
+  // And an authored phase afterwards is not left wearing it: that copy was never directed.
+  stage.holdPrefix = null;
+  engine.onSpeakDone('P11#1');
+  sched.advance(120_000);
+  expect(engine.getState().tone).toBe('');
+  expect(engine.getState().emotion).toBe('neutral');
+});
+
+test('an untagged reading leaves the face flat, as it always did', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('질문');
+  sched.advance(120_000);
+  stage.holdPrefix = 'P11';
+
+  engine.onOracleResult({
+    ok: true,
+    followup: '',
+    beats: [{ phaseId: 'P11', lines: ['먼저 흐름을 봅니다.'] }],
+  });
+  sched.advance(2_000);
+
+  expect(engine.getState().tone).toBe('');
+  expect(engine.getState().emotion).toBe('neutral');
+});

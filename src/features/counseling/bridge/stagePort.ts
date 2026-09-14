@@ -38,6 +38,13 @@ export function createStagePort(bridge: UnityBridge, onExit: () => void): StageP
   };
 }
 
+/** What the mock stage needs back from a turn: the words, and the server's break-up when it sent
+ *  one. A bare string was enough while the split was ours to guess; it no longer is. */
+export interface MockReply {
+  text: string;
+  scenes?: import('../types').CounselorScene[];
+}
+
 /**
  * A stage for builds with no embedded player.
  *
@@ -47,27 +54,82 @@ export function createStagePort(bridge: UnityBridge, onExit: () => void): StageP
  * caller hands over (the app's mock counselor, in practice), so the walk stays
  * believable end to end without Unity.
  */
+/** The four phases the staged reading is spoken over. */
+const READING_PHASES = ['P11', 'P14', 'P17', 'P19'];
+
+/**
+ * Hand out `count` scenes to `buckets` phases, in order and contiguously.
+ *
+ * Order is the reading: scene 3 must never be spoken before scene 2, so this only ever cuts the
+ * run into consecutive slices. Fewer scenes than phases leaves the tail phases empty rather than
+ * repeating a scene — a phase with nothing to say falls back to its authored line, which is what
+ * that line is for.
+ */
+export function spreadScenes<T>(scenes: T[], buckets: number): T[][] {
+  const out: T[][] = Array.from({ length: buckets }, () => []);
+  if (scenes.length === 0) return out;
+  if (scenes.length <= buckets) {
+    scenes.forEach((s, i) => out[i].push(s));
+    return out;
+  }
+  // Remainder goes to the EARLY phases: the opening beats carry the analysis, and a long tail on
+  // the closing blessing reads as padding.
+  const base = Math.floor(scenes.length / buckets);
+  const extra = scenes.length % buckets;
+  let at = 0;
+  for (let b = 0; b < buckets; b += 1) {
+    const take = base + (b < extra ? 1 : 0);
+    out[b] = scenes.slice(at, at + take);
+    at += take;
+  }
+  return out;
+}
+
 export function createMockStagePort(deps: {
   onOracle: (result: import('../types').OracleResultPayload) => void;
   onSpeakDone: (cacheKey: string) => void;
   onExit: () => void;
   /** Answers a turn. Rejecting reports a connection failure, same as Unity. */
-  reply: (question: string, loop: boolean) => Promise<string>;
+  reply: (question: string, loop: boolean) => Promise<MockReply>;
 }): StagePort {
   const ask = (question: string, loop: boolean) => {
     deps
       .reply(question, loop)
-      .then(text => {
-        // The staged reading is one answer spread over four beats; the loop is
-        // a single short turn. Splitting by paragraph mirrors what the oracle's
-        // own fallback does when the model ignores the requested format.
-        const parts = text.split(/\n\s*\n/).filter(Boolean);
-        const beats = loop
-          ? [{ phaseId: 'loop', lines: [text] }]
-          : ['P11', 'P14', 'P17', 'P19'].map((phaseId, i) => ({
+      .then(({ text, scenes }) => {
+        if (loop) {
+          deps.onOracle({
+            ok: true,
+            loop,
+            followup: '',
+            beats: [{ phaseId: 'loop', lines: [text], scenes }],
+          });
+          return;
+        }
+
+        // WITH SCENES the server already decided where this answer breaks and what each break is
+        // for; the phases just take them in order. WITHOUT them we are back to guessing, and
+        // splitting by paragraph mirrors what the oracle's own fallback does when the model
+        // ignores the requested format.
+        if (scenes && scenes.length > 0) {
+          const spread = spreadScenes(scenes, READING_PHASES.length);
+          deps.onOracle({
+            ok: true,
+            loop,
+            followup: '',
+            beats: READING_PHASES.map((phaseId, i) => ({
               phaseId,
-              lines: [parts[i] ?? (i === 0 ? text : '')],
-            }));
+              lines: spread[i].map(sc => sc.text),
+              scenes: spread[i],
+            })).filter(b => b.lines.length > 0),
+          });
+          return;
+        }
+
+        const parts = text.split(/\n\s*\n/).filter(Boolean);
+        const beats = READING_PHASES.map((phaseId, i) => ({
+          phaseId,
+          lines: [parts[i] ?? (i === 0 ? text : '')],
+        }));
         deps.onOracle({ ok: true, loop, followup: '', beats });
       })
       .catch(() => deps.onOracle({ ok: false, loop, followup: '', beats: [], error: 'connection' }));

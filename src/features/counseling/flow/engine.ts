@@ -33,10 +33,33 @@ import { devlog } from '../../../shared/devlog';
 import { ui } from './strings';
 import type { Lang } from '../../../shared/i18n';
 import type {
+  CounselorEmotion,
+  CounselorScene,
   OracleAskPayload,
   OracleResultPayload,
   StagePhasePayload,
 } from '../types';
+
+
+/**
+ * A chunk of speech with the server's direction attached, when there was one.
+ *
+ * `splitReading` produces chunks with no tone — it is a length heuristic and knows nothing about
+ * what is being said. A scene-backed chunk knows: the break is where the model put it, and the tone
+ * is what the model asked the room to perform there.
+ */
+type SpokenChunk = ReadingChunk & { tone?: string; emotion?: CounselorEmotion };
+
+/** Scenes as chunks. Every scene opens its own paragraph: the server broke the answer there because
+ *  the delivery changes, and running two tones into one paragraph hides exactly that. */
+function chunksOfScenes(scenes: CounselorScene[]): SpokenChunk[] {
+  return scenes.map((sc, i) => ({
+    text: sc.text,
+    newParagraph: i > 0,
+    tone: sc.tone,
+    emotion: sc.emotion,
+  }));
+}
 
 /* ── Tuning, ported from the controller's serialized fields ───────────────── */
 
@@ -193,6 +216,13 @@ export interface FlowState {
   finished: boolean;
   /** A free-chat question is out and the answer has not come back yet. */
   pending: boolean;
+  /** The server's tone for the line currently on screen, verbatim (`analysis`, `reveal`, …), or ''
+   *  when nothing directed this one. The stage draws `emotion`; this is here so a room that grows a
+   *  richer performance later does not have to re-derive it from five collapsed emotions. */
+  tone: string;
+  /** That tone, mapped into what this app can draw. `neutral` whenever there is no direction — the
+   *  honest face for a line nobody staged. */
+  emotion: CounselorEmotion;
 }
 
 const emptyState: FlowState = {
@@ -210,6 +240,8 @@ const emptyState: FlowState = {
   topic: '',
   finished: false,
   pending: false,
+  tone: '',
+  emotion: 'neutral',
 };
 
 export interface EngineOptions {
@@ -252,6 +284,9 @@ export class ConsultationEngine {
 
   /** The reading, once it lands: phaseId → lines. */
   private beats: Record<string, string[]> = {};
+  /** The same reading as the server staged it: phaseId → scenes. Empty for a reading that arrived
+   *  untagged, and for every reading from the embedded room — v2 speaks cues, not scenes. */
+  private beatScenes: Record<string, CounselorScene[]> = {};
   private oraclePending = false;
   private oracleError: OracleResultPayload['error'] | null = null;
   private followup = '';
@@ -276,13 +311,13 @@ export class ConsultationEngine {
    *  drop the whole beat on screen and then send all of it to TTS in one go,
    *  which read as "she talks four seconds late" and silently lost anything
    *  past the server's 800-character cap. */
-  private readingWalk: { key: string; chunks: ReadingChunk[]; next: number } | null = null;
+  private readingWalk: { key: string; chunks: SpokenChunk[]; next: number } | null = null;
 
   /** A loop answer mid-delivery: spoken and revealed one chunk at a time, so the
    *  bubble grows with the voice instead of landing whole seconds before it. */
   private answerWalk: {
     key: string;
-    chunks: ReadingChunk[];
+    chunks: SpokenChunk[];
     /** Next chunk to speak. */
     next: number;
     /** Index of the growing bubble in `transcript`, -1 before the first chunk. */
@@ -371,6 +406,7 @@ export class ConsultationEngine {
     this.topic = this.opts.presetTopic ?? '';
     this.scope = '';
     this.beats = {};
+    this.beatScenes = {};
     this.reportData = null;
     this.inLoop = false;
     this.loopTurns = 0;
@@ -489,7 +525,11 @@ export class ConsultationEngine {
       // phases is the doc's "Example Dialogue" — a placeholder for the SHAPE of
       // an answer, never the answer.
       const text = reading.join('\n');
-      const chunks = splitReading(text);
+      // The server's break-up wins over the length heuristic: those breaks are where the delivery
+      // changes, and re-splitting the joined text at ~110 characters would cut straight across them.
+      const scenes = this.beatScenes[p.id];
+      const chunks: SpokenChunk[] =
+        scenes && scenes.length > 0 ? chunksOfScenes(scenes) : splitReading(text);
       this.patch({
         phaseId: p.id,
         screen: p.ui,
@@ -501,6 +541,8 @@ export class ConsultationEngine {
         inputEnabled: false,
         notice: null,
         report: p.ui === 'report' ? this.reportData : null,
+        tone: chunks[0]?.tone ?? '',
+        emotion: chunks[0]?.emotion ?? 'neutral',
       });
       // onCounselorLine is the whole beat: it feeds the history row, not the card.
       this.opts.onCounselorLine?.(text);
@@ -527,6 +569,10 @@ export class ConsultationEngine {
       notice: null,
       report: p.ui === 'report' ? this.reportData : null,
       topic: this.topic,
+      // Authored copy, not a directed reading. Leaving the last scene's face on would carry
+      // `reveal` into a question box.
+      tone: '',
+      emotion: 'neutral',
     });
     if (body) this.opts.onCounselorLine?.(body);
 
@@ -871,7 +917,11 @@ export class ConsultationEngine {
     this.followup = payload.followup ?? '';
     if (payload.report) this.reportData = payload.report;
     this.beats = {};
-    for (const beat of payload.beats ?? []) this.beats[beat.phaseId] = beat.lines;
+    this.beatScenes = {};
+    for (const beat of payload.beats ?? []) {
+      this.beats[beat.phaseId] = beat.lines;
+      if (beat.scenes && beat.scenes.length > 0) this.beatScenes[beat.phaseId] = beat.scenes;
+    }
   }
 
   /* ── The free-chat loop ───────────────────────────────────────────────── */
@@ -975,7 +1025,10 @@ export class ConsultationEngine {
     // answer landing in one frame and the voice arriving four seconds later
     // was the "she talks late" report; the text was early, not the voice late.
     const key = `loop_${this.loopTurns}`;
-    const chunks = splitReading(text);
+    // Same rule as the staged beats: when the server tagged the answer, its scenes ARE the chunks.
+    const loopScenes = payload.beats?.[0]?.scenes;
+    const chunks: SpokenChunk[] =
+      loopScenes && loopScenes.length > 0 ? chunksOfScenes(loopScenes) : splitReading(text);
     // Warm every chunk NOW, while the "one moment" line is still being said:
     // the first clip is usually in memory by the time she finishes it, and the
     // later ones land while the earlier ones play.
@@ -999,7 +1052,11 @@ export class ConsultationEngine {
     }
     const i = walk.next;
     walk.next += 1;
-    this.patch({ line: joinChunks(walk.chunks.slice(0, i + 1)) });
+    this.patch({
+      line: joinChunks(walk.chunks.slice(0, i + 1)),
+      tone: walk.chunks[i].tone ?? '',
+      emotion: walk.chunks[i].emotion ?? 'neutral',
+    });
     const key = `${walk.key}#${i}`;
     this.speak(() => this.stage.speakText(walk.chunks[i].text, key), key);
     return true;
@@ -1014,7 +1071,13 @@ export class ConsultationEngine {
       return false;
     }
     this.readingWalk = null;
-    this.patch({ line: joinChunks(walk.chunks) });
+    // The whole beat is on screen now, so the face is the LAST scene's — the one the beat ends on.
+    const last = walk.chunks[walk.chunks.length - 1];
+    this.patch({
+      line: joinChunks(walk.chunks),
+      tone: last?.tone ?? '',
+      emotion: last?.emotion ?? 'neutral',
+    });
     this.speaking = null;
     this.speakDoneWaiter = null;
     this.stage.stopSpeak();
@@ -1034,6 +1097,7 @@ export class ConsultationEngine {
     const i = walk.next;
     walk.next += 1;
     this.revealChunks(walk, i + 1);
+    this.patch({ tone: walk.chunks[i].tone ?? '', emotion: walk.chunks[i].emotion ?? 'neutral' });
     const chunkKey = `${walk.key}.${i}`;
     this.speak(() => this.stage.speakText(walk.chunks[i].text, chunkKey), chunkKey);
     this.afterSpeech(() => this.speakNextChunk());

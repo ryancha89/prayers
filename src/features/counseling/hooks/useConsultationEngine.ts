@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLang } from '../../../shared/i18n';
 import { ConsultationEngine, FlowState, StagePort } from '../flow/engine';
-import { createMockStagePort, createStagePort } from '../bridge/stagePort';
+import { createMockStagePort, createStagePort, type MockReply } from '../bridge/stagePort';
 import { isNativeUnity, unityBridge } from '../bridge';
 import type { PhaseChoice } from '../flow/types';
 import type { UnityToRNEvent } from '../types';
@@ -21,8 +21,11 @@ export interface UseConsultationOptions {
   /** The area the app already asked about — seeds the flow's topic. */
   topic?: string;
   /** Answers a turn when there is no embedded player. Without it the mock stage
-   *  has nothing to say and the walk parks at the reading hold. */
-  mockReply?: (question: string, loop: boolean) => Promise<string>;
+   *  has nothing to say and the walk parks at the reading hold.
+   *
+   *  Returns the answer AND the server's scene break-up when there is one — the mock stage speaks
+   *  the scenes in order instead of guessing where the answer breaks. */
+  mockReply?: (question: string, loop: boolean) => Promise<MockReply>;
   /** Mirrored into the app's conversation history. */
   onCounselorLine?: (text: string) => void;
   onUserLine?: (text: string) => void;
@@ -136,6 +139,8 @@ function emptyish(): FlowState {
     transcript: [],
     suggestion: '',
     topic: '',
+    tone: '',
+    emotion: 'neutral',
     finished: false,
   pending: false,
   };
