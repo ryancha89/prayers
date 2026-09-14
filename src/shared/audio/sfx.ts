@@ -35,8 +35,14 @@ const FILES: Record<Cue, string> = {
 };
 
 /** Under the music, not over it: these are punctuation, not events. `ui_send` is the one that may
- *  be felt as an event, and it is louder in the file rather than louder here. */
-const VOLUME = 0.5;
+ *  be felt as an event, and it is louder in the file rather than louder here — that spread is real
+ *  now; until 2026-09-14 gen_ui_sfx.py normalised all four to the same peak and threw it away.
+ *
+ *  0.7, not 0.5. The files peaked at -20 dBFS and this halved them again, so a press arrived at
+ *  -26 dBFS while the counselor's voice played at 0 — 26 dB apart, which is the gap the user heard
+ *  as "the clicks are tiny". The files are now -13..-9 dBFS and this trims 3 dB, landing a tap
+ *  around -16 dBFS: audible over the ambient bed (-23 dBFS mean) without competing with speech. */
+const VOLUME = 0.7;
 
 const loaded = new Map<Cue, any>();
 let warned = false;
