@@ -86,8 +86,11 @@ class StageDouble implements StagePort {
     this.spoken.push(cacheKey);
     if (!this.holds(cacheKey)) this.engine.onSpeakDone(cacheKey);
   }
-  speakText(_text: string, cacheKey: string) {
+  /** The words, not just the keys — a test about WHAT is said cannot use a cache key. */
+  spokenText: string[] = [];
+  speakText(text: string, cacheKey: string) {
     this.spoken.push(cacheKey);
+    this.spokenText.push(text);
     if (!this.holds(cacheKey)) this.engine.onSpeakDone(cacheKey);
   }
   prefetched: string[] = [];
@@ -153,6 +156,46 @@ test('the entrance does not act out a walk-in nobody sees', () => {
   }
   // Still opens the music — silence is not the fix.
   expect(p01.sound).toContain('MusicStart');
+});
+
+test('the pillars are said properly on the path the real room actually uses', () => {
+  // ⚠️ THIS IS THE TEST THAT WAS MISSING, and its absence cost a full rebuild.
+  //
+  // The transliteration was wired into ServerCounselorAI.reply() first, with a test proving that
+  // wiring. Both were green, the build shipped — and the screenshot still had 庚辰 in the bubble,
+  // because inside the embedded room RN never calls the server at all. UNITY does, and the answer
+  // comes back over the bridge as ORACLE_RESULT, which that layer never touches.
+  //
+  // So this drives the engine the way the room does: hand it an oracle result and read back what
+  // the player would see and hear.
+  const { sched, stage, engine } = build();
+  engine.setLang('en');
+  engine.begin();
+  sched.advance(60_000);           // through the cover phases to the question box
+  engine.submitQuestion('How is my career going?');
+
+  engine.onOracleResult({
+    ok: true,
+    loop: false,
+    followup: '',
+    beats: [
+      // Two beats on purpose. A beat WITH scenes is spoken from the scenes; a beat without is
+      // spoken from `lines`. Cleaning one and not the other was the exact shape of the earlier
+      // miss, so both paths are driven here.
+      { phaseId: 'P11', lines: ['This follows from 庚辰, where Direct Resource matters.'] },
+      {
+        phaseId: 'P14',
+        lines: ['unused when scenes are present'],
+        scenes: [{ index: 0, text: 'With a weak 癸 Day Master, support matters.', tone: 'analysis' }],
+      },
+    ],
+  });
+  sched.advance(120_000);
+
+  const spoken = stage.spokenText.join(' ');
+  expect(spoken).toContain('Geng Chen');
+  expect(spoken).toContain('Gui');
+  expect(spoken).not.toMatch(/[㐀-鿿]/);
 });
 
 test('the question box waits for the player, however long that takes', () => {

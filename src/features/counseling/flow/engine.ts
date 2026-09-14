@@ -32,6 +32,7 @@ import { splitReading, joinChunks, type ReadingChunk } from './splitReading';
 import { devlog } from '../../../shared/devlog';
 import { ui } from './strings';
 import type { Lang } from '../../../shared/i18n';
+import { sayGlyphs } from '../api/sajuGlyphs';
 import type {
   CounselorEmotion,
   CounselorScene,
@@ -903,6 +904,19 @@ export class ConsultationEngine {
 
   /* ── The reading arrives ──────────────────────────────────────────────── */
 
+  /**
+   * Say the stems and branches in the language being spoken.
+   *
+   * ⚠️ APPLIED HERE, at the one place every server answer enters the room — because a fix one layer
+   * up did nothing. `ServerCounselorAI.reply()` was cleaned first, and it is not on this path at
+   * all: inside the embedded room UNITY calls the server, and the answer arrives back over the
+   * bridge as ORACLE_RESULT. The tests passed, the build shipped, and the screenshot still had
+   * 庚辰 in the bubble. See sajuGlyphs.ts for what the transliteration is and why.
+   */
+  private said(text: string): string {
+    return sayGlyphs(text, this.lang);
+  }
+
   onOracleResult(payload: OracleResultPayload) {
     // Every mounted room hears every ORACLE_RESULT; only the engine that asked
     // may act on it (see loopPending).
@@ -919,8 +933,12 @@ export class ConsultationEngine {
     this.beats = {};
     this.beatScenes = {};
     for (const beat of payload.beats ?? []) {
-      this.beats[beat.phaseId] = beat.lines;
-      if (beat.scenes && beat.scenes.length > 0) this.beatScenes[beat.phaseId] = beat.scenes;
+      // Both, not one: `lines` is what the bubble draws and `scenes` is what the voice speaks a
+      // beat at a time. Cleaning either alone leaves the other exactly as broken.
+      this.beats[beat.phaseId] = beat.lines.map(l => this.said(l));
+      if (beat.scenes && beat.scenes.length > 0) {
+        this.beatScenes[beat.phaseId] = beat.scenes.map(sc => ({ ...sc, text: this.said(sc.text) }));
+      }
     }
   }
 
@@ -993,7 +1011,7 @@ export class ConsultationEngine {
     if (!this.inLoop || !this.loopPending) return;
     this.loopPending = false;
     this.stage.thinking(false);
-    const text = (payload.beats?.[0]?.lines ?? []).join('\n');
+    const text = this.said((payload.beats?.[0]?.lines ?? []).join('\n'));
     if (!payload.ok || !text) {
       this.patch({
         inputEnabled: true,
