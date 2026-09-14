@@ -131,6 +131,30 @@ test('opens on the entrance beat and reaches the question box on its own', () =>
   expect(engine.getState().inputEnabled).toBe(true);
 });
 
+test('the entrance does not act out a walk-in nobody sees', () => {
+  // P01 is an Establishing shot of a counselor the player is ALREADY sitting across from — the
+  // room hands over seated. The doc authored it as a walk-in, and for a while the entrance played
+  // `int_door_open.mp3`, footsteps and a chair over a shot in which nothing moved: a wooden door
+  // swinging open in a room that has no door on screen. The animation side was settled long ago
+  // (CounselorCueAliasBuilder leaves the locomotion cues unaliased on purpose) and so was the VFX
+  // side (the door light beam became a runic ring, 2026-09-10); the sound was the last piece still
+  // performing the old entrance.
+  //
+  // Pinned here rather than in Unity because this JSON is the LAST gate before the player hears it:
+  // it is exported from ConsultationFlow.asset by Tools/consultation/export_flow.py, so a re-run of
+  // the Unity builder that brings the cues back arrives through this file.
+  const { stage, engine } = build();
+  engine.begin();
+
+  const p01 = stage.phases[0];
+  expect(p01.phaseId).toBe('P01');
+  for (const cue of ['DoorOpening', 'Footsteps', 'ChairMovement']) {
+    expect(p01.sound).not.toContain(cue);
+  }
+  // Still opens the music — silence is not the fix.
+  expect(p01.sound).toContain('MusicStart');
+});
+
 test('the question box waits for the player, however long that takes', () => {
   const { sched, engine } = build();
   engine.begin();

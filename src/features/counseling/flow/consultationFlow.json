@@ -28,9 +28,6 @@
         "AmbientParticles"
       ],
       "sound": [
-        "DoorOpening",
-        "Footsteps",
-        "ChairMovement",
         "MusicStart"
       ],
       "ui": "none",
