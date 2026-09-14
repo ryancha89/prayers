@@ -53,7 +53,7 @@ export const SplashScreen: React.FC<{ onDone: () => void }> = ({ onDone }) => {
         useNativeDriver: true,
       });
 
-    Animated.parallel([
+    const reveal = Animated.parallel([
       timing(spark, 1, 500),
       timing(glow, 1, 800, 500),
       timing(logo, 1, 1500, 1300),
@@ -63,7 +63,19 @@ export const SplashScreen: React.FC<{ onDone: () => void }> = ({ onDone }) => {
       ]),
       timing(fade, 0, 300, 3700),
       ...particles.map((p, i) => timing(p, 1, 1400, PARTICLES[i].delay)),
-    ]).start(({ finished }) => finished && onDone());
+    ]);
+    reveal.start(({ finished }) => finished && onDone());
+
+    // ⚠️ The splash is the one component in the app that exists to UNMOUNT ITSELF, and it was doing
+    // it with seventeen native-driven values still attached. `useNativeDriver` hands each value to
+    // the native side; dropping the component without stopping them leaves native nodes pushing
+    // updates at JS listeners that have been torn down — "Sending `onAnimatedValueUpdate` with no
+    // listeners registered", once per node that loses the race, at every launch.
+    //
+    // Nothing breaks, which is why it survived: the splash has already finished by then. But it is
+    // the only warning the app prints on a clean start, and a log with a permanent warning in it is
+    // a log nobody reads.
+    return () => reveal.stop();
   }, [spark, glow, logo, peak, fade, particles, onDone]);
 
   const sound = useMemo(() => {

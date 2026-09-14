@@ -72,12 +72,16 @@ export const CounselorStage: React.FC<{
 
   // Camera default ↔ close-up (spec §21). Subtle, never aggressive.
   useEffect(() => {
-    Animated.timing(camera, {
+    const move = Animated.timing(camera, {
       toValue: closeUp ? 1 : 0,
       duration: 700,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
-    }).start();
+    });
+    move.start();
+    // The two loops above already stop themselves; this one did not, and leaving the room mid-move
+    // is the ordinary case — the player taps out while the camera is still easing.
+    return () => move.stop();
   }, [closeUp, camera]);
 
   const scale = Animated.add(
