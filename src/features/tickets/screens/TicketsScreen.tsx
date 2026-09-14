@@ -33,6 +33,7 @@ export const TicketsScreen: React.FC = () => {
   const [status, setStatus] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<Tier | null>(null);
+  const canBuy = purchaseAvailable();
 
   const refresh = useCallback(async () => {
     const granted = await claimDaily();
@@ -84,8 +85,16 @@ export const TicketsScreen: React.FC = () => {
         {TIERS.map(tier => (
           <Pressable
             key={tier}
-            style={[styles.tier, status?.tier === tier && status.active ? styles.tierCurrent : null]}
-            disabled={busy != null}
+            style={[
+              styles.tier,
+              status?.tier === tier && status.active ? styles.tierCurrent : null,
+              canBuy ? null : styles.tierDisabled,
+            ]}
+            // Not tappable when there is nothing to tap into. The note below says purchases are
+            // unavailable, but a row that still presses and then apologises is the exact "button
+            // that always fails" this file set out not to ship — and in a release build the
+            // apology is the generic one, with no hint of why.
+            disabled={busy != null || !canBuy}
             onPress={() => subscribe(tier)}>
             <View style={styles.tierText}>
               <Text style={styles.tierName}>{t(`tickets.tier.${tier}` as never)}</Text>
@@ -100,7 +109,7 @@ export const TicketsScreen: React.FC = () => {
           </Pressable>
         ))}
 
-        {!purchaseAvailable() && <Text style={styles.unavailable}>{t('tickets.unavailable')}</Text>}
+        {!canBuy && <Text style={styles.unavailable}>{t('tickets.unavailable')}</Text>}
         <Text style={styles.note}>{t('tickets.note')}</Text>
       </ScrollView>
     </SafeAreaView>
@@ -130,6 +139,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   tierCurrent: { borderWidth: 1, borderColor: colors.violetSoft },
+  tierDisabled: { opacity: 0.45 },
   tierText: { flexShrink: 1 },
   tierName: { ...typography.body, color: colors.textPrimary, fontWeight: '600' },
   tierGrant: { ...typography.caption, color: colors.textSecondary },
