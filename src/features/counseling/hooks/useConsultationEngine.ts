@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLang } from '../../../shared/i18n';
 import { ConsultationEngine, FlowState, StagePort } from '../flow/engine';
 import { createMockStagePort, createStagePort, type MockReply } from '../bridge/stagePort';
-import { isNativeUnity, unityBridge } from '../bridge';
+import { getUnityBridge, isNativeUnity } from '../bridge';
 import type { PhaseChoice } from '../flow/types';
 import type { UnityToRNEvent } from '../types';
 
@@ -45,7 +45,7 @@ export interface Consultation {
 
 export function useConsultationEngine(opts: UseConsultationOptions): Consultation {
   const lang = useLang();
-  const [ready, setReady] = useState(!isNativeUnity);
+  const [ready, setReady] = useState(!isNativeUnity());
   const [state, setState] = useState<FlowState>(() => emptyish());
   const engineRef = useRef<ConsultationEngine | null>(null);
 
@@ -57,8 +57,8 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
 
   const stage: StagePort = useMemo(
     () =>
-      isNativeUnity
-        ? createStagePort(unityBridge, () => cbs.current.onFinished?.())
+      isNativeUnity()
+        ? createStagePort(getUnityBridge(), () => cbs.current.onFinished?.())
         : createMockStagePort({
             onOracle: result => engineRef.current?.onOracleResult(result),
             onSpeakDone: key => engineRef.current?.onSpeakDone(key),
@@ -99,7 +99,7 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
   // Unity → engine. ORACLE_RESULT and SPEAK_DONE are the only two replies the
   // walk actually waits on; everything else on the channel belongs to the room.
   useEffect(() => {
-    return unityBridge.onEvent((e: UnityToRNEvent) => {
+    return getUnityBridge().onEvent((e: UnityToRNEvent) => {
       if (e.type === 'UNITY_READY') setReady(true);
       else if (e.type === 'ORACLE_RESULT') engineRef.current?.onOracleResult(e.payload);
       else if (e.type === 'SPEAK_DONE') engineRef.current?.onSpeakDone(e.payload.cacheKey);

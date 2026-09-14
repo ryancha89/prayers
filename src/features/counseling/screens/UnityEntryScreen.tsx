@@ -8,7 +8,7 @@ import { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useCounselingStore } from '../store/counselingStore';
-import { isNativeUnity, unityApiBase, unityBridge } from '../bridge';
+import { getUnityBridge, isNativeUnity, unityApiBase } from '../bridge';
 import { getUserAuth } from '../../auth/store/authStore';
 import { UnityToRNEvent } from '../types';
 import { fetchTicketBalance } from '../api/tickets';
@@ -68,12 +68,12 @@ export const UnityEntryScreen: React.FC = () => {
     // Mock boots here and signals UNITY_READY. The real engine only boots when
     // the room mounts its UnityHost, so we hand over immediately and let the
     // room show its own loading overlay until Unity is ready.
-    const unsub = unityBridge.onEvent((e: UnityToRNEvent) => {
+    const unsub = getUnityBridge().onEvent((e: UnityToRNEvent) => {
       if (e.type === 'UNITY_READY') goToRoom();
     });
-    if (isNativeUnity) setTimeout(goToRoom, 400);
+    if (isNativeUnity()) setTimeout(goToRoom, 400);
 
-    unityBridge.openCounselingRoom({
+    getUnityBridge().openCounselingRoom({
       sessionId,
       counselor: {
         id: counselor.id,

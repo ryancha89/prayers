@@ -11,16 +11,35 @@ import { NativeUnityBridge } from './NativeUnityBridge';
  * exported Unity library is present in the android/ios builds), otherwise
  * falls back to the JS mock so the app keeps working without Unity.
  */
-const hasNativeUnity = (() => {
-  try {
-    return UIManager.hasViewManagerConfig('RNUnityView');
-  } catch {
-    return false;
-  }
-})();
+/**
+ * ⚠️ ASKED EVERY TIME, AND ONLY A `true` IS REMEMBERED.
+ *
+ * This used to be an IIFE run once at module scope, and the answer — whatever it was — stood for
+ * the life of the JS context. That is safe only if the question can never be answered wrongly, and
+ * on 2026-09-14 the devlog caught it answered wrongly twice in two minutes: two reloads landing
+ * mid-session both logged "absent — using mock" on a build whose framework was demonstrably linked
+ * (the cold launch either side of them logged DETECTED).
+ *
+ * What that costs is the whole game. `absent` silently swaps the embedded player for a JS mock:
+ * the room still opens, the flow still runs, the text still appears — and there is no counselor, no
+ * voice, no music and no SFX, with nothing on screen saying so. It is indistinguishable from "the
+ * audio work did not land", which is exactly how it was reported.
+ *
+ * So: never freeze a negative. A `false` is treated as "not yet", re-asked on the next call, and the
+ * room asks again at the moment it actually needs to know. A `true` is cached because a view
+ * manager that exists does not stop existing.
+ */
+let unityDetected = false;
 
-/** True when the embedded Unity player is available in this build. */
-export const isNativeUnity = hasNativeUnity;
+export function isNativeUnity(): boolean {
+  if (unityDetected) return true;
+  try {
+    unityDetected = UIManager.hasViewManagerConfig('RNUnityView') === true;
+  } catch {
+    unityDetected = false;
+  }
+  return unityDetected;
+}
 
 /**
  * Rails host the embedded consultation talks to. Dev: the Mac's local server
@@ -60,7 +79,7 @@ export const isNativeUnity = hasNativeUnity;
 export const unityApiBase = apiBase();
 
 if (__DEV__) {
-  const line = `[unity-bridge] native Unity ${hasNativeUnity ? 'DETECTED' : 'absent — using mock'}`;
+  const line = `[unity-bridge] native Unity ${isNativeUnity() ? 'DETECTED' : 'absent at import — will re-ask'}`;
   console.log(line);
   // Through devlog as well: the console mirror only wraps warn/error (log is far too chatty to
   // ship wholesale), and this one line answers the question that costs the most time to answer any
@@ -74,7 +93,7 @@ export const nativeUnityBridge = new NativeUnityBridge();
 // A JS reload skips React cleanups, so a running Unity instance (and its BGM)
 // survives into this fresh context. Silence it natively and, if one survived,
 // flip the bridge onto the resume path (see NativeUnityBridge.markSurvivor).
-if (hasNativeUnity) {
+if (isNativeUnity()) {
   NativeModules.UnityLifecycle?.silenceSurvivingUnity()
     .then((alive: boolean) => {
       if (!alive) return;
@@ -84,9 +103,20 @@ if (hasNativeUnity) {
     .catch(() => {});
 }
 
-export const unityBridge: UnityBridge = hasNativeUnity
-  ? nativeUnityBridge
-  : new MockUnityBridge();
+let mockBridge: UnityBridge | null = null;
+
+/**
+ * The bridge to talk to, decided WHEN ASKED rather than at import.
+ *
+ * Same reason as above: a module-scope const would hand out the mock forever on the strength of one
+ * bad answer, and a screen that opened five seconds later, on a context where the player is plainly
+ * there, would still be talking to it.
+ */
+export function getUnityBridge(): UnityBridge {
+  if (isNativeUnity()) return nativeUnityBridge;
+  mockBridge ??= new MockUnityBridge();
+  return mockBridge;
+}
 
 export { MockUnityBridge } from './MockUnityBridge';
 export { NativeUnityBridge } from './NativeUnityBridge';

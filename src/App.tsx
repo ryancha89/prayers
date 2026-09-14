@@ -13,6 +13,7 @@ import { colors } from './shared/theme';
 import { RootNavigator } from './navigation/RootNavigator';
 import { SplashScreen } from './shared/components/SplashScreen';
 import { backgroundMusic } from './shared/audio/backgroundMusic';
+import { preload as preloadSfx } from './shared/audio/sfx';
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,9 @@ let musicAllowed = false;
  * Idempotent both ways: safe when Unity never booted, and safe to call on every navigation change,
  * which is exactly how it is wired.
  */
+// The four taps are opened at import, not on first press: see sfx.preload().
+preloadSfx();
+
 const syncAudioToRoute = () => {
   const route = navigationRef.isReady() ? navigationRef.getCurrentRoute() : undefined;
   const inUnity = !!route && UNITY_SCREENS.has(route.name);

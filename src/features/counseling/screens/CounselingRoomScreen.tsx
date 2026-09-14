@@ -12,7 +12,7 @@ import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
 import { useCounselingStore } from '../store/counselingStore';
 import { counselorAI, toneForCharacter } from '../api/counselorAI';
-import { isNativeUnity, unityBridge } from '../bridge';
+import { getUnityBridge, isNativeUnity } from '../bridge';
 import { CounselorStage } from '../components/CounselorStage';
 import { UnityHost } from '../components/UnityHost';
 import { ConsultationOverlay } from '../components/ConsultationOverlay';
@@ -84,7 +84,7 @@ export const CounselingRoomScreen: React.FC = () => {
   const onExit = useCallback(async () => {
     if (exited.current) return;
     exited.current = true;
-    await unityBridge.closeCounselingRoom();
+    await getUnityBridge().closeCounselingRoom();
     // Land on the Conversations tab so the session is visible (spec §50-23).
     navigation.navigate('Tabs', { screen: 'Conversations' });
   }, [navigation]);
@@ -146,7 +146,7 @@ export const CounselingRoomScreen: React.FC = () => {
   // back-button path calls the same idempotent close.
   useEffect(() => {
     return () => {
-      unityBridge.closeCounselingRoom();
+      getUnityBridge().closeCounselingRoom();
     };
   }, []);
 
@@ -168,7 +168,7 @@ export const CounselingRoomScreen: React.FC = () => {
   // means nothing to a player — and the honest fix for each cause is to stop it happening,
   // not to print it.
   useEffect(() => {
-    return unityBridge.onEvent(e => {
+    return getUnityBridge().onEvent(e => {
       if (e.type === 'EXIT_SESSION') onExit();
       else if (e.type === 'SESSION_ERROR') {
         console.warn(`[room] session error: ${e.payload?.reason ?? 'unknown'}`);
@@ -193,7 +193,7 @@ export const CounselingRoomScreen: React.FC = () => {
   // Leaving is the same answer SESSION_ERROR gets, on purpose: the player lands back on
   // Conversations where their session is waiting, instead of guessing at a spinner.
   useEffect(() => {
-    if (!isNativeUnity || consultation.ready) return;
+    if (!isNativeUnity() || consultation.ready) return;
     const timer = setTimeout(() => {
       console.warn('[room] the player never answered SESSION_INIT — leaving instead of hanging.');
       onExit();
@@ -211,7 +211,7 @@ export const CounselingRoomScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {isNativeUnity ? (
+      {isNativeUnity() ? (
         <UnityHost style={StyleSheet.absoluteFill} />
       ) : (
         <CounselorStage

@@ -69,11 +69,30 @@ function instance(cue: Cue): any | null {
   return sound;
 }
 
+/**
+ * Open all four files now, so the first press of each is not the one that loads it.
+ *
+ * ⚠️ It is not merely late — it is SILENT. `play()` rewinds through `Sound.stop(cb)`, and
+ * react-native-sound's stop is `if (this._loaded) { … }` with no else: on a sound still loading the
+ * callback never runs, so the play inside it never happens. The press that warms the cache is the
+ * press that makes no sound, once per cue per launch, which reads exactly like "the taps don't
+ * work". Called once at boot; `instance()` is already idempotent.
+ */
+export function preload() {
+  (Object.keys(FILES) as Cue[]).forEach(instance);
+}
+
 export function play(cue: Cue) {
   if (!sfxEnabled()) return;
   const sound = instance(cue);
   if (!sound) return;
   try {
+    // Still opening (a press in the first moments after launch). Play it straight rather than
+    // through stop() — see preload().
+    if (typeof sound.isLoaded === 'function' && !sound.isLoaded()) {
+      sound.play();
+      return;
+    }
     // Rewind first: a press while the last one is still ringing should sound twice, not once.
     sound.stop(() => {
       sound.setCurrentTime(0);
