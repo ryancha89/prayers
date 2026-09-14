@@ -4,7 +4,15 @@ buildscript {
         minSdkVersion = 24
         compileSdkVersion = 36
         targetSdkVersion = 36
-        ndkVersion = "27.1.12297006"
+        // 27.2, not the 27.1 the React Native template pins.
+        //
+        // The Unity export writes its own module with `ndkVersion "27.2.12479018"` hard-coded — it
+        // is the version the exported IL2CPP C++ is compiled against, and Gradle compiles that
+        // source itself rather than linking a prebuilt .so. Two NDK versions in one build is not a
+        // thing, and Unity's is the one that cannot move. (On this machine it is also the only NDK
+        // that exists: there is no ~/Library/Android/sdk, so android/local.properties points at the
+        // copy inside the Unity Editor.)
+        ndkVersion = "27.2.12479018"
         kotlinVersion = "2.1.20"
     }
     repositories {
