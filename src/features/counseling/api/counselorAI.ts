@@ -1,6 +1,7 @@
 import { Lang } from '../../../shared/i18n';
 import { sendConsultationMessage, type Scene } from './prayersServer';
 import { toneByCharacter } from '../../counselors/data/registry';
+import { sayGlyphs } from './sajuGlyphs';
 import {
   CounselingSubject,
   CounselingTopic,
@@ -432,14 +433,20 @@ export class ServerCounselorAI implements CounselorAIService {
       });
 
       if (turn) {
-        const scenes = scenesToPerformance(turn.scenes);
+        // Say the pillars in the language being spoken, before anything downstream sees the text:
+        // the bubble, the history row and the voice all read from here, and the voice is the one
+        // that turned a bare 庚 in an English sentence into a Chinese syllable out loud.
+        const scenes = scenesToPerformance(turn.scenes)?.map(s => ({
+          ...s,
+          text: sayGlyphs(s.text, input.lang),
+        }));
         // The response's own emotion is the FIRST scene's — it is what the counselor's face is
         // doing when the answer begins. It is still not guessed from the text: no scenes means the
         // model tagged nothing, and a flat delivery is then the honest reading.
         const opening = scenes?.[0];
         return {
           id: nextId(),
-          text: turn.text,
+          text: sayGlyphs(turn.text, input.lang),
           emotion: opening?.emotion ?? 'neutral',
           animation: opening?.animation ?? 'talk',
           camera: turn.followUp ? 'closeUp' : 'default',

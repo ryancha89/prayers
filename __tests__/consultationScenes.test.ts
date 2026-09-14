@@ -144,6 +144,25 @@ test('a turn asks for the break-up', async () => {
   expect(bodyOf(fetchMock).setting.scenes).toBe(true);
 });
 
+test('the pillars are said in the language being spoken, on the way out of the server', async () => {
+  // The unit tests for sayGlyphs pass whether or not it is WIRED — removing the call from
+  // ServerCounselorAI.reply left them all green. This is the one that fails: the defect was never
+  // the transliteration table, it was a bare 庚 reaching a phone and being read aloud in Chinese
+  // in the middle of an English sentence.
+  stubFetch({
+    content: 'This emphasis comes from 庚 in the month pillar.',
+    followup: false,
+    scenes: [scene('With 甲 Wood facing strong Metal, hold your ground.', 'analysis', 3000)],
+  });
+
+  const out = await ask({ lang: 'en' });
+
+  expect(out.text).toBe('This emphasis comes from Geng in the month pillar.');
+  // The scenes are what the voice actually speaks, one beat at a time — cleaning only `text` would
+  // fix the bubble and leave the reading aloud exactly as broken.
+  expect(out.scenes?.[0].text).toBe('With Jia Wood facing strong Metal, hold your ground.');
+});
+
 test('the reply opens on the first scene’s face, and carries the rest', async () => {
   stubFetch({
     content: '올해는 흐름이 좋습니다.',
