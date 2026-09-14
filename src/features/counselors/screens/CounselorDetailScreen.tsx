@@ -18,6 +18,7 @@ import {
   checkConsultationReadiness,
   type ConsultationReadiness,
 } from '../../counseling/api/prayersServer';
+import { sfx } from '../../../shared/audio/sfx';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'CounselorDetail'>;
@@ -134,13 +135,24 @@ export const CounselorDetailScreen: React.FC = () => {
 
       {/* Floating top controls (spec §10) */}
       <SafeAreaView edges={['top']} style={styles.topBar} pointerEvents="box-none">
-        <Pressable style={styles.roundBtn} hitSlop={8} onPress={() => navigation.goBack()}>
+        <Pressable
+          style={styles.roundBtn}
+          hitSlop={8}
+          // `back` is the same pluck as `select` a fifth DOWN, so leaving is audibly the opposite
+          // of arriving. That only pays off if going back actually uses it.
+          onPress={() => {
+            sfx.back();
+            navigation.goBack();
+          }}>
           <Icon name="back" size={26} />
         </Pressable>
         <Pressable
           style={styles.roundBtn}
           hitSlop={8}
-          onPress={() => toggleFavorite(counselor.id)}>
+          onPress={() => {
+            sfx.select();
+            toggleFavorite(counselor.id);
+          }}>
           <Icon
             name={isFavorite ? 'heartFilled' : 'heart'}
             size={22}

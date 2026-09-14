@@ -8,6 +8,7 @@ import { useLang, useT } from '../../../shared/i18n';
 import { RootStackParamList } from '../../../navigation/types';
 import { localizeCounselors } from '../../counselors/data/mockCounselors';
 import { CounselorSummary } from '../../counselors/types';
+import { sfx } from '../../../shared/audio/sfx';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -63,7 +64,13 @@ const Rail: React.FC<{
       <Text style={styles.sectionTitle}>{title}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railRow}>
         {items.map(c => (
-          <Pressable key={c.id} onPress={() => onPress(c.id)} style={styles.railCard}>
+          <Pressable
+          key={c.id}
+          onPress={() => {
+            sfx.tap();
+            onPress(c.id);
+          }}
+          style={styles.railCard}>
             <View style={[styles.railArt, { backgroundColor: c.accent }]}>
               {/* 140x170 is the card's own 0.82, so the card art needs no second cut here. */}
               {c.cardImage ? (

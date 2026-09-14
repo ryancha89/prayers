@@ -5,6 +5,7 @@ import { relativeTime } from '../../../shared/utils/time';
 import { useLang, useT } from '../../../shared/i18n';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { ConversationSummary } from '../types';
+import { sfx } from '../../../shared/audio/sfx';
 
 export const ConversationRow: React.FC<{
   conversation: ConversationSummary;
@@ -18,7 +19,14 @@ export const ConversationRow: React.FC<{
   const counselor = getLocalizedCounselor(conversation.counselorId, lang);
   const name = counselor?.name ?? conversation.counselorName;
   return (
-  <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+  <Pressable
+    // Wired here rather than at each caller: the row is the pressable, so every screen that lists
+    // conversations gets the tick without having to remember it.
+    onPress={() => {
+      sfx.tap();
+      onPress();
+    }}
+    style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
     <View style={[styles.portrait, { backgroundColor: conversation.counselorAccent }]}>
       {counselor?.avatarImage ? (
         <Image source={counselor.avatarImage} style={styles.portraitImg} />

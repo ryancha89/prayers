@@ -5,6 +5,7 @@ import { useT } from '../../../shared/i18n';
 import { CounselorPreview } from '../types';
 import { PREVIEW_ASPECT, PREVIEW_FPS, PREVIEW_FRAMES } from '../assets/previews';
 import { SpriteStrip } from './SpriteStrip';
+import { sfx } from '../../../shared/audio/sfx';
 
 /**
  * Short action previews (spec §12). It must NOT launch Unity (spec §12 explicit rule) — and it no
@@ -51,7 +52,10 @@ export const CounselorPreviewCarousel: React.FC<{
           return (
             <Pressable
               key={p.id}
-              onPress={() => setActive(p.id)}
+              onPress={() => {
+                sfx[isActive ? 'tap' : 'select']();
+                setActive(p.id);
+              }}
               disabled={!hasClip}
               style={[
                 styles.chip,

@@ -11,6 +11,7 @@ import { RootStackParamList } from '../../../navigation/types';
 import { CounselingTopic } from '../types';
 import { useCounselingStore } from '../store/counselingStore';
 import { fetchTopics, type TopicCard } from '../api/prayersServer';
+import { sfx } from '../../../shared/audio/sfx';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -80,7 +81,12 @@ export const CounselingTopicScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable hitSlop={8} onPress={() => navigation.goBack()}>
+        <Pressable
+          hitSlop={8}
+          onPress={() => {
+            sfx.back();
+            navigation.goBack();
+          }}>
           <Icon name="back" size={28} />
         </Pressable>
         <View style={styles.headerSpacer} />
@@ -98,7 +104,11 @@ export const CounselingTopicScreen: React.FC = () => {
             return (
               <Pressable
                 key={option.key}
-                onPress={() => setSelected(isActive ? undefined : option.key)}
+                // Deselecting is not a choice being made — it takes the tap, not the select.
+                onPress={() => {
+                  sfx[isActive ? 'tap' : 'select']();
+                  setSelected(isActive ? undefined : option.key);
+                }}
                 style={[styles.topic, isActive && styles.topicActive]}>
                 <Text style={[styles.topicLabel, isActive && styles.topicLabelActive]}>
                   {option.label}

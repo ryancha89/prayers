@@ -12,6 +12,7 @@ import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsSto
 import { SubjectCard } from '../../subjects/components/SubjectCard';
 import { useCounselingStore } from '../store/counselingStore';
 import { saveSajuProfile } from '../api/prayersServer';
+import { sfx } from '../../../shared/audio/sfx';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -71,7 +72,12 @@ export const CounselingSubjectScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable hitSlop={8} onPress={() => navigation.goBack()}>
+        <Pressable
+          hitSlop={8}
+          onPress={() => {
+            sfx.back();
+            navigation.goBack();
+          }}>
           <Icon name="back" size={28} />
         </Pressable>
         <Text style={styles.step}>{t('subject.with', { name: counselor?.name ?? '' })}</Text>
@@ -89,7 +95,10 @@ export const CounselingSubjectScreen: React.FC = () => {
                 key={s.id}
                 subject={s}
                 selected={selectedId === s.id}
-                onPress={() => setSelectedId(s.id)}
+                onPress={() => {
+                  sfx.select();
+                  setSelectedId(s.id);
+                }}
               />
             ))}
         </View>
@@ -103,11 +112,19 @@ export const CounselingSubjectScreen: React.FC = () => {
                 key={s.id}
                 subject={s}
                 selected={selectedId === s.id}
-                onPress={() => setSelectedId(s.id)}
+                onPress={() => {
+                  sfx.select();
+                  setSelectedId(s.id);
+                }}
               />
             ))}
 
-          <Pressable style={styles.addRow} onPress={() => navigation.navigate('AddSubject')}>
+          <Pressable
+            style={styles.addRow}
+            onPress={() => {
+              sfx.tap();
+              navigation.navigate('AddSubject');
+            }}>
             <Icon name="plus" size={22} color={colors.violetSoft} />
             <Text style={styles.addLabel}>{t('subject.add')}</Text>
           </Pressable>

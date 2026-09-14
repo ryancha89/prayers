@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
+import { sfx } from '../../../shared/audio/sfx';
 
 export const CategoryTabs: React.FC<{
   categories: { key: string; label: string }[];
@@ -16,7 +17,13 @@ export const CategoryTabs: React.FC<{
       return (
         <Pressable
           key={c.key}
-          onPress={() => onChange(c.key)}
+          // `select` means something CHANGED — pressing the chip you are already on changed
+          // nothing, so it gets the everyday tap instead. Same distinction the four cues were
+          // synthesised for (Tools/audio/gen_ui_sfx.py).
+          onPress={() => {
+            sfx[isActive ? 'tap' : 'select']();
+            onChange(c.key);
+          }}
           style={[styles.chip, isActive && styles.chipActive]}>
           <Text style={[styles.label, isActive && styles.labelActive]}>{c.label}</Text>
         </Pressable>

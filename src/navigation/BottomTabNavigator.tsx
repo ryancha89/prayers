@@ -4,6 +4,7 @@ import { colors } from '../shared/theme';
 import { useT, TranslationKey } from '../shared/i18n';
 import { Icon, IconName } from '../shared/components/Icon';
 import { TabParamList } from './types';
+import { sfx } from '../shared/audio/sfx';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { ConversationsScreen } from '../features/conversations/screens/ConversationsScreen';
 import { DiscoverScreen } from '../features/discover/screens/DiscoverScreen';
@@ -29,6 +30,10 @@ export const BottomTabNavigator: React.FC = () => {
   const t = useT();
   return (
     <Tab.Navigator
+      // The four tabs were the largest silent surface in the app: every screen change the player
+      // makes most often made no sound at all, while a counselor card did. tabPress fires for the
+      // tab you are already on too (it scrolls to top), and that is still a press worth answering.
+      screenListeners={{ tabPress: () => sfx.tap() }}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: colors.violetSoft,
