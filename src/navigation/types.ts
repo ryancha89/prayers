@@ -22,6 +22,13 @@ export type RootStackParamList = {
    */
   /** Shown until the app has an account. Registered only while signed out. */
   Login: undefined;
+  /** The account itself: who is signed in, signing out, and deleting it. */
+  Account: undefined;
+  /** Question tickets: the balance, the allowance, and the only way to buy more. */
+  Tickets: undefined;
+  /** Terms and the privacy policy. Apple wants both reachable, and 5.1.1(v) wants the deletion
+   *  above reachable too. */
+  Legal: { doc: 'terms' | 'privacy' };
   ProfileSetup: undefined;
   /** Loading screen that boots the (mock) Unity room, spec §17. */
   UnityEntry: {

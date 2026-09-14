@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, spacing, typography } from '../../../shared/theme';
+import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
 import { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
@@ -105,6 +105,11 @@ export const UnityEntryScreen: React.FC = () => {
       <View style={styles.container}>
         <Text style={styles.title}>{t('unity.noTickets.title')}</Text>
         <Text style={styles.subtitle}>{t('unity.noTickets.body')}</Text>
+        {/* The way OUT of the dead end. This screen used to offer a single Back button: the app
+            told the player they were out of tickets and gave them nowhere to get any. */}
+        <Pressable style={styles.topUp} onPress={() => navigation.navigate('Tickets')}>
+          <Text style={styles.topUpText}>{t('unity.noTickets.topUp')}</Text>
+        </Pressable>
         <Pressable style={styles.back} onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>{t('unity.noTickets.back')}</Text>
         </Pressable>
@@ -139,6 +144,14 @@ const styles = StyleSheet.create({
   spinner: { marginBottom: spacing.lg },
   title: { ...typography.h3, color: colors.textPrimary },
   subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center', paddingHorizontal: spacing.xxl },
+  topUp: {
+    backgroundColor: colors.violet,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.md,
+  },
+  topUpText: { ...typography.body, color: colors.textPrimary, fontWeight: '600' },
   back: { marginTop: spacing.xxl, paddingHorizontal: spacing.xxl, paddingVertical: spacing.md, borderRadius: 999, backgroundColor: colors.card },
   backText: { ...typography.body, color: colors.textPrimary },
 });

@@ -12,7 +12,9 @@ import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useFavoritesStore } from '../../counselors/store/favoritesStore';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
 import { useSoundStore } from '../../../shared/audio/store';
-import { mockWallet } from '../monetization';
+import { fetchTicketBalance } from '../../counseling/api/tickets';
+import { sfx } from '../../../shared/audio/sfx';
+import { useAuthStore } from '../../auth/store/authStore';
 
 /** Simple profile page mirroring the reference structure (spec §33). */
 export const MyPageScreen: React.FC = () => {
@@ -22,10 +24,23 @@ export const MyPageScreen: React.FC = () => {
   const setLang = useLanguageStore(s => s.setLang);
   const musicEnabled = useSoundStore(s => s.musicEnabled);
   const setMusicEnabled = useSoundStore(s => s.setMusicEnabled);
+  const sfxEnabled = useSoundStore(s => s.sfxEnabled);
+  const setSfxEnabled = useSoundStore(s => s.setSfxEnabled);
   const [langOpen, setLangOpen] = React.useState(false);
   const savedCount = useSubjectsStore(s => s.subjects.length);
   const favCount = useFavoritesStore(s => s.ids.length);
   const sessionCount = useConversationsStore(s => s.order.length);
+  const displayName = useAuthStore(s => s.displayName);
+
+  // Read once when the page opens rather than held in a store: it changes on the server (a
+  // consultation spends one, the daily allowance adds some) and a cached copy here would be the
+  // number that is wrong at exactly the moment someone looks at it.
+  const [tickets, setTickets] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    const ac = new AbortController();
+    fetchTicketBalance(ac.signal).then(b => setTickets(b?.tickets ?? null));
+    return () => ac.abort();
+  }, []);
 
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
@@ -36,7 +51,9 @@ export const MyPageScreen: React.FC = () => {
           <View style={styles.avatar}>
             <Icon name="person" size={30} />
           </View>
-          <Text style={styles.name}>Jeongmin</Text>
+          {/* The account's own name. Was hard-coded to "Jeongmin", which shipped a stranger's
+              name to every player; there is a real one to show now. */}
+          <Text style={styles.name}>{displayName || t('account.noName')}</Text>
         </View>
 
         <View style={styles.statsRow}>
@@ -45,15 +62,21 @@ export const MyPageScreen: React.FC = () => {
           <Stat label={t('my.favorites')} value={favCount} />
         </View>
 
-        {/* Credits — placeholder only (spec §34) */}
+        {/* The REAL balance. This block used to read `mockWallet.balance` — a constant 120 in a
+            file, shown to every player, in a currency nothing spends and nothing sells. It is the
+            question-ticket count the consultation gate actually reads, and the button beside it
+            now goes to the only place that can change it. */}
         <View style={styles.credits}>
           <View>
-            <Text style={styles.creditsLabel}>{t('my.credits')}</Text>
-            <Text style={styles.creditsValue}>{mockWallet.balance}</Text>
+            <Text style={styles.creditsLabel}>{t('tickets.balance')}</Text>
+            <Text style={styles.creditsValue}>{tickets ?? '—'}</Text>
           </View>
           <View style={styles.creditsActions}>
-            <PrimaryButton label={t('my.history')} tone="ghost" onPress={() => {}} style={styles.creditBtn} />
-            <PrimaryButton label={t('my.recharge')} onPress={() => {}} style={styles.creditBtn} />
+            <PrimaryButton
+              label={t('my.recharge')}
+              onPress={() => navigation.navigate('Tickets')}
+              style={styles.creditBtn}
+            />
           </View>
         </View>
 
@@ -102,10 +125,27 @@ export const MyPageScreen: React.FC = () => {
             value={musicEnabled}
             onValueChange={setMusicEnabled}
           />
-          <Row label={t('my.account')} />
+          {/* Its own switch, not folded into the music one: people turn music off to listen to
+              something else while they read, and a tap that still clicks is feedback, not noise. */}
+          <ToggleRow
+            label={t('my.sfx')}
+            value={sfxEnabled}
+            onValueChange={setSfxEnabled}
+          />
+          {/* These four were labels with no `onPress` — visible promises of screens that did not
+              exist. Account and the two documents are required for submission (5.1.1(v) wants the
+              deletion inside Account); notifications stays inert until there are notifications to
+              settle, and says so by not looking tappable. */}
+          <Row label={t('my.account')} onPress={() => navigation.navigate('Account')} />
           <Row label={t('my.notifications')} />
-          <Row label={t('my.terms')} />
-          <Row label={t('my.privacy')} />
+          <Row
+            label={t('my.terms')}
+            onPress={() => navigation.navigate('Legal', { doc: 'terms' })}
+          />
+          <Row
+            label={t('my.privacy')}
+            onPress={() => navigation.navigate('Legal', { doc: 'privacy' })}
+          />
         </Section>
       </ScrollView>
     </SafeAreaView>
@@ -161,7 +201,14 @@ const Row: React.FC<{
 }> = ({ label, value, onPress, expanded }) => (
   <Pressable
     style={({ pressed }) => [styles.settingRow, pressed && onPress ? styles.settingRowPressed : null]}
-    onPress={onPress}
+    onPress={
+      onPress
+        ? () => {
+            sfx.tap();
+            onPress();
+          }
+        : undefined
+    }
     disabled={!onPress}>
     <Text style={styles.settingLabel}>{label}</Text>
     <View style={styles.settingRight}>

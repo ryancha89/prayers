@@ -23,6 +23,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
+import { sfx } from '../../../shared/audio/sfx';
 import { useLang } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
 import { ui } from '../flow/strings';
@@ -53,6 +54,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
     const text = input.trim();
     if (!text) return;
     setInput('');
+    sfx.send();
     onSubmit(text);
   };
 

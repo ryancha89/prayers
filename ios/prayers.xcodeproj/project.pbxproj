@@ -10,11 +10,15 @@
 		0C80B921A6F3F58F76C31292 /* libPods-prayers.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-prayers.a */; };
 		117DCE2B56EDA7CB4A355A35 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		52F6F480E5354BC9ABABC536 /* prayers_ambient.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 55A8A8B3A1154B02B88CF833 /* prayers_ambient.m4a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		D14E31D163966341A8A078D4 /* UnityLifecycle.m in Sources */ = {isa = PBXBuildFile; fileRef = B49997535B81B46293E2F292 /* UnityLifecycle.m */; };
 		D36536069254401685C2FFAE /* splash_sound.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 689E9E97097942948C5F96E4 /* splash_sound.m4a */; };
-		52F6F480E5354BC9ABABC536 /* prayers_ambient.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 55A8A8B3A1154B02B88CF833 /* prayers_ambient.m4a */; };
+		1CDBA4DA65034B6393517F04 /* ui_send.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 60FDBBC03F284188B67A0A35 /* ui_send.m4a */; };
+		7AD00FBCEB484848BAAC8077 /* ui_back.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 73862166B8174EF8AB5B5DC4 /* ui_back.m4a */; };
+		02681EB983494661A8C063B2 /* ui_select.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 115E45B5CA344D47B5EFFB16 /* ui_select.m4a */; };
+		797FD39C8FBC4F81AA5A9069 /* ui_tap.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AC109A141DFD45459094C1C2 /* ui_tap.m4a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,6 +27,7 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = prayers/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = prayers/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-prayers.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-prayers.debug.xcconfig"; path = "Target Support Files/Pods-prayers/Pods-prayers.debug.xcconfig"; sourceTree = "<group>"; };
+		55A8A8B3A1154B02B88CF833 /* prayers_ambient.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = prayers_ambient.m4a; path = ../src/shared/assets/sounds/prayers_ambient.m4a; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-prayers.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-prayers.release.xcconfig"; path = "Target Support Files/Pods-prayers/Pods-prayers.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-prayers.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-prayers.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		689E9E97097942948C5F96E4 /* splash_sound.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = splash_sound.m4a; path = ../src/shared/assets/sounds/splash_sound.m4a; sourceTree = "<group>"; };
@@ -30,7 +35,10 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = prayers/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		B49997535B81B46293E2F292 /* UnityLifecycle.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = prayers/UnityLifecycle.m; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		55A8A8B3A1154B02B88CF833 /* prayers_ambient.m4a */ = {isa = PBXFileReference; name = "prayers_ambient.m4a"; path = "../src/shared/assets/sounds/prayers_ambient.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		60FDBBC03F284188B67A0A35 /* ui_send.m4a */ = {isa = PBXFileReference; name = "ui_send.m4a"; path = "../src/shared/assets/sounds/ui_send.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		73862166B8174EF8AB5B5DC4 /* ui_back.m4a */ = {isa = PBXFileReference; name = "ui_back.m4a"; path = "../src/shared/assets/sounds/ui_back.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		115E45B5CA344D47B5EFFB16 /* ui_select.m4a */ = {isa = PBXFileReference; name = "ui_select.m4a"; path = "../src/shared/assets/sounds/ui_select.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		AC109A141DFD45459094C1C2 /* ui_tap.m4a */ = {isa = PBXFileReference; name = "ui_tap.m4a"; path = "../src/shared/assets/sounds/ui_tap.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +80,10 @@
 			children = (
 				689E9E97097942948C5F96E4 /* splash_sound.m4a */,
 				55A8A8B3A1154B02B88CF833 /* prayers_ambient.m4a */,
+				60FDBBC03F284188B67A0A35 /* ui_send.m4a */,
+				73862166B8174EF8AB5B5DC4 /* ui_back.m4a */,
+				115E45B5CA344D47B5EFFB16 /* ui_select.m4a */,
+				AC109A141DFD45459094C1C2 /* ui_tap.m4a */,
 			);
 			name = Resources;
 			path = "";
@@ -181,6 +193,10 @@
 				117DCE2B56EDA7CB4A355A35 /* PrivacyInfo.xcprivacy in Resources */,
 				D36536069254401685C2FFAE /* splash_sound.m4a in Resources */,
 				52F6F480E5354BC9ABABC536 /* prayers_ambient.m4a in Resources */,
+				1CDBA4DA65034B6393517F04 /* ui_send.m4a in Resources */,
+				7AD00FBCEB484848BAAC8077 /* ui_back.m4a in Resources */,
+				02681EB983494661A8C063B2 /* ui_select.m4a in Resources */,
+				797FD39C8FBC4F81AA5A9069 /* ui_tap.m4a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

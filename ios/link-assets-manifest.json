@@ -8,6 +8,22 @@
     {
       "path": "src/shared/assets/sounds/splash_sound.m4a",
       "sha1": "6ed3bec66f3a9e875ac313a31866b61053f8ebaa"
+    },
+    {
+      "path": "src/shared/assets/sounds/ui_back.m4a",
+      "sha1": "d77a3523b565f6ba2545b8573f67699867e9c307"
+    },
+    {
+      "path": "src/shared/assets/sounds/ui_select.m4a",
+      "sha1": "b1ad10313a64cc1e71de36597c865e87fd6d3285"
+    },
+    {
+      "path": "src/shared/assets/sounds/ui_send.m4a",
+      "sha1": "e98accdfe84f4f2f3f9ccd196cacfbd8dfa9f5b0"
+    },
+    {
+      "path": "src/shared/assets/sounds/ui_tap.m4a",
+      "sha1": "34ed6f77c70946f3e1b21c948ab2e5ce6b4acdc5"
     }
   ]
 }

@@ -6,6 +6,7 @@ import { useT } from '../../../shared/i18n';
 import { Badge } from '../../../shared/components/Badge';
 import { CounselorSummary } from '../types';
 import { GradientScrim } from '../../../shared/components/GradientScrim';
+import { sfx } from '../../../shared/audio/sfx';
 
 /**
  * Character-first discovery card (spec §6). Emphasises the portrait; feels like
@@ -28,7 +29,10 @@ export const CounselorCard: React.FC<{
         : undefined;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        sfx.tap();
+        onPress();
+      }}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       <View style={[styles.portrait, { backgroundColor: counselor.accent },
                     counselor.comingSoon && styles.portraitDim]}>

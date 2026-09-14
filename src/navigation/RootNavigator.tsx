@@ -11,6 +11,9 @@ import { CounselingRoomScreen } from '../features/counseling/screens/CounselingR
 import { AddSubjectScreen } from '../features/subjects/screens/AddSubjectScreen';
 import { hasBirthData, useSubjectsStore } from '../features/subjects/store/subjectsStore';
 import { LoginScreen } from '../features/auth/screens/LoginScreen';
+import { AccountScreen } from '../features/profile/screens/AccountScreen';
+import { TicketsScreen } from '../features/tickets/screens/TicketsScreen';
+import { LegalScreen } from '../features/profile/screens/LegalScreen';
 import { useAuthStore } from '../features/auth/store/authStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -53,6 +56,9 @@ export const RootNavigator: React.FC = () => {
       <Stack.Screen name="ProfileSetup" component={AddSubjectScreen} options={{ animation: 'fade' }} />
     ) : null}
     <Stack.Screen name="Tabs" component={BottomTabNavigator} />
+    <Stack.Screen name="Account" component={AccountScreen} />
+    <Stack.Screen name="Tickets" component={TicketsScreen} />
+    <Stack.Screen name="Legal" component={LegalScreen} />
     <Stack.Screen name="CounselorDetail" component={CounselorDetailScreen} />
     <Stack.Screen name="CounselingSubject" component={CounselingSubjectScreen} />
     <Stack.Screen name="CounselingTopic" component={CounselingTopicScreen} />

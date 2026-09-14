@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { sfx } from '../audio/sfx';
 import { colors, radius, spacing, typography } from '../theme';
 
 /** Dominant CTA used for "Start Counseling" and other primary actions (spec §13). */
@@ -10,11 +11,17 @@ export const PrimaryButton: React.FC<{
   disabled?: boolean;
   tone?: 'violet' | 'ghost';
   style?: ViewStyle;
-}> = ({ label, onPress, loading, disabled, tone = 'violet', style }) => {
+  /** The tick this press makes. `select` for a press that changes something, `none` where the
+   *  screen already sounds — the room has its own mix and must not be talked over. */
+  cue?: 'tap' | 'select' | 'none';
+}> = ({ label, onPress, loading, disabled, tone = 'violet', style, cue = 'select' }) => {
   const isGhost = tone === 'ghost';
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        if (cue !== 'none') sfx[cue]();
+        onPress();
+      }}
       disabled={disabled || loading}
       style={({ pressed }) => [
         styles.btn,
