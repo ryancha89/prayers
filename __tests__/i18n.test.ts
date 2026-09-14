@@ -47,6 +47,65 @@ describe('i18n coverage', () => {
   });
 });
 
+/**
+ * The two defects a read-through does not catch, and a machine does.
+ *
+ * Nobody native has reviewed the ja / zh-CN / zh-TW strings — including the ones added for the
+ * login, account and ticket screens. That review is still owed and these tests do not replace it:
+ * tone, register and whether a sentence sounds like a person are exactly what is not checked here.
+ * What is checked is the kind of mistake that survives a read because it LOOKS right.
+ *
+ * The same checks run over Unity's 189 counselor lines in Tools/i18n/audit_translations.py, which
+ * found none there either — after its own first version was fixed for reporting the data clean
+ * while it was in fact auditing empty strings.
+ */
+describe('ja / zh strings, the machine-checkable half', () => {
+  // High-frequency simplified↔traditional pairs. Not exhaustive and does not need to be: one column
+  // copied into the other trips several of these in the first few strings.
+  const PAIRS: [string, string][] = [
+    ['运', '運'], ['势', '勢'], ['问', '問'], ['时', '時'], ['间', '間'], ['语', '語'],
+    ['话', '話'], ['谈', '談'], ['询', '詢'], ['关', '關'], ['开', '開'], ['门', '門'],
+    ['学', '學'], ['会', '會'], ['说', '說'], ['请', '請'], ['见', '見'], ['现', '現'],
+    ['发', '發'], ['对', '對'], ['应', '應'], ['长', '長'], ['业', '業'], ['东', '東'],
+    ['气', '氣'], ['财', '財'], ['号', '號'], ['岁', '歲'], ['选', '選'], ['后', '後'],
+    ['单', '單'], ['体', '體'], ['点', '點'], ['还', '還'], ['这', '這'], ['样', '樣'],
+    ['结', '結'], ['总', '總'], ['题', '題'], ['码', '碼'], ['几', '幾'], ['帐', '帳'],
+  ];
+  const SIMPLIFIED = new Set(PAIRS.map(p => p[0]));
+  const TRADITIONAL = new Set(PAIRS.map(p => p[1]));
+
+  const offenders = (lang: 'zh-CN' | 'zh-TW', wrong: Set<string>) =>
+    Object.entries(translations[lang])
+      .map(([key, value]) => {
+        const bad = [...new Set([...String(value)].filter(c => wrong.has(c)))];
+        return bad.length ? `${key}: ${bad.join('')}` : null;
+      })
+      .filter(Boolean);
+
+  it('keeps simplified out of the traditional column', () => {
+    // The likeliest single defect in this data: zh-CN pasted into zh-TW and never converted.
+    expect(offenders('zh-TW', SIMPLIFIED)).toEqual([]);
+  });
+
+  it('keeps traditional out of the simplified column', () => {
+    expect(offenders('zh-CN', TRADITIONAL)).toEqual([]);
+  });
+
+  it('leaves no Korean or Vietnamese inside a ja or zh string', () => {
+    // A copy-paste that escaped. Reads as the app switching language mid-sentence.
+    const hangul = /[가-힣]/;
+    const viet = /[ăâđêôơưĂÂĐÊÔƠƯáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/;
+    const found: string[] = [];
+    for (const lang of ['ja', 'zh-CN', 'zh-TW'] as const) {
+      for (const [key, value] of Object.entries(translations[lang])) {
+        if (hangul.test(String(value))) found.push(`${lang}/${key}: Hangul`);
+        if (viet.test(String(value))) found.push(`${lang}/${key}: Vietnamese`);
+      }
+    }
+    expect(found).toEqual([]);
+  });
+});
+
 describe('language store helpers', () => {
   it('accepts only the codes it offers', () => {
     LANGUAGES.forEach(l => expect(isLang(l.code)).toBe(true));
