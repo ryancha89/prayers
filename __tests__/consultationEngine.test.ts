@@ -186,7 +186,15 @@ test('the pillars are said properly on the path the real room actually uses', ()
       {
         phaseId: 'P14',
         lines: ['unused when scenes are present'],
-        scenes: [{ index: 0, text: 'With a weak 癸 Day Master, support matters.', tone: 'analysis' }],
+        // A CounselorScene as the bridge delivers it — already mapped, not the raw wire shape.
+        scenes: [
+          {
+            text: 'With a weak 癸 Day Master, support matters.',
+            tone: 'analysis',
+            emotion: 'thinking' as const,
+            animation: 'talk' as const,
+          },
+        ],
       },
     ],
   });

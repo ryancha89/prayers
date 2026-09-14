@@ -1,4 +1,5 @@
 import { sfxEnabled } from './store';
+import { bundledSoundPath, bundledSoundBase } from './bundledSound';
 
 /**
  * The taps.
@@ -54,7 +55,10 @@ function instance(cue: Cue): any | null {
 
   // MAIN_BUNDLE, like the splash and the bed. Failure is silent by design — a missing tick must
   // never be the reason a screen does not respond.
-  const sound = new SoundModule(FILES[cue], SoundModule.MAIN_BUNDLE, (err: unknown) => {
+  const sound = new SoundModule(
+    bundledSoundPath(FILES[cue]),
+    bundledSoundBase(SoundModule),
+    (err: unknown) => {
     if (err) {
       loaded.delete(cue);
       if (__DEV__ && !warned) {

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Dimensions, Easing, Image, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+import { bundledSoundPath, bundledSoundBase } from '../audio/bundledSound';
 
 /**
  * Animated splash (4s), after the "Prayers Splash Screen" storyboard:
@@ -83,7 +84,10 @@ export const SplashScreen: React.FC<{ onDone: () => void }> = ({ onDone }) => {
     try {
       SoundModule.setCategory?.('Ambient');
       // Plays as soon as loading finishes — within the 0-0.5s chime window.
-      const s: any = new SoundModule(CHIME_FILE, SoundModule.MAIN_BUNDLE, (error: unknown) => {
+      const s: any = new SoundModule(
+        bundledSoundPath(CHIME_FILE),
+        bundledSoundBase(SoundModule),
+        (error: unknown) => {
         if (!error) s.play();
       });
       return s;

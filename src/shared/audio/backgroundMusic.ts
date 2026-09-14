@@ -17,6 +17,7 @@
  */
 import { AppState, AppStateStatus } from 'react-native';
 import { musicEnabled, useSoundStore } from './store';
+import { bundledSoundPath, bundledSoundBase } from './bundledSound';
 
 let SoundModule: any = null;
 try {
@@ -89,7 +90,10 @@ const ensureLoaded = (then: () => void) => {
     // Ambient: mixes with other apps and OBEYS THE SILENT SWITCH. Background music the player
     // cannot mute with the hardware switch is the kind of thing that gets an app deleted.
     SoundModule.setCategory?.('Ambient');
-    const s: any = new SoundModule(TRACK_FILE, SoundModule.MAIN_BUNDLE, (error: unknown) => {
+    const s: any = new SoundModule(
+      bundledSoundPath(TRACK_FILE),
+      bundledSoundBase(SoundModule),
+      (error: unknown) => {
       loading = false;
       if (error) {
         // Not a crash and not a retry loop: the track is missing from the bundle (react-native-asset
