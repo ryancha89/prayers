@@ -22,7 +22,11 @@ import { toneForCharacter } from '../src/features/counseling/api/counselorAI';
 
 describe('the generated registry', () => {
   it('gives every playable counselor the four names the two sides need', () => {
-    const playable = counselorRegistry.filter(c => c.available);
+    // SILENT counsellors are excluded on purpose, and the flag is what excludes them rather than a
+    // list of ids. The meditation guide has no characterId spine to fill: nothing stages a body,
+    // nothing answers in a voice. Her room is RN's own breathing screen. The moment a silent card
+    // gains a tone, this test is the one that should start complaining again.
+    const playable = counselorRegistry.filter(c => c.available && !c.silent);
     expect(playable.length).toBeGreaterThan(0);
     // A playable card with no characterId cannot be opened from the app at all: SESSION_INIT is
     // keyed on it. A missing tone means the server answers in its default voice, which is a
@@ -37,8 +41,22 @@ describe('the generated registry', () => {
   it('never lists the same character or persona twice', () => {
     const ids = counselorRegistry.map(c => c.characterId).filter(Boolean);
     expect(new Set(ids).size).toBe(ids.length);
-    const personas = counselorRegistry.map(c => c.personaId);
+    // Empty personas are the silent ones — two of those are not a clash, they are two people with
+    // nothing to say.
+    const personas = counselorRegistry.map(c => c.personaId).filter(Boolean);
     expect(new Set(personas).size).toBe(personas.length);
+  });
+
+  it('keeps a silent counselor genuinely silent', () => {
+    const silent = counselorRegistry.filter(c => c.silent);
+    expect(silent.length).toBeGreaterThan(0);
+    // A tone is a voice the SERVER answers in; a persona is a body Unity stages. A silent card
+    // carrying either means somebody wired her into the consultation path by accident.
+    silent.forEach(c => {
+      expect(c.tone).toBe('');
+      expect(c.personaId).toBe('');
+      expect(toneForCharacter(c.characterId)).toBeUndefined();
+    });
   });
 });
 
@@ -74,5 +92,30 @@ describe('the app roster agrees with it', () => {
   it('has no tone for a counselor who cannot be consulted', () => {
     expect(toneForCharacter('seoyeon_01')).toBeUndefined();
     expect(toneForCharacter(undefined)).toBeUndefined();
+  });
+});
+
+/* ── The order the feed reads in ──────────────────────────────────────────── */
+
+describe('card order', () => {
+  const ids = () => localizeCounselors('en').map(c => c.id);
+
+  it('puts the counselors you can enter first', () => {
+    const order = localizeCounselors('en');
+    const firstSoon = order.findIndex(c => c.comingSoon);
+    expect(order.slice(0, firstSoon).every(c => !c.comingSoon)).toBe(true);
+    expect(order.slice(firstSoon).every(c => c.comingSoon)).toBe(true);
+  });
+
+  it('opens on the generalist', () => {
+    expect(ids()[0]).toBe('yuna');
+  });
+
+  it('puts a seeded counselor ahead of a placeholder that is only a name', () => {
+    const order = ids();
+    // theo has a registry row (persona, tone decided; art in progress).
+    // seoyeon/mina/harin/doyun have none.
+    expect(order.indexOf('theo')).toBeLessThan(order.indexOf('seoyeon'));
+    expect(order.indexOf('theo')).toBeLessThan(order.indexOf('mina'));
   });
 });

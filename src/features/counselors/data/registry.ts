@@ -31,6 +31,15 @@ export interface CounselorRegistryEntry {
   defaultTopic: string;
   accent: string;
   available: boolean;
+  /**
+   * This counselor never speaks.
+   *
+   * The meditation guide is the first: her room is ten minutes of breathing with music and text,
+   * so she has no `tone` (nothing for the server to answer in), no `personaId` (no body for Unity
+   * to stage) and no `room` scene — a combination that is a defect on every other row and is the
+   * whole point of this one. Read it before assuming a playable card has a voice.
+   */
+  silent?: boolean;
   tagline_vi: string;
 }
 
@@ -40,11 +49,18 @@ export const counselorRegistry: CounselorRegistryEntry[] = registry.cards;
  *  word for "has a model and clips"; a characterId is what this app needs to name it. */
 const playable = counselorRegistry.filter(c => c.available && c.characterId.length > 0);
 
+/** The ones whose room is a 3D scene with a counselor in it — everything except the silent ones. */
+export const speakingPlayable = playable.filter(c => !c.silent);
+
+/** True for a counselor whose room is not a consultation at all. */
+export const isSilentCounselor = (characterId?: string): boolean =>
+  !!characterId && counselorRegistry.some(c => c.characterId === characterId && c.silent === true);
+
 export const builtCharacterIds: ReadonlySet<string> = new Set(playable.map(c => c.characterId));
 
 /** characterId → the tone the server answers in. Derived, so it cannot disagree with the roster. */
 export const toneByCharacter: Readonly<Record<string, string>> = Object.fromEntries(
-  playable.filter(c => c.tone.length > 0).map(c => [c.characterId, c.tone]),
+  speakingPlayable.filter(c => c.tone.length > 0).map(c => [c.characterId, c.tone]),
 );
 
 export const registryFor = (characterId?: string): CounselorRegistryEntry | undefined =>

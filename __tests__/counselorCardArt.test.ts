@@ -11,9 +11,25 @@ import { PREVIEW_STRIPS } from '../src/features/counselors/assets/previews';
  * letter on a colour block, and nothing fails. These pin the pairing in both directions.
  */
 describe('counselor card art', () => {
+  // A counselor you can ENTER must have art. One that is still coming soon may not: the card falls
+  // back to the accent block by design, and the alternative — a Blender viewport grab with the
+  // gizmo lines still in it — is worse than a clean placeholder on a locked card.
+  //
+  // Deliberately not a blanket exemption for coming-soon cards: the four older ones DO have art and
+  // must keep it, so the list below is what is genuinely outstanding from the art side. Shrink it
+  // as art lands; it must never grow for a counselor that has become playable.
+  const AWAITING_ART = ['theo'];
+
   it('gives every counselor in the roster a bundled portrait', () => {
     const missing = localizeCounselors('en')
       .filter(c => !c.cardImage)
+      .map(c => c.id);
+    expect(missing).toEqual(AWAITING_ART);
+  });
+
+  it('never leaves a counselor you can actually enter without one', () => {
+    const missing = localizeCounselors('en')
+      .filter(c => !c.comingSoon && (!c.cardImage || !c.avatarImage))
       .map(c => c.id);
     expect(missing).toEqual([]);
   });
@@ -24,7 +40,7 @@ describe('counselor card art', () => {
     const missing = localizeCounselors('en')
       .filter(c => !c.avatarImage)
       .map(c => c.id);
-    expect(missing).toEqual([]);
+    expect(missing).toEqual(AWAITING_ART);
   });
 
   it('has no art for a counselor that is not in the roster', () => {
@@ -40,8 +56,10 @@ describe('counselor card art', () => {
     // The strips are rendered from a real model playing a real clip. A counselor with no model
     // cannot have one, and inventing it would promise a character that does not exist — the same
     // failure the card art was redrawn to fix.
+    // "Has a model" is not the same as "can be entered" since 15-09: the meditation guide's room
+    // is a 2D screen, so she is enterable with no model, no clips and therefore no strip.
     const withModel = localizeCounselors('en')
-      .filter(c => !c.comingSoon)
+      .filter(c => !c.comingSoon && c.category !== 'meditation')
       .map(c => c.id)
       .sort();
     expect(Object.keys(PREVIEW_STRIPS).sort()).toEqual(withModel);
@@ -62,7 +80,7 @@ describe('counselor card art', () => {
     // list and Unity's RNBridge.PersonaFor have to gain a counselor in the same change, or the app
     // offers a name the engine cannot seat.
     const enterable = localizeCounselors('en').filter(c => !c.comingSoon);
-    expect(enterable.map(c => c.id).sort()).toEqual(['jiho', 'yuna', 'yunjung']);
+    expect(enterable.map(c => c.id).sort()).toEqual(['breathe', 'jiho', 'yuna', 'yunjung']);
     enterable.forEach(c => expect(c.cardImage).toBeDefined());
   });
 });

@@ -2,7 +2,7 @@ import { CounselorSummary } from '../types';
 import { Lang } from '../../../shared/i18n';
 import { COUNSELOR_AVATAR_ART, COUNSELOR_CARD_ART } from '../assets';
 import { PREVIEW_STRIPS } from '../assets/previews';
-import { builtCharacterIds } from './registry';
+import { builtCharacterIds, registryFor } from './registry';
 
 /**
  * Mock counselor catalog (spec §47), bilingual (KO default / EN). At least six
@@ -49,6 +49,18 @@ const PREVIEW_ACTIONS: PreviewAction[] = [
   { key: 'thinking', ko: '생각', en: 'Thinking', ja: '考える', 'zh-CN': '思索', 'zh-TW': '思索', vi: 'Ngẫm' },
   { key: 'explaining', ko: '설명', en: 'Explaining', ja: '説明', 'zh-CN': '讲解', 'zh-TW': '講解', vi: 'Giảng giải' },
   { key: 'nod', ko: '끄덕임', en: 'Nod', ja: 'うなずき', 'zh-CN': '点头', 'zh-TW': '點頭', vi: 'Gật đầu' },
+];
+
+/**
+ * Theo's sheet names exactly four animation poses — Explaining, Thinking, Revealing (he holds a
+ * card up) and Welcome. So his preview list is those four and no more: the generic list would
+ * promise a nod and a smile that were never drawn.
+ */
+const PREVIEW_ACTIONS_THEO: PreviewAction[] = [
+  { key: 'hello', ko: '환영 인사', en: 'Welcome', ja: '歓迎', 'zh-CN': '欢迎', 'zh-TW': '歡迎', vi: 'Chào đón' },
+  { key: 'thinking', ko: '생각 중', en: 'Thinking', ja: '考え中', 'zh-CN': '思索', 'zh-TW': '思索', vi: 'Ngẫm' },
+  { key: 'explaining', ko: '설명 중', en: 'Explaining', ja: '説明中', 'zh-CN': '讲解', 'zh-TW': '講解', vi: 'Giảng giải' },
+  { key: 'reveal', ko: '카드 제시', en: 'Revealing', ja: 'カード提示', 'zh-CN': '出牌', 'zh-TW': '出牌', vi: 'Lật bài' },
 ];
 
 /**
@@ -227,7 +239,10 @@ const RAW: RawCounselor[] = [
   {
     id: 'yuna',
     accent: '#38BDF8',
-    category: 'career',
+    // The generalist card. She is the only counsellor whose room answers every topic (her Unity
+    // seed has always said `General`), so she sits under the broad chip rather than under Career —
+    // where she used to compete with Yunjung and Seri, who are genuinely career-only.
+    category: 'saju',
     conversationCount: 960_000,
     characterId: 'yuna_01',
     roomId: 'yuna_room',
@@ -235,63 +250,63 @@ const RAW: RawCounselor[] = [
     l10n: {
       ko: {
         name: '유나',
-        title: '커리어 · 인생 상담사',
-        hook: '당신의 일이 정말 어디로 향하는지 함께 또렷하게 봐요.',
+        title: '무엇이든 듣는 상담사',
+        hook: '무슨 이야기든 좋아요. 앉아서 편하게 꺼내 보세요.',
         about:
-          '유나는 논리적이고 침착해서, 결정이 무겁게 느껴질 때 든든한 사람이에요. 선택하기 전에 두려움과 진짜 신호를 구분하도록 도와줍니다.',
-        personality: ['논리적', '침착함', '지지적'],
-        specialties: ['커리어', '인생', '성장'],
-        tags: ['#커리어', '#인생', '#결정'],
+          '유나는 주제를 가리지 않습니다. 연애든 돈이든 일이든, 요즘 마음에 얹혀 있는 것을 먼저 듣고 사주에서 그 흐름이 어디로 가는지 함께 짚어봅니다. 어디서부터 말해야 할지 모르겠다면, 그 상태로 오셔도 괜찮아요.',
+        personality: ['다정함', '편안함', '솔직함'],
+        specialties: ['연애', '재물', '커리어', '인간관계', '건강', '인생'],
+        tags: ['#무엇이든', '#편안함', '#인생'],
       },
       en: {
         name: 'Yuna',
-        title: 'Career & Life Counselor',
-        hook: "Let's think clearly about where your work is really headed.",
+        title: 'The counsellor who takes any question',
+        hook: 'Anything at all. Sit down and start wherever you like.',
         about:
-          'Yuna is logical and composed, a steady presence when a decision feels heavy. She helps you separate fear from signal before you choose.',
-        personality: ['Logical', 'Composed', 'Supportive'],
-        specialties: ['Career', 'Life', 'Growth'],
-        tags: ['#Career', '#Life', '#Decisions'],
+          'Yuna does not sort people by subject. Love, money, work — she listens to whatever is sitting on you at the moment and then follows that thread through your chart. If you do not know where to begin, that is a fine way to arrive.',
+        personality: ['Warm', 'Easy to talk to', 'Honest'],
+        specialties: ['Love', 'Money', 'Career', 'Relationships', 'Health', 'Life'],
+        tags: ['#Anything', '#Warm', '#Life'],
       },
       ja: {
         name: 'ユナ',
-        title: '仕事・人生の相談者',
-        hook: 'あなたの仕事が本当はどこへ向かうのか、一緒にはっきり見ましょう。',
+        title: '何でも聞く相談役',
+        hook: 'どんな話でも構いません。座って、楽に話し始めてください。',
         about:
-          'ユナは理屈が通っていて落ち着いているので、決断が重く感じるときに頼りになります。選ぶ前に、不安と本当の合図を切り分ける手助けをしてくれます。',
-        personality: ['理知的', '落ち着き', '支えになる'],
-        specialties: ['仕事', '人生', '成長'],
-        tags: ['#仕事', '#人生', '#決断'],
+          'ユナは話題を選びません。恋でもお金でも仕事でも、いま心に引っかかっていることをまず聞き、その流れが四柱のどこへ向かうのかを一緒に見ていきます。どこから話せばいいか分からないまま来ても大丈夫です。',
+        personality: ['やさしい', '話しやすい', '率直'],
+        specialties: ['恋愛', '金運', '仕事', '人間関係', '健康', '人生'],
+        tags: ['#なんでも', '#やさしい', '#人生'],
       },
       'zh-CN': {
-        name: '侑娜',
-        title: '事业 · 人生咨询师',
-        hook: '你的工作到底在往哪走，我们一起看清楚。',
+        name: '宥娜',
+        title: '什么都听的相谈师',
+        hook: '什么话都行。坐下来，从哪儿说起都可以。',
         about:
-          '侑娜讲道理、沉得住气，在决定压得人喘不过气的时候特别靠得住。她会帮你在下决心之前，把害怕和真正的信号分开。',
-        personality: ['讲道理', '沉稳', '托得住'],
-        specialties: ['事业', '人生', '成长'],
-        tags: ['#事业', '#人生', '#抉择'],
+          '宥娜不挑题目。恋爱也好，钱也好，工作也好，她先听你眼下压着的那件事，再顺着它看八字里这股流向哪儿走。不知道从何说起，就这样来也没关系。',
+        personality: ['温和', '好说话', '坦率'],
+        specialties: ['恋爱', '财运', '事业', '人际', '健康', '人生'],
+        tags: ['#什么都问', '#温和', '#人生'],
       },
       'zh-TW': {
-        name: '侑娜',
-        title: '事業 · 人生諮詢師',
-        hook: '你的工作到底在往哪走，我們一起看清楚。',
+        name: '宥娜',
+        title: '什麼都聽的相談師',
+        hook: '什麼話都行。坐下來，從哪兒說起都可以。',
         about:
-          '侑娜講道理、沉得住氣，在決定壓得人喘不過氣的時候特別靠得住。她會幫你在下決心之前，把害怕和真正的信號分開。',
-        personality: ['講道理', '沉穩', '托得住'],
-        specialties: ['事業', '人生', '成長'],
-        tags: ['#事業', '#人生', '#抉擇'],
+          '宥娜不挑題目。戀愛也好，錢也好，工作也好，她先聽你眼下壓著的那件事，再順著它看八字裡這股流向哪兒走。不知道從何說起，就這樣來也沒關係。',
+        personality: ['溫和', '好說話', '坦率'],
+        specialties: ['戀愛', '財運', '事業', '人際', '健康', '人生'],
+        tags: ['#什麼都問', '#溫和', '#人生'],
       },
       vi: {
         name: 'Yuna',
-        title: 'Thầy xem sự nghiệp · vận trình',
-        hook: 'Cùng nhìn cho rõ công việc của con thật ra đang đi về đâu.',
+        title: 'Thầy nghe mọi chuyện',
+        hook: 'Chuyện gì cũng được. Cứ ngồi xuống, kể từ đâu cũng không sao.',
         about:
-          'Yuna có lý lẽ và điềm đạm, rất đáng dựa vào những lúc một quyết định đè nặng. Cô giúp con tách nỗi sợ ra khỏi tín hiệu thật trước khi chọn.',
-        personality: ['Có lý lẽ', 'Điềm đạm', 'Nâng đỡ'],
-        specialties: ['Sự nghiệp', 'Vận trình', 'Trưởng thành'],
-        tags: ['#SựNghiệp', '#VậnTrình', '#QuyếtĐịnh'],
+          'Yuna không chia người theo chủ đề. Tình cảm, tiền bạc hay công việc — cô nghe trước cái đang đè lên con lúc này, rồi lần theo nó xem trong lá số dòng ấy đi về đâu. Chưa biết bắt đầu từ đâu thì cứ tới như vậy cũng được.',
+        personality: ['Dịu dàng', 'Dễ nói chuyện', 'Thẳng thắn'],
+        specialties: ['Tình cảm', 'Tiền bạc', 'Sự nghiệp', 'Quan hệ', 'Sức khoẻ', 'Vận trình'],
+        tags: ['#ChuyệnGìCũngĐược', '#DịuDàng', '#VậnTrình'],
       },
     },
   },
@@ -581,6 +596,170 @@ const RAW: RawCounselor[] = [
       },
     },
   },
+  /**
+   * The meditation guide — the app's first counsellor who does not talk.
+   *
+   * Her "room" is the RN breathing screen, so she is playable TODAY while everyone else waits on a
+   * model: no Unity scene, no clips, no voice. That is recorded in the registry as `silent`, not
+   * left for a reader to infer from three empty fields.
+   *
+   * She is a card and not a tab (15-09). A tab for one feature does not survive the second one —
+   * add another guide and it is another card here, and nothing else moves.
+   */
+  {
+    id: 'breathe',
+    accent: '#C9A6C4',
+    category: 'meditation',
+    characterId: 'breathe_01',
+    roomId: 'breathe_room',
+    isNew: true,
+    previewActions: [],
+    l10n: {
+      ko: {
+        name: '하은',
+        title: '호흡 · 명상 가이드',
+        hook: '십 분이면 돼요. 숨만 고르고 가세요.',
+        about:
+          '하은은 아무것도 묻지 않습니다. 십 분 동안 들이쉬고 내쉬는 것만 함께 해요. 사주도 조언도 없고, 오늘 하루를 잠시 내려놓는 자리입니다.',
+        personality: ['고요함', '느긋함', '다정함'],
+        specialties: ['호흡', '명상', '휴식'],
+        tags: ['#명상', '#호흡', '#십분'],
+      },
+      en: {
+        name: 'Haeun',
+        title: 'Breathing & meditation guide',
+        hook: 'Ten minutes is enough. Just breathe, then go.',
+        about:
+          'Haeun asks you nothing. For ten minutes you breathe in and out together — no chart, no advice, just somewhere to put the day down for a while.',
+        personality: ['Still', 'Unhurried', 'Kind'],
+        specialties: ['Breathing', 'Meditation', 'Rest'],
+        tags: ['#Meditation', '#Breathe', '#TenMinutes'],
+      },
+      ja: {
+        name: 'ハウン',
+        title: '呼吸・瞑想ガイド',
+        hook: '十分で充分です。呼吸を整えて行ってください。',
+        about:
+          'ハウンは何も聞きません。十分のあいだ、ただ一緒に吸って吐くだけ。四柱も助言もなく、今日を少し下ろしておく場所です。',
+        personality: ['静けさ', 'ゆったり', 'やさしさ'],
+        specialties: ['呼吸', '瞑想', '休息'],
+        tags: ['#瞑想', '#呼吸', '#十分'],
+      },
+      'zh-CN': {
+        name: '荷恩',
+        title: '呼吸 · 冥想向导',
+        hook: '十分钟就够。把呼吸调匀再走。',
+        about:
+          '荷恩什么都不问。十分钟里只陪你一吸一呼——没有八字，没有建议，只是把今天先放下的地方。',
+        personality: ['安静', '从容', '温和'],
+        specialties: ['呼吸', '冥想', '休息'],
+        tags: ['#冥想', '#呼吸', '#十分钟'],
+      },
+      'zh-TW': {
+        name: '荷恩',
+        title: '呼吸 · 冥想嚮導',
+        hook: '十分鐘就夠。把呼吸調勻再走。',
+        about:
+          '荷恩什麼都不問。十分鐘裡只陪你一吸一呼——沒有八字，沒有建議，只是把今天先放下的地方。',
+        personality: ['安靜', '從容', '溫和'],
+        specialties: ['呼吸', '冥想', '休息'],
+        tags: ['#冥想', '#呼吸', '#十分鐘'],
+      },
+      vi: {
+        name: 'Haeun',
+        title: 'Người dẫn thở · thiền',
+        hook: 'Mười phút là đủ. Thở cho đều rồi đi.',
+        about:
+          'Haeun không hỏi con điều gì. Mười phút đó chỉ cùng con hít vào thở ra — không lá số, không lời khuyên, chỉ là chỗ đặt ngày hôm nay xuống một lát.',
+        personality: ['Tĩnh', 'Thong thả', 'Dịu dàng'],
+        specialties: ['Hơi thở', 'Thiền', 'Nghỉ ngơi'],
+        tags: ['#Thiền', '#HơiThở', '#MườiPhút'],
+      },
+    },
+  },
+  /**
+   * Theo (테오) — from the character sheet delivered 15-09: turnaround, eight expressions, four
+   * animation poses (Welcome / Thinking / Explaining / Revealing) and a study of his own.
+   *
+   * ⚠️ The sheet is titled "Career & Money Guidance" and that is NOT his role. He is the
+   * relationship counsellor — the brief that ordered him, confirmed 15-09. The copy below follows
+   * the brief; only the look comes from the sheet. His voice follows the role too (`metal`/sudam,
+   * this roster's relationship expert), because a wrong voice is re-recording, not re-typing.
+   *
+   * Not playable yet: no model, and his room on the sheet — Theo's Study, the night-city library —
+   * is not built, so he is seeded into room 1 on loan.
+   */
+  {
+    id: 'theo',
+    accent: '#3B4E8C',
+    category: 'love',
+    characterId: 'theo_01',
+    roomId: 'theo_study',
+    isNew: true,
+    previewActions: PREVIEW_ACTIONS_THEO,
+    l10n: {
+      ko: {
+        name: '테오',
+        title: '인연 · 관계 상담사',
+        hook: '끊을 인연인지 이어갈 인연인지, 같이 봅시다.',
+        about:
+          '테오는 사람 사이의 일을 운으로만 풀지 않습니다. 두 사람의 기운이 어디서 어긋나는지 차분히 짚고, 지금 이 관계에서 당신이 쥘 수 있는 선택까지 함께 정리합니다.',
+        personality: ['냉철함', '논리적', '은근한 다정함'],
+        specialties: ['연애', '인간관계', '가족'],
+        tags: ['#연애', '#인연', '#관계'],
+      },
+      en: {
+        name: 'Theo',
+        title: 'Ties & relationships counsellor',
+        hook: 'A tie worth keeping, or worth ending — let us look at it together.',
+        about:
+          'Theo does not explain people away with fortune alone. He finds, calmly, where two charts pull against each other, and settles what is actually yours to decide in the relationship you are in now.',
+        personality: ['Cool-headed', 'Logical', 'Quietly kind'],
+        specialties: ['Love', 'Relationships', 'Family'],
+        tags: ['#Love', '#Ties', '#Relationships'],
+      },
+      ja: {
+        name: 'テオ',
+        title: '縁・関係の相談役',
+        hook: '切る縁か、続ける縁か。一緒に見ていきましょう。',
+        about:
+          'テオは人と人の問題を運だけで片づけません。二人の気がどこで食い違うのかを静かに示し、今のその関係であなたが選べることまで一緒に整理します。',
+        personality: ['冷静', '論理的', 'さりげない優しさ'],
+        specialties: ['恋愛', '人間関係', '家族'],
+        tags: ['#恋愛', '#縁', '#関係'],
+      },
+      'zh-CN': {
+        name: '泰奥',
+        title: '缘分 · 关系顾问',
+        hook: '该断的缘还是该续的缘，我们一起看。',
+        about:
+          '泰奥不把人与人的事只推给运气。他冷静地指出两个人的气在哪里相冲，再把此刻这段关系里你真正能决定的事一条条理清。',
+        personality: ['冷静', '有逻辑', '不动声色的体贴'],
+        specialties: ['恋爱', '人际', '家庭'],
+        tags: ['#恋爱', '#缘分', '#关系'],
+      },
+      'zh-TW': {
+        name: '泰奧',
+        title: '緣分 · 關係顧問',
+        hook: '該斷的緣還是該續的緣，我們一起看。',
+        about:
+          '泰奧不把人與人的事只推給運氣。他冷靜地指出兩個人的氣在哪裡相沖，再把此刻這段關係裡你真正能決定的事一條條理清。',
+        personality: ['冷靜', '有邏輯', '不動聲色的體貼'],
+        specialties: ['戀愛', '人際', '家庭'],
+        tags: ['#戀愛', '#緣分', '#關係'],
+      },
+      vi: {
+        name: 'Theo',
+        title: 'Cố vấn nhân duyên · quan hệ',
+        hook: 'Duyên nên giữ hay nên buông, ta cùng nhìn cho rõ.',
+        about:
+          'Theo không đổ chuyện người với người cho số phận. Anh điềm tĩnh chỉ ra khí của hai người vênh nhau ở đâu, rồi cùng con sắp lại những điều con thật sự quyết được trong mối quan hệ lúc này.',
+        personality: ['Lạnh đầu', 'Có logic', 'Tử tế ngầm'],
+        specialties: ['Tình cảm', 'Quan hệ', 'Gia đình'],
+        tags: ['#TìnhCảm', '#NhânDuyên', '#QuanHệ'],
+      },
+    },
+  },
 ];
 
 function localize(raw: RawCounselor, lang: Lang): CounselorSummary {
@@ -631,7 +810,18 @@ function localize(raw: RawCounselor, lang: Lang): CounselorSummary {
  */
 export function localizeCounselors(lang: Lang): CounselorSummary[] {
   const all = RAW.map(r => localize(r, lang));
-  return [...all.filter(c => !c.comingSoon), ...all.filter(c => c.comingSoon)];
+  const soon = all.filter(c => c.comingSoon);
+  // Three bands, not two. "Coming soon" covered two very different things once the 15-09 pair was
+  // seeded: counselors whose identity is decided and whose art is being made (they have a row in
+  // the generated registry — persona, tone and room all chosen), and four older placeholders that
+  // are a costume board and a name. Showing the placeholders first put the least real cards
+  // closest to the top.
+  //
+  // Derived from the registry rather than hand-ordered, so a counselor moves up the feed by being
+  // seeded, not by someone remembering to re-sort this list.
+  const announced = soon.filter(c => registryFor(c.characterId));
+  const placeholders = soon.filter(c => !registryFor(c.characterId));
+  return [...all.filter(c => !c.comingSoon), ...announced, ...placeholders];
 }
 
 export function getLocalizedCounselor(
@@ -645,11 +835,18 @@ export function getLocalizedCounselor(
 /** Categories shipped in the first version (spec §7). Labels resolved via t(). */
 export const CATEGORIES: {
   key: 'recommended' | CounselorSummary['category'];
-  labelKey: 'cat.recommended' | 'cat.saju' | 'cat.love' | 'cat.career' | 'cat.life';
+  labelKey:
+    | 'cat.recommended'
+    | 'cat.saju'
+    | 'cat.love'
+    | 'cat.career'
+    | 'cat.life'
+    | 'cat.meditation';
 }[] = [
   { key: 'recommended', labelKey: 'cat.recommended' },
   { key: 'saju', labelKey: 'cat.saju' },
   { key: 'love', labelKey: 'cat.love' },
   { key: 'career', labelKey: 'cat.career' },
   { key: 'life', labelKey: 'cat.life' },
+  { key: 'meditation', labelKey: 'cat.meditation' },
 ];

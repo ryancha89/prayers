@@ -3,10 +3,11 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius, spacing, typography } from '../../../shared/theme';
+import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
 import { RootStackParamList } from '../../../navigation/types';
 import { localizeCounselors } from '../../counselors/data/mockCounselors';
+import { openCounselor } from '../../counselors/openCounselor';
 import { CounselorSummary } from '../../counselors/types';
 import { sfx } from '../../../shared/audio/sfx';
 
@@ -26,17 +27,24 @@ export const DiscoverScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const t = useT();
   const lang = useLang();
-  const open = (id: string) => navigation.navigate('CounselorDetail', { counselorId: id });
+  const open = (id: string) => {
+    const card = all.find(c => c.id === id);
+    if (card) openCounselor(navigation, card);
+  };
 
   const all = localizeCounselors(lang);
   const trending = all.filter(c => c.isTrending);
-  const fresh = all.filter(c => c.isNew);
+  const fresh = all.filter(c => c.isNew && c.category !== 'meditation');
+  // Its own rail rather than a row among the counsellors: it is the one card on this screen that is
+  // not someone to be compared with the others.
+  const breathing = all.filter(c => c.category === 'meditation');
 
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.header}>{t('discover.title')}</Text>
 
+        <Rail title={t('cat.meditation')} items={breathing} onPress={open} />
         <Rail title={t('discover.trending')} items={trending} onPress={open} />
         <Rail title={t('discover.new')} items={fresh} onPress={open} />
 

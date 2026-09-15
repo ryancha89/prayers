@@ -26,6 +26,14 @@ export type RootStackParamList = {
   Account: undefined;
   /** Question tickets: the balance, the allowance, and the only way to buy more. */
   Tickets: undefined;
+  /**
+   * Ten minutes of breathing — the meditation guide's room.
+   *
+   * A pushed screen and not a tab: a tab for one feature does not survive the second one, and the
+   * roster already knows how to hold "a counselor you can enter". The NAME is load-bearing —
+   * App.tsx silences the app's bed on it (`SELF_SCORED_SCREENS`).
+   */
+  MeditationRoom: undefined;
   /** Terms and the privacy policy. Apple wants both reachable, and 5.1.1(v) wants the deletion
    *  above reachable too. */
   Legal: { doc: 'terms' | 'privacy' };

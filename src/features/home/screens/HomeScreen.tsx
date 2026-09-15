@@ -7,6 +7,7 @@ import { colors } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
 import { RootStackParamList } from '../../../navigation/types';
 import { CATEGORIES, localizeCounselors } from '../../counselors/data/mockCounselors';
+import { openCounselor } from '../../counselors/openCounselor';
 import { CounselorGrid } from '../../counselors/components/CounselorGrid';
 import { CategoryTabs } from '../../counselors/components/CategoryTabs';
 import { HomeHeader } from '../../counselors/components/HomeHeader';
@@ -29,9 +30,7 @@ export const HomeScreen: React.FC = () => {
     <SafeAreaView edges={['top']} style={styles.container}>
       <CounselorGrid
         counselors={counselors}
-        onPressCounselor={c =>
-          navigation.navigate('CounselorDetail', { counselorId: c.id })
-        }
+        onPressCounselor={c => openCounselor(navigation, c)}
         ListHeaderComponent={
           <View>
             <HomeHeader />

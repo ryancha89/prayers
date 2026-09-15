@@ -7,7 +7,10 @@ export type CounselorCategory =
   | 'career'
   | 'wealth'
   | 'life'
-  | 'tarot';
+  | 'tarot'
+  /** Not a reading: the breathing room. A category rather than a tab of its own — the second guide
+   *  has to be a second card, not a second tab. */
+  | 'meditation';
 
 export interface CounselorPreview {
   id: string;

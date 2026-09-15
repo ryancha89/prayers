@@ -11,6 +11,7 @@ import { RootStackParamList } from '../../../navigation/types';
 import { CounselingTopic } from '../types';
 import { useCounselingStore } from '../store/counselingStore';
 import { fetchTopics, type TopicCard } from '../api/prayersServer';
+import { groupTopicsFor } from '../topicsForCounselor';
 import { sfx } from '../../../shared/audio/sfx';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -60,6 +61,10 @@ export const CounselingTopicScreen: React.FC = () => {
     ? cards.map(c => ({ key: c.key as CounselingTopic, label: c.label, description: c.description }))
     : TOPICS.map(topic => ({ key: topic.key, label: t(topic.labelKey), description: '' }));
 
+  // Her ground first, the rest below — from the roster's `specialty`, so a new counselor's sections
+  // come from the seed that already had to say what she does.
+  const groups = groupTopicsFor(counselor?.characterId, options);
+
   // A language change swaps the labels under a selection whose key still exists; a server list that
   // does not carry the selected key would leave the Enter button live on nothing.
   useEffect(() => {
@@ -98,30 +103,39 @@ export const CounselingTopicScreen: React.FC = () => {
           {t('topic.subtitle', { name: counselor?.name ?? '' })}
         </Text>
 
-        <View style={styles.grid}>
-          {options.map(option => {
-            const isActive = selected === option.key;
-            return (
-              <Pressable
-                key={option.key}
-                // Deselecting is not a choice being made — it takes the tap, not the select.
-                onPress={() => {
-                  sfx[isActive ? 'tap' : 'select']();
-                  setSelected(isActive ? undefined : option.key);
-                }}
-                style={[styles.topic, isActive && styles.topicActive]}>
-                <Text style={[styles.topicLabel, isActive && styles.topicLabelActive]}>
-                  {option.label}
-                </Text>
-                {option.description ? (
-                  <Text style={styles.topicDescription} numberOfLines={2}>
-                    {option.description}
-                  </Text>
-                ) : null}
-              </Pressable>
-            );
-          })}
-        </View>
+        {groups.map(group => (
+          <View key={group.headingKey ?? 'all'}>
+            {group.headingKey ? (
+              <Text style={styles.section}>
+                {t(group.headingKey, { name: counselor?.name ?? '' })}
+              </Text>
+            ) : null}
+            <View style={styles.grid}>
+              {group.items.map(option => {
+                const isActive = selected === option.key;
+                return (
+                  <Pressable
+                    key={option.key}
+                    // Deselecting is not a choice being made — it takes the tap, not the select.
+                    onPress={() => {
+                      sfx[isActive ? 'tap' : 'select']();
+                      setSelected(isActive ? undefined : option.key);
+                    }}
+                    style={[styles.topic, isActive && styles.topicActive]}>
+                    <Text style={[styles.topicLabel, isActive && styles.topicLabelActive]}>
+                      {option.label}
+                    </Text>
+                    {option.description ? (
+                      <Text style={styles.topicDescription} numberOfLines={2}>
+                        {option.description}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ))}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -138,6 +152,13 @@ const styles = StyleSheet.create({
   scroll: { padding: spacing.xl, gap: spacing.md },
   title: { ...typography.h1, color: colors.textPrimary },
   subtitle: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.md },
+  // Quiet: it labels a group, it does not compete with the cards under it.
+  section: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    marginTop: spacing.xs,
+  },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   topic: {
     width: '47%',

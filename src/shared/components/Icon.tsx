@@ -20,10 +20,12 @@ export type IconName =
   | 'more'
   | 'send'
   | 'mic'
+  | 'stop'
   | 'speaker'
   | 'plus'
   | 'sparkle'
-  | 'play';
+  | 'play'
+  | 'lotus';
 
 type Draw = (color: string) => React.ReactNode;
 
@@ -31,6 +33,17 @@ const HEART_PATH =
   'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z';
 
 const ICONS: Record<IconName, Draw> = {
+  // Three petals and a waterline, in the same 24×24 stroke language as the rest. Drawn rather than
+  // borrowed: the tab it labels is the only place in this app where nobody is talking, and a
+  // speech-adjacent glyph (a candle, a moon) would have read as another counselor.
+  lotus: c => (
+    <>
+      <Path d="M12 4c2.2 2.1 3.2 4.2 3.2 6.4 0 2.1-1.1 3.9-3.2 5.3-2.1-1.4-3.2-3.2-3.2-5.3C8.8 8.2 9.8 6.1 12 4Z" stroke={c} />
+      <Path d="M5.2 9.2c2.6.6 4.3 1.8 5.2 3.6.8 1.7.6 3.4-.6 5.2-2.3-.5-3.9-1.6-4.8-3.4-.9-1.7-.8-3.5.2-5.4Z" stroke={c} />
+      <Path d="M18.8 9.2c1 1.9 1.1 3.7.2 5.4-.9 1.8-2.5 2.9-4.8 3.4-1.2-1.8-1.4-3.5-.6-5.2.9-1.8 2.6-3 5.2-3.6Z" stroke={c} />
+      <Path d="M3.5 19.5c2.6.8 5.4 1.2 8.5 1.2s5.9-.4 8.5-1.2" stroke={c} />
+    </>
+  ),
   home: c => (
     <>
       <Path d="M3 9.5 12 3l9 6.5V20a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20Z" stroke={c} />
@@ -90,6 +103,9 @@ const ICONS: Record<IconName, Draw> = {
       <Line x1="12" y1="19" x2="12" y2="22" stroke={c} />
     </>
   ),
+  // A filled square: the one shape that means "stop" without a label, in every app the player
+  // already uses. Used both to end a recording and to cut the counselor off mid-answer.
+  stop: c => <Path d="M7 7h10v10H7z" stroke={c} fill={c} />,
   speaker: c => (
     <>
       <Polygon points="11 5 6.5 9 3 9 3 15 6.5 15 11 19" stroke={c} />

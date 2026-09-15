@@ -5,6 +5,7 @@ export const translations = {
   ko: {
     'tab.home': '홈',
     'tab.conversations': '대화',
+    'tab.meditation': '명상',
     'tab.discover': '발견',
     'tab.my': '마이',
 
@@ -13,6 +14,7 @@ export const translations = {
     'cat.love': '연애',
     'cat.career': '커리어',
     'cat.life': '인생',
+    'cat.meditation': '명상',
     'cat.wealth': '재물',
     'cat.tarot': '타로',
     'cat.relationships': '인간관계',
@@ -62,6 +64,8 @@ export const translations = {
 
     'topic.title': '어떤 이야기를 나눌까요?',
     'topic.subtitle': '상담 주제를 하나 골라주세요 — 자세한 이야기는 {name} 상담사와 나누게 돼요.',
+    'topic.herGround': '{name} 님이 가장 깊이 보는 것',
+    'topic.alsoPossible': '이것도 물어볼 수 있어요',
     'topic.enter': '상담실 입장하기',
     'topic.love': '연애',
     'topic.career': '커리어',
@@ -78,6 +82,21 @@ export const translations = {
     'unity.tip1': '향이 피어오르고, 상담사가 자리를 정돈하고 있어요.',
     'unity.tip2': '사주는 태어난 순간의 하늘을 여덟 글자에 담은 지도예요.',
     'unity.tip3': '친구에게 묻듯 편하게 물어보세요.',
+
+    // ── 명상실 (10분, 음악과 글만) ─────────────────────────────────
+    'med.title': '명상실',
+    'med.subtitle': '10분 동안, 숨만 고르면 돼요.',
+    'med.start': '시작하기',
+    'med.resume': '이어서 하기',
+    'med.pause': '잠시 멈춤',
+    'med.leave': '나가기',
+    'med.in': '들이쉬고',
+    'med.hold': '잠시 멈추고',
+    'med.out': '내쉬고',
+    'med.paused': '멈춰 있어요. 준비되면 이어서 하세요.',
+    'med.doneTitle': '오늘 몫은 여기까지예요.',
+    'med.doneBody': '{0}번 숨을 쉬었어요.',
+    'med.again': '한 번 더',
 
     'room.placeholder': '무엇이든 물어보세요…',
     'room.waitInput': '상담사의 안내를 기다리는 중…',
@@ -155,7 +174,8 @@ export const translations = {
   },
   en: {
     'tab.home': 'Home',
-    'tab.conversations': 'Conversations',
+    'tab.conversations': 'Chats',
+    'tab.meditation': 'Breathe',
     'tab.discover': 'Discover',
     'tab.my': 'My',
 
@@ -164,6 +184,7 @@ export const translations = {
     'cat.love': 'Love',
     'cat.career': 'Career',
     'cat.life': 'Life',
+    'cat.meditation': 'Breathe',
     'cat.wealth': 'Wealth',
     'cat.tarot': 'Tarot',
     'cat.relationships': 'Relationships',
@@ -213,6 +234,8 @@ export const translations = {
 
     'topic.title': 'What would you like to talk about?',
     'topic.subtitle': 'Pick a topic to begin — {name} will take it from there.',
+    'topic.herGround': 'What {name} reads deepest',
+    'topic.alsoPossible': 'You can also ask about',
     'topic.enter': 'Enter Counseling Room',
     'topic.love': 'Love',
     'topic.career': 'Career',
@@ -229,6 +252,21 @@ export const translations = {
     'unity.tip1': 'Incense is rising — the counselor is arranging her seat.',
     'unity.tip2': 'A saju chart maps the sky of your birth moment in eight characters.',
     'unity.tip3': 'Ask freely, as you would a close friend.',
+
+    // ── Meditation room (10 minutes, music and text only) ─────────
+    'med.title': 'Meditation room',
+    'med.subtitle': 'Ten minutes. All you have to do is breathe.',
+    'med.start': 'Begin',
+    'med.resume': 'Carry on',
+    'med.pause': 'Pause',
+    'med.leave': 'Leave',
+    'med.in': 'Breathe in',
+    'med.hold': 'Hold',
+    'med.out': 'Breathe out',
+    'med.paused': 'Paused. Carry on when you are ready.',
+    'med.doneTitle': 'That is today done.',
+    'med.doneBody': 'You took {0} breaths.',
+    'med.again': 'Once more',
 
     'room.placeholder': 'Ask anything…',
     'room.waitInput': 'Waiting for the counselor…',
@@ -308,6 +346,7 @@ export const translations = {
   ja: {
     'tab.home': 'ホーム',
     'tab.conversations': '相談',
+    'tab.meditation': '瞑想',
     'tab.discover': '発見',
     'tab.my': 'マイ',
 
@@ -316,6 +355,7 @@ export const translations = {
     'cat.love': '恋愛',
     'cat.career': '仕事',
     'cat.life': '人生',
+    'cat.meditation': '瞑想',
     'cat.wealth': '金運',
     'cat.tarot': 'タロット',
     'cat.relationships': '人間関係',
@@ -365,6 +405,8 @@ export const translations = {
 
     'topic.title': 'どんなお話をしましょうか？',
     'topic.subtitle': '相談したいことを一つ選んでください — 詳しいお話は{name}と。',
+    'topic.herGround': '{name}が最も深く読むこと',
+    'topic.alsoPossible': 'こちらも聞けます',
     'topic.enter': '相談室に入る',
     'topic.love': '恋愛',
     'topic.career': '仕事',
@@ -381,6 +423,21 @@ export const translations = {
     'unity.tip1': 'お香が立ちのぼり、相談者が席を整えています。',
     'unity.tip2': '四柱推命は、生まれた瞬間の空を八つの文字に写した地図です。',
     'unity.tip3': '親しい友だちに話すように、気軽に聞いてください。',
+
+    // ── 瞑想室（10分、音楽と文字だけ） ────────────────────────────
+    'med.title': '瞑想室',
+    'med.subtitle': '10分間、呼吸を整えるだけです。',
+    'med.start': 'はじめる',
+    'med.resume': 'つづける',
+    'med.pause': '一時停止',
+    'med.leave': '出る',
+    'med.in': '吸って',
+    'med.hold': 'そのまま',
+    'med.out': '吐いて',
+    'med.paused': '止まっています。整ったら続けてください。',
+    'med.doneTitle': '今日はここまでです。',
+    'med.doneBody': '{0}回の呼吸をしました。',
+    'med.again': 'もう一度',
 
     'room.placeholder': '何でも聞いてください…',
     'room.waitInput': '相談者の言葉を待っています…',
@@ -460,6 +517,7 @@ export const translations = {
   'zh-CN': {
     'tab.home': '首页',
     'tab.conversations': '咨询',
+    'tab.meditation': '冥想',
     'tab.discover': '发现',
     'tab.my': '我的',
 
@@ -468,6 +526,7 @@ export const translations = {
     'cat.love': '感情',
     'cat.career': '事业',
     'cat.life': '人生',
+    'cat.meditation': '冥想',
     'cat.wealth': '财运',
     'cat.tarot': '塔罗',
     'cat.relationships': '人际关系',
@@ -517,6 +576,8 @@ export const translations = {
 
     'topic.title': '今天想聊些什么？',
     'topic.subtitle': '先选一个主题 — 细节就交给{name}慢慢聊。',
+    'topic.herGround': '{name} 看得最深的',
+    'topic.alsoPossible': '这些也可以问',
     'topic.enter': '进入咨询室',
     'topic.love': '感情',
     'topic.career': '事业',
@@ -533,6 +594,21 @@ export const translations = {
     'unity.tip1': '香烟升起，咨询师正在整理座位。',
     'unity.tip2': '八字，是把你出生那一刻的天空写成八个字的地图。',
     'unity.tip3': '像对老朋友那样，随便问。',
+
+    // ── 冥想室（10 分钟，只有音乐和文字） ─────────────────────────
+    'med.title': '冥想室',
+    'med.subtitle': '十分钟，只要调呼吸就好。',
+    'med.start': '开始',
+    'med.resume': '继续',
+    'med.pause': '暂停',
+    'med.leave': '离开',
+    'med.in': '吸气',
+    'med.hold': '屏住',
+    'med.out': '呼气',
+    'med.paused': '已暂停。准备好就继续。',
+    'med.doneTitle': '今天到这里。',
+    'med.doneBody': '你呼吸了 {0} 次。',
+    'med.again': '再来一次',
 
     'room.placeholder': '想问什么都可以…',
     'room.waitInput': '正在等咨询师开口…',
@@ -611,6 +687,7 @@ export const translations = {
   'zh-TW': {
     'tab.home': '首頁',
     'tab.conversations': '諮詢',
+    'tab.meditation': '冥想',
     'tab.discover': '發現',
     'tab.my': '我的',
 
@@ -619,6 +696,7 @@ export const translations = {
     'cat.love': '感情',
     'cat.career': '事業',
     'cat.life': '人生',
+    'cat.meditation': '冥想',
     'cat.wealth': '財運',
     'cat.tarot': '塔羅',
     'cat.relationships': '人際關係',
@@ -668,6 +746,8 @@ export const translations = {
 
     'topic.title': '今天想聊些什麼？',
     'topic.subtitle': '先選一個主題 — 細節就交給{name}慢慢聊。',
+    'topic.herGround': '{name} 看得最深的',
+    'topic.alsoPossible': '這些也可以問',
     'topic.enter': '進入諮詢室',
     'topic.love': '感情',
     'topic.career': '事業',
@@ -684,6 +764,21 @@ export const translations = {
     'unity.tip1': '香煙升起，諮詢師正在整理座位。',
     'unity.tip2': '八字，是把你出生那一刻的天空寫成八個字的地圖。',
     'unity.tip3': '像對老朋友那樣，隨便問。',
+
+    // ── 冥想室（10 分鐘，只有音樂和文字） ─────────────────────────
+    'med.title': '冥想室',
+    'med.subtitle': '十分鐘，只要調呼吸就好。',
+    'med.start': '開始',
+    'med.resume': '繼續',
+    'med.pause': '暫停',
+    'med.leave': '離開',
+    'med.in': '吸氣',
+    'med.hold': '屏住',
+    'med.out': '呼氣',
+    'med.paused': '已暫停。準備好就繼續。',
+    'med.doneTitle': '今天到這裡。',
+    'med.doneBody': '你呼吸了 {0} 次。',
+    'med.again': '再來一次',
 
     'room.placeholder': '想問什麼都可以…',
     'room.waitInput': '正在等諮詢師開口…',
@@ -761,7 +856,8 @@ export const translations = {
   },
   vi: {
     'tab.home': 'Trang chính',
-    'tab.conversations': 'Buổi tư vấn',
+    'tab.conversations': 'Trò chuyện',
+    'tab.meditation': 'Thiền',
     'tab.discover': 'Khám phá',
     'tab.my': 'Của tôi',
 
@@ -770,6 +866,7 @@ export const translations = {
     'cat.love': 'Tình cảm',
     'cat.career': 'Sự nghiệp',
     'cat.life': 'Vận trình',
+    'cat.meditation': 'Thiền',
     'cat.wealth': 'Tiền bạc',
     'cat.tarot': 'Tarot',
     'cat.relationships': 'Quan hệ',
@@ -819,6 +916,8 @@ export const translations = {
 
     'topic.title': 'Hôm nay con muốn nói chuyện gì?',
     'topic.subtitle': 'Chọn một chủ đề để bắt đầu — phần còn lại cứ để {name} dẫn.',
+    'topic.herGround': '{name} xem sâu nhất chuyện này',
+    'topic.alsoPossible': 'Vẫn hỏi được những chuyện này',
     'topic.enter': 'Vào phòng tư vấn',
     'topic.love': 'Tình cảm',
     'topic.career': 'Sự nghiệp',
@@ -835,6 +934,21 @@ export const translations = {
     'unity.tip1': 'Hương đang lên, thầy đang sửa lại chỗ ngồi.',
     'unity.tip2': 'Lá số là tấm bản đồ ghi bầu trời lúc con chào đời bằng tám chữ.',
     'unity.tip3': 'Cứ hỏi thoải mái, như hỏi một người bạn thân.',
+
+    // ── Phòng thiền (10 phút, chỉ nhạc và chữ) ────────────────────
+    'med.title': 'Phòng thiền',
+    'med.subtitle': 'Mười phút, chỉ cần thở cho đều.',
+    'med.start': 'Bắt đầu',
+    'med.resume': 'Thở tiếp',
+    'med.pause': 'Tạm dừng',
+    'med.leave': 'Rời phòng',
+    'med.in': 'Hít vào',
+    'med.hold': 'Giữ',
+    'med.out': 'Thở ra',
+    'med.paused': 'Đang dừng. Sẵn sàng thì thở tiếp.',
+    'med.doneTitle': 'Hôm nay tới đây thôi.',
+    'med.doneBody': 'Con đã thở {0} nhịp.',
+    'med.again': 'Thêm lần nữa',
 
     'room.placeholder': 'Hỏi gì cũng được…',
     'room.waitInput': 'Đang đợi thầy lên tiếng…',
