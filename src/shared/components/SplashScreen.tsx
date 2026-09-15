@@ -65,18 +65,29 @@ export const SplashScreen: React.FC<{ onDone: () => void }> = ({ onDone }) => {
       timing(fade, 0, 300, 3700),
       ...particles.map((p, i) => timing(p, 1, 1400, PARTICLES[i].delay)),
     ]);
-    reveal.start(({ finished }) => finished && onDone());
-
-    // ⚠️ The splash is the one component in the app that exists to UNMOUNT ITSELF, and it was doing
-    // it with seventeen native-driven values still attached. `useNativeDriver` hands each value to
-    // the native side; dropping the component without stopping them leaves native nodes pushing
-    // updates at JS listeners that have been torn down — "Sending `onAnimatedValueUpdate` with no
-    // listeners registered", once per node that loses the race, at every launch.
+    // ⚠️ THE ORDER HERE IS THE WHOLE POINT, AND IT WAS WRONG.
     //
-    // Nothing breaks, which is why it survived: the splash has already finished by then. But it is
-    // the only warning the app prints on a clean start, and a log with a permanent warning in it is
-    // a log nobody reads.
-    return () => reveal.stop();
+    // The splash is the one component in the app that exists to UNMOUNT ITSELF. `useNativeDriver`
+    // hands every value to the native side, so a value still attached when the views go away leaves
+    // a native node pushing updates at a JS listener that has been torn down — "Sending
+    // `onAnimatedValueUpdate` with no listeners registered", once per node that loses the race.
+    //
+    // Stopping them in the effect's CLEANUP looked like the fix and is a beat too late: cleanup
+    // runs after `onDone()` has already unmounted us, which is exactly the window being guarded
+    // against. Everything is stopped BEFORE the handover now, and the cleanup stays as the path for
+    // the other way out — a splash unmounted early, before the run ever finishes.
+    const settle = () => {
+      reveal.stop();
+      [spark, glow, logo, peak, fade, ...particles].forEach(v => v.stopAnimation());
+    };
+
+    reveal.start(({ finished }) => {
+      if (!finished) return;   // stopped by the cleanup below; it has already settled the values
+      settle();
+      onDone();
+    });
+
+    return settle;
   }, [spark, glow, logo, peak, fade, particles, onDone]);
 
   const sound = useMemo(() => {

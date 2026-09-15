@@ -24,6 +24,14 @@ const KO: Bundle = {
   'loop.wait.1': '음, 좋은 질문이에요. 잠깐만 생각해 볼게요.',
   'loop.wait.2': '네, 기둥을 찬찬히 다시 들여다보고 있어요. 조금만 기다려 주세요.',
   'loop.wait.3': '잠깐만요, 흐름을 한 번 더 읽어볼게요.',
+  'mic.listening': '듣고 있어요 — 다 말하면 탭하세요',
+  'mic.transcribing': '받아 적는 중',
+  'mic.error.permission': '마이크 권한이 필요해요. 설정에서 허용해 주세요.',
+  'mic.error.nodevice': '마이크를 찾지 못했어요.',
+  'mic.error.nospeech': '아무 소리도 들리지 않았어요.',
+  'mic.error.failed': '말을 옮겨 적지 못했어요. 글로 적어 주세요.',
+  'loop.stopTalking': '그만 말하기',
+  'mic.opening': '마이크를 여는 중',
 };
 
 const EN: Bundle = {
@@ -39,6 +47,14 @@ const EN: Bundle = {
   'loop.wait.1': 'Mm, good question. Give me a second to think.',
   'loop.wait.2': 'Let me go over the pillars once more. Just a moment.',
   'loop.wait.3': 'Hold on, I want to read the flow one more time.',
+  'mic.listening': 'Listening — tap when you have finished',
+  'mic.transcribing': 'Writing it down',
+  'mic.error.permission': 'The microphone needs permission. Allow it in Settings.',
+  'mic.error.nodevice': 'No microphone was found.',
+  'mic.error.nospeech': 'I did not hear anything.',
+  'mic.error.failed': 'I could not make out the words. Please type instead.',
+  'loop.stopTalking': 'Stop talking',
+  'mic.opening': 'Opening the microphone',
 };
 
 const JA: Bundle = {
@@ -54,6 +70,14 @@ const JA: Bundle = {
   'loop.wait.1': 'うん、いい質問ですね。少し考えさせてください。',
   'loop.wait.2': '柱をもう一度ゆっくり見直しています。少しだけお待ちください。',
   'loop.wait.3': 'ちょっと待ってください、流れをもう一度読んでみます。',
+  'mic.listening': '聞いています — 話し終えたらタップ',
+  'mic.transcribing': '書き取っています',
+  'mic.error.permission': 'マイクの許可が必要です。設定で許可してください。',
+  'mic.error.nodevice': 'マイクが見つかりませんでした。',
+  'mic.error.nospeech': '何も聞こえませんでした。',
+  'mic.error.failed': '聞き取れませんでした。文字で書いてください。',
+  'loop.stopTalking': '話をとめる',
+  'mic.opening': 'マイクを準備しています',
 };
 
 const ZH_CN: Bundle = {
@@ -69,6 +93,14 @@ const ZH_CN: Bundle = {
   'loop.wait.1': '嗯，好问题。让我想一想。',
   'loop.wait.2': '我再仔细看一遍四柱，请稍等。',
   'loop.wait.3': '等一下，我再把这股走势读一遍。',
+  'mic.listening': '正在听 — 说完请点一下',
+  'mic.transcribing': '正在记下来',
+  'mic.error.permission': '需要麦克风权限，请在设置里允许。',
+  'mic.error.nodevice': '没有找到麦克风。',
+  'mic.error.nospeech': '我没有听到声音。',
+  'mic.error.failed': '没能听清，请用文字写下来。',
+  'loop.stopTalking': '让他先停下',
+  'mic.opening': '正在打开麦克风',
 };
 
 const ZH_TW: Bundle = {
@@ -84,6 +116,14 @@ const ZH_TW: Bundle = {
   'loop.wait.1': '嗯，好問題。讓我想一想。',
   'loop.wait.2': '我再仔細看一遍四柱，請稍等。',
   'loop.wait.3': '等一下，我再把這股走勢讀一遍。',
+  'mic.listening': '正在聽 — 說完請點一下',
+  'mic.transcribing': '正在記下來',
+  'mic.error.permission': '需要麥克風權限，請在設定裡允許。',
+  'mic.error.nodevice': '沒有找到麥克風。',
+  'mic.error.nospeech': '我沒有聽到聲音。',
+  'mic.error.failed': '沒能聽清，請用文字寫下來。',
+  'loop.stopTalking': '讓他先停下',
+  'mic.opening': '正在開啟麥克風',
 };
 
 const VI: Bundle = {
@@ -99,9 +139,17 @@ const VI: Bundle = {
   'loop.wait.1': 'Ừm, câu hỏi hay đấy. Để ta nghĩ một lát.',
   'loop.wait.2': 'Ta đang xem lại bốn trụ cho kỹ. Con đợi ta chút nhé.',
   'loop.wait.3': 'Khoan đã, ta đọc lại mạch vận này một lần nữa.',
+  'mic.listening': 'Ta đang nghe — nói xong thì chạm',
+  'mic.transcribing': 'Đang ghi lại lời con',
+  'mic.error.permission': 'Cần quyền dùng micro. Con cho phép trong Cài đặt nhé.',
+  'mic.error.nodevice': 'Không tìm thấy micro.',
+  'mic.error.nospeech': 'Ta không nghe thấy gì cả.',
+  'mic.error.failed': 'Ta nghe không rõ. Con viết ra giúp ta.',
+  'loop.stopTalking': 'Xin thầy dừng',
+  'mic.opening': 'Đang mở micro',
 };
 
-// These eight are RN's own copy, so RN carries all six languages for them. The room's other lines
+// These are RN's own copy, so RN carries all six languages for them. The room's other lines
 // come from consultationStrings.json, which is generated from the Unity table and still ships
 // ko/en/vi — those fall back until the table itself gains ja and Chinese.
 const bundles: Record<Lang, Bundle> = {

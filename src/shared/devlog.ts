@@ -74,3 +74,33 @@ export function installDevlogConsoleMirror(): void {
   wrap('warn');
   wrap('error');
 }
+
+/**
+ * Mirror NATIVE warnings into the sink.
+ *
+ * The console mirror above cannot see them. A warning raised by native code goes
+ * `RCTLog.logIfNoNativeHook` → LogBox's warning handler → `LogBoxData.addLog`, which under RN
+ * 0.86's Fusebox console support DROPS every warning and shows the placeholder "Open debugger to
+ * view warnings." instead. So the text exists for the length of one call and is then gone: not in
+ * the console, not in LogBox's list, not in os_log. Taking the handler over is the only place it
+ * can be read without attaching a debugger.
+ *
+ * (Observing `LogBoxData` was tried first and is useless for exactly that reason — under Fusebox
+ * the list it keeps is empty.)
+ */
+export function installLogBoxMirror(): void {
+  if (!__DEV__) return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const RCTLog = require('react-native/Libraries/Utilities/RCTLog').default;
+    RCTLog.setWarningHandler((...args: unknown[]) => {
+      devlog('NATIVE-WARN ' + args.map(a => (typeof a === 'string' ? a : String(a))).join(' '));
+      // Hand it on. LogBox's own handler is just `registerWarning`, which is what `console.warn`
+      // routes to, so the yellow box keeps behaving as it did — ignore list included.
+      // eslint-disable-next-line no-console
+      console.warn(...args);
+    });
+  } catch (e) {
+    devlog('[devlog] native warning handler unavailable: ' + String(e));
+  }
+}

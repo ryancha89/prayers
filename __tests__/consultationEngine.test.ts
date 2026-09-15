@@ -59,6 +59,8 @@ class FakeScheduler implements Scheduler {
 class StageDouble implements StagePort {
   phases: StagePhasePayload[] = [];
   asks: OracleAskPayload[] = [];
+  /** Every mic command the engine sent, in order — the barge-in tests read this. */
+  micCalls: string[] = [];
   thinkingCalls: boolean[] = [];
   spoken: string[] = [];
   exited = false;
@@ -100,6 +102,15 @@ class StageDouble implements StagePort {
   stopSpeak() {}
   askOracle(p: OracleAskPayload) {
     this.asks.push(p);
+  }
+  startMic(lang: string) {
+    this.micCalls.push('start:' + lang);
+  }
+  stopMic() {
+    this.micCalls.push('stop');
+  }
+  cancelMic() {
+    this.micCalls.push('cancel');
   }
   exit() {
     this.exited = true;
@@ -493,7 +504,16 @@ test('tapping mid-reading shows the rest of the beat instead of skipping it', ()
   expect(engine.getState().phaseId).not.toBe('P11');
 });
 
-test('asking again mid-answer shows the rest of the answer at once', () => {
+/**
+ * Cutting in, and what the counselor is told about it.
+ *
+ * "When the user interrupts, the consultant needs to stop talking and answer based on the current
+ * talking" (15-09-2026). Both halves are here: the bubble keeps only what was SPOKEN — the rest was
+ * never said aloud and putting it on screen would show the player words they did not hear — and the
+ * turn carries that spoken part as `interrupted`, which is the only thing the server cannot work
+ * out for itself.
+ */
+test('asking again mid-answer cuts her off at what the player actually heard', () => {
   const { sched, stage, engine } = build();
   intoLoop(stage, engine, sched);
   const row = engine.getState().transcript.length;
@@ -503,13 +523,17 @@ test('asking again mid-answer shows the rest of the answer at once', () => {
     followup: '',
     beats: [{ phaseId: 'loop', lines: [LONG_ANSWER] }],
   });
-  expect(engine.getState().transcript[row].text).toBe('어머나, 정말 재미있는 사주네요!');
+  const heard = '어머나, 정말 재미있는 사주네요!';
+  expect(engine.getState().transcript[row].text).toBe(heard);
 
   engine.submitQuestion('다른 질문');
   const transcript = engine.getState().transcript;
-  // The whole answer is there, above the new question.
-  expect(transcript[row].text.endsWith('괜찮은 때예요.')).toBe(true);
+  // Only the spoken chunk stands — the paragraph she never reached is dropped, not dumped.
+  expect(transcript[row].text).toBe(heard);
+  expect(transcript[row].text.endsWith('괜찮은 때예요.')).toBe(false);
   expect(transcript[row + 1]).toEqual({ role: 'user', text: '다른 질문' });
+  // And she is told where she was cut off.
+  expect(stage.asks[stage.asks.length - 1].interrupted).toBe(heard);
   // A late SPEAK_DONE for the abandoned answer speaks nothing further.
   const spokenBefore = stage.spoken.length;
   engine.onSpeakDone('loop_1.0');
@@ -517,16 +541,79 @@ test('asking again mid-answer shows the rest of the answer at once', () => {
 });
 
 /**
- * The turn belongs to the counselor until she has finished saying her answer.
+ * The mic IS the interruption: she falls silent on the press, seconds before there is a question.
+ * A take that comes back with nothing must therefore be undoable, or a mistap leaves her mute
+ * half-way through a paragraph the player did want.
+ */
+test('opening the mic silences her, and an empty take gives the answer back', () => {
+  const { sched, stage, engine } = build();
+  intoLoop(stage, engine, sched);
+  const row = engine.getState().transcript.length;
+  engine.onOracleResult({
+    ok: true,
+    loop: true,
+    followup: '다음 질문',
+    beats: [{ phaseId: 'loop', lines: [LONG_ANSWER] }],
+  });
+  const heard = '어머나, 정말 재미있는 사주네요!';
+
+  engine.startMic();
+  expect(stage.micCalls).toEqual(['start:ko']);
+  // Not `listening` yet: the permission dialog sits between the press and the device, and on the
+  // simulator that was eight seconds of a room claiming to hear a microphone that was not open.
+  expect(engine.getState().mic.state).toBe('opening');
+  expect(engine.getState().speaking).toBe(false);
+  expect(engine.getState().transcript[row].text).toBe(heard);
+
+  // Unity opens the device and says so.
+  engine.onMicState('listening', 0.04);
+  expect(engine.getState().mic.state).toBe('listening');
+
+  // She heard nothing. The rest of the answer comes back rather than being lost with the take.
+  engine.onMicResult({ ok: false, text: '', error: 'no_speech' });
+  expect(engine.getState().mic.error).toBe('no_speech');
+  expect(engine.getState().transcript[row].text.endsWith('괜찮은 때예요.')).toBe(true);
+  expect(engine.getState().inputEnabled).toBe(true);
+  expect(engine.getState().suggestion).toBe('다음 질문');
+});
+
+test('a spoken question is asked as if it had been typed, and carries the interruption', () => {
+  const { sched, stage, engine } = build();
+  intoLoop(stage, engine, sched);
+  engine.onOracleResult({
+    ok: true,
+    loop: true,
+    followup: '',
+    beats: [{ phaseId: 'loop', lines: [LONG_ANSWER] }],
+  });
+  const heard = '어머나, 정말 재미있는 사주네요!';
+
+  engine.startMic();
+  // Stop means "I have finished speaking", so it only applies once the device is actually
+  // recording — a tap while the permission dialog is still up is a cancel, not a take.
+  engine.stopMic();
+  expect(stage.micCalls).toEqual(['start:ko']);
+  engine.onMicState('listening', 0.05);
+  engine.stopMic();
+  expect(stage.micCalls).toEqual(['start:ko', 'stop']);
+  engine.onMicResult({ ok: true, text: '  올해 이직해도 될까요  ', error: '' });
+
+  const asked = stage.asks[stage.asks.length - 1];
+  expect(asked.question).toBe('올해 이직해도 될까요');
+  expect(asked.interrupted).toBe(heard);
+  expect(engine.getState().mic.state).toBe('idle');
+});
+
+/**
+ * The suggestion chip belongs to the counselor until she has finished; the text box does not.
  *
  * Reported from a real session: the player asked a question, one short line appeared, the
  * suggestion chip was live, they tapped it — and the long answer arrived AFTER their next question,
- * unspoken. Nothing was broken in the delivery. The room had simply opened the input the moment the
- * payload landed, while the answer still had several seconds of chunks to go, and askLoop's
- * flushAnswerWalk then dumped the remainder in silently, which is what it is supposed to do for a
- * player who chose to move on.
+ * unspoken. The chip is the trap, because it fires a whole question on one tap with no intent
+ * behind it. Typing, or holding the mic, is intent — and since 15-09-2026 cutting in is something
+ * the room is meant to ALLOW. So the box opens with her voice and only the chip waits.
  */
-test('the input stays shut while the counselor is still delivering the answer', () => {
+test('the chip waits for her to finish, but the box is open for cutting in', () => {
   const { sched, stage, engine } = build();
   engine.begin();
   sched.advance(60_000);
@@ -555,20 +642,22 @@ test('the input stays shut while the counselor is still delivering the answer', 
 
   const chunkKeys = () => stage.spoken.filter(k => k.startsWith('loop_1.'));
   expect(chunkKeys().length).toBe(1);          // she has started, and only started
-  expect(engine.getState().inputEnabled).toBe(false);
+  expect(engine.getState().inputEnabled).toBe(true);   // they may cut in
+  expect(engine.getState().speaking).toBe(true);       // and the UI can tell she is mid-answer
   expect(engine.getState().suggestion).toBe('');
   expect(engine.getState().pending).toBe(false); // the WAITING is over; the turn is not
 
-  // Walk the rest of the answer, checking the door stays shut on every chunk but the last.
+  // Walk the rest of the answer, checking the CHIP stays away on every chunk but the last.
   for (let guard = 0; guard < 20; guard++) {
     const before = chunkKeys().length;
     engine.onSpeakDone(chunkKeys()[before - 1]);
     if (chunkKeys().length === before) break;   // nothing new started: that was the last one
-    expect(engine.getState().inputEnabled).toBe(false);
+    expect(engine.getState().suggestion).toBe('');
   }
 
   expect(engine.getState().inputEnabled).toBe(true);
   expect(engine.getState().suggestion).toBe('또 다른 질문');
+  expect(engine.getState().speaking).toBe(false);
 });
 
 /**
@@ -598,11 +687,12 @@ test('a take that never reports still gives the turn back', () => {
     beats: [{ phaseId: 'loop', lines: [long] }],
   });
 
-  expect(engine.getState().inputEnabled).toBe(false);
+  expect(engine.getState().suggestion).toBe('');
 
   // Nobody ever calls onSpeakDone. The guard is the only thing left.
   sched.advance(120_000);
 
+  expect(engine.getState().suggestion).toBe('또 다른 질문');
   expect(engine.getState().inputEnabled).toBe(true);
   // And the rest of what she was saying is on screen rather than lost.
   const transcript = engine.getState().transcript;
@@ -795,4 +885,129 @@ test('an untagged reading leaves the face flat, as it always did', () => {
 
   expect(engine.getState().tone).toBe('');
   expect(engine.getState().emotion).toBe('neutral');
+});
+
+/* ── Opening with what she remembers (26-08 steps 18-19) ──────────────────── */
+
+test('the remembered opening replaces the authored welcome, and is spoken as words', () => {
+  const { sched, stage, engine } = build();
+  engine.setRecallOpening('지난번에 「이직해도 될까요」 하고 물으셨지요. 그 뒤로 어떻게 되었나요?');
+  engine.begin();
+  sched.advance(60_000);
+
+  // Said by TTS, not by a recorded take: it is the server's sentence, not an asset's.
+  expect(stage.spokenText.some(t => t.includes('이직해도 될까요'))).toBe(true);
+  // ...and it went out under P02's key, so the walk's pacing is untouched.
+  expect(stage.spoken).toContain('P02#0');
+  expect(stage.spoken).not.toContain('P02');
+});
+
+test('a first visit still plays the authored welcome', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+
+  expect(stage.spoken).toContain('P02');
+  expect(stage.spokenText.join(' ')).not.toContain('지난번');
+});
+
+test('a memory that arrives after the welcome is dropped rather than interrupting', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000); // walks past P02 to the question box
+
+  engine.setRecallOpening('지난번에 「이직해도 될까요」 하고 물으셨지요.');
+  sched.advance(60_000);
+
+  expect(stage.spokenText.join(' ')).not.toContain('이직해도 될까요');
+});
+
+/* ── Pacing: the scene stands for as long as the server asked ─────────────── */
+
+const PACED_BEAT = {
+  phaseId: 'loop',
+  lines: ['첫 줄이에요. 둘째 줄이에요.'],
+  scenes: [
+    { text: '첫 줄이에요.', tone: 'reveal', emotion: 'surprised' as const, animation: 'talk' as const, holdMs: 3000 },
+    { text: '둘째 줄이에요.', tone: 'calm', emotion: 'neutral' as const, animation: 'talk' as const, holdMs: 1000 },
+  ],
+};
+
+test('a scene the voice rushes is still held for its hold_ms before the next one', () => {
+  const { sched, stage, engine } = build();
+  intoLoop(stage, engine, sched);
+
+  engine.onOracleResult({ ok: true, loop: true, followup: '', beats: [PACED_BEAT] });
+  expect(stage.spokenText).toContain('첫 줄이에요.');
+
+  // The synthesiser was quick — but the scene is owed three seconds on screen.
+  engine.onSpeakDone('loop_1.0');
+  expect(stage.spokenText).not.toContain('둘째 줄이에요.');
+
+  sched.advance(2_900);
+  expect(stage.spokenText).not.toContain('둘째 줄이에요.');
+
+  sched.advance(200);
+  expect(stage.spokenText).toContain('둘째 줄이에요.');
+});
+
+test('a tap during the hold gets on with it', () => {
+  const { sched, stage, engine } = build();
+  intoLoop(stage, engine, sched);
+
+  engine.onOracleResult({ ok: true, loop: true, followup: '', beats: [PACED_BEAT] });
+  engine.onSpeakDone('loop_1.0');
+  // Barging in mid-pause must not leave a timer behind that speaks into the interruption.
+  engine.hush();
+  sched.advance(10_000);
+
+  expect(stage.spokenText).not.toContain('둘째 줄이에요.');
+  expect(engine.getState().inputEnabled).toBe(true);
+});
+
+test('without scenes nothing waits — the old pacing is untouched', () => {
+  const { sched, stage, engine } = build();
+  intoLoop(stage, engine, sched);
+
+  engine.onOracleResult({
+    ok: true,
+    loop: true,
+    followup: '',
+    beats: [{ phaseId: 'loop', lines: ['첫 줄이에요. 둘째 줄이에요. 셋째 줄이에요.'] }],
+  });
+  engine.onSpeakDone('loop_1.0');
+
+  // No clock advance was needed to get there — the second scene followed the first immediately.
+  expect(stage.spokenText.join(' ')).toContain('둘째');
+});
+
+test('a cue pause is a breath BEFORE the line, not a hold after it', () => {
+  const { sched, stage, engine } = build();
+  intoLoop(stage, engine, sched);
+
+  // What the embedded room sends: no hold_ms (that is the prayers path), a lead from `[Beat] pause=`.
+  engine.onOracleResult({
+    ok: true,
+    loop: true,
+    followup: '',
+    beats: [
+      {
+        phaseId: 'loop',
+        lines: ['첫 줄이에요. 둘째 줄이에요.'],
+        scenes: [
+          { text: '첫 줄이에요.', tone: 'neutral', emotion: 'neutral' as const, animation: 'talk' as const },
+          { text: '둘째 줄이에요.', tone: 'serious', emotion: 'thinking' as const, animation: 'talk' as const, leadMs: 1200 },
+        ],
+      },
+    ],
+  } as any);
+
+  engine.onSpeakDone('loop_1.0');
+  expect(stage.spokenText).not.toContain('둘째 줄이에요.');
+
+  sched.advance(1_100);
+  expect(stage.spokenText).not.toContain('둘째 줄이에요.');
+
+  sched.advance(200);
+  expect(stage.spokenText).toContain('둘째 줄이에요.');
 });

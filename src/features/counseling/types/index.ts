@@ -62,8 +62,13 @@ export interface CounselorScene {
   tone: string;
   emotion: CounselorEmotion;
   animation: CounselorAnimation;
-  /** How long the server wants this scene held, in ms. Carried, not yet paced on. */
+  /** How long the server wants this scene held, in ms — its whole time on screen, reading time
+   *  floored by the tone's clip length (`Prayers::SceneBuilder#hold_ms`). */
   holdMs?: number;
+  /** How long to wait BEFORE speaking this scene, in ms. A different thing from `holdMs`, and it
+   *  comes from a different place: the embedded room's `[Beat] … pause=` cue, which the model
+   *  writes as a breath before the line rather than a hold after it. Either may be absent. */
+  leadMs?: number;
   /** The five-element tag the VFX names are built from (`kim`, `moc`, …), when the server sent one. */
   element?: string | null;
 }
@@ -157,7 +162,35 @@ export interface OracleAskPayload {
   scope: string;
   /** A free-chat turn after the staged reading, not the reading itself. */
   loop?: boolean;
+  /** What the counselor had already SAID OUT LOUD when the player cut in.
+   *
+   *  Only the spoken part — never the chunks still queued behind the voice. The whole point is the
+   *  boundary between what they heard and what they did not; sending the full answer would have
+   *  her reply "as I was saying" about a sentence that never left the room. */
+  interrupted?: string;
 }
+
+/**
+ * opening = asked for, device not open yet; listening = the device IS open; transcribing = they
+ * finished and it is being read.
+ *
+ * `opening` is RN's own — Unity never sends it. It exists because the permission dialog sits
+ * between the press and the device, and measured on the simulator that is EIGHT SECONDS of a room
+ * claiming to listen to a microphone that is not on. Unity announces the real thing (`OnListening`);
+ * this is the honest state until it does.
+ */
+export type MicState = 'idle' | 'opening' | 'listening' | 'transcribing';
+
+/** Why a take produced no text. Unity sends the key, RN owns the sentence. */
+export type MicError =
+  | 'permission'
+  | 'no_device'
+  | 'too_short'
+  | 'no_speech'
+  | 'upstream'
+  | 'connection'
+  | 'no_token'
+  | 'cancelled';
 
 export type OracleErrorKind =
   | 'connection'
@@ -200,6 +233,16 @@ export type RNToUnityEvent =
   | { type: 'STAGE_STOP_SPEAK' }
   /** Ask the counselor for a reading (or a follow-up turn). */
   | { type: 'ORACLE_ASK'; payload: OracleAskPayload }
+  /** Open the microphone and record a spoken question.
+   *
+   *  The capture is Unity's, not RN's: the app has no audio-recording dependency, and the embedded
+   *  player already has the device and the permission flow. RN owns the button and every word of
+   *  copy around it; it gets the text back as MIC_RESULT and decides what to do with it. */
+  | { type: 'MIC_START'; payload: { lang: string } }
+  /** Finished speaking — cut the take here and transcribe it. */
+  | { type: 'MIC_STOP' }
+  /** Throw the take away (left the room, or changed their mind). */
+  | { type: 'MIC_CANCEL' }
   /** The session is over (back, error, any navigation away) — Unity must
    *  silence all audio immediately, ahead of the engine unload. */
   | { type: 'SESSION_END' };
@@ -223,6 +266,11 @@ export type UnityToRNEvent =
   | { type: 'ORACLE_RESULT'; payload: OracleResultPayload }
   /** A spoken take finished — RN paces the next beat off this, not a guess. */
   | { type: 'SPEAK_DONE'; payload: { cacheKey: string } }
+  /** Where the microphone is, and how loud the room is while it listens. The level exists so the
+   *  button can move: a listening dot that never changes looks exactly like a dead microphone. */
+  | { type: 'MIC_STATE'; payload: { state: MicState; level: number } }
+  /** The spoken question as text, or why there is none. `error` is a key — the copy is RN's. */
+  | { type: 'MIC_RESULT'; payload: { ok: boolean; text: string; error: MicError | '' } }
   | { type: 'SESSION_ERROR'; payload: { reason: string } }
   | { type: 'EXIT_SESSION' };
 

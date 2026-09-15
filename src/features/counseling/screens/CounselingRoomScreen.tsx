@@ -10,6 +10,8 @@ import { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
+import { fetchRecall } from '../api/prayersServer';
+import { devlog } from '../../../shared/devlog';
 import { useCounselingStore } from '../store/counselingStore';
 import { counselorAI, toneForCharacter } from '../api/counselorAI';
 import { getUnityBridge, isNativeUnity } from '../bridge';
@@ -129,6 +131,26 @@ export const CounselingRoomScreen: React.FC = () => {
     },
   });
 
+  // What she remembers of last time, fetched while the player is still loading the room.
+  //
+  // Deliberately not awaited by anything: the walk starts on UNITY_READY and the welcome is four
+  // seconds behind it, which this beats comfortably — and if it does not, or the server has nothing
+  // to remember, the authored welcome plays and nobody is any the wiser. Free on the server (no
+  // model call), so it costs the player nothing to ask on every visit.
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchRecall({ uniqId: params.sessionId, lang, topic, signal: ctrl.signal })
+      .then(recall => {
+        if (!recall) return;
+        devlog(`[recall] ${recall.turns} turn(s) remembered — opening with them`);
+        consultation.remember(recall.opening);
+      })
+      .catch(() => {});
+    return () => ctrl.abort();
+    // Once per room. A language change mid-session must not re-ask and re-open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Create/resume the conversation row before the first line is recorded.
   useEffect(() => {
     if (!counselor || !subject) return;
@@ -217,7 +239,12 @@ export const CounselingRoomScreen: React.FC = () => {
         <CounselorStage
           name={counselor.name}
           accent={counselor.accent}
-          state={consultation.state.inputEnabled ? 'idle' : 'speaking'}
+          // `speaking` first, because the two came apart: in the free-chat loop the box is open
+          // WHILE she talks, so that the player can cut in. `!inputEnabled` still covers the staged
+          // phases, where a shut box does mean she has the floor.
+          state={
+            consultation.state.speaking || !consultation.state.inputEnabled ? 'speaking' : 'idle'
+          }
           // The server's own direction for the line being spoken, when it sent one. `neutral` is
           // still what an undirected line gets — it is a real answer here, not a placeholder.
           emotion={consultation.state.emotion}
@@ -240,6 +267,11 @@ export const CounselingRoomScreen: React.FC = () => {
         onSubmit={consultation.submit}
         onRetry={consultation.retry}
         onLeave={onExit}
+        onMicStart={consultation.startMic}
+        onMicStop={consultation.stopMic}
+        onMicCancel={consultation.cancelMic}
+        onHush={consultation.hush}
+        micAvailable={consultation.micAvailable}
       />
 
       {/* Top controls — kept minimal, never covering the character (spec §27) */}

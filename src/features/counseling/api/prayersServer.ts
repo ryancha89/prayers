@@ -205,6 +205,64 @@ export async function checkConsultationReadiness(
   }
 }
 
+export interface Recall {
+  /** False on a first visit. The room must be able to tell the two apart — an opening that
+   *  pretends to remember a session that never happened is worse than no opening. */
+  hasHistory: boolean;
+  /** The counselor's line, already written in the asked-for language by the server. */
+  opening: string;
+  topicLabel?: string;
+  lastQuestion?: string;
+  turns: number;
+}
+
+/**
+ * What the counselor remembers of this player, for the line she opens with.
+ *
+ * Free and instant by design: the server builds it from rows it already has (the thread, its
+ * running summary, the player's own last question) and never calls a model — it is spoken before
+ * anything has been paid for. See `Prayers::Recall`.
+ *
+ * `uniqId` is the session about to START, and is sent so the server excludes it: a client that
+ * reuses its session id would otherwise be told to remember the conversation it is already in.
+ *
+ * Returns null on any failure, including "no history" — the caller's own first-visit line is the
+ * right answer either way, and a room must never wait on this.
+ */
+export async function fetchRecall(input: {
+  uniqId?: string;
+  lang: Lang;
+  topic?: string;
+  signal?: AbortSignal;
+}): Promise<Recall | null> {
+  const headers = await apiHeaders();
+  if (!headers) return null;
+
+  const query = new URLSearchParams({ language: input.lang });
+  if (input.topic) query.set('topic', input.topic);
+  if (input.uniqId) query.set('uniq_id', input.uniqId);
+
+  try {
+    const res = await fetch(`${BASE()}/api/v1/prayers/consultations/recall?${query}`, {
+      headers,
+      signal: input.signal,
+    });
+    const payload: any = await res.json();
+    if (!res.ok || payload?.success !== true || payload?.has_history !== true) return null;
+    if (typeof payload.opening !== 'string' || payload.opening.length === 0) return null;
+
+    return {
+      hasHistory: true,
+      opening: payload.opening,
+      topicLabel: typeof payload.topic_label === 'string' ? payload.topic_label : undefined,
+      lastQuestion: typeof payload.last_question === 'string' ? payload.last_question : undefined,
+      turns: Number(payload.turns) || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export interface SendMessageInput {
   /** Stable per counselor+subject, so the server can carry the session's history and language. */
   uniqId: string;

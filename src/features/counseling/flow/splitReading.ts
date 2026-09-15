@@ -22,13 +22,38 @@ const FIRST_MIN = 15;
 const ENDINGS = new Set(['.', '!', '?', '…', '。']);
 const TRAILERS = new Set(['"', "'", ')', '”', '’']);
 
+/**
+ * Quote marks that must not be split across two chunks.
+ *
+ * A sentence end INSIDE a quotation is not the end of the sentence carrying it, and the counselor
+ * quotes constantly — she opens a returning session by reading the player's own last question back
+ * to them, and those end in "?" almost by definition. Split there and the bubble shows an unclosed
+ * 「, the voice takes a breath in the middle of the quote, and the closing 」 arrives seconds later
+ * attached to the rest of the sentence. Measured in the room on 2026-09-15, first run of recall.
+ *
+ * Paired marks only. A straight " is both its own opener and closer, so tracking it would make any
+ * single apostrophe swallow the rest of the reading — it stays a TRAILER and nothing more.
+ */
+const QUOTE_PAIRS = new Map([
+  ['「', '」'],
+  ['『', '』'],
+  ['“', '”'],
+  ['‘', '’'],
+  ['«', '»'],
+  ['（', '）'],
+]);
+
 function sentences(paragraph: string): string[] {
   const out: string[] = [];
   let cur = '';
+  // What is still open, innermost last. A quote inside a quote is rare but costs nothing to allow.
+  const open: string[] = [];
   for (let i = 0; i < paragraph.length; i++) {
     const ch = paragraph[i];
     cur += ch;
-    if (ENDINGS.has(ch)) {
+    if (QUOTE_PAIRS.has(ch)) open.push(QUOTE_PAIRS.get(ch)!);
+    else if (open.length > 0 && ch === open[open.length - 1]) open.pop();
+    if (ENDINGS.has(ch) && open.length === 0) {
       while (i + 1 < paragraph.length && TRAILERS.has(paragraph[i + 1])) cur += paragraph[++i];
       out.push(cur.trim());
       cur = '';

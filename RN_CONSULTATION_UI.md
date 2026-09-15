@@ -81,11 +81,46 @@ the other.
 | RN→Unity | `STAGE_SPEAK` | `clip` (loc keys) or `tts` (the AI's own words) |
 | RN→Unity | `STAGE_STOP_SPEAK` | the player tapped ahead |
 | RN→Unity | `ORACLE_ASK` | ask for the reading, or one free-chat turn (`loop`) |
+| RN→Unity | `MIC_START` | open the room's microphone and record a spoken question |
+| RN→Unity | `MIC_STOP` | they have finished speaking — cut the take and transcribe it |
+| RN→Unity | `MIC_CANCEL` | throw the take away |
 | RN→Unity | `SESSION_END` | silence everything now, ahead of the unload |
 | Unity→RN | `UNITY_READY` | the room is up and the counselor is seated |
 | Unity→RN | `ORACLE_RESULT` | beats per phase, follow-up, report rows, thread id, error |
 | Unity→RN | `SPEAK_DONE` | a take finished — the real clock behind a beat's dwell |
+| Unity→RN | `MIC_STATE` | `listening` / `transcribing` / `idle`, plus the input level |
+| Unity→RN | `MIC_RESULT` | the spoken question as text, or an error KEY (RN owns the sentence) |
 | Unity→RN | `EXIT_SESSION` / `SESSION_ERROR` | the room is done, or gave up |
+
+### Speaking, and cutting in (15-09-2026)
+
+Three things were asked for together, and they are one gesture: *the mouth moves while she talks,
+the player can use the mic, and interrupting stops her and is answered from where she was cut off.*
+
+**The capture is Unity's, not RN's.** The app has no audio-recording dependency; adding one means a
+native module and a rebuild of both platforms. The embedded player already owns `Microphone` and the
+permission flow (`MediaPermission`, written for the video room), so `ConsultationMic` records 16 kHz
+mono WAV and `ConsultationStt` uploads it to `POST /api/v1/prayers/stt` — same headers as TTS. Same
+split, same reason: RN owns the button and every word of copy; the room owns the device.
+
+**Opening the mic IS the interruption.** She falls silent on the press, not on the send — her voice
+is in the same room as the microphone. What the player had actually HEARD (the chunks already
+spoken, never the ones still queued) rides on `ORACLE_ASK.interrupted`, and the oracle wraps it into
+the turn. Only RN can know that boundary: it walks the answer chunk by chunk.
+
+**An interruption that comes to nothing is undone.** The mic opens seconds before there is a
+question, so a take that produces nothing (`no_speech`, a failed transcription, cancel) puts the
+rest of her answer back on screen rather than leaving her mute mid-paragraph.
+
+**The box is open while she speaks; the suggestion chip is not.** The chip was the original barge-in
+bug — one tap fires a whole question with no intent behind it. Typing, or holding the mic, is intent.
+
+⚠️ **Locally the mic reaches the route and stops at the model.** `Prayers::SttService` deliberately
+builds its own OpenAI client: the shared one is pointed at the codex bridge on :4002, which answers
+`/v1/chat/completions` and nothing else, so transcription through it would 404 and read as "the
+microphone does not work". With no real key on this machine the endpoint answers
+`503 {"success":false,"error":"stt upstream: … 401"}` — route, auth, upload and parsing all proven,
+model transport absent. `PRAYERS_STT_ACCESS_TOKEN` / `PRAYERS_STT_URI_BASE` override it.
 
 ## Behaviour that survived the move
 

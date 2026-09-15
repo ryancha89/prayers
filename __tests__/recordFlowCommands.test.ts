@@ -126,6 +126,10 @@ test('records a full consultation as bridge commands', () => {
       record({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey, prefetch: true } }),
     stopSpeak: () => record({ type: 'STAGE_STOP_SPEAK' }),
     askOracle: (payload: OracleAskPayload) => record({ type: 'ORACLE_ASK', payload }),
+    // No device on this side: the recorder drives a headless walk, not a player.
+    startMic: () => {},
+    stopMic: () => {},
+    cancelMic: () => {},
     exit: () => record({ type: 'SESSION_END' }),
   };
 

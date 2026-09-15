@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { absoluteFill, colors, typography } from '../../../shared/theme';
 import { useT, TranslationKey } from '../../../shared/i18n';
@@ -84,11 +84,37 @@ export const CounselorStage: React.FC<{
     return () => move.stop();
   }, [closeUp, camera]);
 
-  const scale = Animated.add(
-    breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] }),
-    camera.interpolate({ inputRange: [0, 1], outputRange: [0, 0.12] }),
+  // Settle every value on the way out — the breathing loop never ends on its own, and stopping a
+  // driver (`loop.stop()` above) is not the same as stopping the value it drives. Declared last so
+  // it runs after the three cleanups above.
+  //
+  // ⚠️ This is hygiene, not the cure for the warning it looks like it is about. "Sending
+  // `onAnimatedValueUpdate` with no listeners registered" was traced on 2026-09-15 to
+  // react-native-screens' native `Animated.event` props, inside RN's own hook, at the first commit
+  // — not to this component and not to the splash (see the note in index.js). Left in place
+  // because dropping a native-driven loop mid-flight is worth not doing either way.
+  useEffect(
+    () => () => {
+      [breathe, talk, camera].forEach(v => v.stopAnimation());
+    },
+    [breathe, talk, camera],
   );
-  const mouthScale = talk.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] });
+
+  // Memoised, not rebuilt per render. Built inline, these handed the native side a fresh node tree
+  // on every render — and this component re-renders on every phase, emotion and speaking flip, so
+  // nodes were being attached and detached underneath a running animation all through a session.
+  const scale = useMemo(
+    () =>
+      Animated.add(
+        breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] }),
+        camera.interpolate({ inputRange: [0, 1], outputRange: [0, 0.12] }),
+      ),
+    [breathe, camera],
+  );
+  const mouthScale = useMemo(
+    () => talk.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] }),
+    [talk],
+  );
   const ring = state === 'thinking' || state === 'listening';
   const stateKey = STATE_LABEL_KEY[state];
   const stateLabel = stateKey ? t(stateKey) : '';

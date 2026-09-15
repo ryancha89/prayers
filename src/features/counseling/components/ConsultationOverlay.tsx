@@ -37,6 +37,17 @@ export interface ConsultationOverlayProps {
   onSubmit(text: string): void;
   onRetry(): void;
   onLeave(): void;
+  /** Press the mic. Cuts the counselor off and starts recording. */
+  onMicStart?(): void;
+  /** Finished speaking — transcribe what was said. */
+  onMicStop?(): void;
+  /** Drop the take; the counselor picks her answer back up. */
+  onMicCancel?(): void;
+  /** Stop her talking, with no question behind it. */
+  onHush?(): void;
+  /** False in builds with no embedded player — the button is hidden rather than offered and then
+   *  failing, because there is no microphone on this side of the bridge. */
+  micAvailable?: boolean;
 }
 
 export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
@@ -46,9 +57,16 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   onSubmit,
   onRetry,
   onLeave,
+  onMicStart,
+  onMicStop,
+  onMicCancel,
+  onHush,
+  micAvailable = false,
 }) => {
   const lang = useLang();
   const [input, setInput] = useState('');
+  const mic = state.mic;
+  const recording = mic.state !== 'idle';
 
   const send = () => {
     const text = input.trim();
@@ -127,30 +145,80 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
 
         {(state.screen === 'questionBox' || state.screen === 'loop') && (
           <SafeAreaView edges={['bottom']}>
-            <View style={styles.inputRow}>
-              <TextInput
-                style={styles.input}
-                value={input}
-                editable={state.inputEnabled}
-                onChangeText={setInput}
-                placeholder={ui(
-                  state.screen === 'loop' ? 'loop.placeholder' : 'question.placeholder',
-                  lang,
-                )}
-                placeholderTextColor={colors.textMuted}
-                multiline
-                onSubmitEditing={send}
-              />
-              <Pressable
-                style={[
-                  styles.sendBtn,
-                  (!input.trim() || !state.inputEnabled) && styles.sendDisabled,
-                ]}
-                onPress={send}
-                disabled={!input.trim() || !state.inputEnabled}>
-                <Icon name="send" size={22} />
+            {/* Why the take failed, in the player's own language. Unity sends a key, never a
+                sentence — the copy for every one of these is here. */}
+            {!!mic.error && <Text style={styles.micError}>{micErrorText(mic.error, lang)}</Text>}
+
+            {/* She is talking and the box is open: cutting in is allowed, so it is also SHOWN.
+                Without this the only way to learn it is to try, and a player who does not know
+                they may interrupt will sit through every answer to the end. */}
+            {state.speaking && state.screen === 'loop' && !recording && (
+              <Pressable style={styles.hush} onPress={onHush} hitSlop={8}>
+                <Icon name="stop" size={12} color={colors.textMuted} />
+                <Text style={styles.hushText}>{ui('loop.stopTalking', lang)}</Text>
               </Pressable>
-            </View>
+            )}
+
+            {recording ? (
+              <View style={styles.inputRow}>
+                {/* The level bar is not decoration. RN cannot see the waveform, and a listening
+                    state that never moves is indistinguishable from a microphone that never
+                    opened — which is exactly how a denied permission used to look. */}
+                <View style={styles.micLive}>
+                  <Text style={styles.micLabel}>
+                    {ui(MIC_LABEL[mic.state] ?? 'mic.listening', lang)}
+                  </Text>
+                  {mic.state === 'listening' && (
+                    <View style={styles.levelTrack}>
+                      <View style={[styles.levelFill, { width: `${Math.round(clamp(mic.level * 100))}%` }]} />
+                    </View>
+                  )}
+                </View>
+                <Pressable
+                  style={styles.sendBtn}
+                  onPress={mic.state === 'listening' ? onMicStop : onMicCancel}
+                  accessibilityLabel={ui('mic.listening', lang)}>
+                  <Icon name="stop" size={18} />
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={styles.input}
+                  value={input}
+                  editable={state.inputEnabled}
+                  onChangeText={setInput}
+                  placeholder={ui(
+                    state.screen === 'loop' ? 'loop.placeholder' : 'question.placeholder',
+                    lang,
+                  )}
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  onSubmitEditing={send}
+                />
+                {/* Mic OR send, never both: the button is the mic until there is something typed,
+                    and speaking is the only gesture that needs to be reachable one-handed. */}
+                {micAvailable && !input.trim() ? (
+                  <Pressable
+                    style={[styles.sendBtn, !state.inputEnabled && styles.sendDisabled]}
+                    onPress={onMicStart}
+                    disabled={!state.inputEnabled}
+                    accessibilityLabel={ui('mic.listening', lang)}>
+                    <Icon name="mic" size={22} />
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    style={[
+                      styles.sendBtn,
+                      (!input.trim() || !state.inputEnabled) && styles.sendDisabled,
+                    ]}
+                    onPress={send}
+                    disabled={!input.trim() || !state.inputEnabled}>
+                    <Icon name="send" size={22} />
+                  </Pressable>
+                )}
+              </View>
+            )}
             {/* Leaving is not a conversational move, so it does not sit in the
                 pill row next to the follow-up question. */}
             {state.screen === 'loop' && (
@@ -211,7 +279,32 @@ const Report: React.FC<{ state: FlowState }> = ({ state }) => {
   );
 };
 
+/** What the row says for each state the mic can be in while the take is live. */
+const MIC_LABEL = {
+  opening: 'mic.opening',
+  listening: 'mic.listening',
+  transcribing: 'mic.transcribing',
+  idle: 'mic.listening',
+} as const;
+
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
+
+/** Unity reports WHY a take produced nothing as a key; the sentence is RN's, in all six languages.
+ *  Everything that is not the player's to fix collapses onto one line — "I could not make out the
+ *  words" is as much as a player can act on whether the route 404'd or the upload timed out. */
+function micErrorText(error: NonNullable<FlowState['mic']['error']>, lang: Parameters<typeof ui>[1]) {
+  switch (error) {
+    case 'permission':
+      return ui('mic.error.permission', lang);
+    case 'no_device':
+      return ui('mic.error.nodevice', lang);
+    case 'no_speech':
+    case 'too_short':
+      return ui('mic.error.nospeech', lang);
+    default:
+      return ui('mic.error.failed', lang);
+  }
+}
 
 /** A hold of 5-30 s with a still card looked exactly like a crash. */
 const ThinkingDots: React.FC = () => {
@@ -330,6 +423,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendDisabled: { backgroundColor: colors.card },
+
+  micError: {
+    ...typography.tiny,
+    color: colors.gold,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  micLive: { flex: 1, justifyContent: 'center', gap: spacing.xs, paddingHorizontal: spacing.md },
+  micLabel: { ...typography.caption, color: colors.textSecondary },
+  levelTrack: {
+    height: 4,
+    borderRadius: radius.pill,
+    backgroundColor: colors.card,
+    overflow: 'hidden',
+  },
+  levelFill: { height: 4, backgroundColor: colors.violetSoft },
+
+  hush: {
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  hushText: { ...typography.tiny, color: colors.textMuted },
 
   leave: { alignSelf: 'center', paddingVertical: spacing.sm },
   leaveText: { ...typography.caption, color: colors.textMuted },

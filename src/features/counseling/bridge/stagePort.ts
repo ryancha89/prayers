@@ -34,6 +34,15 @@ export function createStagePort(bridge: UnityBridge, onExit: () => void): StageP
     askOracle(payload: OracleAskPayload) {
       bridge.sendEvent({ type: 'ORACLE_ASK', payload });
     },
+    startMic(lang: string) {
+      bridge.sendEvent({ type: 'MIC_START', payload: { lang } });
+    },
+    stopMic() {
+      bridge.sendEvent({ type: 'MIC_STOP' });
+    },
+    cancelMic() {
+      bridge.sendEvent({ type: 'MIC_CANCEL' });
+    },
     exit: onExit,
   };
 }
@@ -151,6 +160,11 @@ export function createMockStagePort(deps: {
     askOracle(payload) {
       ask(payload.question, payload.loop === true);
     },
+    // No player, no device. The mic button is hidden in mock builds rather than offered and then
+    // failing, so these exist only to satisfy the port.
+    startMic() {},
+    stopMic() {},
+    cancelMic() {},
     exit: deps.onExit,
   };
 }

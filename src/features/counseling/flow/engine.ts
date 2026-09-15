@@ -36,6 +36,8 @@ import { sayGlyphs } from '../api/sajuGlyphs';
 import type {
   CounselorEmotion,
   CounselorScene,
+  MicError,
+  MicState,
   OracleAskPayload,
   OracleResultPayload,
   StagePhasePayload,
@@ -49,7 +51,14 @@ import type {
  * what is being said. A scene-backed chunk knows: the break is where the model put it, and the tone
  * is what the model asked the room to perform there.
  */
-type SpokenChunk = ReadingChunk & { tone?: string; emotion?: CounselorEmotion };
+type SpokenChunk = ReadingChunk & {
+  tone?: string;
+  emotion?: CounselorEmotion;
+  /** How long the server wants this scene to stand, in ms — see `holdRemaining`. */
+  holdMs?: number;
+  /** A breath before this scene is spoken, in ms — the room's `[Beat] … pause=` cue. */
+  leadMs?: number;
+};
 
 /** Scenes as chunks. Every scene opens its own paragraph: the server broke the answer there because
  *  the delivery changes, and running two tones into one paragraph hides exactly that. */
@@ -59,6 +68,8 @@ function chunksOfScenes(scenes: CounselorScene[]): SpokenChunk[] {
     newParagraph: i > 0,
     tone: sc.tone,
     emotion: sc.emotion,
+    holdMs: sc.holdMs,
+    leadMs: sc.leadMs,
   }));
 }
 
@@ -78,6 +89,15 @@ const MIN_HOLD_MS = 1800;
 const MAX_HOLD_MS = 9000;
 /** The pause after a line finishes, before the next phase. */
 const TAIL_MS = 700;
+
+/**
+ * Ceiling on the server's own `hold_ms`, as a guard rather than a policy.
+ *
+ * `Prayers::SceneBuilder#hold_ms` is how long a scene should STAND — reading time, floored by the
+ * length of the tone's animation clip — and it already clamps itself. This is only here so that a
+ * malformed number cannot freeze the room on one line.
+ */
+const MAX_SCENE_HOLD_MS = 9000;
 /** How often a cover phase re-checks whether the reading has landed. */
 const COVER_POLL_MS = 200;
 
@@ -114,6 +134,14 @@ const LOOP_AFTER_PHASE = 'P19';
 /** The first phase that speaks the reading — the only one that has to wait. */
 const READING_PHASE = 'P11';
 
+/** Where a returning player is greeted as one.
+ *
+ * P02 is the welcome — "Welcome. What would you like to know today?" — and it is the only beat in
+ * the walk whose whole job is to open the conversation, so it is the only one a remembered opening
+ * can replace without losing anything. P01 is the arrival (she has not looked up yet) and P05 is
+ * the invitation to type, which still has to be said afterwards. */
+const RECALL_PHASE = 'P02';
+
 /** Which viz stage the spotlight features, by phase (`SpotlightCueFor`). */
 const SPOTLIGHT: Record<string, string> = {
   P07: 'MagicCircleForm',
@@ -149,6 +177,15 @@ export interface StagePort {
   prefetchText(text: string, cacheKey: string): void;
   stopSpeak(): void;
   askOracle(payload: OracleAskPayload): void;
+  /** Open the room's microphone and record a spoken question (`MIC_START`).
+   *
+   *  The capture is Unity's — the app carries no audio-recording dependency, and the embedded
+   *  player already owns the device and the permission dialog. The engine only decides WHEN. */
+  startMic(lang: string): void;
+  /** They have finished speaking: cut the take and transcribe it. */
+  stopMic(): void;
+  /** Throw the take away without transcribing it. */
+  cancelMic(): void;
   exit(): void;
 }
 
@@ -224,6 +261,22 @@ export interface FlowState {
   /** That tone, mapped into what this app can draw. `neutral` whenever there is no direction — the
    *  honest face for a line nobody staged. */
   emotion: CounselorEmotion;
+  /** The counselor is talking RIGHT NOW.
+   *
+   *  Not the same as `!inputEnabled`: in the loop the box is open while she speaks, precisely so
+   *  she CAN be cut off. The UI needs the difference to offer "stop" instead of "send". */
+  speaking: boolean;
+  /** Where the microphone is, and how loud the room is while it listens (0–1). */
+  mic: MicView;
+}
+
+export interface MicView {
+  state: MicState;
+  /** 0–1 while listening, 0 otherwise. Exists so the button can move — a listening dot that never
+   *  changes is indistinguishable from a microphone that never opened. */
+  level: number;
+  /** Why the last take produced nothing, as a key. Cleared when a new take starts. */
+  error: MicError | '';
 }
 
 const emptyState: FlowState = {
@@ -243,6 +296,8 @@ const emptyState: FlowState = {
   pending: false,
   tone: '',
   emotion: 'neutral',
+  speaking: false,
+  mic: { state: 'idle', level: 0, error: '' },
 };
 
 export interface EngineOptions {
@@ -276,6 +331,10 @@ export class ConsultationEngine {
   /** The answer walk's lock-breaker. Its own handle, not `timer`: that one belongs to phase
    *  advance, and sharing it would have a phase timer cancel the guard or the reverse. */
   private answerGuard: number | null = null;
+
+  /** What she remembers of the last session, when the server had something to remember. Replaces
+   *  the authored welcome at P02 — see `setRecallOpening`. */
+  private recallOpening: string | null = null;
 
   /** Branch tags collected so far — the reading layer reads these. */
   private branches: string[] = [];
@@ -312,7 +371,24 @@ export class ConsultationEngine {
    *  drop the whole beat on screen and then send all of it to TTS in one go,
    *  which read as "she talks four seconds late" and silently lost anything
    *  past the server's 800-character cap. */
-  private readingWalk: { key: string; chunks: SpokenChunk[]; next: number } | null = null;
+  private readingWalk: { key: string; chunks: SpokenChunk[]; next: number; shownAt: number } | null =
+    null;
+
+  /** The pause between one scene finishing and the next being spoken. Its own handle: `timer`
+   *  belongs to phase advance, and a tap that clears one must not silently cancel the other. */
+  private holdTimer: number | null = null;
+
+  /** An answer she was cut off part-way through, and how much of it the player had heard.
+   *
+   *  Held between the interruption and the question that caused it, because the mic opens BEFORE
+   *  the question exists: she has to fall silent the instant the player starts talking, several
+   *  seconds before there is anything to send. Consumed by the next turn, or undone by
+   *  `restoreCutOff` when the take produced nothing. */
+  private cutOff: {
+    heard: string;
+    walk: NonNullable<ConsultationEngine['answerWalk']>;
+    said: number;
+  } | null = null;
 
   /** A loop answer mid-delivery: spoken and revealed one chunk at a time, so the
    *  bubble grows with the voice instead of landing whole seconds before it. */
@@ -323,6 +399,8 @@ export class ConsultationEngine {
     next: number;
     /** Index of the growing bubble in `transcript`, -1 before the first chunk. */
     row: number;
+    /** When the chunk now on screen was put there — the clock `holdRemaining` measures from. */
+    shownAt: number;
   } | null = null;
 
   constructor(opts: EngineOptions) {
@@ -335,6 +413,24 @@ export class ConsultationEngine {
   }
 
   /* ── Subscription ─────────────────────────────────────────────────────── */
+
+  /**
+   * Hand the engine the counselor's memory of the last session.
+   *
+   * Arrives on its own clock — the room asks the server for it while Unity is still loading — so
+   * this is a late binding rather than a constructor argument. Ignored once the welcome has been
+   * spoken: a line that remembers the previous session is only an opening, and dropping it in
+   * halfway through a consultation would be a stranger interrupting.
+   */
+  setRecallOpening(opening: string): void {
+    if (!opening || this.recallOpening) return;
+    if (this.phaseIndexOf(RECALL_PHASE) <= this.index) return;
+    this.recallOpening = opening;
+  }
+
+  private phaseIndexOf(id: string): number {
+    return this.phases.findIndex(p => p.id === id);
+  }
 
   getState(): FlowState {
     return this.state;
@@ -421,6 +517,7 @@ export class ConsultationEngine {
 
   dispose() {
     this.clearTimer();
+    if (this.state.mic.state !== 'idle') this.stage.cancelMic();
     this.running = false;
     this.listeners.clear();
   }
@@ -519,7 +616,12 @@ export class ConsultationEngine {
 
   private show(p: ConsultationPhase) {
     const speaker = loc(p.speakerLocKey, this.lang, '');
-    const reading = this.beats[p.id];
+    // A remembered opening is treated exactly like a reading beat: it is the server's words, not
+    // the asset's, so it is spoken by TTS and chunked the same way. That also means it inherits the
+    // rule that the AI's text always wins over the authored line.
+    const reading =
+      this.beats[p.id] ??
+      (p.id === RECALL_PHASE && this.recallOpening ? [this.recallOpening] : undefined);
 
     if (reading && reading.length > 0) {
       // The AI's reading wins over everything. The asset's text for the reading
@@ -549,7 +651,7 @@ export class ConsultationEngine {
       this.opts.onCounselorLine?.(text);
       // Warm the rest while the first is being said. The first cannot be warmed
       // by anyone — it is the only one the player waits on.
-      this.readingWalk = { key: p.id, chunks, next: 1 };
+      this.readingWalk = { key: p.id, chunks, next: 1, shownAt: this.sched.now() };
       for (let i = 1; i < chunks.length; i += 1) {
         this.stage.prefetchText(chunks[i].text, `${p.id}#${i}`);
       }
@@ -683,6 +785,10 @@ export class ConsultationEngine {
   private speak(fire: () => void, cacheKey: string) {
     this.stage.stopSpeak();
     this.speaking = cacheKey;
+    // Mirrored into the state because the UI has to tell "she is talking" from "the box is shut".
+    // In the loop those came apart the day the player was allowed to cut in: the box is open while
+    // she speaks, and the send button has to offer to interrupt rather than to send.
+    if (!this.state.speaking) this.patch({ speaking: true });
     fire();
   }
 
@@ -698,6 +804,7 @@ export class ConsultationEngine {
   onSpeakDone(cacheKey: string) {
     if (this.speaking && this.speaking !== cacheKey) return;
     this.speaking = null;
+    if (this.state.speaking) this.patch({ speaking: false });
     // A reading beat still has chunks to say. Take the take, leave the phase's
     // waiter queued — autoAdvance registered it before the first chunk was even
     // spoken, and running it here would cut the beat off after one sentence.
@@ -712,7 +819,62 @@ export class ConsultationEngine {
       this.sched.clear(this.timer);
       this.timer = null;
     }
+    this.clearHold();
     this.speakDoneWaiter = null;
+  }
+
+  private clearHold() {
+    if (this.holdTimer !== null) {
+      this.sched.clear(this.holdTimer);
+      this.holdTimer = null;
+    }
+  }
+
+  /**
+   * How much longer the scene now on screen is owed, in ms.
+   *
+   * `hold_ms` is not a gap between lines — `Prayers::SceneBuilder` computes it as how long the
+   * scene should STAND: its reading time, floored by the length of the tone's animation clip. So
+   * the wait is what is LEFT of it once the voice has stopped, and it is usually zero for a long
+   * line read slowly and a second or two for a short one the synthesiser rushes.
+   *
+   * Without this the room moved on the instant the take reported done, which is why a two-word
+   * reveal ("…삼 년 뒤예요.") flashed past before it could land, and why the rig's one-shot gesture
+   * for that tone was still playing when the next line started.
+   */
+  private holdRemaining(chunk: SpokenChunk | undefined, shownAt: number): number {
+    const want = chunk?.holdMs ?? 0;
+    if (!(want > 0)) return 0;
+    const elapsed = this.sched.now() - shownAt;
+    return Math.max(0, Math.min(want, MAX_SCENE_HOLD_MS) - elapsed);
+  }
+
+  /**
+   * Run `then` once the scene on screen has had its time AND the next one has had its breath.
+   *
+   * Two different pauses meet here and the longer wins: what the finished scene is still owed
+   * (`hold_ms`, from the `/prayers` reading) and what the next one asks for before it starts
+   * (`pause`, from the embedded room's `[Beat]` cue). They come from different servers on different
+   * paths and are never both present today, but taking the max costs nothing and means neither
+   * path has to know about the other.
+   */
+  private afterHold(
+    chunk: SpokenChunk | undefined,
+    shownAt: number,
+    next: SpokenChunk | undefined,
+    then: () => void,
+  ) {
+    const lead = Math.min(Math.max(next?.leadMs ?? 0, 0), MAX_SCENE_HOLD_MS);
+    const wait = Math.max(this.holdRemaining(chunk, shownAt), lead);
+    if (wait <= 0) {
+      then();
+      return;
+    }
+    this.clearHold();
+    this.holdTimer = this.sched.set(() => {
+      this.holdTimer = null;
+      then();
+    }, wait);
   }
 
   /* ── Player input ─────────────────────────────────────────────────────── */
@@ -735,6 +897,7 @@ export class ConsultationEngine {
     // player's own impatience as two failures per session until this line existed.
     devlog(`[flow] tap skips ${this.state.phaseId} mid-line`);
     this.speaking = null;
+    this.patch({ speaking: false });
     this.stage.stopSpeak();
     this.advance();
   }
@@ -779,6 +942,91 @@ export class ConsultationEngine {
 
   leave() {
     this.finish();
+  }
+
+  /* ── The microphone ───────────────────────────────────────────────────────
+   *
+   * "The user can use the mic to talk", and "when the user interrupts, the counselor needs to stop
+   * talking and answer based on what she was saying" (CHA JEONGMIN, 15-09-2026). Those two are one
+   * gesture: opening the mic IS the interruption. She stops on the press, not on the send — a
+   * counselor who keeps reading over the player is both rude and unusable, since her voice is in
+   * the same room as the microphone.
+   *
+   * The device belongs to Unity (StagePort.startMic). The engine decides when, keeps the state the
+   * UI draws, and turns a finished take into a question. */
+
+  /**
+   * Stop talking — the bare gesture, with no question behind it.
+   *
+   * The player has heard enough of this answer. What she had not yet said is dropped rather than
+   * dumped on screen: they stopped her because they did not want the rest, and a wall of text
+   * appearing the instant she goes quiet is the opposite of what they asked for. The turn goes
+   * straight back, so the box and the follow-up chip are theirs again.
+   */
+  hush() {
+    if (!this.running || !this.inLoop) return;
+    this.interruptAnswer();
+    this.releaseTurn();
+  }
+
+  /** Press. Silences her, opens the device. */
+  startMic() {
+    if (!this.running || this.state.mic.state !== 'idle') return;
+    // Only a loop ANSWER can be taken back. A staged phase is a walk with a camera and a beat
+    // structure behind it, so its line is simply treated as finished — the same thing a tap does.
+    //
+    // That second branch is not tidiness. Unity silences the room the moment the device opens
+    // (ConsultationRemoteStage.MicStart), so the take's SPEAK_DONE never comes; a phase waiting on
+    // it would sit there forever, and the guard that catches a lost take only covers the loop.
+    if (this.inLoop) {
+      this.interruptAnswer(true);
+    } else if (this.speaking) {
+      this.speaking = null;
+      this.patch({ speaking: false });
+      const waiter = this.speakDoneWaiter;
+      this.speakDoneWaiter = null;
+      waiter?.();
+    }
+    // `opening`, not `listening` — the device is not open until Unity says so (MIC_STATE).
+    this.patch({ mic: { state: 'opening', level: 0, error: '' } });
+    this.stage.startMic(this.lang);
+  }
+
+  /** Release. Cuts the take here; the text comes back as a MIC_RESULT. */
+  stopMic() {
+    // Only a take that is actually recording can be "finished". Tapping stop while the permission
+    // dialog is still up is a cancel, and the UI routes it there.
+    if (this.state.mic.state !== 'listening') return;
+    this.patch({ mic: { ...this.state.mic, state: 'transcribing', level: 0 } });
+    this.stage.stopMic();
+  }
+
+  /** Changed their mind. The take is dropped and, if she was cut off for it, she gets her answer
+   *  back rather than being left mute mid-paragraph. */
+  cancelMic() {
+    if (this.state.mic.state === 'idle') return;
+    this.stage.cancelMic();
+    this.patch({ mic: { state: 'idle', level: 0, error: '' } });
+    this.restoreCutOff();
+  }
+
+  /** Unity's view of the device. `level` moves the button while it listens. */
+  onMicState(state: MicState, level: number) {
+    if (this.state.mic.state === 'idle' && state === 'idle') return;
+    this.patch({ mic: { ...this.state.mic, state, level: state === 'listening' ? level : 0 } });
+  }
+
+  /** A finished take. Spoken words ARE the question — the mic is how you talk to her, not a
+   *  dictation box, so a good transcript is sent rather than parked in the text field. */
+  onMicResult(result: { ok: boolean; text: string; error: MicError | '' }) {
+    this.patch({ mic: { state: 'idle', level: 0, error: result.ok ? '' : result.error || 'upstream' } });
+    const text = (result.text ?? '').trim();
+    if (!result.ok || !text) {
+      // Nothing was said, so nothing was interrupted.
+      this.restoreCutOff();
+      return;
+    }
+    this.submitQuestion(text);
   }
 
   /**
@@ -985,9 +1233,9 @@ export class ConsultationEngine {
   }
 
   private askLoop(text: string) {
-    // The player moved on mid-answer. The rest of what she was saying goes into
-    // the transcript at once — unspoken, but not lost.
-    this.flushAnswerWalk();
+    // The player spoke over her. Cut her off where she stands, and keep what they had actually
+    // HEARD — the answer to their new question has to start from there.
+    const heard = this.interruptAnswer();
     this.loopTurns += 1;
     this.loopPending = true;
     this.appendTranscript('user', text);
@@ -996,7 +1244,13 @@ export class ConsultationEngine {
     // He takes the question in before he starts thinking about it.
     this.stageBeat('LOOP_ASK', 'Agreeing');
     this.stage.thinking(true);
-    this.stage.askOracle({ question: text, topic: this.topic, scope: this.scope, loop: true });
+    this.stage.askOracle({
+      question: text,
+      topic: this.topic,
+      scope: this.scope,
+      loop: true,
+      interrupted: heard,
+    });
     // The answer is 15-20 s away. Rather than a typing indicator, the counselor
     // says so — a short prefetched line, spoken at once, so the wait reads as
     // her thinking rather than the app hanging.
@@ -1027,14 +1281,16 @@ export class ConsultationEngine {
     this.followup = payload.followup ?? '';
     this.stageBeat('LOOP_ANSWER', 'Explaining');
     this.opts.onCounselorLine?.(text);
-    // `pending` ends here — the waiting is over — but the TURN does not. The answer is delivered a
-    // chunk at a time over the next several seconds, so opening the input and the suggestion chip
-    // now would invite the player to speak while the counselor is still mid-sentence. They did:
-    // one short line on screen, the chip live, tap, and the rest of the answer arrived behind their
-    // next question — and askLoop's flushAnswerWalk dumped it in unspoken, exactly as designed for
-    // a player who MEANT to move on. Nobody meant to. The room asked them to.
-    // Handed back in releaseTurn(), when she has actually finished.
-    this.patch({ pending: false });
+    // `pending` ends here — the waiting is over — but the TURN does not: the answer is delivered a
+    // chunk at a time over the next several seconds.
+    //
+    // THE INPUT OPENS ANYWAY, AND THE SUGGESTION CHIP DOES NOT. Those two were shut together once,
+    // for a real bug: one short line on screen, the chip live, one tap, and the rest of the answer
+    // arrived behind a question the player never meant to ask. The chip was the trap — a single tap
+    // that fires a question with no intent behind it. Typing one, or holding the mic down, is not
+    // an accident, and cutting in is now something the room is MEANT to allow (interruptAnswer).
+    // So the box opens with her voice and the chip waits for her to finish, in releaseTurn().
+    this.patch({ pending: false, inputEnabled: true });
 
     // The answer is not dropped into the transcript whole. It is spoken a chunk
     // at a time — first chunk a single sentence, the rest ~110 characters — and
@@ -1051,7 +1307,7 @@ export class ConsultationEngine {
     // the first clip is usually in memory by the time she finishes it, and the
     // later ones land while the earlier ones play.
     chunks.forEach((c, i) => this.stage.prefetchText(c.text, `${key}.${i}`));
-    this.answerWalk = { key, chunks, next: 0, row: -1 };
+    this.answerWalk = { key, chunks, next: 0, row: -1, shownAt: this.sched.now() };
     this.armAnswerGuard(text);
     // If the "one moment" line is still being said, let it finish: cutting her
     // off mid-word to start the answer sounds worse than a beat of pause.
@@ -1068,15 +1324,24 @@ export class ConsultationEngine {
       this.readingWalk = null;
       return false;
     }
-    const i = walk.next;
-    walk.next += 1;
-    this.patch({
-      line: joinChunks(walk.chunks.slice(0, i + 1)),
-      tone: walk.chunks[i].tone ?? '',
-      emotion: walk.chunks[i].emotion ?? 'neutral',
+    // The scene that just finished speaking may still be owed time on screen. Returning true
+    // BEFORE that wait is deliberate: it tells onSpeakDone the beat is not over, so the phase's
+    // waiter stays queued across the pause instead of the walk being released into it.
+    const previous = walk.chunks[walk.next - 1];
+    this.afterHold(previous, walk.shownAt, walk.chunks[walk.next], () => {
+      const current = this.readingWalk;
+      if (!current || current.key !== walk.key || !this.running) return;
+      const i = current.next;
+      current.next += 1;
+      current.shownAt = this.sched.now();
+      this.patch({
+        line: joinChunks(current.chunks.slice(0, i + 1)),
+        tone: current.chunks[i].tone ?? '',
+        emotion: current.chunks[i].emotion ?? 'neutral',
+      });
+      const key = `${current.key}#${i}`;
+      this.speak(() => this.stage.speakText(current.chunks[i].text, key), key);
     });
-    const key = `${walk.key}#${i}`;
-    this.speak(() => this.stage.speakText(walk.chunks[i].text, key), key);
     return true;
   }
 
@@ -1089,6 +1354,9 @@ export class ConsultationEngine {
       return false;
     }
     this.readingWalk = null;
+    // A tap during a hold means "get on with it": the pause is for the player's benefit, and they
+    // have just said they do not need it.
+    this.clearHold();
     // The whole beat is on screen now, so the face is the LAST scene's — the one the beat ends on.
     const last = walk.chunks[walk.chunks.length - 1];
     this.patch({
@@ -1097,6 +1365,7 @@ export class ConsultationEngine {
       emotion: last?.emotion ?? 'neutral',
     });
     this.speaking = null;
+    this.patch({ speaking: false });
     this.speakDoneWaiter = null;
     this.stage.stopSpeak();
     return true;
@@ -1108,17 +1377,26 @@ export class ConsultationEngine {
     const walk = this.answerWalk;
     if (!walk || !this.inLoop || !this.running) return;
     if (walk.next >= walk.chunks.length) {
-      this.answerWalk = null;
-      this.releaseTurn();
+      // The last scene is owed its time too — releasing the turn the instant her voice stops puts
+      // the input box back under a line the player has not finished reading.
+      this.afterHold(walk.chunks[walk.next - 1], walk.shownAt, undefined, () => {
+        if (this.answerWalk !== walk) return;
+        this.answerWalk = null;
+        this.releaseTurn();
+      });
       return;
     }
-    const i = walk.next;
-    walk.next += 1;
-    this.revealChunks(walk, i + 1);
-    this.patch({ tone: walk.chunks[i].tone ?? '', emotion: walk.chunks[i].emotion ?? 'neutral' });
-    const chunkKey = `${walk.key}.${i}`;
-    this.speak(() => this.stage.speakText(walk.chunks[i].text, chunkKey), chunkKey);
-    this.afterSpeech(() => this.speakNextChunk());
+    this.afterHold(walk.chunks[walk.next - 1], walk.shownAt, walk.chunks[walk.next], () => {
+      if (this.answerWalk !== walk || !this.inLoop || !this.running) return;
+      const i = walk.next;
+      walk.next += 1;
+      walk.shownAt = this.sched.now();
+      this.revealChunks(walk, i + 1);
+      this.patch({ tone: walk.chunks[i].tone ?? '', emotion: walk.chunks[i].emotion ?? 'neutral' });
+      const chunkKey = `${walk.key}.${i}`;
+      this.speak(() => this.stage.speakText(walk.chunks[i].text, chunkKey), chunkKey);
+      this.afterSpeech(() => this.speakNextChunk());
+    });
   }
 
   /** Show the first `count` chunks of the walk in its bubble (creating it on the
@@ -1136,6 +1414,62 @@ export class ConsultationEngine {
   }
 
   /** Stop delivering the current answer and show whatever of it was still to come. */
+  /**
+   * Stop her mid-sentence because the player is talking, and report what they had heard.
+   *
+   * NOT the same as `flushAnswerWalk`. That one is for an answer that ran out of time or was
+   * abandoned: the unspoken remainder is dumped into the bubble so nothing is lost. An interruption
+   * is the opposite case — the rest was never said, the player never heard it, and showing it would
+   * put words on screen that the counselor is about to be told not to repeat. So the bubble is
+   * truncated to the chunks that were actually spoken and the tail is dropped.
+   *
+   * The last spoken chunk was almost certainly cut part-way through. It counts as heard anyway:
+   * half a sentence is closer to what reached them than none of it, and the alternative is the
+   * counselor repeating a point the player just sat through.
+   */
+  private interruptAnswer(stash = false): string {
+    // Already cut off — the mic did it when it opened, and the words they heard were put aside
+    // then. Consume them here: the question that follows is the one they interrupted her with.
+    if (this.cutOff) {
+      const heard = this.cutOff.heard;
+      this.cutOff = null;
+      return heard;
+    }
+    const walk = this.answerWalk;
+    if (!walk) return '';
+    this.answerWalk = null;
+    // She may be between scenes rather than mid-word — a pending hold would otherwise fire after
+    // the interruption and start the next line into a player who is already talking.
+    this.clearHold();
+    const spoken = walk.chunks.slice(0, Math.max(walk.next, 0));
+    // Only if something was said. Revealing zero chunks would open an empty counselor bubble above
+    // the player's question — a blank speech bubble reads as a failed answer.
+    if (spoken.length > 0) this.revealChunks(walk, spoken.length);
+    this.speakDoneWaiter = null;
+    this.speaking = null;
+    this.stage.stopSpeak();
+    this.patch({ speaking: false });
+    this.clearAnswerGuard();
+    const heard = joinChunks(spoken);
+    if (heard) devlog(`[flow] interrupted after ${spoken.length}/${walk.chunks.length} chunk(s)`);
+    // `stash` is the mic's path only. The mic opens BEFORE there is a question, so an interruption
+    // that comes to nothing (they said nothing, the transcription failed) has to be undoable:
+    // `restoreCutOff` puts the rest of her answer back on screen. A typed question is already the
+    // question, so there is nothing to undo and the tail is deliberately dropped.
+    if (stash) this.cutOff = { heard, walk, said: spoken.length };
+    return heard;
+  }
+
+  /** The interruption came to nothing. Show the rest of the answer she never got to say (unspoken,
+   *  but not lost) and hand the turn back. */
+  private restoreCutOff() {
+    const cut = this.cutOff;
+    this.cutOff = null;
+    if (!cut || !this.inLoop || !this.running) return;
+    if (cut.said < cut.walk.chunks.length) this.revealChunks(cut.walk, cut.walk.chunks.length);
+    this.releaseTurn();
+  }
+
   private flushAnswerWalk() {
     const walk = this.answerWalk;
     if (!walk) return;
@@ -1209,9 +1543,15 @@ export class ConsultationEngine {
     this.running = false;
     this.answerWalk = null;
     this.readingWalk = null;
+    this.cutOff = null;
     this.clearTimer();
     this.stage.stopSpeak();
-    this.patch({ finished: true, screen: 'none', inputEnabled: false, canTap: false });
+    // A recording left running holds the input device — and its indicator — after the room is gone.
+    if (this.state.mic.state !== 'idle') this.stage.cancelMic();
+    this.patch({
+      finished: true, screen: 'none', inputEnabled: false, canTap: false,
+      speaking: false, mic: { state: 'idle', level: 0, error: '' },
+    });
     this.opts.onFinished?.();
     this.stage.exit();
   }

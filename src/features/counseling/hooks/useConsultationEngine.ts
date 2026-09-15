@@ -41,6 +41,19 @@ export interface Consultation {
   submit(text: string): void;
   retry(): void;
   endLoop(): void;
+  /** Stop the counselor mid-answer without asking anything. */
+  hush(): void;
+  /** Press the mic: silences the counselor and opens the device. */
+  startMic(): void;
+  /** Release it: the take is cut here and transcribed. */
+  stopMic(): void;
+  /** Drop the take — and give the counselor back the answer she was cut off in. */
+  cancelMic(): void;
+  /** Whether this build can record at all. Only the embedded player owns the device. */
+  micAvailable: boolean;
+  /** Give the counselor her memory of the last session, to open with. Late by nature — the room
+   *  asks the server for it while the player is still loading — and ignored once she has spoken. */
+  remember(opening: string): void;
 }
 
 export function useConsultationEngine(opts: UseConsultationOptions): Consultation {
@@ -103,6 +116,8 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
       if (e.type === 'UNITY_READY') setReady(true);
       else if (e.type === 'ORACLE_RESULT') engineRef.current?.onOracleResult(e.payload);
       else if (e.type === 'SPEAK_DONE') engineRef.current?.onSpeakDone(e.payload.cacheKey);
+      else if (e.type === 'MIC_STATE') engineRef.current?.onMicState(e.payload.state, e.payload.level);
+      else if (e.type === 'MIC_RESULT') engineRef.current?.onMicResult(e.payload);
     });
   }, []);
 
@@ -122,6 +137,14 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
     submit: useCallback((t: string) => engineRef.current?.submitQuestion(t), []),
     retry: useCallback(() => engineRef.current?.retry(), []),
     endLoop: useCallback(() => engineRef.current?.endLoop(), []),
+    hush: useCallback(() => engineRef.current?.hush(), []),
+    startMic: useCallback(() => engineRef.current?.startMic(), []),
+    stopMic: useCallback(() => engineRef.current?.stopMic(), []),
+    cancelMic: useCallback(() => engineRef.current?.cancelMic(), []),
+    remember: useCallback((opening: string) => engineRef.current?.setRecallOpening(opening), []),
+    // The mock stage has no microphone, so the button is hidden rather than offered and then
+    // failing — the same rule the room follows everywhere else about not pretending.
+    micAvailable: isNativeUnity(),
   };
 }
 
@@ -142,6 +165,8 @@ function emptyish(): FlowState {
     tone: '',
     emotion: 'neutral',
     finished: false,
-  pending: false,
+    pending: false,
+    speaking: false,
+    mic: { state: 'idle', level: 0, error: '' },
   };
 }

@@ -28,6 +28,8 @@ const base: FlowState = {
   topic: '',
   finished: false,
     pending: false,
+  speaking: false,
+  mic: { state: 'idle', level: 0, error: '' },
 };
 
 const noop = () => {};
