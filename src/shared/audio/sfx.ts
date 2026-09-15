@@ -1,4 +1,5 @@
 import { sfxEnabled } from './store';
+import { devlog } from '../devlog';
 import { bundledSoundPath, bundledSoundBase } from './bundledSound';
 
 /**
@@ -26,14 +27,29 @@ try {
 }
 
 /** Bundled natively via react-native.config.js `assets` + react-native-asset. */
-export type Cue = 'tap' | 'select' | 'back' | 'send';
+export type Cue = 'tap' | 'select' | 'back' | 'send' | 'bellIn' | 'bellOut';
 
 const FILES: Record<Cue, string> = {
   tap: 'ui_tap.m4a',
   select: 'ui_select.m4a',
   back: 'ui_back.m4a',
   send: 'ui_send.m4a',
+  bellIn: 'med_bell_in.m4a',
+  bellOut: 'med_bell_out.m4a',
 };
+
+/**
+ * The two bells are the odd pair in this module and are meant to be.
+ *
+ * Everything else here is punctuation — 55 ms, under the music, noticed by its absence. The bells
+ * are the opposite: seconds long, listened to, and the only sound in the app a player WAITS for. A
+ * ten-minute session with eyes shut has no other way of being told it has started, or ended.
+ *
+ * They still ride the interface-sounds switch rather than the music one. Someone who turned the
+ * taps off has said they do not want the app making noises at them, and a bowl is a noise the app
+ * makes; the room's music is the thing they came for and has its own switch.
+ */
+const LONG_CUES = new Set<Cue>(['bellIn', 'bellOut']);
 
 /** Under the music, not over it: these are punctuation, not events. `ui_send` is the one that may
  *  be felt as an event, and it is louder in the file rather than louder here — that spread is real
@@ -67,7 +83,9 @@ function instance(cue: Cue): any | null {
       }
       return;
     }
-    sound.setVolume(VOLUME);
+    // The bells sit UNDER the room's music rather than over it: they are an invitation, and an
+    // invitation does not need to be the loudest thing in the room. Same switch, different gain.
+    sound.setVolume(LONG_CUES.has(cue) ? VOLUME * 0.8 : VOLUME);
   });
   loaded.set(cue, sound);
   return sound;
@@ -86,8 +104,17 @@ export function preload() {
   (Object.keys(FILES) as Cue[]).forEach(instance);
 }
 
+/** Dev-only: one line per launch, not one per press — the taps are too frequent to log each. */
+let mutedReported = false;
+
 export function play(cue: Cue) {
-  if (!sfxEnabled()) return;
+  if (!sfxEnabled()) {
+    if (!mutedReported) {
+      mutedReported = true;
+      devlog('[sfx] swallowed \'' + cue + '\' — interface sounds are off (further ones silent)');
+    }
+    return;
+  }
   const sound = instance(cue);
   if (!sound) return;
   try {
@@ -100,7 +127,15 @@ export function play(cue: Cue) {
     // Rewind first: a press while the last one is still ringing should sound twice, not once.
     sound.stop(() => {
       sound.setCurrentTime(0);
-      sound.play();
+      // The bells are the only cues anyone waits on, and they are also the only ones nobody can
+      // confirm from a screenshot — so their result goes to the sink. `play`'s callback fires with
+      // false when the decode or the route failed, which is the difference between "the file is
+      // missing" and "your simulator is muted".
+      sound.play(
+        LONG_CUES.has(cue)
+          ? (ok: boolean) => devlog(`[sfx] ${cue} ${ok ? 'rang through' : 'FAILED to play'}`)
+          : undefined,
+      );
     });
   } catch {
     // Never let a sound break a press.
@@ -112,6 +147,10 @@ export const sfx = {
   select: () => play('select'),
   back: () => play('back'),
   send: () => play('send'),
+  /** Struck once as a session begins — "settle". */
+  bellIn: () => play('bellIn'),
+  /** Lower and longer, as it ends — a release, not another instruction. */
+  bellOut: () => play('bellOut'),
 };
 
 /** Free the preloaded instances. Called when the app goes away, like the music player does. */

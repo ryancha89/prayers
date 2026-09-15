@@ -35,6 +35,17 @@ const navigationRef = createNavigationContainerRef<RootStackParamList>();
 /** Screens where embedded Unity (and its BGM) is allowed to be audible. */
 const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry']);
 
+/**
+ * Screens whose audio is NOT the route's business.
+ *
+ * The meditation room is the one place where the music is the content rather than the background,
+ * and content starts when the player says so. So the route rule does half the job — it silences the
+ * app's bed on the way in — and the screen does the other half: the loop starts on Begin, pauses on
+ * Pause, and is dropped on the way out. A bed that came up with the screen would be playing at
+ * someone still deciding whether they have ten minutes.
+ */
+const SELF_SCORED_SCREENS = new Set(['MeditationRoom']);
+
 /** Whether the app's own music may play. The splash has a cue of its own and the two would
  *  overlap, so nothing starts until it is done. */
 let musicAllowed = false;
@@ -58,8 +69,10 @@ const syncAudioToRoute = () => {
 
   if (!inUnity) nativeUnityBridge.stopAllAudio();
 
-  if (inUnity || !musicAllowed) backgroundMusic.stop();
-  else backgroundMusic.start();
+  const selfScored = !!route && SELF_SCORED_SCREENS.has(route.name);
+
+  if (inUnity || selfScored || !musicAllowed) backgroundMusic.stop();
+  else backgroundMusic.start('app');
 };
 
 const App: React.FC = () => {

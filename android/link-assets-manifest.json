@@ -2,8 +2,20 @@
   "migIndex": 1,
   "data": [
     {
+      "path": "src/shared/assets/sounds/med_bell_in.m4a",
+      "sha1": "ae235624a1f067f337805179bdef7d860ddf84e5"
+    },
+    {
+      "path": "src/shared/assets/sounds/med_bell_out.m4a",
+      "sha1": "ba73656c411de270ec4981918628e9ec3b5379e2"
+    },
+    {
+      "path": "src/shared/assets/sounds/meditation_bed.m4a",
+      "sha1": "b11b06eca6ae503bd99f6c6f6f75f979850052d5"
+    },
+    {
       "path": "src/shared/assets/sounds/prayers_ambient.m4a",
-      "sha1": "6696393f33e189632180936c0644ee5906590d17"
+      "sha1": "72857b9a2d197c0c1502ac22718c9f4b45424a84"
     },
     {
       "path": "src/shared/assets/sounds/splash_sound.m4a",
@@ -11,19 +23,19 @@
     },
     {
       "path": "src/shared/assets/sounds/ui_back.m4a",
-      "sha1": "d77a3523b565f6ba2545b8573f67699867e9c307"
+      "sha1": "c86baaa93d8efc836aa0b5d3500d76c1f3ac0c05"
     },
     {
       "path": "src/shared/assets/sounds/ui_select.m4a",
-      "sha1": "b1ad10313a64cc1e71de36597c865e87fd6d3285"
+      "sha1": "372097c82f871e2da98fd5a73532de10c56b3a06"
     },
     {
       "path": "src/shared/assets/sounds/ui_send.m4a",
-      "sha1": "e98accdfe84f4f2f3f9ccd196cacfbd8dfa9f5b0"
+      "sha1": "bca283b67a05985cb73c2a2f2780b6b8485fb256"
     },
     {
       "path": "src/shared/assets/sounds/ui_tap.m4a",
-      "sha1": "34ed6f77c70946f3e1b21c948ab2e5ce6b4acdc5"
+      "sha1": "b1b2964b1b973e0a1b7ce51fe47ee885f7fa5745"
     }
   ]
 }
