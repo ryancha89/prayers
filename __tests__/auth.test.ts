@@ -7,11 +7,6 @@
  * that decide whether a build can talk to production at all: that a signed-in client prefers its
  * own 24h game token over any embedded secret, and that a signed-out client sends nothing.
  */
-jest.mock(
-  '../src/features/counseling/api/devToken',
-  () => ({ SAJU_ACCESS_TOKEN: 'test-token' }),
-  { virtual: true },
-);
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
 jest.mock('@react-native-async-storage/async-storage', () => {
   const store = new Map<string, string>();

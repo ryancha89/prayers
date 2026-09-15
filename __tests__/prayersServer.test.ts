@@ -6,11 +6,6 @@
  * part most worth pinning: sending `User-Auth` alone is a 401, and that mistake looks exactly like
  * the server being down.
  */
-jest.mock(
-  '../src/features/counseling/api/devToken',
-  () => ({ SAJU_ACCESS_TOKEN: 'test-token' }),
-  { virtual: true },
-);
 jest.mock('../src/features/counseling/bridge', () => ({ unityApiBase: 'http://localhost:4000' }));
 jest.mock('../src/shared/config/api', () => ({ apiBase: () => 'http://localhost:4000' }));
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));

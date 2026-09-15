@@ -6,11 +6,6 @@
  * a refusal does NOT sign the person out (their account still exists, with their tickets in it),
  * and that a success does not leave the previous person's saved people on the phone.
  */
-jest.mock(
-  '../src/features/counseling/api/devToken',
-  () => ({ SAJU_ACCESS_TOKEN: '' }),
-  { virtual: true },
-);
 jest.mock('../src/shared/config/api', () => ({ apiBase: () => 'http://localhost:4000' }));
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
 jest.mock('@react-native-async-storage/async-storage', () => {

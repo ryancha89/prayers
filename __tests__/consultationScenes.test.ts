@@ -11,11 +11,6 @@
  * scenes still behaves exactly as it did, because that is every reading the embedded room delivers
  * (it answers over v2, which speaks cues and has no scenes at all).
  */
-jest.mock(
-  '../src/features/counseling/api/devToken',
-  () => ({ SAJU_ACCESS_TOKEN: 'test-token' }),
-  { virtual: true },
-);
 jest.mock('../src/features/counseling/bridge', () => ({ unityApiBase: 'http://localhost:4000' }));
 jest.mock('../src/shared/config/api', () => ({ apiBase: () => 'http://localhost:4000' }));
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));

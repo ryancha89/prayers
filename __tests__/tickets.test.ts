@@ -4,11 +4,6 @@
  * Until now the app read a balance on the way into a room, refused entry at zero, and offered a
  * Back button — while MyPage showed a wallet of 120 credits that was a constant in a file.
  */
-jest.mock(
-  '../src/features/counseling/api/devToken',
-  () => ({ SAJU_ACCESS_TOKEN: '' }),
-  { virtual: true },
-);
 jest.mock('../src/shared/config/api', () => ({ apiBase: () => 'http://localhost:4000' }));
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
 jest.mock('@react-native-async-storage/async-storage', () => {
