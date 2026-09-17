@@ -36,6 +36,19 @@ export interface PhaseVariant {
   branchTag: string;
   lines: string[];
   lineLocKeys: string[];
+  /**
+   * Choices for this branch, replacing the phase's own.
+   *
+   * ⚠️ WITHOUT THIS, A BRANCH COULD CHANGE WHAT THE COUNSELLOR ASKS BUT NOT WHAT THE PLAYER MAY
+   * ANSWER. The love branch of P12 asks "where does your heart stand right now?" and then offered
+   * *Start a business · Consider investing · Create a side income* — the wealth choices, because
+   * those are the phase's own and `choicesOf` never looked at the variant. Same at P16, where every
+   * closing question was about money whatever the session had been about.
+   *
+   * Optional on purpose: a variant that only re-words a line leaves this out and keeps the phase's
+   * choices, which is what the existing wealth branches do.
+   */
+  choices?: PhaseChoice[];
 }
 
 export interface ConsultationPhase {

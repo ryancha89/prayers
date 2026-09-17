@@ -31,6 +31,7 @@ import { phases as allPhases, indexOf, loc, format } from './flowData';
 import { splitReading, joinChunks, type ReadingChunk } from './splitReading';
 import { devlog } from '../../../shared/devlog';
 import { ui } from './strings';
+import { CounselorVoice, voiced } from './voice';
 import type { Lang } from '../../../shared/i18n';
 import { sayGlyphs } from '../api/sajuGlyphs';
 import type {
@@ -120,6 +121,13 @@ const REPORT_HOLD_MULTIPLIER = 2.2;
 // P13 reacts to the answer given at P12 ("then the situation is a little
 // different"); with P12 skipped it has nothing to react to, so it goes too.
 const SKIP_PHASES = ['P03', 'P04', 'P12', 'P13', 'P15', 'P16', 'P18'];
+
+// ⚠️ NO EXCEPTIONS, AND THAT IS A DECISION, NOT AN OVERSIGHT. For one afternoon (17-09) the
+// relationship topics kept P12/P13/P16, on the argument that a relationship session has a question
+// the app never asks — WHO. It was built, shipped to the simulator and looked at, and the call was
+// that Theo should behave like every other counsellor: one question box, one answer. The branch
+// content stays in the asset (and `PhaseVariant.choices` still works) so re-enabling is a
+// three-line change, but the walk is uniform again.
 
 /** Phases that exist only to cover the wait for the server. */
 const COVER_PHASES = ['P06', 'P07', 'P08', 'P09', 'P10'];
@@ -311,6 +319,9 @@ export interface EngineOptions {
   onFinished?: () => void;
   scheduler?: Scheduler;
   phases?: ConsultationPhase[];
+  /** Which register the counselor speaks the room's own lines in — see `voice.ts`. Defaults to the
+   *  shared one, so a caller that does not know who is in the chair changes nothing. */
+  voice?: CounselorVoice;
 }
 
 /* ── The engine ───────────────────────────────────────────────────────────── */
@@ -403,12 +414,27 @@ export class ConsultationEngine {
     shownAt: number;
   } | null = null;
 
+  /** The counselor's register for the room's own lines. Not the server's tone — see `voice.ts`. */
+  private voice: CounselorVoice = 'default';
+
+  /** RN's own copy, in this counselor's register. */
+  private uiV(key: Parameters<typeof ui>[0]): string {
+    return voiced(this.voice, key, this.lang) ?? ui(key, this.lang);
+  }
+
+  /** A generated-table line, in this counselor's register. Same fallback chain as `loc` once the
+   *  register has nothing to say, so an un-overridden key behaves exactly as before. */
+  private locV(key: string, fallback = ''): string {
+    return voiced(this.voice, key, this.lang) ?? loc(key, this.lang, fallback);
+  }
+
   constructor(opts: EngineOptions) {
     this.opts = opts;
     this.stage = opts.stage;
     this.sched = opts.scheduler ?? realScheduler;
     this.phases = opts.phases ?? allPhases;
     this.lang = opts.lang;
+    this.voice = opts.voice ?? 'default';
     this.topic = opts.presetTopic ?? '';
   }
 
@@ -496,11 +522,17 @@ export class ConsultationEngine {
 
   begin() {
     if (this.phases.length === 0) return;
-    this.branches = [];
-    this.question = '';
     // Seeded, not blanked: begin() also runs on a replay, and the area the
     // player picked on the way in still holds for the next question.
     this.topic = this.opts.presetTopic ?? '';
+    // ⚠️ AND IT MUST BE A BRANCH, NOT ONLY A LABEL. `presetTopic` used to set `topic` alone, which
+    // feeds `{0}` and the voice take — while every per-topic VARIANT keys off `branches`. So a
+    // session the app had already pointed at love or relationships (which is every session that
+    // starts from a counsellor card) took the phase's DEFAULT lines and choices: the wealth ones.
+    // That is how a relationship counsellor came to ask "where does your heart stand?" and then
+    // offer *Start a business · Consider investing*.
+    this.branches = this.topic ? ['topic:' + this.topic] : [];
+    this.question = '';
     this.scope = '';
     this.beats = {};
     this.beatScenes = {};
@@ -709,13 +741,23 @@ export class ConsultationEngine {
     // Kept per line, not only joined: the card shows one paragraph, but the voice says one
     // line at a time and a line with no take needs its own text to synthesise.
     const spoken = (lines ?? []).map((fallback, i) =>
-      this.withTopic(loc(keys?.[i] ?? '', this.lang, fallback)),
+      this.withTopic(this.locV(keys?.[i] ?? '', fallback)),
     );
     return { keys, spoken, body: spoken.join('\n') };
   }
 
   private choicesOf(p: ConsultationPhase): ChoiceView[] {
-    return (p.choices ?? []).map(c => ({
+    // The branch's own choices when it has them — see PhaseVariant.choices for what it looked like
+    // when only the LINES could branch. Same first-match-wins rule as linesOf, and a variant that
+    // carries none falls through to the phase's own list.
+    let list = p.choices ?? [];
+    for (const v of p.variants ?? []) {
+      if (!v.branchTag || !this.branches.includes(v.branchTag)) continue;
+      if (!v.choices || v.choices.length === 0) continue;
+      list = v.choices;
+      break;
+    }
+    return list.map(c => ({
       label: this.withTopic(loc(c.locKey, this.lang, c.english)),
       choice: c,
     }));
@@ -1061,7 +1103,7 @@ export class ConsultationEngine {
     // Say that the wait is a wait. Without this the card from the last cover
     // phase just sat there, and a 5-30 s hold looked exactly like a crash.
     const p = this.phases[i];
-    const waiting = loc('consult_thinking', this.lang, ui('thinking', this.lang));
+    const waiting = this.locV('consult_thinking', this.uiV('thinking'));
     this.patch({
       screen: 'thinking',
       speaker: loc(p?.speakerLocKey ?? '', this.lang, this.state.speaker),
@@ -1205,7 +1247,7 @@ export class ConsultationEngine {
       suggestion: this.followup,
       // The loop's opening line never had a Unity string key — it was an
       // inspector field on ConsultationLoop. It is RN copy now.
-      line: ui('loop.intro', this.lang),
+      line: this.uiV('loop.intro'),
     });
     const intro = this.state.line;
     if (intro) {
@@ -1219,7 +1261,7 @@ export class ConsultationEngine {
     // they have to be in memory already — synthesising them then would put the
     // same 2-3 s of silence in front of them that they exist to cover.
     for (let i = 0; i < WAIT_LINES; i++) {
-      const line = ui(`loop.wait.${i}` as UiKey, this.lang);
+      const line = this.uiV(`loop.wait.${i}` as UiKey);
       if (line) this.stage.prefetchText(line, `loop_wait_${i}`);
     }
   }
@@ -1229,7 +1271,7 @@ export class ConsultationEngine {
     let i = Math.floor(Math.random() * WAIT_LINES);
     if (i === this.lastWait) i = (i + 1) % WAIT_LINES;
     this.lastWait = i;
-    return { text: ui(`loop.wait.${i}` as UiKey, this.lang), key: `loop_wait_${i}` };
+    return { text: this.uiV(`loop.wait.${i}` as UiKey), key: `loop_wait_${i}` };
   }
 
   private askLoop(text: string) {

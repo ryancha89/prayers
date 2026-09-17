@@ -84,7 +84,11 @@ class StageDouble implements StagePort {
   private holds(cacheKey: string) {
     return !this.autoFinishSpeech || (this.holdPrefix !== null && cacheKey.startsWith(this.holdPrefix));
   }
-  speakClip(_keys: string[], _topic: string, cacheKey: string) {
+  /** The loc keys of every scripted line spoken — the only place a test can see WHICH variant
+   *  was chosen, since a recorded take carries keys rather than words. */
+  spokenKeys: string[] = [];
+  speakClip(keys: string[], _topic: string, cacheKey: string) {
+    this.spokenKeys.push(...(keys ?? []));
     this.spoken.push(cacheKey);
     if (!this.holds(cacheKey)) this.engine.onSpeakDone(cacheKey);
   }
@@ -1010,4 +1014,166 @@ test('a cue pause is a breath BEFORE the line, not a hold after it', () => {
 
   sched.advance(200);
   expect(stage.spokenText).toContain('둘째 줄이에요.');
+});
+
+/**
+ * The branch a session STARTS in — the counsellor card already chose it.
+ *
+ * Every per-topic variant keys off `branches`, and `presetTopic` used to set only the label. So a
+ * session opened from a card ran the phase DEFAULTS, which are the wealth ones: Theo, whose card
+ * reads relationships, asked where the player's heart stood and then offered "start a business".
+ */
+describe('the topic the app already picked', () => {
+  const flow = require('../src/features/counseling/flow/consultationFlow.json');
+  /**
+   * The real phase, under a different id.
+   *
+   * ⚠️ `SKIP_PHASES` drops P12 by id, so even a one-phase engine shows nothing for it. Renaming
+   * keeps the DATA under test (its variants, its choices, its lines) while stepping out of the way
+   * of a skip that is about the walk, not about branching.
+   */
+  const phase = (id: string) =>
+    flow.phases
+      .filter((p: { id: string }) => p.id === id)
+      .map((p: object) => ({ ...JSON.parse(JSON.stringify(p)), id: 'PX' }));
+
+  /**
+   * ⚠️ P12 IS SKIPPED IN THE LIVE WALK. `SKIP_PHASES` drops the in-room pickers because the app
+   * asks for the topic on the way in ("talk-first"), so this drives the phase on its own rather
+   * than walking to somewhere the walk no longer goes. What is under test is the BRANCHING, which
+   * is latent until those pickers come back — and which was wrong in a way nothing would report.
+   */
+  function at(phaseId: string, topic: string) {
+    const sched = new FakeScheduler();
+    const stage = new StageDouble();
+    const engine = new ConsultationEngine({
+      stage, lang: 'ko', scheduler: sched, presetTopic: topic, phases: phase(phaseId),
+    });
+    stage.bind(engine);
+    stage.autoFinishSpeech = true;
+    engine.begin();
+    sched.advance(30_000);
+    return engine.getState();
+  }
+
+  it('seeds the branch, so P12 asks the relationship question and offers relationship answers', () => {
+    const st = at('P12', 'relationships');
+    expect(st.line).toContain('사이');
+    const labels = st.choices.map(c => c.label).join(' ');
+    expect(labels).not.toContain('창업');   // the wealth set
+    expect(labels).not.toContain('투자');
+    expect(st.choices.map(c => c.choice.branchTag)).toEqual([
+      'plan:rel_family', 'plan:rel_work', 'plan:rel_friend', 'plan:rel_distance',
+    ]);
+  });
+
+  it('a love session gets the love answers, not the money ones', () => {
+    expect(at('P12', 'love').choices.map(c => c.choice.branchTag)).toEqual([
+      'plan:love_single', 'plan:love_seeing', 'plan:love_commit', 'plan:love_healing',
+    ]);
+  });
+
+  it('with no preset topic the phase keeps its own wealth answers', () => {
+    expect(at('P12', '').choices.map(c => c.choice.branchTag)).toEqual([
+      'plan:business', 'plan:invest', 'plan:side', 'plan:none',
+    ]);
+  });
+});
+
+describe('the flow asset', () => {
+  const flow = require('../src/features/counseling/flow/consultationFlow.json');
+  const strings = require('../src/features/counseling/flow/consultationStrings.json');
+
+  it('has no variant that no answer can reach', () => {
+    const settable = new Set<string>();
+    for (const p of flow.phases) {
+      for (const c of p.choices ?? []) settable.add(c.branchTag);
+      for (const v of p.variants ?? []) for (const c of v.choices ?? []) settable.add(c.branchTag);
+    }
+    // A topic branch is also seeded by the card the player came in from.
+    for (const topic of ['wealth', 'love', 'business', 'career', 'health', 'relationships']) {
+      settable.add('topic:' + topic);
+    }
+    const unreachable: string[] = [];
+    for (const p of flow.phases) {
+      for (const v of p.variants ?? []) if (!settable.has(v.branchTag)) unreachable.push(p.id + ' ' + v.branchTag);
+    }
+    expect(unreachable).toEqual([]);
+  });
+
+  it('says every line and every answer in all six languages', () => {
+    const missing: string[] = [];
+    const short: string[] = [];
+    const check = (key: string) => {
+      if (!key) return;
+      const row = (strings as Record<string, Record<string, string>>)[key];
+      if (!row) { missing.push(key); return; }
+      for (const lang of ['ko', 'en', 'vi', 'ja', 'zh-CN', 'zh-TW']) {
+        if (!row[lang]) short.push(key + ':' + lang);
+      }
+    };
+    for (const p of flow.phases) {
+      (p.lineLocKeys ?? []).forEach(check);
+      for (const c of p.choices ?? []) check(c.locKey);
+      for (const v of p.variants ?? []) {
+        (v.lineLocKeys ?? []).forEach(check);
+        for (const c of v.choices ?? []) check(c.locKey);
+      }
+    }
+    expect({ missing, short }).toEqual({ missing: [], short: [] });
+  });
+});
+
+/**
+ * Talk-first is UNIFORM. Every counsellor gets one question box and one answer — no in-room
+ * pickers, whatever the topic.
+ *
+ * ⚠️ This test exists because the exception was built and then taken out again (17-09). The branch
+ * content for relationships is still in the asset and still correct; what was decided is that the
+ * player should not be asked a second question inside the room. If that is ever reversed, this is
+ * the test that will go red first, and it should be edited deliberately rather than deleted.
+ */
+describe('the walk is the same for every counsellor', () => {
+  function walk(topic: string) {
+    const sched = new FakeScheduler();
+    const stage = new StageDouble();
+    const engine = new ConsultationEngine({ stage, lang: 'ko', scheduler: sched, presetTopic: topic });
+    stage.bind(engine);
+    stage.autoFinishSpeech = true;
+    engine.begin();
+    sched.advance(60_000);
+    engine.submitQuestion('질문');
+    engine.onOracleResult({
+      ok: true,
+      followup: '',
+      beats: [
+        { phaseId: 'P11', lines: ['하나'] },
+        { phaseId: 'P14', lines: ['둘'] },
+        { phaseId: 'P17', lines: ['셋'] },
+        { phaseId: 'P19', lines: ['넷'] },
+      ],
+    });
+    for (let i = 0; i < 60 && engine.getState().screen !== 'loop'; i++) {
+      const st = engine.getState();
+      if (st.choices.length > 0) engine.choose(st.choices[0].choice);
+      sched.advance(20_000);
+    }
+    return { sched, stage, engine };
+  }
+
+  it.each(['relationships', 'love', 'wealth', 'career'])(
+    'a %s session never stops at the in-room pickers',
+    topic => {
+      const ids = walk(topic).stage.phaseIds;
+      for (const skipped of ['P03', 'P04', 'P12', 'P13', 'P15', 'P16', 'P18']) {
+        expect(ids).not.toContain(skipped);
+      }
+    },
+  );
+
+  it('still reaches the free chat, one AI turn spent', () => {
+    const { engine, stage } = walk('relationships');
+    expect(engine.getState().screen).toBe('loop');
+    expect(stage.asks).toHaveLength(1);
+  });
 });

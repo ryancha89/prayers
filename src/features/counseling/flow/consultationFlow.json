@@ -437,6 +437,32 @@
           ],
           "lineLocKeys": [
             "consult_p12_love_l0"
+          ],
+          "choices": [
+            {
+              "locKey": "consult_p12_love_c0",
+              "english": "I am on my own right now",
+              "goTo": "",
+              "branchTag": "plan:love_single"
+            },
+            {
+              "locKey": "consult_p12_love_c1",
+              "english": "I am getting to know someone",
+              "goTo": "",
+              "branchTag": "plan:love_seeing"
+            },
+            {
+              "locKey": "consult_p12_love_c2",
+              "english": "I am thinking about something lasting",
+              "goTo": "",
+              "branchTag": "plan:love_commit"
+            },
+            {
+              "locKey": "consult_p12_love_c3",
+              "english": "Something has just ended",
+              "goTo": "",
+              "branchTag": "plan:love_healing"
+            }
           ]
         },
         {
@@ -446,6 +472,32 @@
           ],
           "lineLocKeys": [
             "consult_p12_biz_l0"
+          ],
+          "choices": [
+            {
+              "locKey": "consult_p12_biz_c0",
+              "english": "I am about to start one",
+              "goTo": "",
+              "branchTag": "plan:biz_new"
+            },
+            {
+              "locKey": "consult_p12_biz_c1",
+              "english": "I want to expand",
+              "goTo": "",
+              "branchTag": "plan:biz_expand"
+            },
+            {
+              "locKey": "consult_p12_biz_c2",
+              "english": "It has stalled",
+              "goTo": "",
+              "branchTag": "plan:biz_stuck"
+            },
+            {
+              "locKey": "consult_p12_biz_c3",
+              "english": "I am thinking of letting it go",
+              "goTo": "",
+              "branchTag": "plan:biz_exit"
+            }
           ]
         },
         {
@@ -455,6 +507,32 @@
           ],
           "lineLocKeys": [
             "consult_p12_career_l0"
+          ],
+          "choices": [
+            {
+              "locKey": "consult_p12_career_c0",
+              "english": "I am starting out",
+              "goTo": "",
+              "branchTag": "plan:career_start"
+            },
+            {
+              "locKey": "consult_p12_career_c1",
+              "english": "I am thinking of moving",
+              "goTo": "",
+              "branchTag": "plan:career_move"
+            },
+            {
+              "locKey": "consult_p12_career_c2",
+              "english": "I want to go further where I am",
+              "goTo": "",
+              "branchTag": "plan:career_grow"
+            },
+            {
+              "locKey": "consult_p12_career_c3",
+              "english": "I want to stay as I am",
+              "goTo": "",
+              "branchTag": "plan:career_stay"
+            }
           ]
         },
         {
@@ -464,6 +542,67 @@
           ],
           "lineLocKeys": [
             "consult_p12_health_l0"
+          ],
+          "choices": [
+            {
+              "locKey": "consult_p12_health_c0",
+              "english": "Something is wrong",
+              "goTo": "",
+              "branchTag": "plan:health_issue"
+            },
+            {
+              "locKey": "consult_p12_health_c1",
+              "english": "I am worn out",
+              "goTo": "",
+              "branchTag": "plan:health_tired"
+            },
+            {
+              "locKey": "consult_p12_health_c2",
+              "english": "I want to prevent trouble",
+              "goTo": "",
+              "branchTag": "plan:health_prevent"
+            },
+            {
+              "locKey": "consult_p12_health_c3",
+              "english": "I am doing fine",
+              "goTo": "",
+              "branchTag": "plan:health_fine"
+            }
+          ]
+        },
+        {
+          "branchTag": "topic:relationships",
+          "lines": [
+            "There is one thing I want to ask. Which relationship is weighing on you these days?"
+          ],
+          "lineLocKeys": [
+            "consult_p12_rel_l0"
+          ],
+          "choices": [
+            {
+              "locKey": "consult_p12_rel_c0",
+              "english": "Someone in my family",
+              "goTo": "",
+              "branchTag": "plan:rel_family"
+            },
+            {
+              "locKey": "consult_p12_rel_c1",
+              "english": "Someone I work with",
+              "goTo": "",
+              "branchTag": "plan:rel_work"
+            },
+            {
+              "locKey": "consult_p12_rel_c2",
+              "english": "A friend I am close to",
+              "goTo": "",
+              "branchTag": "plan:rel_friend"
+            },
+            {
+              "locKey": "consult_p12_rel_c3",
+              "english": "Someone who has drifted away",
+              "goTo": "",
+              "branchTag": "plan:rel_distance"
+            }
           ]
         }
       ],
@@ -740,6 +879,50 @@
             "consult_p13_health_fine_l0",
             "consult_p13_health_fine_l1"
           ]
+        },
+        {
+          "branchTag": "plan:rel_family",
+          "lines": [
+            "If it is family, it hurts more precisely because you cannot walk away.",
+            "That seat sits deep in your chart — try to win it and the fight lasts for years."
+          ],
+          "lineLocKeys": [
+            "consult_p13_rel_family_l0",
+            "consult_p13_rel_family_l1"
+          ]
+        },
+        {
+          "branchTag": "plan:rel_work",
+          "lines": [
+            "Between people who work together, it is the roles that collide before the feelings do.",
+            "Your authority star is strong this year: draw a line rather than meet them head on."
+          ],
+          "lineLocKeys": [
+            "consult_p13_rel_work_l0",
+            "consult_p13_rel_work_l1"
+          ]
+        },
+        {
+          "branchTag": "plan:rel_friend",
+          "lines": [
+            "The closer the friend, the later the hurt shows itself.",
+            "You have always been the one to reach out first. This year you may wait."
+          ],
+          "lineLocKeys": [
+            "consult_p13_rel_friend_l0",
+            "consult_p13_rel_friend_l1"
+          ]
+        },
+        {
+          "branchTag": "plan:rel_distance",
+          "lines": [
+            "Pull hard on a bond that has drifted and it only drifts further.",
+            "It is not cut; it is folded away for now. There is a season for it."
+          ],
+          "lineLocKeys": [
+            "consult_p13_rel_distance_l0",
+            "consult_p13_rel_distance_l1"
+          ]
         }
       ],
       "animationTriggers": [
@@ -887,7 +1070,33 @@
         {
           "branchTag": "topic:love",
           "lines": [],
-          "lineLocKeys": []
+          "lineLocKeys": [],
+          "choices": [
+            {
+              "locKey": "consult_p16_love_c0",
+              "english": "Will this bond last?",
+              "goTo": "",
+              "branchTag": "final:bond"
+            },
+            {
+              "locKey": "consult_p16_love_c1",
+              "english": "Should I say it first?",
+              "goTo": "",
+              "branchTag": "final:first_move"
+            },
+            {
+              "locKey": "consult_p16_love_c2",
+              "english": "Should I let this go?",
+              "goTo": "",
+              "branchTag": "final:let_go"
+            },
+            {
+              "locKey": "consult_p16_love_c3",
+              "english": "When will someone come?",
+              "goTo": "",
+              "branchTag": "final:timing"
+            }
+          ]
         },
         {
           "branchTag": "topic:business",
@@ -897,12 +1106,95 @@
         {
           "branchTag": "topic:career",
           "lines": [],
-          "lineLocKeys": []
+          "lineLocKeys": [],
+          "choices": [
+            {
+              "locKey": "consult_p16_career_c0",
+              "english": "Should I move?",
+              "goTo": "",
+              "branchTag": "final:move"
+            },
+            {
+              "locKey": "consult_p16_career_c1",
+              "english": "How do I go further here?",
+              "goTo": "",
+              "branchTag": "final:grow"
+            },
+            {
+              "locKey": "consult_p16_career_c2",
+              "english": "Who helps me this year?",
+              "goTo": "",
+              "branchTag": "final:ally"
+            },
+            {
+              "locKey": "consult_p16_career_c3",
+              "english": "When should I act?",
+              "goTo": "",
+              "branchTag": "final:timing"
+            }
+          ]
         },
         {
           "branchTag": "topic:health",
           "lines": [],
-          "lineLocKeys": []
+          "lineLocKeys": [],
+          "choices": [
+            {
+              "locKey": "consult_p16_health_c0",
+              "english": "Where should I take care?",
+              "goTo": "",
+              "branchTag": "final:care"
+            },
+            {
+              "locKey": "consult_p16_health_c1",
+              "english": "When do I get my strength back?",
+              "goTo": "",
+              "branchTag": "final:recover"
+            },
+            {
+              "locKey": "consult_p16_health_c2",
+              "english": "What should I change first?",
+              "goTo": "",
+              "branchTag": "final:change"
+            },
+            {
+              "locKey": "consult_p16_health_c3",
+              "english": "When should I be careful?",
+              "goTo": "",
+              "branchTag": "final:timing"
+            }
+          ]
+        },
+        {
+          "branchTag": "topic:relationships",
+          "lines": [],
+          "lineLocKeys": [],
+          "choices": [
+            {
+              "locKey": "consult_p16_rel_c0",
+              "english": "Should I speak first?",
+              "goTo": "",
+              "branchTag": "final:first_move"
+            },
+            {
+              "locKey": "consult_p16_rel_c1",
+              "english": "Should I keep my distance?",
+              "goTo": "",
+              "branchTag": "final:distance"
+            },
+            {
+              "locKey": "consult_p16_rel_c2",
+              "english": "Can this be mended?",
+              "goTo": "",
+              "branchTag": "final:mend"
+            },
+            {
+              "locKey": "consult_p16_rel_c3",
+              "english": "When does it ease?",
+              "goTo": "",
+              "branchTag": "final:timing"
+            }
+          ]
         }
       ],
       "animationTriggers": [

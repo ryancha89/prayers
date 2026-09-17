@@ -816,36 +816,36 @@
     "zh-TW": "想請教一件事。此刻您的心停在哪個階段？"
   },
   "consult_p12_love_c0": {
-    "ko": "지금 알아가는 사람이 있습니다",
-    "en": "I'm getting to know someone",
+    "ko": "지금은 혼자입니다",
+    "en": "I am on my own right now",
+    "vi": "Hiện tôi đang một mình",
+    "ja": "今はひとりです",
+    "zh-CN": "现在是一个人",
+    "zh-TW": "現在是一個人"
+  },
+  "consult_p12_love_c1": {
+    "ko": "알아가는 사람이 있습니다",
+    "en": "I am getting to know someone",
     "vi": "Tôi đang tìm hiểu một người",
-    "ja": "今、知り合っている人がいます",
+    "ja": "気になる人がいます",
     "zh-CN": "正在认识一个人",
     "zh-TW": "正在認識一個人"
   },
-  "consult_p12_love_c1": {
-    "ko": "그 사람과 더 나아가고 싶습니다",
-    "en": "I want to take it further",
-    "vi": "Tôi muốn tiến xa hơn với người ấy",
-    "ja": "その人ともっと進みたいです",
-    "zh-CN": "想和那个人再进一步",
-    "zh-TW": "想和那個人再進一步"
-  },
   "consult_p12_love_c2": {
-    "ko": "얼마 전 관계가 끝났습니다",
-    "en": "I just ended a relationship",
-    "vi": "Tôi vừa kết thúc một mối quan hệ",
-    "ja": "少し前に関係が終わりました",
-    "zh-CN": "不久前结束了一段关系",
-    "zh-TW": "不久前結束了一段關係"
+    "ko": "오래갈 사이를 생각 중입니다",
+    "en": "I am thinking about something lasting",
+    "vi": "Tôi đang nghĩ đến chuyện lâu dài",
+    "ja": "長く続く関係を考えています",
+    "zh-CN": "在考虑长久的关系",
+    "zh-TW": "在考慮長久的關係"
   },
   "consult_p12_love_c3": {
-    "ko": "아직 혼자입니다",
-    "en": "I'm still on my own",
-    "vi": "Tôi vẫn đang một mình",
-    "ja": "まだ一人です",
-    "zh-CN": "我还是一个人",
-    "zh-TW": "我還是一個人"
+    "ko": "얼마 전에 끝났습니다",
+    "en": "Something has just ended",
+    "vi": "Tôi vừa kết thúc một mối quan hệ",
+    "ja": "少し前に終わりました",
+    "zh-CN": "不久前刚结束",
+    "zh-TW": "不久前剛結束"
   },
   "consult_p12_biz_l0": {
     "ko": "한 가지 여쭙고 싶습니다. 사업이 지금 어느 단계에 있으신가요?",
@@ -856,36 +856,36 @@
     "zh-TW": "想請教一件事。您的事業現在處於哪個階段？"
   },
   "consult_p12_biz_c0": {
-    "ko": "새로운 것을 시작하려 합니다",
-    "en": "I'm about to open something new",
-    "vi": "Tôi sắp mở một hướng mới",
-    "ja": "新しいことを始めようとしています",
-    "zh-CN": "正要开始新的事",
-    "zh-TW": "正要開始新的事"
+    "ko": "이제 시작하려 합니다",
+    "en": "I am about to start one",
+    "vi": "Tôi sắp bắt đầu",
+    "ja": "これから始めます",
+    "zh-CN": "正准备开始",
+    "zh-TW": "正準備開始"
   },
   "consult_p12_biz_c1": {
-    "ko": "지금 하는 것을 키우고 싶습니다",
-    "en": "I want to expand what I have",
-    "vi": "Tôi muốn mở rộng cái đang có",
-    "ja": "今やっていることを育てたいです",
-    "zh-CN": "想把现在做的做大",
-    "zh-TW": "想把現在做的做大"
+    "ko": "키우고 싶습니다",
+    "en": "I want to expand",
+    "vi": "Tôi muốn mở rộng",
+    "ja": "広げたいです",
+    "zh-CN": "想要扩大",
+    "zh-TW": "想要擴大"
   },
   "consult_p12_biz_c2": {
-    "ko": "요즘 잘 풀리지 않습니다",
-    "en": "Things have stalled",
-    "vi": "Việc làm ăn đang chững lại",
-    "ja": "このところ思うように進みません",
-    "zh-CN": "最近有些停滞",
-    "zh-TW": "最近有些停滯"
+    "ko": "멈춰 있습니다",
+    "en": "It has stalled",
+    "vi": "Việc đang chững lại",
+    "ja": "止まっています",
+    "zh-CN": "停滞不前",
+    "zh-TW": "停滯不前"
   },
   "consult_p12_biz_c3": {
-    "ko": "정리를 고민 중입니다",
-    "en": "I'm considering stepping back",
-    "vi": "Tôi đang tính chuyện dừng lại",
-    "ja": "畳むことを考えています",
-    "zh-CN": "正在考虑收手",
-    "zh-TW": "正在考慮收手"
+    "ko": "접을까 생각 중입니다",
+    "en": "I am thinking of letting it go",
+    "vi": "Tôi đang nghĩ đến chuyện dừng lại",
+    "ja": "たたもうか考えています",
+    "zh-CN": "在考虑收手",
+    "zh-TW": "在考慮收手"
   },
   "consult_p12_career_l0": {
     "ko": "한 가지 여쭙고 싶습니다. 요즘 일은 어떠신가요?",
@@ -896,36 +896,36 @@
     "zh-TW": "想請教一件事。您最近的工作如何？"
   },
   "consult_p12_career_c0": {
-    "ko": "이직을 생각 중입니다",
-    "en": "I'm planning to change jobs",
-    "vi": "Tôi định chuyển việc",
-    "ja": "転職を考えています",
-    "zh-CN": "正在考虑换工作",
-    "zh-TW": "正在考慮換工作"
+    "ko": "이제 막 시작합니다",
+    "en": "I am starting out",
+    "vi": "Tôi mới bắt đầu",
+    "ja": "始めたばかりです",
+    "zh-CN": "刚刚起步",
+    "zh-TW": "剛剛起步"
   },
   "consult_p12_career_c1": {
-    "ko": "승진을 바라고 있습니다",
-    "en": "I want to move up",
-    "vi": "Tôi muốn được thăng tiến",
-    "ja": "昇進を望んでいます",
-    "zh-CN": "希望能升上去",
-    "zh-TW": "希望能升上去"
+    "ko": "옮길까 고민 중입니다",
+    "en": "I am thinking of moving",
+    "vi": "Tôi đang tính chuyển việc",
+    "ja": "移ろうか迷っています",
+    "zh-CN": "在考虑换地方",
+    "zh-TW": "在考慮換地方"
   },
   "consult_p12_career_c2": {
-    "ko": "일자리를 찾고 있습니다",
-    "en": "I'm looking for work",
-    "vi": "Tôi đang tìm việc",
-    "ja": "仕事を探しています",
-    "zh-CN": "正在找工作",
-    "zh-TW": "正在找工作"
+    "ko": "지금 자리에서 더 올라가고 싶습니다",
+    "en": "I want to go further where I am",
+    "vi": "Tôi muốn tiến xa hơn ở chỗ hiện tại",
+    "ja": "今の場所でもっと上を目指したい",
+    "zh-CN": "想在现在的位置更进一步",
+    "zh-TW": "想在現在的位置更進一步"
   },
   "consult_p12_career_c3": {
-    "ko": "지금 자리를 지키고 싶습니다",
-    "en": "I want to hold my current place",
-    "vi": "Tôi muốn giữ chỗ đang làm",
-    "ja": "今の場所を守りたいです",
-    "zh-CN": "想守住现在的位置",
-    "zh-TW": "想守住現在的位置"
+    "ko": "지금 그대로 있고 싶습니다",
+    "en": "I want to stay as I am",
+    "vi": "Tôi muốn giữ nguyên như hiện tại",
+    "ja": "今のままでいたいです",
+    "zh-CN": "想维持现状",
+    "zh-TW": "想維持現狀"
   },
   "consult_p12_health_l0": {
     "ko": "한 가지 여쭙고 싶습니다. 요즘 건강은 어떠신가요?",
@@ -936,34 +936,34 @@
     "zh-TW": "想請教一件事。您最近的身體如何？"
   },
   "consult_p12_health_c0": {
-    "ko": "걱정되는 곳이 있습니다",
-    "en": "There's something that worries me",
-    "vi": "Tôi có chỗ đang lo trong người",
-    "ja": "気になるところがあります",
-    "zh-CN": "有让我担心的地方",
-    "zh-TW": "有讓我擔心的地方"
+    "ko": "아픈 곳이 있습니다",
+    "en": "Something is wrong",
+    "vi": "Tôi đang có chỗ không ổn",
+    "ja": "不調なところがあります",
+    "zh-CN": "有不舒服的地方",
+    "zh-TW": "有不舒服的地方"
   },
   "consult_p12_health_c1": {
-    "ko": "자주 피곤합니다",
-    "en": "I often feel drained",
-    "vi": "Tôi hay thấy mệt mỏi",
-    "ja": "よく疲れます",
-    "zh-CN": "常常觉得累",
-    "zh-TW": "常常覺得累"
+    "ko": "많이 지쳐 있습니다",
+    "en": "I am worn out",
+    "vi": "Tôi đang rất mệt mỏi",
+    "ja": "かなり疲れています",
+    "zh-CN": "非常疲惫",
+    "zh-TW": "非常疲憊"
   },
   "consult_p12_health_c2": {
-    "ko": "미리 관리하고 싶습니다",
-    "en": "I want to prevent trouble early",
-    "vi": "Tôi muốn phòng bệnh từ sớm",
-    "ja": "早めに整えておきたいです",
-    "zh-CN": "想提早调理好",
-    "zh-TW": "想提早調理好"
+    "ko": "미리 대비하고 싶습니다",
+    "en": "I want to prevent trouble",
+    "vi": "Tôi muốn phòng trước",
+    "ja": "前もって備えたいです",
+    "zh-CN": "想提前预防",
+    "zh-TW": "想提前預防"
   },
   "consult_p12_health_c3": {
     "ko": "괜찮은 편입니다",
-    "en": "I feel fine",
-    "vi": "Tôi thấy vẫn ổn",
-    "ja": "まずまず良い方です",
+    "en": "I am doing fine",
+    "vi": "Tôi vẫn ổn",
+    "ja": "おおむね元気です",
     "zh-CN": "还算不错",
     "zh-TW": "還算不錯"
   },
@@ -1224,36 +1224,36 @@
     "zh-TW": "別把今天的健康預支到明天。"
   },
   "consult_p16_love_c0": {
-    "ko": "언제 인연을 만날까요?",
-    "en": "When will I meet the right one?",
-    "vi": "Khi nào tôi gặp được đúng người?",
-    "ja": "いつ縁に出会えますか？",
-    "zh-CN": "我什么时候会遇到对的人？",
-    "zh-TW": "我什麼時候會遇到對的人？"
+    "ko": "이 인연이 오래갈까요",
+    "en": "Will this bond last?",
+    "vi": "Duyên này có bền không",
+    "ja": "この縁は続くでしょうか",
+    "zh-CN": "这段缘分能长久吗",
+    "zh-TW": "這段緣分能長久嗎"
   },
   "consult_p16_love_c1": {
-    "ko": "그 사람과 잘 맞을까요?",
-    "en": "Are we a good match?",
-    "vi": "Người ấy có hợp với tôi không?",
-    "ja": "あの人と相性は良いですか？",
-    "zh-CN": "我和那个人合得来吗？",
-    "zh-TW": "我和那個人合得來嗎？"
+    "ko": "제가 먼저 말해도 될까요",
+    "en": "Should I say it first?",
+    "vi": "Tôi có nên nói trước không",
+    "ja": "私から言ってもいいですか",
+    "zh-CN": "该由我先开口吗",
+    "zh-TW": "該由我先開口嗎"
   },
   "consult_p16_love_c2": {
-    "ko": "이 인연을 어떻게 지킬까요?",
-    "en": "How do I keep this bond?",
-    "vi": "Làm sao giữ được mối duyên này?",
-    "ja": "この縁をどう守ればいいですか？",
-    "zh-CN": "这段缘分该怎么守住？",
-    "zh-TW": "這段緣分該怎麼守住？"
+    "ko": "이제 놓아야 할까요",
+    "en": "Should I let this go?",
+    "vi": "Tôi có nên buông không",
+    "ja": "もう手放すべきでしょうか",
+    "zh-CN": "该放下了吗",
+    "zh-TW": "該放下了嗎"
   },
   "consult_p16_love_c3": {
-    "ko": "잡아야 할까요, 놓아야 할까요?",
-    "en": "Should I hold on or let go?",
-    "vi": "Tôi nên giữ hay nên buông?",
-    "ja": "掴むべきですか、手放すべきですか？",
-    "zh-CN": "我该抓住还是放手？",
-    "zh-TW": "我該抓住還是放手？"
+    "ko": "인연은 언제 옵니까",
+    "en": "When will someone come?",
+    "vi": "Bao giờ duyên tới",
+    "ja": "縁はいつ来ますか",
+    "zh-CN": "缘分什么时候来",
+    "zh-TW": "緣分什麼時候來"
   },
   "consult_p16_biz_c0": {
     "ko": "어느 방향이 맞을까요?",
@@ -1288,68 +1288,68 @@
     "zh-TW": "什麼時候是好時機？"
   },
   "consult_p16_career_c0": {
-    "ko": "올해 이직해도 될까요?",
-    "en": "Should I change jobs this year?",
-    "vi": "Tôi có nên chuyển việc năm nay?",
-    "ja": "今年、転職してもよいですか？",
-    "zh-CN": "今年可以换工作吗？",
-    "zh-TW": "今年可以換工作嗎？"
+    "ko": "옮기는 게 맞을까요",
+    "en": "Should I move?",
+    "vi": "Tôi có nên chuyển không",
+    "ja": "移るべきでしょうか",
+    "zh-CN": "该换地方吗",
+    "zh-TW": "該換地方嗎"
   },
   "consult_p16_career_c1": {
-    "ko": "승진 운은 어떤가요?",
-    "en": "What are my chances of moving up?",
-    "vi": "Cơ hội thăng tiến của tôi ra sao?",
-    "ja": "昇進の運はどうですか？",
-    "zh-CN": "我升迁的运势如何？",
-    "zh-TW": "我升遷的運勢如何？"
+    "ko": "지금 자리에서 더 가려면",
+    "en": "How do I go further here?",
+    "vi": "Làm sao tiến xa hơn ở đây",
+    "ja": "今の場所で上に行くには",
+    "zh-CN": "在现在的位置如何更进一步",
+    "zh-TW": "在現在的位置如何更進一步"
   },
   "consult_p16_career_c2": {
-    "ko": "어떤 일이 제게 맞을까요?",
-    "en": "What work fits my chart?",
-    "vi": "Nghề nào hợp mệnh tôi?",
-    "ja": "どんな仕事が私に合いますか？",
-    "zh-CN": "什么工作适合我的命盘？",
-    "zh-TW": "什麼工作適合我的命盤？"
+    "ko": "올해 저를 돕는 사람은",
+    "en": "Who helps me this year?",
+    "vi": "Năm nay ai là quý nhân của tôi",
+    "ja": "今年わたしを助ける人は",
+    "zh-CN": "今年谁是我的贵人",
+    "zh-TW": "今年誰是我的貴人"
   },
   "consult_p16_career_c3": {
-    "ko": "언제 일운이 풀릴까요?",
-    "en": "When does my career luck turn?",
-    "vi": "Khi nào vận công việc khởi sắc?",
-    "ja": "いつ仕事運が開けますか？",
-    "zh-CN": "我的事业运什么时候转？",
-    "zh-TW": "我的事業運什麼時候轉？"
+    "ko": "언제 움직여야 합니까",
+    "en": "When should I act?",
+    "vi": "Khi nào nên hành động",
+    "ja": "いつ動くべきですか",
+    "zh-CN": "什么时候该行动",
+    "zh-TW": "什麼時候該行動"
   },
   "consult_p16_health_c0": {
-    "ko": "어디를 가장 조심해야 할까요?",
-    "en": "What should I watch most?",
-    "vi": "Tôi cần giữ gìn chỗ nào nhất?",
-    "ja": "どこを一番気をつけるべきですか？",
-    "zh-CN": "我最该留意哪里？",
-    "zh-TW": "我最該留意哪裡？"
+    "ko": "어디를 조심해야 합니까",
+    "en": "Where should I take care?",
+    "vi": "Tôi nên giữ gìn chỗ nào",
+    "ja": "どこに気をつけるべきですか",
+    "zh-CN": "该注意哪里",
+    "zh-TW": "該注意哪裡"
   },
   "consult_p16_health_c1": {
-    "ko": "언제를 조심해야 할까요?",
-    "en": "Which period needs care?",
-    "vi": "Giai đoạn nào trong năm cần cẩn thận?",
-    "ja": "いつ気をつけるべきですか？",
-    "zh-CN": "哪个时期需要当心？",
-    "zh-TW": "哪個時期需要當心？"
+    "ko": "기운은 언제 돌아옵니까",
+    "en": "When do I get my strength back?",
+    "vi": "Bao giờ sức khoẻ hồi lại",
+    "ja": "気力はいつ戻りますか",
+    "zh-CN": "元气什么时候回来",
+    "zh-TW": "元氣什麼時候回來"
   },
   "consult_p16_health_c2": {
-    "ko": "어떤 습관을 바꿔야 할까요?",
-    "en": "What habit should I change?",
-    "vi": "Tôi nên đổi thói quen gì?",
-    "ja": "どんな習慣を変えるべきですか？",
-    "zh-CN": "我该改掉什么习惯？",
-    "zh-TW": "我該改掉什麼習慣？"
+    "ko": "무엇부터 바꿔야 합니까",
+    "en": "What should I change first?",
+    "vi": "Nên đổi điều gì trước",
+    "ja": "まず何を変えるべきですか",
+    "zh-CN": "该先改变什么",
+    "zh-TW": "該先改變什麼"
   },
   "consult_p16_health_c3": {
-    "ko": "장기적인 기력은 어떤가요?",
-    "en": "How is my long-term vitality?",
-    "vi": "Sức bền của tôi về lâu dài thế nào?",
-    "ja": "長い目で見た気力はどうですか？",
-    "zh-CN": "我长远的精力如何？",
-    "zh-TW": "我長遠的精力如何？"
+    "ko": "언제를 조심해야 합니까",
+    "en": "When should I be careful?",
+    "vi": "Khi nào cần cẩn thận",
+    "ja": "いつを警戒すべきですか",
+    "zh-CN": "什么时候要小心",
+    "zh-TW": "什麼時候要小心"
   },
   "consult_disconnect_body": {
     "ko": "서버 연결이 끊겨 풀이를 받지 못했습니다. 다시 시도하시겠어요?",
@@ -1510,5 +1510,141 @@
     "ja": "今は鑑定ができません。",
     "zh-CN": "现在无法为您占卜。",
     "zh-TW": "現在無法為您占卜。"
+  },
+  "consult_p12_rel_c0": {
+    "ko": "집안 사람입니다",
+    "en": "Someone in my family",
+    "vi": "Người trong nhà",
+    "ja": "家族のことです",
+    "zh-CN": "是家里人",
+    "zh-TW": "是家裡人"
+  },
+  "consult_p12_rel_c1": {
+    "ko": "같이 일하는 사람입니다",
+    "en": "Someone I work with",
+    "vi": "Người cùng làm việc",
+    "ja": "一緒に働く人です",
+    "zh-CN": "是共事的人",
+    "zh-TW": "是共事的人"
+  },
+  "consult_p12_rel_c2": {
+    "ko": "가까운 친구입니다",
+    "en": "A friend I am close to",
+    "vi": "Một người bạn thân",
+    "ja": "親しい友人です",
+    "zh-CN": "是亲近的朋友",
+    "zh-TW": "是親近的朋友"
+  },
+  "consult_p12_rel_c3": {
+    "ko": "멀어진 사람입니다",
+    "en": "Someone who has drifted away",
+    "vi": "Người đã xa cách",
+    "ja": "遠くなった人です",
+    "zh-CN": "是渐渐疏远的人",
+    "zh-TW": "是漸漸疏遠的人"
+  },
+  "consult_p12_rel_l0": {
+    "ko": "한 가지 여쭙겠습니다. 요즘 마음을 무겁게 하는 사이는 누구와의 사이입니까?",
+    "en": "There is one thing I want to ask. Which relationship is weighing on you these days?",
+    "vi": "Ta muốn hỏi một điều. Mối quan hệ đang làm con nặng lòng là với ai?",
+    "ja": "ひとつ伺います。近ごろ心を重くしているのは、誰との間柄でしょう。",
+    "zh-CN": "我想问一件事。最近让你心里沉甸甸的，是和谁的关系？",
+    "zh-TW": "我想問一件事。最近讓你心裡沉甸甸的，是和誰的關係？"
+  },
+  "consult_p13_rel_family_l0": {
+    "ko": "집안 사람이라면, 끊을 수 없는 자리라 더 아픕니다.",
+    "en": "If it is family, it hurts more precisely because you cannot walk away.",
+    "vi": "Người trong nhà thì đau hơn, vì đó là chỗ không cắt bỏ được.",
+    "ja": "家族なら、離れられない間柄だからこそ痛みます。",
+    "zh-CN": "若是家里人，正因为断不了，才更疼。",
+    "zh-TW": "若是家裡人，正因為斷不了，才更疼。"
+  },
+  "consult_p13_rel_family_l1": {
+    "ko": "사주에 그 자리가 깊게 박혀 있으니, 이기려 들면 오래 갑니다.",
+    "en": "That seat sits deep in your chart — try to win it and the fight lasts for years.",
+    "vi": "Lá số cắm chỗ ấy rất sâu — cố thắng thì sẽ kéo dài nhiều năm.",
+    "ja": "その座は命式に深く根を張っています。勝とうとすれば長引きます。",
+    "zh-CN": "这一位在你的命盘里扎得很深——想争赢，只会拖很久。",
+    "zh-TW": "這一位在你的命盤裡扎得很深——想爭贏，只會拖很久。"
+  },
+  "consult_p13_rel_work_l0": {
+    "ko": "같이 일하는 사이는 마음보다 자리가 먼저 부딪칩니다.",
+    "en": "Between people who work together, it is the roles that collide before the feelings do.",
+    "vi": "Người cùng làm việc thì va nhau ở vị trí trước khi va ở lòng.",
+    "ja": "ともに働く間柄では、心より先に立場がぶつかります。",
+    "zh-CN": "共事的人，往往是位置先撞上，心才随后。",
+    "zh-TW": "共事的人，往往是位置先撞上，心才隨後。"
+  },
+  "consult_p13_rel_work_l1": {
+    "ko": "올해 당신의 관성이 세니, 맞서기보다 선을 긋는 편이 낫습니다.",
+    "en": "Your authority star is strong this year: draw a line rather than meet them head on.",
+    "vi": "Năm nay quan tinh của con vượng — vạch ranh giới hơn là đối đầu.",
+    "ja": "今年は官星が強い年。正面から当たるより、線を引くほうが得策です。",
+    "zh-CN": "今年你的官星偏旺——与其正面相争，不如划清界线。",
+    "zh-TW": "今年你的官星偏旺——與其正面相爭，不如劃清界線。"
+  },
+  "consult_p13_rel_friend_l0": {
+    "ko": "가까운 친구일수록 서운함이 늦게 드러납니다.",
+    "en": "The closer the friend, the later the hurt shows itself.",
+    "vi": "Càng thân thì nỗi tủi càng lộ ra muộn.",
+    "ja": "近しい友ほど、わだかまりは遅れて表に出ます。",
+    "zh-CN": "越是亲近的朋友，委屈越晚浮出来。",
+    "zh-TW": "越是親近的朋友，委屈越晚浮出來。"
+  },
+  "consult_p13_rel_friend_l1": {
+    "ko": "당신은 먼저 손 내미는 쪽이었지요. 올해는 기다려도 됩니다.",
+    "en": "You have always been the one to reach out first. This year you may wait.",
+    "vi": "Con vẫn luôn là người chìa tay trước. Năm nay con được phép chờ.",
+    "ja": "いつも先に手を差し出すのはあなたでした。今年は待ってよいのです。",
+    "zh-CN": "一直都是你先伸手。今年，你可以等一等。",
+    "zh-TW": "一直都是你先伸手。今年，你可以等一等。"
+  },
+  "consult_p13_rel_distance_l0": {
+    "ko": "멀어진 사이를 억지로 당기면 더 멀어집니다.",
+    "en": "Pull hard on a bond that has drifted and it only drifts further.",
+    "vi": "Kéo mạnh một mối đã xa thì nó càng xa.",
+    "ja": "遠のいた間柄を無理に引けば、さらに遠のきます。",
+    "zh-CN": "硬拉一段已经疏远的关系，只会更远。",
+    "zh-TW": "硬拉一段已經疏遠的關係，只會更遠。"
+  },
+  "consult_p13_rel_distance_l1": {
+    "ko": "인연은 끊긴 것이 아니라 잠시 접혀 있습니다. 때가 따로 있습니다.",
+    "en": "It is not cut; it is folded away for now. There is a season for it.",
+    "vi": "Duyên không đứt, chỉ đang gấp lại. Nó có mùa của nó.",
+    "ja": "縁は切れてはいません。いまは畳まれているだけ。時期は別にあります。",
+    "zh-CN": "缘分没有断，只是暂时收起来了。它自有它的时候。",
+    "zh-TW": "緣分沒有斷，只是暫時收起來了。它自有它的時候。"
+  },
+  "consult_p16_rel_c0": {
+    "ko": "제가 먼저 말을 꺼낼까요",
+    "en": "Should I speak first?",
+    "vi": "Tôi có nên mở lời trước không",
+    "ja": "私から切り出しましょうか",
+    "zh-CN": "该由我先开口吗",
+    "zh-TW": "該由我先開口嗎"
+  },
+  "consult_p16_rel_c1": {
+    "ko": "거리를 두는 게 나을까요",
+    "en": "Should I keep my distance?",
+    "vi": "Tôi có nên giữ khoảng cách không",
+    "ja": "距離を置くほうがよいですか",
+    "zh-CN": "保持距离会不会更好",
+    "zh-TW": "保持距離會不會更好"
+  },
+  "consult_p16_rel_c2": {
+    "ko": "이 사이가 회복될까요",
+    "en": "Can this be mended?",
+    "vi": "Mối này có hàn gắn được không",
+    "ja": "この間柄は戻せますか",
+    "zh-CN": "这段关系还能修复吗",
+    "zh-TW": "這段關係還能修復嗎"
+  },
+  "consult_p16_rel_c3": {
+    "ko": "언제쯤 풀립니까",
+    "en": "When does it ease?",
+    "vi": "Bao giờ thì nhẹ đi",
+    "ja": "いつごろ和らぎますか",
+    "zh-CN": "什么时候会缓和",
+    "zh-TW": "什麼時候會緩和"
   }
 }
