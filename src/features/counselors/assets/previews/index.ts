@@ -57,10 +57,19 @@ export const PREVIEW_STRIPS: Record<string, Record<string, ImageSourcePropType>>
     explaining: require('./jiho_explaining.jpg'),
     bless: require('./jiho_bless.jpg'),
   },
-  // One action, because f_char_003 has one gesture clip — and it is filmed in HER room
-  // (ConsultationSolo02), not in the other counselors'. The strip is only ever as honest as the
-  // clip list behind it; add rows here as clips arrive, not before.
+  // Two actions, because f_char_003 has two gesture clips since the 2026-09-14 delivery — and both
+  // are filmed in HER room (ConsultationSolo02), not in the other counselors'. The strip is only
+  // ever as honest as the clip list behind it; add rows here as clips arrive, not before.
   yunjung: {
+    smile: require('./yunjung_smile.jpg'),
     explaining: require('./yunjung_explaining.jpg'),
+  },
+  // ONE action, and one is the honest number. m_char_004 arrived on 16-09 with an idle and a
+  // talking loop — nothing else, and both of them STANDING, which is how he plays in his room
+  // (decided 17-09, after a seated version borrowed from f_char_003 was built and turned down). His card carried four actions while he was unbuildable, as an
+  // order list for the animator; the moment he became playable that list stopped being a request
+  // and started being a promise to a player, and three quarters of it was false.
+  theo: {
+    explaining: require('./theo_explaining.jpg'),
   },
 };
