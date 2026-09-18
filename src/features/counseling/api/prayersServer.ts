@@ -123,6 +123,76 @@ export async function saveAccountLanguage(lang: Lang): Promise<boolean> {
   }
 }
 
+/** One past consultation, as the server remembers it. */
+export interface RemoteConversation {
+  /** `session_<counselorId>_<subjectId>` — the same key the room opens with. */
+  uniqId: string;
+  /** Card id: what the app draws the row from (name, portrait, accent). */
+  counselorId: string;
+  subjectId?: string;
+  topic?: string;
+  topicLabel?: string;
+  /** Counselor turns in that thread. */
+  turns: number;
+  lastSeenAt: string;
+  /** The player's own last question, already stripped of the room's prompt shaping. */
+  lastQuestion?: string;
+  lastAnswer?: string;
+}
+
+/**
+ * The account's past consultations, newest first.
+ *
+ * ⚠️ THIS IS THE SOURCE OF TRUTH FOR THE CONVERSATIONS TAB, and the phone is the cache — not the
+ * other way round. The list used to live only in AsyncStorage while the sign-in screen promised an
+ * account that follows you: a reinstall wiped every past reading and the server, which had held
+ * every turn all along, was never asked.
+ *
+ * `null` means "no answer" (signed out, offline, or a server too old to have the route) and the
+ * caller keeps showing what it has. An empty array is a real answer: this account has no history.
+ */
+export async function fetchConversations(input: {
+  lang: Lang;
+  counselorId?: string;
+  limit?: number;
+  signal?: AbortSignal;
+}): Promise<RemoteConversation[] | null> {
+  const headers = await apiHeaders();
+  if (!headers) return null;
+
+  const query = new URLSearchParams({ language: input.lang });
+  if (input.counselorId) query.set('counselor', input.counselorId);
+  if (input.limit) query.set('limit', String(input.limit));
+
+  try {
+    const res = await fetch(`${BASE()}/api/v1/prayers/consultations?${query}`, {
+      headers,
+      signal: input.signal,
+    });
+    if (!res.ok) return null;
+    const body: any = await res.json();
+    if (body?.success !== true || !Array.isArray(body.conversations)) return null;
+
+    return body.conversations
+      .filter((row: any) => typeof row?.uniq_id === 'string' && typeof row?.counselor === 'string')
+      .map(
+        (row: any): RemoteConversation => ({
+          uniqId: row.uniq_id,
+          counselorId: row.counselor,
+          subjectId: typeof row.subject === 'string' ? row.subject : undefined,
+          topic: typeof row.topic === 'string' ? row.topic : undefined,
+          topicLabel: typeof row.topic_label === 'string' ? row.topic_label : undefined,
+          turns: Number(row.turns) || 0,
+          lastSeenAt: typeof row.last_seen_at === 'string' ? row.last_seen_at : '',
+          lastQuestion: typeof row.last_question === 'string' ? row.last_question : undefined,
+          lastAnswer: typeof row.last_answer === 'string' ? row.last_answer : undefined,
+        }),
+      );
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchTopics(lang: Lang, signal?: AbortSignal): Promise<TopicCard[] | null> {
   const headers = await apiHeaders();
   if (!headers) return null;

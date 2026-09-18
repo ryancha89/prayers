@@ -89,7 +89,12 @@ export const MyPageScreen: React.FC = () => {
           />
           <Row label={t('my.savedPeople')} />
           <Row label={t('my.favoriteCounselors')} />
-          <Row label={t('my.counselingHistory')} />
+          {/* The conversations tab, which now reads the account rather than this phone — so the
+              row is a real destination whichever device they signed in on. */}
+          <Row
+            label={t('my.counselingHistory')}
+            onPress={() => navigation.navigate('Tabs', { screen: 'Conversations' })}
+          />
         </Section>
 
         <Section title={t('my.settings')}>

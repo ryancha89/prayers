@@ -5,8 +5,15 @@ import { ChatMessage, ConversationSummary } from '../types';
 
 /**
  * Conversation history (spec §29-31). One entry per counselor relationship,
- * keyed by sessionId. Persisted so sessions survive app restarts and can be
- * resumed (spec §31). Backend can later own long-term memory (spec §38).
+ * keyed by sessionId — which is the same `session_<counselorId>_<subjectId>` key the room and the
+ * server know the thread by.
+ *
+ * ⚠️ THE PHONE IS THE CACHE, THE ACCOUNT IS THE RECORD (18-09). This store used to be the only
+ * place a past consultation existed: a reinstall or a second device wiped a history the server had
+ * been keeping all along, while the sign-in screen promised an account that follows you.
+ * `mergeFromServer` is the reconciliation, and it has one rule — the server owns what a thread IS
+ * (that it happened, when, and what was last said), the device owns what it has CACHED of it (the
+ * transcript bodies, which the list endpoint does not carry). Neither overwrites the other's half.
  */
 
 interface ConversationsState {
@@ -27,6 +34,21 @@ interface ConversationsState {
 
   appendMessage: (sessionId: string, msg: ChatMessage) => void;
   setLastTopicSummary: (sessionId: string, summary: string) => void;
+
+  /** Reconcile the account's list into the device's. See the note at the top of this file. */
+  mergeFromServer: (remote: ServerConversation[]) => void;
+}
+
+/** What the server knows about a thread — everything except the transcript itself. */
+export interface ServerConversation {
+  sessionId: string;
+  counselorId: string;
+  counselorName: string;
+  counselorAccent: string;
+  subjectId?: string;
+  lastMessage: string;
+  updatedAt: string;
+  lastTopicSummary?: string;
 }
 
 export const useConversationsStore = create<ConversationsState>()(
@@ -72,6 +94,34 @@ export const useConversationsStore = create<ConversationsState>()(
             byId: { ...state.byId, [sessionId]: updated },
             order: [sessionId, ...state.order.filter(id => id !== sessionId)],
           };
+        }),
+
+      mergeFromServer: remote =>
+        set(state => {
+          if (remote.length === 0) return state;
+          const byId = { ...state.byId };
+
+          for (const row of remote) {
+            const local = byId[row.sessionId];
+            byId[row.sessionId] = {
+              ...row,
+              // The one thing the account does NOT have: the words themselves. A thread read on a
+              // new phone opens with an empty transcript and fills as it is used — better than
+              // dropping a conversation the player knows they had.
+              messages: local?.messages ?? [],
+              // Kept when the server has nothing to say about it (a thread with no turns yet).
+              lastMessage: row.lastMessage || local?.lastMessage || '',
+              lastTopicSummary: row.lastTopicSummary ?? local?.lastTopicSummary,
+              unreadCount: local?.unreadCount,
+            };
+          }
+
+          // Newest first, across both halves. A local-only thread (this session, still unsynced)
+          // keeps its place by date rather than being pushed out by the server's list.
+          const order = Object.keys(byId).sort(
+            (a, b) => Date.parse(byId[b].updatedAt) - Date.parse(byId[a].updatedAt),
+          );
+          return { byId, order };
         }),
 
       setLastTopicSummary: (sessionId, summary) =>
