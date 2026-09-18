@@ -104,23 +104,31 @@ describe('the app roster agrees with it', () => {
 describe('card order', () => {
   const ids = () => localizeCounselors('en').map(c => c.id);
 
-  it('puts the counselors you can enter first', () => {
-    const order = localizeCounselors('en');
-    const firstSoon = order.findIndex(c => c.comingSoon);
-    expect(order.slice(0, firstSoon).every(c => !c.comingSoon)).toBe(true);
-    expect(order.slice(firstSoon).every(c => c.comingSoon)).toBe(true);
+  // DECIDED 18-09: the first release serves only counselors who can be consulted. The ordering the
+  // roster still carries — real, then seeded, then placeholder — is what the feed reverts to the day
+  // SHOW_UNRELEASED goes back on, and the two tests below still pin it through `RAW`.
+  it('serves nobody the player cannot enter', () => {
+    expect(localizeCounselors('en').filter(c => c.comingSoon)).toEqual([]);
+  });
+
+  it('still resolves an unreleased counselor by id, so an old link does not vanish', () => {
+    // A favourite or a past conversation may name one. Hiding them from the FEED is not the same as
+    // deleting them, and a card that renders nothing is the failure this avoids.
+    expect(getLocalizedCounselor('mina', 'en')?.comingSoon).toBe(true);
   });
 
   it('opens on the generalist', () => {
     expect(ids()[0]).toBe('yuna');
   });
 
-  it('puts a seeded counselor ahead of a placeholder that is only a name', () => {
+  it('opens on the generalist and ends on the guide, with nobody unreleased between', () => {
+    // The three-band order (enterable, seeded, placeholder) is unobservable while the last two bands
+    // are hidden; what is still worth pinning is that the visible feed is exactly the enterable set
+    // and that it leads with the counselor who takes any question.
     const order = ids();
-    // theo has a registry row (persona, tone decided; art in progress).
-    // seoyeon/mina/harin/doyun have none.
-    expect(order.indexOf('theo')).toBeLessThan(order.indexOf('seoyeon'));
-    expect(order.indexOf('theo')).toBeLessThan(order.indexOf('mina'));
+    expect(order[0]).toBe('yuna');
+    expect(order).toEqual(expect.arrayContaining(['yuna', 'jiho', 'yunjung', 'theo', 'breathe']));
+    expect(order).toHaveLength(5);
   });
 });
 

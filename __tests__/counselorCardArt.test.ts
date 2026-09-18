@@ -1,4 +1,4 @@
-import { localizeCounselors } from '../src/features/counselors/data/mockCounselors';
+import { getLocalizedCounselor, localizeCounselors } from '../src/features/counselors/data/mockCounselors';
 import {
   COUNSELOR_AVATAR_ART,
   COUNSELOR_CARD_ART,
@@ -46,11 +46,13 @@ describe('counselor card art', () => {
   });
 
   it('has no art for a counselor that is not in the roster', () => {
-    const ids = new Set(localizeCounselors('en').map(c => c.id));
+    // Against the WHOLE roster, not the visible feed. Since 18-09 the feed hides counselors who
+    // cannot be consulted yet (SHOW_UNRELEASED), and their art is not orphaned by that — it is
+    // waiting, and it still draws the card if a favourite or an old conversation names one.
     const orphans = [
       ...Object.keys(COUNSELOR_CARD_ART),
       ...Object.keys(COUNSELOR_AVATAR_ART),
-    ].filter(id => !ids.has(id));
+    ].filter(id => !getLocalizedCounselor(id, 'en'));
     expect(orphans).toEqual([]);
   });
 

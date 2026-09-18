@@ -860,8 +860,24 @@ function localize(raw: RawCounselor, lang: Lang): CounselorSummary {
  * which is the order the feed was designed to read in; a comparator returning 0 for everything else
  * relies on sort stability to do the same thing less clearly.
  */
+/**
+ * Whether the feed shows counselors who cannot be consulted yet.
+ *
+ * DECIDED 18-09, FOR THE FIRST RELEASE: it does not. Four of the nine cards are a name and a
+ * costume board — no persona, no room, no voice — and a store release is not a roadmap: a player
+ * paying for tickets should not be shown four people they cannot talk to. The cards stay in the
+ * data and keep their three-band ordering below, so turning this back on is one line the day the
+ * roster becomes a marketing surface again (a "coming soon" shelf is a reasonable thing to want —
+ * it is just not what a first release should lead with).
+ *
+ * ⚠️ It does NOT hide them from a direct link: `getLocalizedCounselor` still resolves them, so a
+ * conversation or favourite that names one still renders rather than vanishing.
+ */
+const SHOW_UNRELEASED = false;
+
 export function localizeCounselors(lang: Lang): CounselorSummary[] {
   const all = RAW.map(r => localize(r, lang));
+  if (!SHOW_UNRELEASED) return all.filter(c => !c.comingSoon);
   const soon = all.filter(c => c.comingSoon);
   // Three bands, not two. "Coming soon" covered two very different things once the 15-09 pair was
   // seeded: counselors whose identity is decided and whose art is being made (they have a row in
