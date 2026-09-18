@@ -1,5 +1,6 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, ViewStyle } from 'react-native';
+import { Text } from './Text';
 import { sfx } from '../audio/sfx';
 import { colors, radius, spacing, typography } from '../theme';
 

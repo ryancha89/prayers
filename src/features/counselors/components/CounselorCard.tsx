@@ -1,5 +1,6 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../../shared/components/Text';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
 import { compactNumber } from '../../../shared/utils/time';
 import { useT } from '../../../shared/i18n';

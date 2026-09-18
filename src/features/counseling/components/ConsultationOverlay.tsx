@@ -17,15 +17,21 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
+import { Text, TextInput } from '../../../shared/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
+import {
+  absoluteFill,
+  colors,
+  radius,
+  spacing,
+  typography,
+} from '../../../shared/theme';
 import { sfx } from '../../../shared/audio/sfx';
 import { useLang } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
+import { useScreen } from '../../../shared/device/screen';
 import { ui } from '../flow/strings';
 import { CounselorVoice, voiced } from '../flow/voice';
 import type { FlowState } from '../flow/engine';
@@ -70,8 +76,12 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   micAvailable = false,
 }) => {
   const lang = useLang();
+  // Heights here are shares of the window, not constants: see useScreen. On a 667pt phone the
+  // three panels below used to add up to more screen than there was, under an open keyboard.
+  const screen = useScreen();
   /** A prompt SHE is asking through, in her register. Falls back to the shared copy. */
-  const say = (key: Parameters<typeof ui>[0]) => voiced(voice, key, lang) ?? ui(key, lang);
+  const say = (key: Parameters<typeof ui>[0]) =>
+    voiced(voice, key, lang) ?? ui(key, lang);
   const [input, setInput] = useState('');
   const mic = state.mic;
   const recording = mic.state !== 'idle';
@@ -92,26 +102,43 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.root}
-      pointerEvents="box-none">
+      pointerEvents="box-none"
+    >
       {/* Tap-to-continue catches the whole screen, not just the card: a dialogue
           beat is advanced by tapping anywhere, the way it was in the engine. */}
       {state.canTap && (
-        <Pressable style={StyleSheet.absoluteFill} onPress={onTap} accessibilityRole="button" />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onTap}
+          accessibilityRole="button"
+        />
       )}
 
       <View style={styles.stack} pointerEvents="box-none">
-        {state.screen === 'loop' && <Transcript state={state} />}
+        {state.screen === 'loop' && (
+          <Transcript state={state} maxHeight={screen.vh(0.3, 140, 320)} />
+        )}
 
         {state.screen === 'report' && state.report && <Report state={state} />}
 
         {!!state.line && state.screen !== 'loop' && (
           <View style={styles.card}>
-            {!!state.speaker && <Text style={styles.speaker}>{state.speaker}</Text>}
-            <ScrollView style={styles.lineScroll} showsVerticalScrollIndicator={false}>
+            {!!state.speaker && (
+              <Text style={styles.speaker}>{state.speaker}</Text>
+            )}
+            <ScrollView
+              style={[
+                styles.lineScroll,
+                { maxHeight: screen.vh(0.24, 110, 220) },
+              ]}
+              showsVerticalScrollIndicator={false}
+            >
               <Text style={styles.line}>{state.line}</Text>
             </ScrollView>
             {state.screen === 'thinking' && <ThinkingDots />}
-            {state.canTap && <Text style={styles.hint}>{ui('tap.continue', lang)}</Text>}
+            {state.canTap && (
+              <Text style={styles.hint}>{ui('tap.continue', lang)}</Text>
+            )}
           </View>
         )}
 
@@ -119,8 +146,13 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
           <View style={styles.card}>
             <Text style={styles.line}>{state.notice.body}</Text>
             <View style={styles.noticeRow}>
-              <Pressable style={[styles.pill, styles.pillPrimary]} onPress={onRetry}>
-                <Text style={styles.pillTextPrimary}>{state.notice.retryLabel}</Text>
+              <Pressable
+                style={[styles.pill, styles.pillPrimary]}
+                onPress={onRetry}
+              >
+                <Text style={styles.pillTextPrimary}>
+                  {state.notice.retryLabel}
+                </Text>
               </Pressable>
               <Pressable style={styles.pill} onPress={onLeave}>
                 <Text style={styles.pillText}>{state.notice.leaveLabel}</Text>
@@ -135,7 +167,8 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
               <Pressable
                 key={c.choice.locKey || c.label}
                 style={styles.choice}
-                onPress={() => onChoose(c.choice)}>
+                onPress={() => onChoose(c.choice)}
+              >
                 <Text style={styles.choiceText}>{c.label}</Text>
               </Pressable>
             ))}
@@ -144,7 +177,10 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
 
         {/* The server's own follow-up question, offered rather than imposed. */}
         {state.screen === 'loop' && !!state.suggestion && (
-          <Pressable style={styles.suggestion} onPress={() => onSubmit(state.suggestion)}>
+          <Pressable
+            style={styles.suggestion}
+            onPress={() => onSubmit(state.suggestion)}
+          >
             <Text style={styles.suggestionText} numberOfLines={2}>
               {state.suggestion}
             </Text>
@@ -155,7 +191,11 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
           <SafeAreaView edges={['bottom']}>
             {/* Why the take failed, in the player's own language. Unity sends a key, never a
                 sentence — the copy for every one of these is here. */}
-            {!!mic.error && <Text style={styles.micError}>{micErrorText(mic.error, lang)}</Text>}
+            {!!mic.error && (
+              <Text style={styles.micError}>
+                {micErrorText(mic.error, lang)}
+              </Text>
+            )}
 
             {/* She is talking and the box is open: cutting in is allowed, so it is also SHOWN.
                 Without this the only way to learn it is to try, and a player who does not know
@@ -163,7 +203,9 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
             {state.speaking && state.screen === 'loop' && !recording && (
               <Pressable style={styles.hush} onPress={onHush} hitSlop={8}>
                 <Icon name="stop" size={12} color={colors.textMuted} />
-                <Text style={styles.hushText}>{ui('loop.stopTalking', lang)}</Text>
+                <Text style={styles.hushText}>
+                  {ui('loop.stopTalking', lang)}
+                </Text>
               </Pressable>
             )}
 
@@ -178,26 +220,37 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                   </Text>
                   {mic.state === 'listening' && (
                     <View style={styles.levelTrack}>
-                      <View style={[styles.levelFill, { width: `${Math.round(clamp(mic.level * 100))}%` }]} />
+                      <View
+                        style={[
+                          styles.levelFill,
+                          { width: `${Math.round(clamp(mic.level * 100))}%` },
+                        ]}
+                      />
                     </View>
                   )}
                 </View>
                 <Pressable
                   style={styles.sendBtn}
                   onPress={mic.state === 'listening' ? onMicStop : onMicCancel}
-                  accessibilityLabel={ui('mic.listening', lang)}>
+                  accessibilityLabel={ui('mic.listening', lang)}
+                >
                   <Icon name="stop" size={18} />
                 </Pressable>
               </View>
             ) : (
               <View style={styles.inputRow}>
                 <TextInput
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    { maxHeight: screen.vh(0.12, 64, 110) },
+                  ]}
                   value={input}
                   editable={state.inputEnabled}
                   onChangeText={setInput}
                   placeholder={say(
-                    state.screen === 'loop' ? 'loop.placeholder' : 'question.placeholder',
+                    state.screen === 'loop'
+                      ? 'loop.placeholder'
+                      : 'question.placeholder',
                   )}
                   placeholderTextColor={colors.textMuted}
                   multiline
@@ -207,20 +260,26 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                     and speaking is the only gesture that needs to be reachable one-handed. */}
                 {micAvailable && !input.trim() ? (
                   <Pressable
-                    style={[styles.sendBtn, !state.inputEnabled && styles.sendDisabled]}
+                    style={[
+                      styles.sendBtn,
+                      !state.inputEnabled && styles.sendDisabled,
+                    ]}
                     onPress={onMicStart}
                     disabled={!state.inputEnabled}
-                    accessibilityLabel={ui('mic.listening', lang)}>
+                    accessibilityLabel={ui('mic.listening', lang)}
+                  >
                     <Icon name="mic" size={22} />
                   </Pressable>
                 ) : (
                   <Pressable
                     style={[
                       styles.sendBtn,
-                      (!input.trim() || !state.inputEnabled) && styles.sendDisabled,
+                      (!input.trim() || !state.inputEnabled) &&
+                        styles.sendDisabled,
                     ]}
                     onPress={send}
-                    disabled={!input.trim() || !state.inputEnabled}>
+                    disabled={!input.trim() || !state.inputEnabled}
+                  >
                     <Icon name="send" size={22} />
                   </Pressable>
                 )}
@@ -248,19 +307,35 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
  *  growth spurt changes the content size, which is the cue to scroll to the
  *  end. Without it the bubble grew below the fold and the player read the first
  *  sentence while hearing the fourth. */
-const Transcript: React.FC<{ state: FlowState }> = ({ state }) => {
+const Transcript: React.FC<{ state: FlowState; maxHeight: number }> = ({
+  state,
+  maxHeight,
+}) => {
   const scroll = useRef<ScrollView>(null);
   return (
     <ScrollView
       ref={scroll}
-      style={styles.transcript}
+      style={[styles.transcript, { maxHeight }]}
       contentContainerStyle={styles.transcriptBody}
-      onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}>
+      onContentSizeChange={() =>
+        scroll.current?.scrollToEnd({ animated: true })
+      }
+    >
       {state.transcript.map((m, i) => (
         <View
           key={`${i}-${m.role}`}
-          style={[styles.bubble, m.role === 'user' ? styles.bubbleUser : styles.bubbleCounselor]}>
-          <Text style={m.role === 'user' ? styles.bubbleTextUser : styles.bubbleText}>{m.text}</Text>
+          style={[
+            styles.bubble,
+            m.role === 'user' ? styles.bubbleUser : styles.bubbleCounselor,
+          ]}
+        >
+          <Text
+            style={
+              m.role === 'user' ? styles.bubbleTextUser : styles.bubbleText
+            }
+          >
+            {m.text}
+          </Text>
         </View>
       ))}
     </ScrollView>
@@ -275,13 +350,19 @@ const Report: React.FC<{ state: FlowState }> = ({ state }) => {
         <View key={row.label} style={styles.reportRow}>
           <Text style={styles.reportLabel}>{row.label}</Text>
           <View style={styles.reportTrack}>
-            <View style={[styles.reportFill, { width: `${clamp(row.score)}%` }]} />
+            <View
+              style={[styles.reportFill, { width: `${clamp(row.score)}%` }]}
+            />
           </View>
           <Text style={styles.reportScore}>{row.score}</Text>
         </View>
       ))}
-      {!!report.keywords && <Text style={styles.reportKeywords}>{report.keywords}</Text>}
-      {!!report.period && <Text style={styles.reportPeriod}>{report.period}</Text>}
+      {!!report.keywords && (
+        <Text style={styles.reportKeywords}>{report.keywords}</Text>
+      )}
+      {!!report.period && (
+        <Text style={styles.reportPeriod}>{report.period}</Text>
+      )}
     </View>
   );
 };
@@ -299,7 +380,10 @@ const clamp = (n: number) => Math.max(0, Math.min(100, n));
 /** Unity reports WHY a take produced nothing as a key; the sentence is RN's, in all six languages.
  *  Everything that is not the player's to fix collapses onto one line — "I could not make out the
  *  words" is as much as a player can act on whether the route 404'd or the upload timed out. */
-function micErrorText(error: NonNullable<FlowState['mic']['error']>, lang: Parameters<typeof ui>[1]) {
+function micErrorText(
+  error: NonNullable<FlowState['mic']['error']>,
+  lang: Parameters<typeof ui>[1],
+) {
   switch (error) {
     case 'permission':
       return ui('mic.error.permission', lang);
@@ -339,7 +423,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   speaker: { ...typography.caption, color: colors.gold },
-  lineScroll: { maxHeight: 220 },
+  // maxHeight is applied at the call site from useScreen; 220 is only its ceiling.
+  lineScroll: {},
   line: { ...typography.body, color: colors.textPrimary, lineHeight: 23 },
   hint: { ...typography.tiny, color: colors.textMuted, alignSelf: 'flex-end' },
   dots: { ...typography.body, color: colors.violetSoft },
@@ -382,7 +467,7 @@ const styles = StyleSheet.create({
   },
   suggestionText: { ...typography.body, color: colors.textPrimary },
 
-  transcript: { maxHeight: 320 },
+  transcript: {},
   transcriptBody: { gap: spacing.sm, paddingBottom: spacing.sm },
   bubble: { borderRadius: radius.md, padding: spacing.md, maxWidth: '86%' },
   bubbleCounselor: { alignSelf: 'flex-start', backgroundColor: colors.scrim },
@@ -397,7 +482,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   reportRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  reportLabel: { ...typography.caption, color: colors.textSecondary, width: 76 },
+  reportLabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    width: 76,
+  },
   reportTrack: {
     flex: 1,
     height: 6,
@@ -406,7 +495,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   reportFill: { height: 6, backgroundColor: colors.gold },
-  reportScore: { ...typography.tiny, color: colors.textMuted, width: 26, textAlign: 'right' },
+  reportScore: {
+    ...typography.tiny,
+    color: colors.textMuted,
+    width: 26,
+    textAlign: 'right',
+  },
   reportKeywords: { ...typography.caption, color: colors.gold },
   reportPeriod: { ...typography.tiny, color: colors.textMuted },
 
@@ -422,7 +516,6 @@ const styles = StyleSheet.create({
     flex: 1,
     ...typography.body,
     color: colors.textPrimary,
-    maxHeight: 110,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
@@ -442,7 +535,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.xs,
   },
-  micLive: { flex: 1, justifyContent: 'center', gap: spacing.xs, paddingHorizontal: spacing.md },
+  micLive: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+  },
   micLabel: { ...typography.caption, color: colors.textSecondary },
   levelTrack: {
     height: 4,

@@ -1,6 +1,13 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
-import { absoluteFill, colors, spacing, typography } from '../../../shared/theme';
+import { Image, StyleSheet, View } from 'react-native';
+import { Text } from '../../../shared/components/Text';
+import { useScreen } from '../../../shared/device/screen';
+import {
+  absoluteFill,
+  colors,
+  spacing,
+  typography,
+} from '../../../shared/theme';
 import { CounselorSummary } from '../types';
 import { GradientScrim } from '../../../shared/components/GradientScrim';
 
@@ -18,33 +25,50 @@ import { GradientScrim } from '../../../shared/components/GradientScrim';
  * iOS does not clip children by default, and an absolutely-positioned Image given only insets was
  * painting past the 460 and straight over the tags, the Preview heading and the chips below it.
  */
-export const CounselorHero: React.FC<{ counselor: CounselorSummary }> = ({ counselor }) => (
-  <View style={[styles.hero, { backgroundColor: counselor.accent }]}>
-    {counselor.cardImage ? (
-      <Image source={counselor.cardImage} style={styles.art} resizeMode="cover" />
-    ) : counselor.heroUrl ? (
-      <Image source={{ uri: counselor.heroUrl }} style={absoluteFill} />
-    ) : (
-      <Text style={styles.initial}>{counselor.name.charAt(0)}</Text>
-    )}
-    <GradientScrim height={260} />
-    <View style={styles.caption}>
-      <Text style={styles.name}>{counselor.name}</Text>
-      <Text style={styles.title}>{counselor.title}</Text>
-      <Text style={styles.hook}>“{counselor.hook}”</Text>
+export const CounselorHero: React.FC<{ counselor: CounselorSummary }> = ({
+  counselor,
+}) => {
+  // 460 was measured on a 844pt phone, where it is 55% of the screen. Kept as a share of the
+  // window so it stays a hero on a small phone instead of eating the whole first screen, and the
+  // scrim keeps its proportion of it rather than covering a different amount of the art.
+  const screen = useScreen();
+  const height = screen.vh(0.55, 320, 460);
+  return (
+    <View style={[styles.hero, { height, backgroundColor: counselor.accent }]}>
+      {counselor.cardImage ? (
+        <Image
+          source={counselor.cardImage}
+          style={styles.art}
+          resizeMode="cover"
+        />
+      ) : counselor.heroUrl ? (
+        <Image source={{ uri: counselor.heroUrl }} style={absoluteFill} />
+      ) : (
+        <Text style={styles.initial}>{counselor.name.charAt(0)}</Text>
+      )}
+      <GradientScrim height={Math.round(height * 0.57)} />
+      <View style={styles.caption}>
+        <Text style={styles.name}>{counselor.name}</Text>
+        <Text style={styles.title}>{counselor.title}</Text>
+        <Text style={styles.hook}>“{counselor.hook}”</Text>
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   hero: {
-    height: 460,
+    // height comes from useScreen at the call site.
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
   },
   art: { ...absoluteFill, width: '100%', height: '100%' },
-  initial: { fontSize: 180, fontWeight: '800', color: 'rgba(255,255,255,0.85)' },
+  initial: {
+    fontSize: 180,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.85)',
+  },
   caption: {
     position: 'absolute',
     left: spacing.xl,
@@ -54,5 +78,10 @@ const styles = StyleSheet.create({
   },
   name: { ...typography.hero, color: colors.textPrimary },
   title: { ...typography.body, color: colors.violetSoft },
-  hook: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm, lineHeight: 22 },
+  hook: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+    lineHeight: 22,
+  },
 });

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, ImageBackground, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';

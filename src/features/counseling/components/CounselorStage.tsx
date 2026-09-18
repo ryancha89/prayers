@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Text } from '../../../shared/components/Text';
 import { absoluteFill, colors, typography } from '../../../shared/theme';
 import { useT, TranslationKey } from '../../../shared/i18n';
 import { CounselorEmotion } from '../types';
