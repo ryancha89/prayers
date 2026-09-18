@@ -35,6 +35,12 @@ export interface UnityViewLike {
 const BRIDGE_OBJECT = 'RNBridge';
 const BRIDGE_METHOD = 'OnMessage';
 
+/** How long to wait for an answer before saying SESSION_INIT again, and how many times.
+ *  Three goes over 4.5 s sits well inside the screen's own 30 s deadline, so the retries are
+ *  invisible when they work and cost nothing when the player really is not there. */
+const INIT_RETRY_MS = 1500;
+const INIT_MAX_TRIES = 3;
+
 export class NativeUnityBridge implements UnityBridge {
   private handlers = new Set<(e: UnityToRNEvent) => void>();
   private view: UnityViewLike | null = null;
@@ -43,6 +49,9 @@ export class NativeUnityBridge implements UnityBridge {
    *  so a re-entry RESUMES that instance and no spontaneous UNITY_READY comes. */
   private everReady = false;
   private initSent = false;
+  /** Retry timer for the handshake below, and how many goes it has had. */
+  private initRetry: ReturnType<typeof setTimeout> | null = null;
+  private initTries = 0;
   private payload?: UnitySessionPayload;
   private outbox: RNToUnityEvent[] = [];
 
@@ -51,12 +60,64 @@ export class NativeUnityBridge implements UnityBridge {
   async openCounselingRoom(payload: UnitySessionPayload): Promise<void> {
     this.payload = payload;
     this.initSent = false;
+    this.initTries = 0;
     // Resume path: the surviving Unity instance won't announce itself, so WE
     // open the session — it reloads the consult scene and re-sends UNITY_READY.
-    if (this.view && this.everReady) {
-      this.post({ type: 'SESSION_INIT', payload });
-      this.initSent = true;
+    if (this.view && this.everReady) this.sendInit('resume');
+    this.armInitRetry();
+  }
+
+  /**
+   * Say SESSION_INIT again when nobody has answered.
+   *
+   * ⚠️ THE HANDSHAKE HAS A RACE, AND IT COSTS THE WHOLE ROOM. Both paths that open a session are
+   * conditional on state that arrives asynchronously: `everReady` is set by the native
+   * `silenceSurvivingUnity()` PROMISE, and `view` by a React mount. Enter the room in the window
+   * before either lands and no SESSION_INIT is ever sent — no BRIDGE_READY is coming either,
+   * because the surviving player announced itself to a JS context that no longer exists. Nothing
+   * fails, nothing logs: the veil sits there until the screen's 30 s deadline gives up and walks
+   * the player out. Seen on device 18-09, and the log is one line long — "the player never answered
+   * SESSION_INIT".
+   *
+   * So the opening is repeated rather than assumed. It is safe to repeat: SESSION_INIT is what
+   * loads the room, and re-sending it before the room exists loads it once; after UNITY_READY the
+   * retry is cancelled, so it can never reload a session that is already running.
+   *
+   * ⚠️ IT STOPS AT THE FIRST WORD BACK, not at UNITY_READY. Anything arriving from Unity proves the
+   * transport works and the player is listening, and the room takes 5-8 s to load after it answers
+   * BRIDGE_READY — re-sending SESSION_INIT during that load would restart the scene load every 1.5 s
+   * and the room would never finish coming up. A player that answers and then stalls is the screen
+   * deadline's problem, not this one's.
+   *
+   * Three goes, 1.5 s apart, then it stops and leaves the screen's deadline to do the honest thing.
+   */
+  private armInitRetry(): void {
+    this.clearInitRetry();
+    this.initRetry = setTimeout(() => {
+      this.initRetry = null;
+      if (this.ready || !this.payload || !this.view) return;
+      if (this.initTries >= INIT_MAX_TRIES) {
+        devlog(`[unity-bridge] no answer after ${this.initTries} SESSION_INIT(s) — giving the room back`);
+        return;
+      }
+      this.sendInit(this.initSent ? 'retry' : 'first');
+      this.armInitRetry();
+    }, INIT_RETRY_MS);
+  }
+
+  private clearInitRetry(): void {
+    if (this.initRetry !== null) {
+      clearTimeout(this.initRetry);
+      this.initRetry = null;
     }
+  }
+
+  private sendInit(why: string): void {
+    if (!this.payload) return;
+    this.initTries += 1;
+    this.initSent = true;
+    devlog(`[unity-bridge] SESSION_INIT (${why}, try ${this.initTries})`);
+    this.post({ type: 'SESSION_INIT', payload: this.payload });
   }
 
   sendEvent(event: RNToUnityEvent): void {
@@ -73,6 +134,7 @@ export class NativeUnityBridge implements UnityBridge {
   }
 
   async closeCounselingRoom(): Promise<void> {
+    this.clearInitRetry();
     // Silence Unity NOW — the view unload that follows is asynchronous, and a
     // BGM outliving the room (or an error exit) is exactly the bug this guards.
     if (this.view) this.post({ type: 'SESSION_END' });
@@ -101,10 +163,10 @@ export class NativeUnityBridge implements UnityBridge {
     this.view = view;
     // Resume path — the host just re-mounted over the surviving Unity
     // instance; open the session now (see openCounselingRoom).
-    if (this.everReady && this.payload && !this.initSent) {
-      this.post({ type: 'SESSION_INIT', payload: this.payload });
-      this.initSent = true;
-    }
+    if (this.everReady && this.payload && !this.initSent) this.sendInit('view registered');
+    // The view arriving is also what makes a retry possible at all — before it there is nowhere to
+    // post to, and `post` would only queue.
+    if (this.payload && !this.ready) this.armInitRetry();
   }
 
   unregisterView(view: UnityViewLike): void {
@@ -135,6 +197,10 @@ export class NativeUnityBridge implements UnityBridge {
       return;
     }
 
+    // Anything at all from the far side means the handshake does not need saying again — see
+    // armInitRetry.
+    this.clearInitRetry();
+
     // The JS twin of Unity's BridgeTap, and the only place this direction can
     // be watched from. Unity's own Debug.Log does NOT reach the device log once
     // the player runs embedded inside a host app — only its two startup banners
@@ -147,19 +213,15 @@ export class NativeUnityBridge implements UnityBridge {
     // exist yet and stage commands sent now are dropped on the far side.
     if (event.type === 'BRIDGE_READY') {
       this.everReady = true;
-      if (!this.initSent && this.payload) {
-        this.post({ type: 'SESSION_INIT', payload: this.payload });
-        this.initSent = true;
-      }
+      if (!this.initSent && this.payload) this.sendInit('bridge ready');
     }
 
     if (event.type === 'UNITY_READY') {
       this.ready = true;
       this.everReady = true;
-      if (!this.initSent && this.payload) {
-        this.post({ type: 'SESSION_INIT', payload: this.payload });
-        this.initSent = true;
-      }
+      // The room is up: nothing may re-open it now.
+      this.clearInitRetry();
+      if (!this.initSent && this.payload) this.sendInit('unity ready');
       const queued = this.outbox;
       this.outbox = [];
       queued.forEach(e => this.post(e));
