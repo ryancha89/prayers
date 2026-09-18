@@ -1217,3 +1217,57 @@ describe('the walk is the same for every counsellor', () => {
     expect(stage.asks).toHaveLength(1);
   });
 });
+
+/**
+ * A wait that outlives its own line.
+ *
+ * The room says "one moment" once and then nothing moves for fifteen to forty-five seconds, which
+ * is where waiting stops reading as thinking and starts reading as a hang. The cover comes in
+ * tiers: the line is replaced IN PLACE (a second bubble would look like she had answered), and the
+ * camera pushes in once when even that has stopped being news.
+ */
+test('a long wait swaps its line in place, and pushes the camera in once', () => {
+  const { sched, stage, engine } = build();
+  intoLoop(stage, engine, sched);
+
+  const before = engine.getState().transcript.length;
+  engine.submitQuestion('올해 이직해도 될까요');
+
+  // Her question is in, and the one spoken waiting line under it.
+  const rows = engine.getState().transcript.length;
+  expect(rows).toBe(before + 2);
+  const first = engine.getState().transcript[rows - 1].text;
+  expect(first.length).toBeGreaterThan(0);
+
+  // Nothing happens for the first few seconds: a line replaced at once would be a flicker.
+  sched.advance(7_000);
+  expect(engine.getState().transcript[rows - 1].text).toBe(first);
+  expect(engine.getState().transcript).toHaveLength(rows);
+
+  // 8s: new words, SAME bubble.
+  sched.advance(1_500);
+  const second = engine.getState().transcript[rows - 1].text;
+  expect(second).not.toBe(first);
+  expect(engine.getState().transcript).toHaveLength(rows);
+
+  // ...and nothing new was spoken for it: a take started mid-wait would still be playing when the
+  // answer arrives.
+  const spokenAfterSwap = stage.spoken.length;
+  sched.advance(6_000);
+  expect(stage.spoken.length).toBe(spokenAfterSwap);
+
+  // 20s: one push-in, and only one.
+  const shots = () => stage.phases.filter(p => p.phaseId === 'LOOP_WAIT_LONG').length;
+  expect(shots()).toBe(0);
+  sched.advance(8_000);
+  expect(shots()).toBe(1);
+  sched.advance(30_000);
+  expect(shots()).toBe(1);
+
+  // The answer ends the cover: no swap may land on top of it.
+  engine.onOracleResult({ ok: true, loop: true, followup: '', beats: [{ phaseId: 'loop', lines: ['답이에요.'] }] });
+  const answered = engine.getState().transcript.length;
+  sched.advance(30_000);
+  expect(engine.getState().transcript.length).toBeGreaterThanOrEqual(answered);
+  expect(engine.getState().transcript[engine.getState().transcript.length - 1].text).toContain('답이에요');
+});

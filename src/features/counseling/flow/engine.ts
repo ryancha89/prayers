@@ -134,6 +134,27 @@ const COVER_PHASES = ['P06', 'P07', 'P08', 'P09', 'P10'];
 
 /** How many `loop.wait.N` lines strings.ts carries per language. */
 const WAIT_LINES = 4;
+
+/**
+ * Covering a wait that outlives its own first line.
+ *
+ * An answer is 15-20 s away and sometimes 45. The room says so once — a short spoken line — and
+ * then nothing moves at all, which is where a wait stops reading as thinking and starts reading as
+ * a hang. So the cover comes in tiers: her line is REPLACED in place at 8 s and every 6 s after
+ * (same bubble, new words — a second bubble would look like she answered), and at 20 s the camera
+ * pushes in once, because at that point only a change of shot still says "this is going somewhere".
+ *
+ * ⚠️ THE SWAPPED LINES ARE NOT SPOKEN. Only the first is: a take started mid-wait would still be
+ * playing when the answer arrives, and cutting it off to start the answer sounds worse than silence.
+ * The room's own `loading_messages` endpoint (which Unity's chat panel uses) is deliberately NOT
+ * ported here — it is an LLM call on the same transport that is already busy generating the answer,
+ * and a personalised waiting line that lands after the answer is worse than a generic one that
+ * lands on time.
+ */
+const WAIT_SWAP_AFTER_MS = 8000;
+const WAIT_SWAP_EVERY_MS = 6000;
+/** One slow push-in, once, when even the swapped lines have stopped being news. */
+const WAIT_PUSHIN_AFTER_MS = 20000;
 type UiKey = Parameters<typeof ui>[0];
 
 /** The last spoken reading beat; the free-chat loop takes over after it. */
@@ -381,6 +402,10 @@ export class ConsultationEngine {
   private loopPending = false;
   /** Which "one moment" line was used last, so two turns in a row never repeat it. */
   private lastWait = -1;
+  /** The transcript row the wait line is written into, so later tiers can replace it in place. */
+  private waitRow = -1;
+  private waitTimer: number | null = null;
+  private waitPushedIn = false;
   /** A reading beat mid-delivery. Same idea as `answerWalk` but the text lives
    *  on the phase card rather than in the transcript: P11/P14/P17/P19 used to
    *  drop the whole beat on screen and then send all of it to TTS in one go,
@@ -866,6 +891,9 @@ export class ConsultationEngine {
       this.timer = null;
     }
     this.clearHold();
+    // The wait cover rides along here rather than being remembered at each call site: every way out
+    // of a wait — a tap, a hush, the answer, leaving the room — already passes through this.
+    this.clearWaitCover();
     this.speakDoneWaiter = null;
   }
 
@@ -1100,10 +1128,10 @@ export class ConsultationEngine {
    * the one relaxed moment in the session. Change them freely; nothing computes
    * anything from these ids.
    */
-  private stageBeat(id: string, trigger: string) {
+  private stageBeat(id: string, trigger: string, camera: string = 'dialogue') {
     this.stage.phase({
       phaseId: id,
-      camera: 'dialogue',
+      camera,
       animationTriggers: [trigger],
       vfx: [],
       sound: [],
@@ -1314,13 +1342,61 @@ export class ConsultationEngine {
     const wait = this.pickWait();
     if (wait.text) {
       this.appendTranscript('counselor', wait.text);
+      this.waitRow = this.state.transcript.length - 1;
       this.speak(() => this.stage.speakText(wait.text, wait.key), wait.key);
+      this.armWaitCover();
+    }
+  }
+
+  /**
+   * Keep the wait alive while the answer is being written.
+   *
+   * Tier 1 replaces the line in its own bubble; tier 2 pushes the camera in, once. Both stop the
+   * moment the turn is no longer pending — an answer, an error, an interruption or leaving the room
+   * all go through `clearWaitCover`, because a timer that outlives the wait writes one of these
+   * lines over the answer itself.
+   */
+  private armWaitCover() {
+    this.clearWaitCover();
+    this.waitPushedIn = false;
+    const startedAt = this.sched.now();
+
+    const tick = () => {
+      this.waitTimer = null;
+      if (!this.loopPending || !this.inLoop || !this.running) return;
+
+      const waited = this.sched.now() - startedAt;
+      if (waited >= WAIT_PUSHIN_AFTER_MS && !this.waitPushedIn) {
+        this.waitPushedIn = true;
+        // A closer shot, not a new phase: the beat id is only there so the bridge log says why the
+        // camera moved. ⚠️ Whether the room honours it is the room's business — see the shot-lock
+        // note in the camera work; if it does not, the tier above is still doing its job.
+        this.stageBeat('LOOP_WAIT_LONG', 'Thinking', 'closeUp');
+      }
+
+      const next = this.pickWait();
+      if (next.text && this.waitRow >= 0 && this.waitRow < this.state.transcript.length) {
+        const transcript = this.state.transcript.slice();
+        transcript[this.waitRow] = { role: 'counselor', text: next.text };
+        this.patch({ transcript });
+      }
+      this.waitTimer = this.sched.set(tick, WAIT_SWAP_EVERY_MS);
+    };
+
+    this.waitTimer = this.sched.set(tick, WAIT_SWAP_AFTER_MS);
+  }
+
+  private clearWaitCover() {
+    if (this.waitTimer !== null) {
+      this.sched.clear(this.waitTimer);
+      this.waitTimer = null;
     }
   }
 
   private onLoopResult(payload: OracleResultPayload) {
     if (!this.inLoop || !this.loopPending) return;
     this.loopPending = false;
+    this.clearWaitCover();
     this.stage.thinking(false);
     const text = this.said((payload.beats?.[0]?.lines ?? []).join('\n'));
     if (!payload.ok || !text) {
