@@ -165,16 +165,26 @@ describe('langFromLocale', () => {
     expect(langFromLocale('en-GB')).toBe('en');
   });
 
-  it('splits Chinese by SCRIPT, not by the tag looking Chinese', () => {
-    // Getting this wrong is not a near miss: a Taiwanese reader would get the whole reading in
-    // Simplified.
+  // ⚠️ THIS TEST USED TO ASSERT THE OPPOSITE, and the reversal is the point. It split Chinese by
+  // SCRIPT, because sending a Taiwanese reader a Simplified reading was a bug worth a test.
+  // Traditional was retired on 18-09: it is gone from LANGUAGES, so nobody can pick it and nothing
+  // can land on it. Every `zh` tag now goes to Simplified — still the wrong script for a reader in
+  // Taipei, but now a decision somebody made rather than a mistake nobody noticed.
+  it('sends every Chinese tag to Simplified, now that Traditional is retired', () => {
     expect(langFromLocale('zh-Hans-CN')).toBe('zh-CN');
     expect(langFromLocale('zh_CN')).toBe('zh-CN');
     expect(langFromLocale('zh-SG')).toBe('zh-CN');
-    expect(langFromLocale('zh-Hant-TW')).toBe('zh-TW');
-    expect(langFromLocale('zh_TW')).toBe('zh-TW');
-    expect(langFromLocale('zh-HK')).toBe('zh-TW');
-    expect(langFromLocale('zh-MO')).toBe('zh-TW');
+    expect(langFromLocale('zh-Hant-TW')).toBe('zh-CN');
+    expect(langFromLocale('zh_TW')).toBe('zh-CN');
+    expect(langFromLocale('zh-HK')).toBe('zh-CN');
+    expect(langFromLocale('zh-MO')).toBe('zh-CN');
+  });
+
+  it('will not offer Traditional in the picker, and drops it if a player had it saved', () => {
+    expect(LANGUAGES.map(l => l.code)).not.toContain('zh-TW');
+    // isLang reads LANGUAGES, which is what makes a persisted 'zh-TW' fall back to the device
+    // instead of stranding that player on a language the build no longer renders.
+    expect(isLang('zh-TW')).toBe(false);
   });
 
   it('is undefined for a language the app is not written in, and for nothing at all', () => {

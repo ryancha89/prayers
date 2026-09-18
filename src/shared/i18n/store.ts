@@ -13,13 +13,30 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  */
 export type Lang = 'ko' | 'en' | 'ja' | 'zh-CN' | 'zh-TW' | 'vi';
 
+/**
+ * ⚠️ `zh-TW` IS IN THE TYPE AND NOT IN `LANGUAGES`, and that gap is deliberate (18-09).
+ *
+ * Traditional Chinese was retired from the app: nobody can pick it, and a Traditional device gets
+ * Simplified. But the TRANSLATIONS stay — six files carry a full `zh-TW` bundle, and deleting them
+ * would throw away finished work to save nothing, since a `Record<Lang, …>` with one extra key
+ * costs a build exactly nothing.
+ *
+ * Everything that gates on the language reads `LANGUAGES`, not the type: the picker lists it,
+ * `isLang` validates against it, `cycle` walks it. So removing the one entry below retires the
+ * language everywhere at once — including for a player who already had it saved, because `isLang`
+ * then rejects the persisted value and the store falls back to their device.
+ *
+ * To bring it back: restore the `LANGUAGES` entry and the Traditional branch in `langFromLocale`.
+ * Nothing else was removed.
+ */
+
 /** In the order the picker shows them, each written in its own language. */
 export const LANGUAGES: { code: Lang; label: string }[] = [
   { code: 'ko', label: '한국어' },
   { code: 'en', label: 'English' },
   { code: 'ja', label: '日本語' },
   { code: 'zh-CN', label: '简体中文' },
-  { code: 'zh-TW', label: '繁體中文' },
+  // { code: 'zh-TW', label: '繁體中文' },   ← retired 18-09; see the note on Lang above
   { code: 'vi', label: 'Tiếng Việt' },
 ];
 
@@ -29,10 +46,11 @@ export const DEFAULT_LANG: Lang = 'ko';
 /**
  * A device locale tag → one of the six, or undefined when it is none of them.
  *
- * Chinese is the only one that needs thought: the script matters and the tag does not always say
- * it. `zh-Hant`, and the regions that use Traditional, are Taiwan/Hong Kong/Macau; everything else
- * under `zh` is Simplified. Guessing wrong here is not a near miss — a Taiwanese reader gets a
- * reading in the wrong script.
+ * Chinese needed thought while both scripts shipped: `zh-Hant` and the Traditional regions are
+ * Taiwan/Hong Kong/Macau, everything else under `zh` is Simplified, and guessing wrong was not a
+ * near miss — a Taiwanese reader got a reading in the wrong script. Traditional is retired as of
+ * 18-09, so every `zh` now lands on Simplified. That IS the wrong script for a Taiwanese reader,
+ * and it is now a product decision rather than a bug.
  *
  * Exported for its own sake: this is the part worth testing, and it is pure.
  */
@@ -44,7 +62,10 @@ export function langFromLocale(locale: string | undefined | null): Lang | undefi
   if (tag.startsWith('ko')) return 'ko';
   if (tag.startsWith('ja')) return 'ja';
   if (tag.startsWith('en')) return 'en';
-  if (tag.startsWith('zh')) return /hant|-tw|-hk|-mo/.test(tag) ? 'zh-TW' : 'zh-CN';
+  // Traditional is retired, so every `zh` tag lands on Simplified — including zh-Hant/TW/HK/MO.
+  // This used to split them, and the comment above still explains why that mattered; it is kept
+  // because the day zh-TW comes back, this line is half the change.
+  if (tag.startsWith('zh')) return 'zh-CN';
   return undefined;
 }
 
