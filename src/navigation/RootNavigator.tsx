@@ -11,6 +11,7 @@ import { AddSubjectScreen } from '../features/subjects/screens/AddSubjectScreen'
 import { hasBirthData, useSubjectsStore } from '../features/subjects/store/subjectsStore';
 import { LoginScreen } from '../features/auth/screens/LoginScreen';
 import { AccountScreen } from '../features/profile/screens/AccountScreen';
+import { LibraryScreen } from '../features/profile/screens/LibraryScreen';
 import { MeditationRoomScreen } from '../features/meditation/screens/MeditationRoomScreen';
 import { TicketsScreen } from '../features/tickets/screens/TicketsScreen';
 import { LegalScreen } from '../features/profile/screens/LegalScreen';
@@ -57,6 +58,7 @@ export const RootNavigator: React.FC = () => {
     ) : null}
     <Stack.Screen name="Tabs" component={BottomTabNavigator} />
     <Stack.Screen name="Account" component={AccountScreen} />
+    <Stack.Screen name="Library" component={LibraryScreen} />
     <Stack.Screen name="Tickets" component={TicketsScreen} />
     <Stack.Screen name="MeditationRoom" component={MeditationRoomScreen} />
     <Stack.Screen name="Legal" component={LegalScreen} />

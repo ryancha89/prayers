@@ -27,6 +27,14 @@ export type RootStackParamList = {
   Login: undefined;
   /** The account itself: who is signed in, signing out, and deleting it. */
   Account: undefined;
+  /**
+   * The two My Page library lists — saved people, and favourited counsellors.
+   *
+   * One route with a discriminator rather than two: the lists differ in what a row is and where it
+   * leads, and in nothing else. Both were rows with no `onPress` until 18-09, while the stat row
+   * above them was already counting the very things they refused to show.
+   */
+  Library: { list: 'people' | 'favorites' };
   /** Question tickets: the balance, the allowance, and the only way to buy more. */
   Tickets: undefined;
   /**

@@ -87,8 +87,18 @@ export const MyPageScreen: React.FC = () => {
             label={t('addSubject.myProfile')}
             onPress={() => navigation.navigate('AddSubject', { subjectId: 'self' })}
           />
-          <Row label={t('my.savedPeople')} />
-          <Row label={t('my.favoriteCounselors')} />
+          {/* Both of these were labels with no onPress — while the stat row above counted exactly
+              what they would have shown. The data was never missing; the destination was. */}
+          <Row
+            label={t('my.savedPeople')}
+            value={String(savedCount)}
+            onPress={() => navigation.navigate('Library', { list: 'people' })}
+          />
+          <Row
+            label={t('my.favoriteCounselors')}
+            value={String(favCount)}
+            onPress={() => navigation.navigate('Library', { list: 'favorites' })}
+          />
           {/* The conversations tab, which now reads the account rather than this phone — so the
               row is a real destination whichever device they signed in on. */}
           <Row
