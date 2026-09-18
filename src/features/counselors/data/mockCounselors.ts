@@ -79,7 +79,14 @@ const PREVIEW_ACTIONS: PreviewAction[] = [
  * else: his model does not exist yet, his card is locked, and this list is the order to draw in.
  */
 const PREVIEW_ACTIONS_THEO: PreviewAction[] = [
+  // FOUR since the 18-09 delivery, and the list grew because the clips did — a smile, a think and a
+  // startle, all of them his own. ⚠️ `explaining` was already here and was playing `Male_TalkLoop`,
+  // a clip with zero moving bones: the strip was twenty identical frames of a man standing still.
+  // It plays `Male_Talking` now. Adding a row means re-rendering, and looking at the render.
+  PREVIEW_ACTIONS[1],
+  PREVIEW_ACTIONS[2],
   { key: 'explaining', ko: '설명 중', en: 'Explaining', ja: '説明中', 'zh-CN': '讲解', 'zh-TW': '講解', vi: 'Giảng giải' },
+  { key: 'surprised', ko: '놀람', en: 'Surprised', ja: '驚き', 'zh-CN': '惊讶', 'zh-TW': '驚訝', vi: 'Ngạc nhiên' },
 ];
 
 /**
@@ -91,7 +98,14 @@ const PREVIEW_ACTIONS_THEO: PreviewAction[] = [
  * Still deliberately short. Add rows as clips arrive, not before — and re-render the strips, because
  * a row here with no strip behind it shows the previous counselor's frames.
  */
-const PREVIEW_ACTIONS_YUNJUNG: PreviewAction[] = [PREVIEW_ACTIONS[1], PREVIEW_ACTIONS[3]];
+const PREVIEW_ACTIONS_YUNJUNG: PreviewAction[] = [
+  PREVIEW_ACTIONS[1],
+  PREVIEW_ACTIONS[3],
+  // THREE since 18-09 — and nothing new was delivered for her. `Female_SitSoftLaugh` has been in
+  // the project since 14-09 and is her largest gesture (115 moving bones against the talking clip's
+  // 86); it had simply never been given a row or a strip.
+  { key: 'laugh', ko: '웃음', en: 'Laughing', ja: '笑い', 'zh-CN': '轻笑', 'zh-TW': '輕笑', vi: 'Bật cười' },
+];
 
 /** m_char_003 blesses instead of nodding. */
 const PREVIEW_ACTIONS_JIHO: PreviewAction[] = [

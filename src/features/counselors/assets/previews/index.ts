@@ -63,13 +63,24 @@ export const PREVIEW_STRIPS: Record<string, Record<string, ImageSourcePropType>>
   yunjung: {
     smile: require('./yunjung_smile.jpg'),
     explaining: require('./yunjung_explaining.jpg'),
+    // The third was already on disk: `Female_SitSoftLaugh` is her largest gesture — 115 moving
+    // bones against the talking clip's 86 — and it had simply never been given a row. Nothing new
+    // was delivered for her on 18-09; the preview had been under-selling what she can already do.
+    laugh: require('./yunjung_laugh.jpg'),
   },
-  // ONE action, and one is the honest number. m_char_004 arrived on 16-09 with an idle and a
-  // talking loop — nothing else, and both of them STANDING, which is how he plays in his room
-  // (decided 17-09, after a seated version borrowed from f_char_003 was built and turned down). His card carried four actions while he was unbuildable, as an
-  // order list for the animator; the moment he became playable that list stopped being a request
-  // and started being a promise to a player, and three quarters of it was false.
+  // FOUR since the 18-09 delivery, and every one of them is a clip he really has. He arrived on
+  // 16-09 with an idle and a talking loop and nothing else — his card carried four actions while he
+  // was unbuildable, as an order list for the animator, and the moment he became playable that list
+  // stopped being a request and became a promise, three quarters of it false. It was cut to one.
+  //
+  // ⚠️ AND THAT ONE WAS FILMING A STATIC POSE. `theo_explaining` pointed at `Male_TalkLoop`, which
+  // has zero moving bones: twenty identical frames, assembled and shipped without a single warning,
+  // because every step of the pipeline succeeded. It plays `Male_Talking` now. The lesson is in the
+  // renderer's own comment — the preview must play what the CONTROLLER plays.
   theo: {
+    smile: require('./theo_smile.jpg'),
+    thinking: require('./theo_thinking.jpg'),
     explaining: require('./theo_explaining.jpg'),
+    surprised: require('./theo_surprised.jpg'),
   },
 };
