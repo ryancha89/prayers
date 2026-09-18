@@ -60,8 +60,21 @@ export function installDevlogConsoleMirror(): void {
           args
             .map(a => {
               if (typeof a === 'string') return a;
+              // ⚠️ AN ERROR DOES NOT SURVIVE JSON.stringify. `message` and `stack` are
+              // non-enumerable, so `JSON.stringify(new Error('boom'))` is `{}` — and this is the
+              // only channel that can carry a warning off the simulator at all. Thirteen console
+              // errors in a row on 17-09 arrived as `{"preventSymbolication":true}`, which is just
+              // the one extra field RN's ExceptionsManager happens to set: the message and the
+              // whole stack were dropped by this line, not by RN.
+              if (a instanceof Error) {
+                const stack = a.stack ? '\n' + a.stack.split('\n').slice(0, 6).join('\n') : '';
+                return `${a.name}: ${a.message}${stack}`;
+              }
               try {
-                return JSON.stringify(a);
+                const json = JSON.stringify(a);
+                // `{}` from a non-plain object is the same silence by another route — a class
+                // instance, a native module handle. Fall back to whatever it can say about itself.
+                return json === '{}' && String(a) !== '[object Object]' ? String(a) : json;
               } catch {
                 return String(a);
               }
