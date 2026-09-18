@@ -145,7 +145,14 @@ export const CounselingRoomScreen: React.FC = () => {
   // model call), so it costs the player nothing to ask on every visit.
   useEffect(() => {
     const ctrl = new AbortController();
-    fetchRecall({ uniqId: params.sessionId, lang, topic, signal: ctrl.signal })
+    fetchRecall({
+      uniqId: params.sessionId,
+      lang,
+      topic,
+      // Her own conversations, not the player's most recent one with anybody.
+      counselorId: params.counselorId,
+      signal: ctrl.signal,
+    })
       .then(recall => {
         if (!recall) return;
         devlog(`[recall] ${recall.turns} turn(s) remembered — opening with them`);

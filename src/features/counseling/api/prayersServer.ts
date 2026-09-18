@@ -281,6 +281,15 @@ export async function fetchRecall(input: {
   uniqId?: string;
   lang: Lang;
   topic?: string;
+  /**
+   * The counselor about to be sat with, by CARD id (`yunjung`), not characterId.
+   *
+   * ⚠️ WITHOUT IT THE ROOM REMEMBERS SOMEBODY ELSE'S CONVERSATION. Recall used to return the
+   * player's most recent thread whatever counselor it belonged to, so opening Go Yunjung's room
+   * after a session with Theo had her say "last time we talked about love" about a conversation
+   * she was never in. The server scopes on the session key, which is built from this id.
+   */
+  counselorId?: string;
   signal?: AbortSignal;
 }): Promise<Recall | null> {
   const headers = await apiHeaders();
@@ -289,6 +298,7 @@ export async function fetchRecall(input: {
   const query = new URLSearchParams({ language: input.lang });
   if (input.topic) query.set('topic', input.topic);
   if (input.uniqId) query.set('uniq_id', input.uniqId);
+  if (input.counselorId) query.set('counselor', input.counselorId);
 
   try {
     const res = await fetch(`${BASE()}/api/v1/prayers/consultations/recall?${query}`, {
