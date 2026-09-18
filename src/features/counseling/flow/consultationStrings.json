@@ -202,7 +202,7 @@
   "consult_p05_l0": {
     "ko": "편하게 말씀해 주세요.",
     "en": "Feel free to ask me anything.",
-    "vi": "Con cứ hỏi ta thoải mái nhé.",
+    "vi": "Bạn cứ hỏi tôi thoải mái nhé.",
     "ja": "どうぞ気楽にお話しください。",
     "zh-CN": "请放心地说吧。",
     "zh-TW": "請放心地說吧。"
@@ -210,7 +210,7 @@
   "consult_p06_l0": {
     "ko": "알겠습니다. {0}의 흐름이 궁금하신 거군요.",
     "en": "I see. You would like to know about the flow of your {0}.",
-    "vi": "Ta hiểu rồi. Con muốn biết dòng chảy {0} của mình.",
+    "vi": "Tôi hiểu rồi. Bạn muốn biết dòng chảy {0} của mình.",
     "ja": "わかりました。{0}の流れが気になるのですね。",
     "zh-CN": "我明白了。您想知道{0}的走向。",
     "zh-TW": "我明白了。您想知道{0}的走向。"
@@ -250,7 +250,7 @@
   "consult_p10_l0": {
     "ko": "아... 이 부분이 {0}과 바로 연결됩니다.",
     "en": "Ah... this part connects directly to your {0}.",
-    "vi": "À... phần này nối thẳng với {0} của con.",
+    "vi": "À... phần này nối thẳng với {0} của bạn.",
     "ja": "ああ… この部分が{0}に直に繋がっています。",
     "zh-CN": "啊…… 这一部分与{0}直接相连。",
     "zh-TW": "啊…… 這一部分與{0}直接相連。"
@@ -258,7 +258,7 @@
   "consult_p11_l0": {
     "ko": "{0}은 약하지 않습니다.",
     "en": "Your {0} is not weak.",
-    "vi": "{0} của con không hề yếu.",
+    "vi": "{0} của bạn không hề yếu.",
     "ja": "{0}は弱くありません。",
     "zh-CN": "您的{0}并不弱。",
     "zh-TW": "您的{0}並不弱。"
@@ -274,7 +274,7 @@
   "consult_p12_l0": {
     "ko": "한 가지 여쭙고 싶습니다. 새로 시작하거나 투자할 계획이 있으신가요?",
     "en": "Let me ask one thing. Do you have plans to start something new or to invest?",
-    "vi": "Ta muốn hỏi một điều. Con có dự định bắt đầu việc mới hay đầu tư không?",
+    "vi": "Tôi muốn hỏi một điều. Bạn có dự định bắt đầu việc mới hay đầu tư không?",
     "ja": "一つお伺いします。新しく始める、あるいは投資するご予定はありますか？",
     "zh-CN": "想请教一件事。您有打算开始新的事，或是进行投资吗？",
     "zh-TW": "想請教一件事。您有打算開始新的事，或是進行投資嗎？"
@@ -394,7 +394,7 @@
   "consult_p14_business_l0": {
     "ko": "사주로 보면 시작할 수 있습니다. 다만 작게 시작하십시오.",
     "en": "Your Saju says you can begin, but begin small.",
-    "vi": "Theo tứ trụ, con có thể bắt đầu, nhưng hãy bắt đầu nhỏ.",
+    "vi": "Theo tứ trụ, bạn có thể bắt đầu, nhưng hãy bắt đầu nhỏ.",
     "ja": "四柱で見れば始められます。ただし小さく始めてください。",
     "zh-CN": "从四柱看是可以开始的，但请从小处着手。",
     "zh-TW": "從四柱看是可以開始的，但請從小處著手。"
@@ -506,7 +506,7 @@
   "consult_p17_l0": {
     "ko": "{0}을 정리하자면...",
     "en": "To sum up your {0}...",
-    "vi": "Tóm lại về {0} của con...",
+    "vi": "Tóm lại về {0} của bạn...",
     "ja": "{0}をまとめますと…",
     "zh-CN": "把{0}归纳起来……",
     "zh-TW": "把{0}歸納起來……"
@@ -522,7 +522,7 @@
   "consult_p17_business_l0": {
     "ko": "{0}을 정리하자면...",
     "en": "To sum up your {0}...",
-    "vi": "Tóm lại về {0} của con...",
+    "vi": "Tóm lại về {0} của bạn...",
     "ja": "{0}をまとめますと…",
     "zh-CN": "把{0}归纳起来……",
     "zh-TW": "把{0}歸納起來……"
@@ -538,7 +538,7 @@
   "consult_p17_invest_l0": {
     "ko": "{0}을 정리하자면...",
     "en": "To sum up your {0}...",
-    "vi": "Tóm lại về {0} của con...",
+    "vi": "Tóm lại về {0} của bạn...",
     "ja": "{0}をまとめますと…",
     "zh-CN": "把{0}归纳起来……",
     "zh-TW": "把{0}歸納起來……"
@@ -554,7 +554,7 @@
   "consult_p17_side_l0": {
     "ko": "{0}을 정리하자면...",
     "en": "To sum up your {0}...",
-    "vi": "Tóm lại về {0} của con...",
+    "vi": "Tóm lại về {0} của bạn...",
     "ja": "{0}をまとめますと…",
     "zh-CN": "把{0}归纳起来……",
     "zh-TW": "把{0}歸納起來……"
@@ -570,7 +570,7 @@
   "consult_p17_none_l0": {
     "ko": "{0}을 정리하자면...",
     "en": "To sum up your {0}...",
-    "vi": "Tóm lại về {0} của con...",
+    "vi": "Tóm lại về {0} của bạn...",
     "ja": "{0}をまとめますと…",
     "zh-CN": "把{0}归纳起来……",
     "zh-TW": "把{0}歸納起來……"
@@ -578,7 +578,7 @@
   "consult_p17_none_l1": {
     "ko": "아직 결정하지 않아도 됩니다. 기회가 왔을 때 준비되어 있는 것이 중요합니다.",
     "en": "You do not have to decide yet. What matters is being ready when the chance comes.",
-    "vi": "Con chưa cần quyết định. Điều quan trọng là sẵn sàng khi cơ hội đến.",
+    "vi": "Bạn chưa cần quyết định. Điều quan trọng là sẵn sàng khi cơ hội đến.",
     "ja": "まだ決めなくても構いません。機会が来た時に備えができていることが大事です。",
     "zh-CN": "现在还不必决定。要紧的是机会来时您已准备好。",
     "zh-TW": "現在還不必決定。要緊的是機會來時您已準備好。"
@@ -746,7 +746,7 @@
   "consult_no_tickets_body": {
     "ko": "질문 티켓이 없습니다. 티켓이 생기면 다시 오세요.",
     "en": "You have no question tickets left. Come back when you have one and I will read for you.",
-    "vi": "Con đã hết vé hỏi rồi. Khi nào có vé, quay lại đây ta xem cho.",
+    "vi": "Bạn đã hết vé hỏi rồi. Khi nào có vé, quay lại đây tôi xem cho.",
     "ja": "質問チケットがありません。チケットができましたら、またお越しください。",
     "zh-CN": "您的提问券已用完。有券时再来，我为您看。",
     "zh-TW": "您的提問券已用完。有券時再來，我為您看。"
@@ -762,7 +762,7 @@
   "consult_thinking": {
     "ko": "사주를 좀 더 자세히 살펴보겠습니다",
     "en": "Let me look more closely at your chart",
-    "vi": "Để ta xem kỹ lá số của con",
+    "vi": "Để tôi xem kỹ lá số của bạn",
     "ja": "命式をもう少し詳しく見てみます",
     "zh-CN": "让我再仔细看看您的命盘",
     "zh-TW": "讓我再仔細看看您的命盤"
@@ -794,7 +794,7 @@
   "consult_no_tickets_mid": {
     "ko": "질문 티켓을 모두 사용하셨습니다. 티켓이 생기면 다시 오세요.",
     "en": "You have used up your question tickets. Come back with one and I will continue the reading.",
-    "vi": "Con đã dùng hết vé hỏi rồi. Khi nào có vé, quay lại đây ta xem tiếp cho.",
+    "vi": "Bạn đã dùng hết vé hỏi rồi. Khi nào có vé, quay lại đây tôi xem tiếp cho.",
     "ja": "質問チケットを使い切りました。チケットができましたら、続きを見て差し上げます。",
     "zh-CN": "您的提问券已用完。有券时再来，我接着为您看。",
     "zh-TW": "您的提問券已用完。有券時再來，我接著為您看。"
@@ -802,7 +802,7 @@
   "consult_rate_limited": {
     "ko": "너무 빠릅니다. 잠시 후 다시 물어봐 주세요.",
     "en": "You are asking faster than I can read. Give it a moment and ask again.",
-    "vi": "Con hỏi nhanh quá, để ta thở một chút đã. Lát nữa hỏi lại nhé.",
+    "vi": "Bạn hỏi nhanh quá, để tôi thở một chút đã. Lát nữa hỏi lại nhé.",
     "ja": "少し速すぎます。間を置いてもう一度お尋ねください。",
     "zh-CN": "问得比我看得还快。稍等片刻再问吧。",
     "zh-TW": "問得比我看得還快。稍等片刻再問吧。"
@@ -1402,7 +1402,7 @@
   "consult_more_remember": {
     "ko": "무엇을 가장 기억해야 할까요?",
     "en": "What should I remember most?",
-    "vi": "Con nên nhớ điều gì nhất?",
+    "vi": "Bạn nên nhớ điều gì nhất?",
     "ja": "何を一番覚えておくべきですか？",
     "zh-CN": "我最该记住什么？",
     "zh-TW": "我最該記住什麼？"
@@ -1410,7 +1410,7 @@
   "consult_more_report": {
     "ko": "요약 카드를 보여주세요",
     "en": "Show me the summary card",
-    "vi": "Cho con xem bảng tổng kết",
+    "vi": "Cho bạn xem bảng tổng kết",
     "ja": "まとめのカードを見せてください",
     "zh-CN": "给我看看总结卡",
     "zh-TW": "給我看看總結卡"
@@ -1418,7 +1418,7 @@
   "consult_more_actions": {
     "ko": "그럼 무엇을 해야 하나요?",
     "en": "So what should I do?",
-    "vi": "Vậy con nên làm gì?",
+    "vi": "Vậy bạn nên làm gì?",
     "ja": "では、何をすればよいですか？",
     "zh-CN": "那我该做什么？",
     "zh-TW": "那我該做什麼？"
@@ -1426,7 +1426,7 @@
   "consult_actions_intro": {
     "ko": "그러면 이렇게 해 보거라:",
     "en": "Then do this:",
-    "vi": "Vậy thì con làm thế này:",
+    "vi": "Vậy thì bạn làm thế này:",
     "ja": "それでは、こうしてみなさい：",
     "zh-CN": "那就这样做吧：",
     "zh-TW": "那就這樣做吧："
@@ -1434,7 +1434,7 @@
   "consult_shape_hint_v4": {
     "ko": "{0}에 대해 봐 주세요. 답변을 1)부터 9)까지 아홉 부분으로 나누어 주세요. 앞의 네 부분은 앞에 앉은 사람에게 건네는 말입니다. 직접 말을 걸듯이, 각 2-3문장으로, 네 토막이 아니라 하나의 흐름으로 이어지게 해 주세요. 제목도 글머리 기호도 쓰지 말고, 질문을 되풀이하지 마세요. 1) 물어본 것에 사주의 언어로 곧바로 답하기, 2) 왜 그런지, 사주의 어느 자리가 그렇게 만드는지 짚기, 3) 그러면 어떻게 하면 좋은지, 4) 기억할 한마디, 5) 0-100 점수 항목 정확히 4개를 이름=숫자 형식으로 쉼표로 구분, 6) 짧은 키워드 3개를 쉼표로 구분, 7) 가장 주목할 시기를 반드시 Months=<시작>-<끝>; <짧은 설명> 형식으로 (월은 1-12 숫자, 예: Months=6-9; 6월부터 9월까지), 8) 2)와 3)과 4)를 듣기 위해 듣는 사람이 물어볼 짧은 질문 정확히 3개를 그 순서대로, 각 10단어 이내, | 로 구분, 9) 구체적으로 할 일 2~3가지를 | 로 구분.",
     "en": "Read for {0}. Answer in 9 numbered parts, 1) to 9). The first four are the counselor SPEAKING to the person in front of him: address them directly, 2-3 sentences each, running on from one another as one train of thought rather than four separate passages; no headings, no bullet points, do not restate the question. 1) answer what was actually asked, in the chart's own terms, 2) say why it is so, pointing at the place in the chart that makes it so, 3) what to do about it, 4) one short thing to remember, 5) exactly 4 scored aspects from 0-100 as Name=number, comma separated, 6) 3 short keywords, comma separated, 7) the single most notable period, in exactly this form: Months=<first>-<last>; <short phrase> (months are numbers 1-12, e.g. Months=6-9; June through September), 8) exactly 3 short questions the listener would ask to hear parts 2, 3 and 4 in that order, each under 10 words, separated by |, 9) 2 or 3 concrete things to do, separated by |.",
-    "vi": "Hãy xem về {0}. Trả lời thành 9 phần, đánh số 1) đến 9). Bốn phần đầu là LỜI NÓI của thầy với người đang ngồi trước mặt: xưng \"ta\" gọi \"con\", mỗi phần 2-3 câu, nối tiếp nhau như một mạch chuyện chứ không phải bốn đoạn rời; không tiêu đề, không gạch đầu dòng, không lặp lại câu hỏi. 1) trả lời thẳng điều con vừa hỏi, bằng chính chữ của lá số, 2) nói vì sao lại thế, chỉ ra chỗ trong lá số làm nên điều đó, 3) vậy thì nên xoay xở ra sao, 4) một câu dặn ngắn để nhớ, 5) đúng 4 mục chấm điểm 0-100 theo dạng Tên=số, cách nhau bằng dấu phẩy, 6) 3 từ khoá ngắn cách nhau bằng dấu phẩy, 7) giai đoạn đáng chú ý nhất, bắt buộc theo dạng: Months=<tháng đầu>-<tháng cuối>; <mô tả ngắn> (tháng là số 1-12, ví dụ Months=6-9; từ tháng 6 đến tháng 9), 8) đúng 3 câu hỏi ngắn mà người nghe sẽ hỏi để được nghe phần 2, phần 3 và phần 4 theo đúng thứ tự đó, mỗi câu dưới 10 chữ, ngăn cách bằng dấu |, 9) 2 đến 3 việc cụ thể nên làm, ngăn cách bằng dấu |.",
+    "vi": "Hãy xem về {0}. Trả lời thành 9 phần, đánh số 1) đến 9). Bốn phần đầu là LỜI NÓI của thầy với người đang ngồi trước mặt: xưng \"tôi\" gọi \"bạn\", mỗi phần 2-3 câu, nối tiếp nhau như một mạch chuyện chứ không phải bốn đoạn rời; không tiêu đề, không gạch đầu dòng, không lặp lại câu hỏi. 1) trả lời thẳng điều bạn vừa hỏi, bằng chính chữ của lá số, 2) nói vì sao lại thế, chỉ ra chỗ trong lá số làm nên điều đó, 3) vậy thì nên xoay xở ra sao, 4) một câu dặn ngắn để nhớ, 5) đúng 4 mục chấm điểm 0-100 theo dạng Tên=số, cách nhau bằng dấu phẩy, 6) 3 từ khoá ngắn cách nhau bằng dấu phẩy, 7) giai đoạn đáng chú ý nhất, bắt buộc theo dạng: Months=<tháng đầu>-<tháng cuối>; <mô tả ngắn> (tháng là số 1-12, ví dụ Months=6-9; từ tháng 6 đến tháng 9), 8) đúng 3 câu hỏi ngắn mà người nghe sẽ hỏi để được nghe phần 2, phần 3 và phần 4 theo đúng thứ tự đó, mỗi câu dưới 10 chữ, ngăn cách bằng dấu |, 9) 2 đến 3 việc cụ thể nên làm, ngăn cách bằng dấu |.",
     "ja": "{0}について見てください。答えを 1) から 9) までの九つの部分に分けてください。最初の四つは、目の前に座っている人に語りかける言葉です。直接話しかけるように、それぞれ2-3文で、四つの断片ではなく一つの流れとして続けてください。見出しも箇条書きも使わず、質問を繰り返さないでください。1) 訊かれたことに命式の言葉で直に答える、2) なぜそうなのか、命式のどの位置がそうさせるのかを指す、3) ではどうすればよいか、4) 覚えておく一言、5) 0-100 の点数項目をちょうど4つ、名前=数字 の形でカンマ区切り、6) 短いキーワードを3つカンマ区切り、7) 最も注目すべき時期を必ず Months=<開始>-<終了>; <短い説明> の形式で（月は1-12の数字、例：Months=6-9; 六月から九月まで）、8) 2)と3)と4)を聞くために聞き手が尋ねる短い質問をちょうど3つ、その順に、各10語以内、| で区切る、9) 具体的にすべきことを2〜3つ、| で区切る。",
     "zh-CN": "请看{0}。请把回答分成 1) 到 9) 九个部分。前四个部分是咨询师对坐在面前的人说的话：直接对他说，每部分2-3句，前后连成一条思路而不是四段各说各的；不要用标题，不要用项目符号，不要重复问题。1) 用命盘自己的语言直接回答所问的事，2) 说明为什么如此，指出命盘中哪一处使它如此，3) 那么该怎么办，4) 值得记住的一句短话，5) 恰好4个 0-100 的评分项，用 名称=数字 的形式并以逗号分隔，6) 3个简短关键词，以逗号分隔，7) 最值得注意的时期，务必用这个格式：Months=<起始>-<结束>; <简短说明>（月份是 1-12 的数字，例：Months=6-9; 六月到九月），8) 恰好3个听者为了听到第2、3、4部分而会提出的简短问题，按那个顺序，每个不超过10个词，用 | 分隔，9) 2到3件具体该做的事，用 | 分隔。",
     "zh-TW": "請看{0}。請把回答分成 1) 到 9) 九個部分。前四個部分是諮詢師對坐在面前的人說的話：直接對他說，每部分2-3句，前後連成一條思路而不是四段各說各的；不要用標題，不要用項目符號，不要重複問題。1) 用命盤自己的語言直接回答所問的事，2) 說明為什麼如此，指出命盤中哪一處使它如此，3) 那麼該怎麼辦，4) 值得記住的一句短話，5) 恰好4個 0-100 的評分項，用 名稱=數字 的形式並以逗號分隔，6) 3個簡短關鍵詞，以逗號分隔，7) 最值得注意的時期，務必用這個格式：Months=<起始>-<結束>; <簡短說明>（月份是 1-12 的數字，例：Months=6-9; 六月到九月），8) 恰好3個聽者為了聽到第2、3、4部分而會提出的簡短問題，按那個順序，每個不超過10個詞，用 | 分隔，9) 2到3件具體該做的事，用 | 分隔。"
@@ -1442,7 +1442,7 @@
   "consult_no_chart_body": {
     "ko": "아직 사주를 받지 못해 풀이할 수 없습니다. 다시 불러올까요?",
     "en": "Your chart has not reached me yet, so there is nothing for me to read. Shall I look it up again?",
-    "vi": "Ta chưa nhận được lá số của con nên chưa thể luận. Để ta tra lại một lần nữa nhé?",
+    "vi": "Tôi chưa nhận được lá số của bạn nên chưa thể luận. Để tôi tra lại một lần nữa nhé?",
     "ja": "まだ命式が届いておらず、見て差し上げられません。もう一度読み込みましょうか？",
     "zh-CN": "命盘还没送到，暂时无从看起。要我重新取一次吗？",
     "zh-TW": "命盤還沒送到，暫時無從看起。要我重新取一次嗎？"
@@ -1498,7 +1498,7 @@
   "consult_upstream_body": {
     "ko": "지금은 풀이를 모으지 못하겠구나. 잠시 뒤에 다시 물어보겠느냐?",
     "en": "I cannot gather the reading right now. Give me a moment and ask again?",
-    "vi": "Ta đang không tụ được khí để luận. Con chờ ta một lát rồi hỏi lại nhé?",
+    "vi": "Tôi đang không tụ được khí để luận. Bạn chờ tôi một lát rồi hỏi lại nhé?",
     "ja": "今は鑑定をまとめられません。少し置いてから、もう一度お尋ねになりますか？",
     "zh-CN": "眼下没法把卦象汇齐。稍等片刻再问一次好吗？",
     "zh-TW": "眼下沒法把卦象匯齊。稍等片刻再問一次好嗎？"
@@ -1546,7 +1546,7 @@
   "consult_p12_rel_l0": {
     "ko": "한 가지 여쭙겠습니다. 요즘 마음을 무겁게 하는 사이는 누구와의 사이입니까?",
     "en": "There is one thing I want to ask. Which relationship is weighing on you these days?",
-    "vi": "Ta muốn hỏi một điều. Mối quan hệ đang làm con nặng lòng là với ai?",
+    "vi": "Tôi muốn hỏi một điều. Mối quan hệ đang làm bạn nặng lòng là với ai?",
     "ja": "ひとつ伺います。近ごろ心を重くしているのは、誰との間柄でしょう。",
     "zh-CN": "我想问一件事。最近让你心里沉甸甸的，是和谁的关系？",
     "zh-TW": "我想問一件事。最近讓你心裡沉甸甸的，是和誰的關係？"
@@ -1578,7 +1578,7 @@
   "consult_p13_rel_work_l1": {
     "ko": "올해 당신의 관성이 세니, 맞서기보다 선을 긋는 편이 낫습니다.",
     "en": "Your authority star is strong this year: draw a line rather than meet them head on.",
-    "vi": "Năm nay quan tinh của con vượng — vạch ranh giới hơn là đối đầu.",
+    "vi": "Năm nay quan tinh của bạn vượng — vạch ranh giới hơn là đối đầu.",
     "ja": "今年は官星が強い年。正面から当たるより、線を引くほうが得策です。",
     "zh-CN": "今年你的官星偏旺——与其正面相争，不如划清界线。",
     "zh-TW": "今年你的官星偏旺——與其正面相爭，不如劃清界線。"
@@ -1594,7 +1594,7 @@
   "consult_p13_rel_friend_l1": {
     "ko": "당신은 먼저 손 내미는 쪽이었지요. 올해는 기다려도 됩니다.",
     "en": "You have always been the one to reach out first. This year you may wait.",
-    "vi": "Con vẫn luôn là người chìa tay trước. Năm nay con được phép chờ.",
+    "vi": "Bạn vẫn luôn là người chìa tay trước. Năm nay bạn được phép chờ.",
     "ja": "いつも先に手を差し出すのはあなたでした。今年は待ってよいのです。",
     "zh-CN": "一直都是你先伸手。今年，你可以等一等。",
     "zh-TW": "一直都是你先伸手。今年，你可以等一等。"
