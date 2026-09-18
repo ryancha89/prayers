@@ -27,6 +27,7 @@ import { sfx } from '../../../shared/audio/sfx';
 import { useLang } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
 import { ui } from '../flow/strings';
+import { CounselorVoice, voiced } from '../flow/voice';
 import type { FlowState } from '../flow/engine';
 import type { PhaseChoice } from '../flow/types';
 
@@ -48,6 +49,10 @@ export interface ConsultationOverlayProps {
   /** False in builds with no embedded player — the button is hidden rather than offered and then
    *  failing, because there is no microphone on this side of the bridge. */
   micAvailable?: boolean;
+  /** The counselor's register for the two input placeholders. Everything else on this overlay is
+   *  the APP talking (mic errors, "tap to continue"), and the app has one voice whoever is in the
+   *  chair — only the prompts she is asking through follow her. */
+  voice?: CounselorVoice;
 }
 
 export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
@@ -57,6 +62,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   onSubmit,
   onRetry,
   onLeave,
+  voice = 'default',
   onMicStart,
   onMicStop,
   onMicCancel,
@@ -64,6 +70,8 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   micAvailable = false,
 }) => {
   const lang = useLang();
+  /** A prompt SHE is asking through, in her register. Falls back to the shared copy. */
+  const say = (key: Parameters<typeof ui>[0]) => voiced(voice, key, lang) ?? ui(key, lang);
   const [input, setInput] = useState('');
   const mic = state.mic;
   const recording = mic.state !== 'idle';
@@ -188,9 +196,8 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                   value={input}
                   editable={state.inputEnabled}
                   onChangeText={setInput}
-                  placeholder={ui(
+                  placeholder={say(
                     state.screen === 'loop' ? 'loop.placeholder' : 'question.placeholder',
-                    lang,
                   )}
                   placeholderTextColor={colors.textMuted}
                   multiline

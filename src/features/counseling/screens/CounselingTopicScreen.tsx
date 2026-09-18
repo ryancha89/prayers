@@ -34,7 +34,18 @@ const TOPICS: { key: CounselingTopic; labelKey: 'topic.love' | 'topic.career' | 
   { key: 'other', labelKey: 'topic.other' },
 ];
 
-/** "What would you like to talk about?" — a topic is required before entering. */
+/**
+ * "What would you like to talk about?" — a topic is required before entering.
+ *
+ * ⚠️ UNROUTED SINCE 18-09. The request was "don't let the user choose a category, they can directly
+ * enter the room", so `CounselingSubject` now sets the topic itself from the counsellor's specialty
+ * and pushes `UnityEntry`. This screen is no longer in `RootStackParamList` and nothing navigates
+ * to it; it is kept because the picker may return as something you change mid-session rather than a
+ * gate in front of the room.
+ *
+ * The TOPIC ITSELF did not go away and must not: it picks the topic-suffixed voice takes
+ * (`consult_p06_l0__love`, which have NO bare fallback) and fills `{0}` in the server prompt.
+ */
 export const CounselingTopicScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const t = useT();

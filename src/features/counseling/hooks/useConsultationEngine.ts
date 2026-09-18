@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLang } from '../../../shared/i18n';
 import { ConsultationEngine, FlowState, StagePort } from '../flow/engine';
+import { CounselorVoice } from '../flow/voice';
 import { createMockStagePort, createStagePort, type MockReply } from '../bridge/stagePort';
 import { getUnityBridge, isNativeUnity } from '../bridge';
 import type { PhaseChoice } from '../flow/types';
@@ -20,6 +21,10 @@ import type { UnityToRNEvent } from '../types';
 export interface UseConsultationOptions {
   /** The area the app already asked about — seeds the flow's topic. */
   topic?: string;
+  /** The register the counselor speaks the room's own lines in. Passed at construction like `lang`
+   *  rather than read from a store: the engine is built once per room and the person in the chair
+   *  does not change mid-session. */
+  voice?: CounselorVoice;
   /** Answers a turn when there is no embedded player. Without it the mock stage
    *  has nothing to say and the walk parks at the reading hold.
    *
@@ -88,6 +93,7 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
       stage,
       lang,
       presetTopic: opts.topic,
+      voice: opts.voice,
       onCounselorLine: text => cbs.current.onCounselorLine?.(text),
       onUserLine: text => cbs.current.onUserLine?.(text),
       onFinished: () => cbs.current.onFinished?.(),

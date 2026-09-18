@@ -8,9 +8,10 @@ import { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useCounselingStore } from '../store/counselingStore';
+import { defaultTopicFor } from '../topicsForCounselor';
 import { getUnityBridge, isNativeUnity, unityApiBase } from '../bridge';
 import { getUserAuth } from '../../auth/store/authStore';
-import { UnityToRNEvent } from '../types';
+import { CounselingTopic, UnityToRNEvent } from '../types';
 import { fetchTicketBalance } from '../api/tickets';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -29,7 +30,14 @@ export const UnityEntryScreen: React.FC = () => {
   const counselor = getLocalizedCounselor(params.counselorId, lang);
   const getSubject = useSubjectsStore(s => s.getById);
   const subject = getSubject(params.subjectId);
-  const topic = useCounselingStore(s => s.topic);
+  const storedTopic = useCounselingStore(s => s.topic);
+  // Every way into the room comes through here, so the fallback belongs here and not in the
+  // callers. Resuming an old conversation never set a topic at all — it leaned on whatever the
+  // persisted store happened to hold — and since the picker was removed (18-09) the store is only
+  // written on the way in through the subject screen. An empty topic is not cosmetic: the lines
+  // that name the subject are recorded per topic with no unsuffixed file, so it drops them into
+  // live synthesis.
+  const topic = storedTopic ?? (defaultTopicFor(counselor?.characterId) as CounselingTopic);
   const handled = useRef(false);
 
   // null = still asking, false = go ahead, true = stop here and say why.

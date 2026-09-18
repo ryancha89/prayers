@@ -11,6 +11,8 @@ import { RootStackParamList } from '../../../navigation/types';
 import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { SubjectCard } from '../../subjects/components/SubjectCard';
 import { useCounselingStore } from '../store/counselingStore';
+import { defaultTopicFor } from '../topicsForCounselor';
+import type { CounselingTopic } from '../types';
 import { saveSajuProfile } from '../api/prayersServer';
 import { sfx } from '../../../shared/audio/sfx';
 
@@ -26,6 +28,7 @@ export const CounselingSubjectScreen: React.FC = () => {
   const all = useMemo(() => [self, ...subjects], [self, subjects]);
   const counselor = useCounselingStore(s => s.counselor);
   const setSubject = useCounselingStore(s => s.setSubject);
+  const setTopic = useCounselingStore(s => s.setTopic);
 
   const [selectedId, setSelectedId] = useState<string>('self');
   const [saving, setSaving] = useState(false);
@@ -66,7 +69,14 @@ export const CounselingSubjectScreen: React.FC = () => {
     }
 
     setSubject(subject);
-    navigation.navigate('CounselingTopic');
+    // Straight into the room: the topic screen was removed on 18-09 and the topic now comes from
+    // the counsellor's own specialty. See `defaultTopicFor` for what still depends on it.
+    setTopic(defaultTopicFor(counselor?.characterId) as CounselingTopic);
+    if (!counselor) return;
+    navigation.navigate('UnityEntry', {
+      counselorId: counselor.id,
+      subjectId: subject.id,
+    });
   };
 
   return (

@@ -11,7 +11,10 @@ export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList>;
   CounselorDetail: { counselorId: string };
   CounselingSubject: undefined;
-  CounselingTopic: undefined;
+  /* CounselingTopic was removed on 18-09: the player no longer picks a subject area, they walk
+     straight into the room and the topic comes from the counsellor's own specialty
+     (`defaultTopicFor`). The screen file is kept, unrouted, because the picker may come back as a
+     mid-session change rather than a gate. */
   /** `subjectId` edits an existing person (including `'self'`); absent creates a new one. */
   AddSubject: { subjectId?: string } | undefined;
   /**

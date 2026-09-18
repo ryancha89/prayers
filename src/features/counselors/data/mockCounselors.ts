@@ -52,24 +52,46 @@ const PREVIEW_ACTIONS: PreviewAction[] = [
 ];
 
 /**
- * Theo's sheet names exactly four animation poses — Explaining, Thinking, Revealing (he holds a
- * card up) and Welcome. So his preview list is those four and no more: the generic list would
- * promise a nod and a smile that were never drawn.
+ * ⚠️ ONE ACTION SINCE 16-09, DOWN FROM FOUR, AND THAT IS THE FIX RATHER THAN A LOSS.
+ *
+ * While Theo had no model this list was an ORDER LIST — four poses from his sheet, naming what the
+ * animator still had to draw, on a card nobody could tap. `m_char_004` landed with a seated idle
+ * and a talking loop, his card went `available`, and at that moment the list stopped being a
+ * request and became a promise to a player. Three quarters of it was false, and the card-art test
+ * said so in the same run.
+ *
+ * `explaining` is what he can do. The rest comes back a row at a time as clips arrive — with a
+ * rendered strip behind each, never before.
+ *
+ * (For the record, the sheet's four were Explaining, Thinking, Welcome and Revealing. `reveal` was
+ * dropped on its own account — see below — and is not waiting in this queue.)
+ *
+ * ⚠️ `reveal` was dropped on 16-09 and is not coming back — for HIM. Theo runs the same reading
+ * every playable counsellor runs, the P06-P10 saju walk, and no card is drawn anywhere in it. The
+ * pose came from the sheet's own tarot flavour. (The roster does hold a tarot specialist, `jeonuji`
+ * — no model, no topics, `GROUND.tarot` empty — and a card flip would be his, not Theo's.) A
+ * preview button that promises a gesture this counsellor's reading never makes is the same broken
+ * promise the card art was redrawn to fix, one step further upstream.
+ *
+ * `nod` replaces it, labelled as LISTENING rather than as a nod: he is the relationship counsellor,
+ * and hearing someone out is the gesture that reads as his job. It is the one row here with no pose
+ * on the sheet — so it is an animation request, not a record. That is honest for him and for no one
+ * else: his model does not exist yet, his card is locked, and this list is the order to draw in.
  */
 const PREVIEW_ACTIONS_THEO: PreviewAction[] = [
-  { key: 'hello', ko: '환영 인사', en: 'Welcome', ja: '歓迎', 'zh-CN': '欢迎', 'zh-TW': '歡迎', vi: 'Chào đón' },
-  { key: 'thinking', ko: '생각 중', en: 'Thinking', ja: '考え中', 'zh-CN': '思索', 'zh-TW': '思索', vi: 'Ngẫm' },
   { key: 'explaining', ko: '설명 중', en: 'Explaining', ja: '説明中', 'zh-CN': '讲解', 'zh-TW': '講解', vi: 'Giảng giải' },
-  { key: 'reveal', ko: '카드 제시', en: 'Revealing', ja: 'カード提示', 'zh-CN': '出牌', 'zh-TW': '出牌', vi: 'Lật bài' },
 ];
 
 /**
- * f_char_003 has exactly two clips: a seated POSE and a talking gesture. So her preview list is one
- * action long, and that is the honest length — the fallback in the frame renderer would let her
- * "greet" with an idle, but a button that promises a greeting and plays a still is the same broken
- * promise the card art was redrawn to fix. Add rows here as clips are delivered.
+ * TWO actions since the 2026-09-14 delivery. The note here used to say one, and it was right at the
+ * time: her only other clips were a seated POSE and a talk loop whose largest arm swing was 0.024,
+ * and a button that promises a gesture and plays a still is the same broken promise the card art
+ * was redrawn to fix. `Sit_Soft_Smile` is a real gesture, so it can be promised.
+ *
+ * Still deliberately short. Add rows as clips arrive, not before — and re-render the strips, because
+ * a row here with no strip behind it shows the previous counselor's frames.
  */
-const PREVIEW_ACTIONS_YUNJUNG: PreviewAction[] = [PREVIEW_ACTIONS[3]];
+const PREVIEW_ACTIONS_YUNJUNG: PreviewAction[] = [PREVIEW_ACTIONS[1], PREVIEW_ACTIONS[3]];
 
 /** m_char_003 blesses instead of nodding. */
 const PREVIEW_ACTIONS_JIHO: PreviewAction[] = [
@@ -525,6 +547,21 @@ const RAW: RawCounselor[] = [
       },
     },
   },
+  /**
+   * Go Yunjung — the career specialist, and since 16-09 the roster's first counsellor whose CARD is
+   * held to what her room actually does.
+   *
+   * ⚠️ `specialties` is not decoration: her topic picker shows `career` + `wealth` and nothing else
+   * (`groupTopicsFor`), so the card has to advertise those two. It used to read "Career, Decisions,
+   * Life" — a menu of one thing under a card promising three is the specialty made decorative, the
+   * exact failure the filter was introduced to fix.
+   *
+   * ⚠️ VIETNAMESE PRONOUNS ARE THE REGISTER. Her hook said "Ta … con", the grandmaster-to-disciple
+   * pairing every other card uses — while her own room speaks "tôi / bạn" (`flow/voice.ts`). One
+   * counsellor cannot address the player two ways in one session, and it is the CARD that was
+   * wrong: she talks straight to an adult about work and money. The other five languages already
+   * carried that in their politeness level and needed no change.
+   */
   {
     id: 'yunjung',
     accent: '#B07C9B',
@@ -541,8 +578,8 @@ const RAW: RawCounselor[] = [
         about:
           '고윤정은 사주를 위로가 아니라 자료로 읽습니다. 지금 무엇이 사실인지 먼저 정리하고, 그 위에서 고를 수 있는 길을 짚어줍니다.',
         personality: ['직설적', '냉철함', '현실적'],
-        specialties: ['커리어', '선택', '인생'],
-        tags: ['#커리어', '#직설', '#현실'],
+        specialties: ['커리어', '재물', '선택'],
+        tags: ['#커리어', '#재물', '#직설'],
       },
       en: {
         name: 'Go Yunjung',
@@ -551,8 +588,8 @@ const RAW: RawCounselor[] = [
         about:
           'Yunjung reads a chart as evidence, not as comfort. She settles what is actually true first, and only then points at the choices that are still open.',
         personality: ['Direct', 'Clear-eyed', 'Practical'],
-        specialties: ['Career', 'Decisions', 'Life'],
-        tags: ['#Career', '#Straight', '#Reality'],
+        specialties: ['Career', 'Money', 'Decisions'],
+        tags: ['#Career', '#Money', '#Straight'],
       },
       ja: {
         name: 'コ・ユンジョン',
@@ -561,8 +598,8 @@ const RAW: RawCounselor[] = [
         about:
           'ユンジョンは四柱を慰めではなく資料として読みます。まず事実を整理し、その上で残されている選択肢を示します。',
         personality: ['率直', '冷静', '現実的'],
-        specialties: ['仕事', '決断', '人生'],
-        tags: ['#仕事', '#率直', '#現実'],
+        specialties: ['仕事', '金運', '決断'],
+        tags: ['#仕事', '#金運', '#率直'],
       },
       'zh-CN': {
         name: '高允祯',
@@ -571,8 +608,8 @@ const RAW: RawCounselor[] = [
         about:
           '允祯把八字当资料读，不当安慰。她先把现在真实的情况理清楚，再指出还能选的路。',
         personality: ['直接', '冷静', '务实'],
-        specialties: ['事业', '抉择', '人生'],
-        tags: ['#事业', '#直说', '#现实'],
+        specialties: ['事业', '财运', '抉择'],
+        tags: ['#事业', '#财运', '#直说'],
       },
       'zh-TW': {
         name: '高允禎',
@@ -581,18 +618,18 @@ const RAW: RawCounselor[] = [
         about:
           '允禎把八字當資料讀，不當安慰。她先把現在真實的情況理清楚，再指出還能選的路。',
         personality: ['直接', '冷靜', '務實'],
-        specialties: ['事業', '抉擇', '人生'],
-        tags: ['#事業', '#直說', '#現實'],
+        specialties: ['事業', '財運', '抉擇'],
+        tags: ['#事業', '#財運', '#直說'],
       },
       vi: {
         name: 'Go Yunjung',
         title: 'Chuyên gia nhìn thẳng vào thực tế',
-        hook: 'Ta không nói vòng. Con nghe thẳng được chứ?',
+        hook: 'Tôi không nói vòng. Bạn nghe thẳng được chứ?',
         about:
           'Yunjung đọc lá số như đọc dữ liệu, không phải như lời an ủi. Cô chốt lại điều gì đang là sự thật trước đã, rồi mới chỉ ra những đường còn chọn được.',
         personality: ['Thẳng thắn', 'Tỉnh táo', 'Thực tế'],
-        specialties: ['Sự nghiệp', 'Quyết định', 'Vận trình'],
-        tags: ['#SựNghiệp', '#NóiThẳng', '#ThựcTế'],
+        specialties: ['Sự nghiệp', 'Tiền bạc', 'Quyết định'],
+        tags: ['#SựNghiệp', '#TiềnBạc', '#NóiThẳng'],
       },
     },
   },
@@ -686,8 +723,9 @@ const RAW: RawCounselor[] = [
    * the brief; only the look comes from the sheet. His voice follows the role too (`metal`/sudam,
    * this roster's relationship expert), because a wrong voice is re-recording, not re-typing.
    *
-   * Not playable yet: no model, and his room on the sheet — Theo's Study, the night-city library —
-   * is not built, so he is seeded into room 1 on loan.
+   * His ROOM exists since 16-09: ConsultationSolo03, "Theo's Study", built to the object list on
+   * the sheet. What is still missing is his MODEL, so the room's seat holds a stand-in sage and the
+   * card stays locked — `comingSoon` is derived from the built-model list, never hand-set.
    */
   {
     id: 'theo',

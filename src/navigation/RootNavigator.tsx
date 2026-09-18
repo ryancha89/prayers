@@ -5,7 +5,6 @@ import { RootStackParamList } from './types';
 import { BottomTabNavigator } from './BottomTabNavigator';
 import { CounselorDetailScreen } from '../features/counselors/screens/CounselorDetailScreen';
 import { CounselingSubjectScreen } from '../features/counseling/screens/CounselingSubjectScreen';
-import { CounselingTopicScreen } from '../features/counseling/screens/CounselingTopicScreen';
 import { UnityEntryScreen } from '../features/counseling/screens/UnityEntryScreen';
 import { CounselingRoomScreen } from '../features/counseling/screens/CounselingRoomScreen';
 import { AddSubjectScreen } from '../features/subjects/screens/AddSubjectScreen';
@@ -63,7 +62,6 @@ export const RootNavigator: React.FC = () => {
     <Stack.Screen name="Legal" component={LegalScreen} />
     <Stack.Screen name="CounselorDetail" component={CounselorDetailScreen} />
     <Stack.Screen name="CounselingSubject" component={CounselingSubjectScreen} />
-    <Stack.Screen name="CounselingTopic" component={CounselingTopicScreen} />
     {/* The same form as a modal, for every later edit — including from inside the consultation
         flow, which is why it is ALWAYS registered now. While it shared a name with the first-run
         screen it could not be, and navigating to it popped the stack back to first run. */}

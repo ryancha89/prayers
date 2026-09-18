@@ -19,6 +19,7 @@ import { CounselorStage } from '../components/CounselorStage';
 import { UnityHost } from '../components/UnityHost';
 import { ConsultationOverlay } from '../components/ConsultationOverlay';
 import { useConsultationEngine } from '../hooks/useConsultationEngine';
+import { voiceFor } from '../flow/voice';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'CounselingRoom'>;
@@ -91,8 +92,13 @@ export const CounselingRoomScreen: React.FC = () => {
     navigation.navigate('Tabs', { screen: 'Conversations' });
   }, [navigation]);
 
+  // Her register, from what the roster says she reads — not from her name, and not from the topic
+  // the player picked: a career counselor asked about love still talks like a career counselor.
+  const voice = voiceFor(counselor?.characterId);
+
   const consultation = useConsultationEngine({
     topic,
+    voice,
     onCounselorLine: text => record('counselor', text),
     onUserLine: text => {
       record('user', text);
@@ -261,6 +267,7 @@ export const CounselingRoomScreen: React.FC = () => {
       )}
 
       <ConsultationOverlay
+        voice={voice}
         state={consultation.state}
         onTap={consultation.tap}
         onChoose={consultation.choose}

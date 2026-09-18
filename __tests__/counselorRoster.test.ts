@@ -17,7 +17,11 @@ import {
   registryFor,
   toneByCharacter,
 } from '../src/features/counselors/data/registry';
-import { localizeCounselors } from '../src/features/counselors/data/mockCounselors';
+import {
+  getLocalizedCounselor,
+  localizeCounselors,
+} from '../src/features/counselors/data/mockCounselors';
+import { groupTopicsFor } from '../src/features/counseling/topicsForCounselor';
 import { toneForCharacter } from '../src/features/counseling/api/counselorAI';
 
 describe('the generated registry', () => {
@@ -117,5 +121,53 @@ describe('card order', () => {
     // seoyeon/mina/harin/doyun have none.
     expect(order.indexOf('theo')).toBeLessThan(order.indexOf('seoyeon'));
     expect(order.indexOf('theo')).toBeLessThan(order.indexOf('mina'));
+  });
+});
+
+/**
+ * WHAT A CARD PROMISES has to be what the room delivers. Three grids drifted apart before anything
+ * compared them, and all three are cheap to pin:
+ *
+ *  - the preview buttons promise a POSE (16-09: Theo's promised a tarot card flip);
+ *  - `specialties` promises a SUBJECT, while `groupTopicsFor` is what the picker actually offers;
+ *  - the Vietnamese copy promises a REGISTER, which in this language is carried by the pronouns.
+ */
+describe('what a counselor card promises', () => {
+  it('never promises a card flip from a counsellor whose reading is the saju walk', () => {
+    // Every counsellor with a card today goes through the same P06-P10 saju reading, and none of it
+    // draws a card. The "Revealing" pose came in with Theo's sheet, which was drawn with tarot
+    // flavour. If the roster's tarot specialist is ever built, this assertion is the one to revisit
+    // — deliberately, and with a strip behind it.
+    for (const c of localizeCounselors('en')) {
+      expect(c.previews.map(p => p.id)).not.toContain(`${c.id}_reveal`);
+    }
+  });
+
+  it('advertises the career reader exactly the subjects her picker offers', () => {
+    const options = [
+      { key: 'career' }, { key: 'wealth' }, { key: 'love' },
+      { key: 'relationships' }, { key: 'life' }, { key: 'health' },
+    ];
+    const ground = groupTopicsFor('yunjung_01', options)[0].items.map(o => o.key);
+    expect(ground).toEqual(['career', 'wealth']);
+
+    // The card's own word for each of those keys. `wealth` is "Money" on a card and nothing else.
+    const advertised = getLocalizedCounselor('yunjung', 'en')!.specialties.map(s => s.toLowerCase());
+    expect(advertised).toContain('career');
+    expect(advertised).toContain('money');
+    // The three it used to claim it read. A menu of two under a card offering "Life" is the
+    // specialty made decorative.
+    expect(advertised).not.toContain('life');
+  });
+
+  it('keeps the career reader on her own pronouns in Vietnamese', () => {
+    // vi has no neutral "you": "ta / con" is grandmaster-to-disciple and "tôi / bạn" is one adult
+    // to another. Her ROOM speaks the second (flow/voice.ts), so her card cannot speak the first.
+    const hers = getLocalizedCounselor('yunjung', 'vi')!;
+    expect(hers.hook).toMatch(/\bTôi\b|\btôi\b/);
+    expect(hers.hook).not.toMatch(/\bTa\b|\bcon\b/);
+
+    // The control: the shared register is not a bug, and this test must fail if someone sweeps it.
+    expect(getLocalizedCounselor('jiho', 'vi')!.hook).toMatch(/\bcon\b/);
   });
 });

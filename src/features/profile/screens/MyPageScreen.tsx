@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../../../navigation/types';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { LANGUAGES, labelFor, useLanguageStore, useT } from '../../../shared/i18n';
+import { setLanguageEverywhere } from '../../settings/languageSync';
 import { Icon } from '../../../shared/components/Icon';
 import { PrimaryButton } from '../../../shared/components/PrimaryButton';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
@@ -109,7 +110,10 @@ export const MyPageScreen: React.FC = () => {
                   label={option.label}
                   selected={option.code === lang}
                   onPress={() => {
-                    setLang(option.code);
+                    // Not `setLang` on its own: the language belongs to the ACCOUNT since 16-09, so
+                    // the choice is applied here and written up in the same breath. Local first —
+                    // the screen turns over on the tap, not on the round trip.
+                    setLanguageEverywhere(option.code);
                     setLangOpen(false);
                   }}
                 />

@@ -18,7 +18,9 @@ describe('counselor card art', () => {
   // Deliberately not a blanket exemption for coming-soon cards: the four older ones DO have art and
   // must keep it, so the list below is what is genuinely outstanding from the art side. Shrink it
   // as art lands; it must never grow for a counselor that has become playable.
-  const AWAITING_ART = ['theo'];
+  // Empty since 16-09: Theo's art was cut from his own character sheet (Tools/gen_theo_sheet_art.py),
+  // which is the artefact his model will be built from — so it cannot promise a different person.
+  const AWAITING_ART: string[] = [];
 
   it('gives every counselor in the roster a bundled portrait', () => {
     const missing = localizeCounselors('en')
@@ -80,7 +82,8 @@ describe('counselor card art', () => {
     // list and Unity's RNBridge.PersonaFor have to gain a counselor in the same change, or the app
     // offers a name the engine cannot seat.
     const enterable = localizeCounselors('en').filter(c => !c.comingSoon);
-    expect(enterable.map(c => c.id).sort()).toEqual(['breathe', 'jiho', 'yuna', 'yunjung']);
+    // Theo joined on 2026-09-16 with m_char_004 and ConsultationSolo03.
+    expect(enterable.map(c => c.id).sort()).toEqual(['breathe', 'jiho', 'theo', 'yuna', 'yunjung']);
     enterable.forEach(c => expect(c.cardImage).toBeDefined());
   });
 });

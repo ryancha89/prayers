@@ -1,6 +1,7 @@
 import { apiBase } from '../../../shared/config/api';
 import { apiHeaders } from '../../auth/api/headers';
 import { devlog } from '../../../shared/devlog';
+import { isLang } from '../../../shared/i18n';
 import type { Lang } from '../../../shared/i18n';
 
 /**
@@ -75,6 +76,53 @@ export const serverAvailable = async (): Promise<boolean> => (await apiHeaders()
  * null on any failure, and the caller shows its built-in list — a topic screen that cannot render
  * is worse than one that is a release behind.
  */
+/**
+ * The player's language, as their ACCOUNT remembers it.
+ *
+ * WHY THE SERVER HOLDS THIS. Until 2026-09-16 it lived in two places on the device — this app's
+ * AsyncStorage and Unity's PlayerPrefs — and they drifted: the store said `ko` while `saju_lang`
+ * said EN. A preference somebody set belongs to their account, so it survives a reinstall and
+ * follows them to a second device, and so there is one answer to "what language is this player in".
+ *
+ * ⚠️ RN IS THE ONLY CLIENT THAT CALLS THIS. Unity is told the language over the bridge and keeps no
+ * copy; a second client fetching the same setting independently is a race at boot and a second
+ * source of truth one layer down, which is the thing being removed.
+ *
+ * `null` means "no answer" — signed out, offline, or simply never set. The caller keeps its local
+ * value; it does NOT mean "no language".
+ */
+export async function fetchAccountLanguage(signal?: AbortSignal): Promise<Lang | null> {
+  const headers = await apiHeaders();
+  if (!headers) return null;
+  try {
+    const res = await fetch(`${BASE()}/api/v1/prayers/settings`, { headers, signal });
+    if (!res.ok) return null;
+    const body = await res.json();
+    const lang = body?.settings?.language;
+    return isLang(lang) ? lang : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Remember this language on the account. Best effort: a failure leaves the local choice alone,
+ *  because a player who picked a language must see it applied whether or not the network agrees. */
+export async function saveAccountLanguage(lang: Lang): Promise<boolean> {
+  const headers = await apiHeaders();
+  if (!headers) return false;
+  try {
+    const res = await fetch(`${BASE()}/api/v1/prayers/settings`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: lang }),
+    });
+    if (!res.ok) return false;
+    return (await res.json())?.success === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchTopics(lang: Lang, signal?: AbortSignal): Promise<TopicCard[] | null> {
   const headers = await apiHeaders();
   if (!headers) return null;

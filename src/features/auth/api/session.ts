@@ -1,5 +1,8 @@
 import { apiBase } from '../../../shared/config/api';
 import { devlog } from '../../../shared/devlog';
+// Reconciled at the API layer, not inside the store: importing it there would close a cycle
+// (authStore -> languageSync -> prayersServer -> auth/api/headers -> authStore).
+import { syncAccountLanguage } from '../../settings/languageSync';
 import {
   getUserAuth,
   signedIn,
@@ -52,6 +55,7 @@ export async function signInWithApple(appleResponse: unknown) {
   const { userAuth, displayName } = await callback('apple', appleResponse);
   signedIn({ userAuth, provider: 'apple', displayName });
   await ensureGameToken();
+  void syncAccountLanguage();
   return userAuth;
 }
 
@@ -59,6 +63,7 @@ export async function signInWithGoogle(googleResponse: unknown) {
   const { userAuth, displayName } = await callback('google', googleResponse);
   signedIn({ userAuth, provider: 'google', displayName });
   await ensureGameToken();
+  void syncAccountLanguage();
   return userAuth;
 }
 
@@ -80,6 +85,7 @@ export function signInAsDeveloper(uid?: string) {
         () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 36)],
       ).join('');
   signedIn({ userAuth: id, provider: 'dev', displayName: 'Developer' });
+  void syncAccountLanguage();
   return id;
 }
 
