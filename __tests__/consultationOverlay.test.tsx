@@ -29,7 +29,7 @@ const base: FlowState = {
   finished: false,
     pending: false,
   speaking: false,
-  mic: { state: 'idle', level: 0, error: '' },
+  mic: { state: 'idle', level: 0, error: '', offered: true },
 };
 
 const noop = () => {};
@@ -134,4 +134,33 @@ test('the loop shows the transcript and the follow-up pill', () => {
 
 test('an immersion beat with nothing to say draws nothing at all', () => {
   expect(textOf({ ...base, screen: 'none', line: '', canTap: false })).toEqual([]);
+});
+
+/**
+ * The sentence under the input when the take produced nothing.
+ *
+ * "I could not make out the words" is the right thing to say about a mumble and the wrong thing to
+ * say about a route that does not exist — the player reads the second as their own fault.
+ */
+test('a server that cannot transcribe says so, instead of blaming the player', () => {
+  const unavailable = textOf({
+    ...base,
+    screen: 'loop',
+    line: '',
+    canTap: false,
+    inputEnabled: true,
+    mic: { state: 'idle', level: 0, error: 'unavailable', offered: false },
+  }).join(' ');
+  expect(unavailable).toContain('Asking out loud is not available right now');
+  expect(unavailable).not.toContain('could not make out the words');
+
+  const mumbled = textOf({
+    ...base,
+    screen: 'loop',
+    line: '',
+    canTap: false,
+    inputEnabled: true,
+    mic: { state: 'idle', level: 0, error: 'no_speech', offered: true },
+  }).join(' ');
+  expect(mumbled).toContain('I did not hear anything');
 });

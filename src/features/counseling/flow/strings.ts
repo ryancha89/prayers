@@ -30,6 +30,7 @@ const KO: Bundle = {
   'mic.error.nodevice': '마이크를 찾지 못했어요.',
   'mic.error.nospeech': '아무 소리도 들리지 않았어요.',
   'mic.error.failed': '말을 옮겨 적지 못했어요. 글로 적어 주세요.',
+  'mic.error.unavailable': '지금은 음성으로 물어볼 수 없어요. 글로 적어 주세요.',
   'loop.stopTalking': '그만 말하기',
   'mic.opening': '마이크를 여는 중',
 };
@@ -53,6 +54,7 @@ const EN: Bundle = {
   'mic.error.nodevice': 'No microphone was found.',
   'mic.error.nospeech': 'I did not hear anything.',
   'mic.error.failed': 'I could not make out the words. Please type instead.',
+  'mic.error.unavailable': 'Asking out loud is not available right now. Please type instead.',
   'loop.stopTalking': 'Stop talking',
   'mic.opening': 'Opening the microphone',
 };
@@ -76,6 +78,7 @@ const JA: Bundle = {
   'mic.error.nodevice': 'マイクが見つかりませんでした。',
   'mic.error.nospeech': '何も聞こえませんでした。',
   'mic.error.failed': '聞き取れませんでした。文字で書いてください。',
+  'mic.error.unavailable': '今は音声で質問できません。文字で書いてください。',
   'loop.stopTalking': '話をとめる',
   'mic.opening': 'マイクを準備しています',
 };
@@ -99,6 +102,7 @@ const ZH_CN: Bundle = {
   'mic.error.nodevice': '没有找到麦克风。',
   'mic.error.nospeech': '我没有听到声音。',
   'mic.error.failed': '没能听清，请用文字写下来。',
+  'mic.error.unavailable': '现在还不能用语音提问，请用文字写下来。',
   'loop.stopTalking': '让他先停下',
   'mic.opening': '正在打开麦克风',
 };
@@ -122,6 +126,7 @@ const ZH_TW: Bundle = {
   'mic.error.nodevice': '沒有找到麥克風。',
   'mic.error.nospeech': '我沒有聽到聲音。',
   'mic.error.failed': '沒能聽清，請用文字寫下來。',
+  'mic.error.unavailable': '現在還不能用語音提問，請用文字寫下來。',
   'loop.stopTalking': '讓他先停下',
   'mic.opening': '正在開啟麥克風',
 };
@@ -145,6 +150,7 @@ const VI: Bundle = {
   'mic.error.nodevice': 'Không tìm thấy micro.',
   'mic.error.nospeech': 'Ta không nghe thấy gì cả.',
   'mic.error.failed': 'Ta nghe không rõ. Con viết ra giúp ta.',
+  'mic.error.unavailable': 'Bây giờ chưa hỏi bằng giọng nói được. Con viết ra giúp ta.',
   'loop.stopTalking': 'Xin thầy dừng',
   'mic.opening': 'Đang mở micro',
 };

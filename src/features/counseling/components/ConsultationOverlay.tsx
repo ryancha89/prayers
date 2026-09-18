@@ -308,6 +308,11 @@ function micErrorText(error: NonNullable<FlowState['mic']['error']>, lang: Param
     case 'no_speech':
     case 'too_short':
       return ui('mic.error.nospeech', lang);
+    // Nothing the player did. Saying "I could not make out the words" here is a lie that reads as
+    // "you mumbled" — and the mic button is gone by now anyway, so the line has to explain that.
+    case 'unavailable':
+    case 'no_token':
+      return ui('mic.error.unavailable', lang);
     default:
       return ui('mic.error.failed', lang);
   }

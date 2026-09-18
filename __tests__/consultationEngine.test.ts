@@ -581,6 +581,46 @@ test('opening the mic silences her, and an empty take gives the answer back', ()
   expect(engine.getState().suggestion).toBe('다음 질문');
 });
 
+/**
+ * A server that cannot transcribe at all takes the button away.
+ *
+ * Production ran for weeks without `/prayers/stt`: every press recorded, uploaded, 404'd, and the
+ * app answered "I could not make out the words" — so the player tried again, louder, and read the
+ * fault as theirs. Unity now separates a missing route (`unavailable`) from a failed take
+ * (`upstream`), and the room stops offering a gesture that is guaranteed to fail.
+ */
+test('a server with no transcription route stops being offered the microphone', () => {
+  const { sched, stage, engine } = build();
+  intoLoop(stage, engine, sched);
+  expect(engine.getState().mic.offered).toBe(true);
+
+  engine.startMic();
+  engine.onMicState('listening', 0.05);
+  engine.stopMic();
+  engine.onMicResult({ ok: false, text: '', error: 'unavailable' });
+
+  expect(engine.getState().mic.error).toBe('unavailable');
+  expect(engine.getState().mic.offered).toBe(false);
+  // Losing the mic must not lose the turn: the room stays in the chat loop, keyboard and all.
+  expect(engine.getState().screen).toBe('loop');
+
+  // And it stays withdrawn: the route does not come back mid-session.
+  engine.startMic();
+  engine.onMicResult({ ok: true, text: '올해 이직해도 될까요', error: '' });
+  expect(engine.getState().mic.offered).toBe(false);
+});
+
+/** A take that merely failed is worth another try, so the button stays. */
+test('a failed take does not withdraw the microphone', () => {
+  const { sched, stage, engine } = build();
+  intoLoop(stage, engine, sched);
+  engine.startMic();
+  engine.onMicState('listening', 0.05);
+  engine.onMicResult({ ok: false, text: '', error: 'upstream' });
+  expect(engine.getState().mic.error).toBe('upstream');
+  expect(engine.getState().mic.offered).toBe(true);
+});
+
 test('a spoken question is asked as if it had been typed, and carries the interruption', () => {
   const { sched, stage, engine } = build();
   intoLoop(stage, engine, sched);

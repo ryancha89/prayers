@@ -188,6 +188,10 @@ export type MicError =
   | 'too_short'
   | 'no_speech'
   | 'upstream'
+  /** The server cannot transcribe at all — the route is not deployed, or this build points at a
+   *  server that never had it. Different from `upstream` on purpose: a take that failed is worth
+   *  retrying, a route that does not exist is not, so the room stops offering the microphone. */
+  | 'unavailable'
   | 'connection'
   | 'no_token'
   | 'cancelled';

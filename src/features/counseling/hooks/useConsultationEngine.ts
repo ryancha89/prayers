@@ -149,8 +149,10 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
     cancelMic: useCallback(() => engineRef.current?.cancelMic(), []),
     remember: useCallback((opening: string) => engineRef.current?.setRecallOpening(opening), []),
     // The mock stage has no microphone, so the button is hidden rather than offered and then
-    // failing — the same rule the room follows everywhere else about not pretending.
-    micAvailable: isNativeUnity(),
+    // failing — the same rule the room follows everywhere else about not pretending. The second
+    // half of that rule: a server with no transcription route makes the button pretend too, so the
+    // engine lowers `offered` the first time it hears so.
+    micAvailable: isNativeUnity() && state.mic.offered,
   };
 }
 
@@ -173,6 +175,6 @@ function emptyish(): FlowState {
     finished: false,
     pending: false,
     speaking: false,
-    mic: { state: 'idle', level: 0, error: '' },
+    mic: { state: 'idle', level: 0, error: '', offered: true },
   };
 }

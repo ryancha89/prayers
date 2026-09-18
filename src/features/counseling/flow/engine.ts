@@ -285,6 +285,10 @@ export interface MicView {
   level: number;
   /** Why the last take produced nothing, as a key. Cleared when a new take starts. */
   error: MicError | '';
+  /** Whether asking out loud is still on the table. Lowered for the rest of the session the first
+   *  time the server says it cannot transcribe at all (`unavailable`): a button that is guaranteed
+   *  to fail is worse than no button, and the player reads a second failure as their own fault. */
+  offered: boolean;
 }
 
 const emptyState: FlowState = {
@@ -305,7 +309,7 @@ const emptyState: FlowState = {
   tone: '',
   emotion: 'neutral',
   speaking: false,
-  mic: { state: 'idle', level: 0, error: '' },
+  mic: { state: 'idle', level: 0, error: '', offered: true },
 };
 
 export interface EngineOptions {
@@ -1030,7 +1034,7 @@ export class ConsultationEngine {
       waiter?.();
     }
     // `opening`, not `listening` — the device is not open until Unity says so (MIC_STATE).
-    this.patch({ mic: { state: 'opening', level: 0, error: '' } });
+    this.patch({ mic: { ...this.state.mic, state: 'opening', level: 0, error: '' } });
     this.stage.startMic(this.lang);
   }
 
@@ -1048,7 +1052,7 @@ export class ConsultationEngine {
   cancelMic() {
     if (this.state.mic.state === 'idle') return;
     this.stage.cancelMic();
-    this.patch({ mic: { state: 'idle', level: 0, error: '' } });
+    this.patch({ mic: { ...this.state.mic, state: 'idle', level: 0, error: '' } });
     this.restoreCutOff();
   }
 
@@ -1061,7 +1065,18 @@ export class ConsultationEngine {
   /** A finished take. Spoken words ARE the question — the mic is how you talk to her, not a
    *  dictation box, so a good transcript is sent rather than parked in the text field. */
   onMicResult(result: { ok: boolean; text: string; error: MicError | '' }) {
-    this.patch({ mic: { state: 'idle', level: 0, error: result.ok ? '' : result.error || 'upstream' } });
+    const error = result.ok ? '' : result.error || 'upstream';
+    this.patch({
+      mic: {
+        ...this.state.mic,
+        state: 'idle',
+        level: 0,
+        error,
+        // One refusal of this kind is the whole answer: the route is missing on this server and
+        // will be missing for every take after it too.
+        offered: this.state.mic.offered && error !== 'unavailable',
+      },
+    });
     const text = (result.text ?? '').trim();
     if (!result.ok || !text) {
       // Nothing was said, so nothing was interrupted.
@@ -1592,7 +1607,7 @@ export class ConsultationEngine {
     if (this.state.mic.state !== 'idle') this.stage.cancelMic();
     this.patch({
       finished: true, screen: 'none', inputEnabled: false, canTap: false,
-      speaking: false, mic: { state: 'idle', level: 0, error: '' },
+      speaking: false, mic: { state: 'idle', level: 0, error: '', offered: this.state.mic.offered },
     });
     this.opts.onFinished?.();
     this.stage.exit();
