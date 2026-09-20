@@ -11,8 +11,10 @@ import {
 } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT } from '../../../shared/i18n';
+import { Icon } from '../../../shared/components/Icon';
 import { sfx } from '../../../shared/audio/sfx';
 import {
   TIERS,
@@ -41,6 +43,7 @@ import { PRAYER_TICKET_ART } from '../assets/art';
  */
 export const TicketsScreen: React.FC = () => {
   const t = useT();
+  const navigation = useNavigation();
   const [status, setStatus] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<Tier | null>(null);
@@ -81,7 +84,21 @@ export const TicketsScreen: React.FC = () => {
   return (
     <SafeAreaView edges={['top']} style={styles.root}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>{t('tickets.title')}</Text>
+        {/* The stack draws no header (RootNavigator), so the way back is this screen's to draw —
+            it was reachable only by the edge swipe, which nobody is told about. */}
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => {
+              sfx.tap();
+              navigation.goBack();
+            }}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={t('unity.noTickets.back')}>
+            <Icon name="back" size={22} />
+          </Pressable>
+          <Text style={styles.title}>{t('tickets.title')}</Text>
+        </View>
 
         <Image
           source={PRAYER_TICKET_ART}
@@ -141,7 +158,8 @@ export const TicketsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.xl },
-  title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.lg },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.lg },
+  title: { ...typography.h1, color: colors.textPrimary, flexShrink: 1 },
   hero: { alignSelf: 'center', marginBottom: spacing.lg },
   balanceCard: {
     backgroundColor: colors.card,
