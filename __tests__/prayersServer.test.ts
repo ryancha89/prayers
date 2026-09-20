@@ -24,6 +24,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 
 import {
   checkConsultationReadiness,
+  fetchRecall,
   saveSajuProfile,
   fetchTopics,
   sendConsultationMessage,
@@ -97,6 +98,23 @@ describe('fetchTopics', () => {
   });
 });
 
+describe('fetchRecall', () => {
+  it('names the counselor by card AND by persona, so the embedded room is remembered too', async () => {
+    const fetchSpy = stubFetch({ success: true, has_history: true, opening: '아까 그 이야기, 이어서 볼까요?', turns: 2 });
+    const recall = await fetchRecall({
+      uniqId: 'session_yunjung_self',
+      lang: 'ko',
+      counselorId: 'yunjung',
+      tone: 'coldgirl',
+    });
+    expect(recall?.opening).toBe('아까 그 이야기, 이어서 볼까요?');
+    const url = new URL(fetchSpy.mock.calls[0][0]);
+    expect(url.searchParams.get('counselor')).toBe('yunjung');
+    expect(url.searchParams.get('tone')).toBe('coldgirl');
+    expect(url.searchParams.get('uniq_id')).toBe('session_yunjung_self');
+  });
+});
+
 describe('sendConsultationMessage', () => {
   it('sends the shape the controller reads', async () => {
     const fetchSpy = stubFetch({
@@ -128,6 +146,12 @@ describe('sendConsultationMessage', () => {
     expect(body.message).toEqual({ content: 'How is money this year?' });
     expect(body.setting).toEqual({ lang: 'vi', tone: 'sunyeo', scenes: true });
     expect(body.base_info.info.topic).toBe('wealth');
+  });
+
+  it('carries the SAVIS answer style under the name the server reads', async () => {
+    const fetchSpy = stubFetch({ content: 'short answer' });
+    await sendConsultationMessage({ uniqId: 'u', content: 'q', lang: 'ko', chatMode: 'tiki' });
+    expect(bodyOf(fetchSpy).setting).toEqual({ lang: 'ko', chat_mode: 'tiki' });
   });
 
   it('omits scenes and tone rather than sending empties', async () => {

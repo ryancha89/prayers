@@ -10,6 +10,7 @@ import {
   CounselorEmotion,
   CounselorResponse,
   CounselorScene,
+  ChatMode,
 } from '../types';
 
 /**
@@ -38,6 +39,8 @@ export interface CounselorAIService {
     sessionId?: string;
     /** Which counselor is speaking, as a voice the server knows (`sunyeo`, `dosa`, …). */
     tone?: string;
+    /** SAVIS's answer style for this turn — `tiki` or `detail`. Unset leaves the server's default. */
+    chatMode?: ChatMode;
   }): Promise<CounselorResponse>;
 }
 
@@ -427,6 +430,7 @@ export class ServerCounselorAI implements CounselorAIService {
         // `other` is the app's own catch-all and means nothing to Prayers::TopicClassifier; sending
         // it would start the reading on a topic the server has to discard anyway.
         topic: input.topic && input.topic !== 'other' ? input.topic : undefined,
+        chatMode: input.chatMode,
         // Ask for the break-up. The server charges nothing for it and clients that ignore it get a
         // byte-identical response, so the only cost of asking is the one turn that needed it.
         scenes: true,

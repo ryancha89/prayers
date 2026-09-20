@@ -164,3 +164,47 @@ test('a server that cannot transcribe says so, instead of blaming the player', (
   }).join(' ');
   expect(mumbled).toContain('I did not hear anything');
 });
+
+test('the loop offers the two SAVIS answer styles, and only when a server is there to read them', () => {
+  const loop: FlowState = {
+    ...base,
+    screen: 'loop',
+    line: '',
+    canTap: false,
+    inputEnabled: true,
+  };
+  const render = (props: Partial<React.ComponentProps<typeof ConsultationOverlay>>) => {
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    ReactTestRenderer.act(() => {
+      tree = ReactTestRenderer.create(
+        <ConsultationOverlay
+          state={loop}
+          onTap={noop}
+          onChoose={noop}
+          onSubmit={noop}
+          onRetry={noop}
+          onLeave={noop}
+          {...props}
+        />,
+      );
+    });
+    const out: string[] = [];
+    const walk = (node: unknown) => {
+      if (typeof node === 'string') out.push(node);
+      else if (Array.isArray(node)) node.forEach(walk);
+      else if (node && typeof node === 'object' && 'children' in (node as any))
+        walk((node as any).children);
+    };
+    walk(tree.toJSON());
+    ReactTestRenderer.act(() => tree.unmount());
+    return out.join(' ');
+  };
+
+  const withServer = render({ chatMode: 'detail', onChatMode: noop });
+  expect(withServer).toMatch(/티키타카|Quick chat/);
+  expect(withServer).toMatch(/깊은 풀이|Deep reading/);
+
+  // No handler, no segment: a mock room has no styles to choose between.
+  const without = render({});
+  expect(without).not.toMatch(/티키타카|Quick chat/);
+});

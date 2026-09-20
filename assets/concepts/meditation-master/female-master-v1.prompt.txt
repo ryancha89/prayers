@@ -1,0 +1,9 @@
+Generator: built-in image_gen
+Purpose: concept preview before Blender modeling; not an existing 3D mesh.
+
+Use case: stylized-concept.
+Asset type: concept art preview for one female meditation master to subsequently model and animate in Blender for the Prayers mobile app.
+Create an elegant, polished character design presentation showing TWO views of the SAME adult Korean woman, age approximately 32, not two different characters. Large standing full-body three-quarter view on the left, smaller seated meditation full-body view on the right. Consistent face, hair and outfit across both. Refined semi-realistic 3D animated-film character aesthetic, believable anatomy, softly sculpted shapes, expressive warm brown eyes, natural skin, serene approachable slight smile, confident gentle mentor presence. Dark brown hair neatly in a low bun, minimal loose strands, no elaborate hair accessories.
+Outfit: modest elegant ivory wrap-front meditation tunic, simple sage green waist sash, relaxed sage green trousers, barefoot. Soft matte linen with restrained folds and clear construction suitable for actual 3D modeling and seated animation, no busy ornaments. Natural adult proportions, not chibi, no exaggerated sexual features.
+Standing view: relaxed neutral stance with hands visible and arms slightly separated from torso, entire head and feet visible. Seated view: seated cross-legged on a simple round cream meditation cushion, eyes softly closed, hands resting naturally on knees, relaxed upright posture.
+Warm light stone studio background, subtle ground shadows, soft daylight studio lighting, quiet sophisticated wellness mood, generous clean space around both figures. Crisp beautiful face detail and fabric. No text, no logos, no watermark, no UI, no ornamental frame, no additional people. This is a character concept sheet, not a screenshot of Blender and not a claim that a mesh already exists. Landscape composition.

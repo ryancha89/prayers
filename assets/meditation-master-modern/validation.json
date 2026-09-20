@@ -1,0 +1,15 @@
+{
+  "animation": "Idle_Breath_Blink",
+  "animation_source": "fbx",
+  "fps": 30,
+  "frame_start": 1,
+  "frame_end": 61,
+  "body_max_movement_m": 0.007353729657969264,
+  "body_loop_endpoint_max_error_m": 0.0,
+  "eyelash_max_movement_m": 0.01906597102343555,
+  "blink_peak_frame": 19,
+  "mesh_objects": 37,
+  "triangles_approx": 180303,
+  "bones": 147,
+  "missing_image_files": []
+}

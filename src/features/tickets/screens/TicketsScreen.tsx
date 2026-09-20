@@ -1,5 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
@@ -16,6 +25,7 @@ import {
   type Tier,
 } from '../api/subscription';
 import { buySubscription, purchaseAvailable } from '../providers/purchase';
+import { PRAYER_TICKET_ART } from '../assets/art';
 
 /**
  * Where tickets come from.
@@ -35,6 +45,10 @@ export const TicketsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<Tier | null>(null);
   const canBuy = purchaseAvailable();
+  // Sized from the window, not from the asset: a static require() carries its pixel size, and a
+  // percentage width on it resolved to that (a 960pt ticket sailing off the right edge).
+  const { width: windowWidth } = useWindowDimensions();
+  const heroWidth = windowWidth - spacing.xl * 2;
 
   const refresh = useCallback(async () => {
     const granted = await claimDaily();
@@ -68,6 +82,13 @@ export const TicketsScreen: React.FC = () => {
     <SafeAreaView edges={['top']} style={styles.root}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>{t('tickets.title')}</Text>
+
+        <Image
+          source={PRAYER_TICKET_ART}
+          style={[styles.hero, { width: heroWidth, height: Math.round((heroWidth * 2) / 3) }]}
+          resizeMode="contain"
+          accessibilityIgnoresInvertColors
+        />
 
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>{t('tickets.balance')}</Text>
@@ -120,7 +141,8 @@ export const TicketsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.xl },
-  title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.xl },
+  title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.lg },
+  hero: { alignSelf: 'center', marginBottom: spacing.lg },
   balanceCard: {
     backgroundColor: colors.card,
     borderRadius: radius.lg,

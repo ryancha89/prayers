@@ -7,7 +7,6 @@ import { TabParamList } from './types';
 import { sfx } from '../shared/audio/sfx';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { ConversationsScreen } from '../features/conversations/screens/ConversationsScreen';
-import { DiscoverScreen } from '../features/discover/screens/DiscoverScreen';
 import { MyPageScreen } from '../features/profile/screens/MyPageScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -15,14 +14,12 @@ const Tab = createBottomTabNavigator<TabParamList>();
 const ICONS: Record<keyof TabParamList, IconName> = {
   Home: 'home',
   Conversations: 'chat',
-  Discover: 'compass',
   My: 'person',
 };
 
 const LABEL_KEYS: Record<keyof TabParamList, TranslationKey> = {
   Home: 'tab.home',
   Conversations: 'tab.conversations',
-  Discover: 'tab.discover',
   My: 'tab.my',
 };
 
@@ -30,7 +27,7 @@ export const BottomTabNavigator: React.FC = () => {
   const t = useT();
   return (
     <Tab.Navigator
-      // The four tabs were the largest silent surface in the app: every screen change the player
+      // The tabs were the largest silent surface in the app: every screen change the player
       // makes most often made no sound at all, while a counselor card did. tabPress fires for the
       // tab you are already on too (it scrolls to top), and that is still a press worth answering.
       screenListeners={{ tabPress: () => sfx.tap() }}
@@ -51,7 +48,6 @@ export const BottomTabNavigator: React.FC = () => {
       })}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Conversations" component={ConversationsScreen} />
-      <Tab.Screen name="Discover" component={DiscoverScreen} />
       <Tab.Screen name="My" component={MyPageScreen} />
     </Tab.Navigator>
   );

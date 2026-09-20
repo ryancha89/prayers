@@ -15,8 +15,9 @@ import { ConsultationEngine, FlowState, StagePort } from '../flow/engine';
 import { CounselorVoice } from '../flow/voice';
 import { createMockStagePort, createStagePort, type MockReply } from '../bridge/stagePort';
 import { getUnityBridge, isNativeUnity } from '../bridge';
+import { useChatModeStore } from '../store/chatModeStore';
 import type { PhaseChoice } from '../flow/types';
-import type { UnityToRNEvent } from '../types';
+import type { ChatMode, UnityToRNEvent } from '../types';
 
 export interface UseConsultationOptions {
   /** The area the app already asked about — seeds the flow's topic. */
@@ -30,7 +31,7 @@ export interface UseConsultationOptions {
    *
    *  Returns the answer AND the server's scene break-up when there is one — the mock stage speaks
    *  the scenes in order instead of guessing where the answer breaks. */
-  mockReply?: (question: string, loop: boolean) => Promise<MockReply>;
+  mockReply?: (question: string, loop: boolean, chatMode?: ChatMode) => Promise<MockReply>;
   /** Mirrored into the app's conversation history. */
   onCounselorLine?: (text: string) => void;
   onUserLine?: (text: string) => void;
@@ -81,8 +82,9 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
             onOracle: result => engineRef.current?.onOracleResult(result),
             onSpeakDone: key => engineRef.current?.onSpeakDone(key),
             onExit: () => cbs.current.onFinished?.(),
-            reply: (question, loop) =>
-              cbs.current.mockReply?.(question, loop) ?? Promise.reject(new Error('no mock reply')),
+            reply: (question, loop, chatMode) =>
+              cbs.current.mockReply?.(question, loop, chatMode) ??
+              Promise.reject(new Error('no mock reply')),
           }),
     [],
   );
@@ -94,6 +96,9 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
       lang,
       presetTopic: opts.topic,
       voice: opts.voice,
+      // Read from the store at ask time, not captured here: the segment in the room flips it
+      // mid-session and the next question has to go out in the new style.
+      chatMode: () => useChatModeStore.getState().chatMode,
       onCounselorLine: text => cbs.current.onCounselorLine?.(text),
       onUserLine: text => cbs.current.onUserLine?.(text),
       onFinished: () => cbs.current.onFinished?.(),

@@ -12,7 +12,8 @@ export const CounselorGrid: React.FC<{
   counselors: CounselorSummary[];
   onPressCounselor: (c: CounselorSummary) => void;
   ListHeaderComponent?: React.ReactElement;
-}> = ({ counselors, onPressCounselor, ListHeaderComponent }) => {
+  ListFooterComponent?: React.ReactElement;
+}> = ({ counselors, onPressCounselor, ListHeaderComponent, ListFooterComponent }) => {
   const renderItem: ListRenderItem<CounselorSummary> = ({ item }) => (
     <View style={styles.cell}>
       <CounselorCard counselor={item} onPress={() => onPressCounselor(item)} />
@@ -28,6 +29,7 @@ export const CounselorGrid: React.FC<{
       columnWrapperStyle={styles.column}
       contentContainerStyle={styles.content}
       ListHeaderComponent={ListHeaderComponent}
+      ListFooterComponent={ListFooterComponent}
       showsVerticalScrollIndicator={false}
     />
   );

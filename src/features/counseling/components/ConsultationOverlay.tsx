@@ -10,7 +10,7 @@
  * It is presentational: every decision (which surface, what text, when the beat
  * ends) belongs to `ConsultationEngine`. This file only knows how it looks.
  */
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -36,6 +36,7 @@ import { ui } from '../flow/strings';
 import { CounselorVoice, voiced } from '../flow/voice';
 import type { FlowState } from '../flow/engine';
 import type { PhaseChoice } from '../flow/types';
+import type { ChatMode } from '../types';
 
 export interface ConsultationOverlayProps {
   state: FlowState;
@@ -59,6 +60,11 @@ export interface ConsultationOverlayProps {
    *  the APP talking (mic errors, "tap to continue"), and the app has one voice whoever is in the
    *  chair — only the prompts she is asking through follow her. */
   voice?: CounselorVoice;
+  /** SAVIS's two answer styles, as a segment above the free-chat box: ⚡ 티키타카 | 깊은 풀이. Shown
+   *  only in the loop, because that is the only turn it changes — the staged reading keeps its own
+   *  shape. Absent `onChatMode` hides the segment (a room with no server has no styles to pick). */
+  chatMode?: ChatMode;
+  onChatMode?(mode: ChatMode): void;
 }
 
 export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
@@ -74,8 +80,27 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   onMicCancel,
   onHush,
   micAvailable = false,
+  chatMode = 'detail',
+  onChatMode,
 }) => {
   const lang = useLang();
+  // The one-line explanation of the style just picked, the way SAVIS toasts it. Shown under the
+  // segment for a moment rather than permanently: the label is the setting, the hint is the
+  // answer to "what did that just do".
+  const [modeHint, setModeHint] = useState<ChatMode | null>(null);
+  const modeHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (modeHintTimer.current) clearTimeout(modeHintTimer.current);
+    },
+    [],
+  );
+  const pickMode = (mode: ChatMode) => {
+    if (mode !== chatMode) onChatMode?.(mode);
+    setModeHint(mode);
+    if (modeHintTimer.current) clearTimeout(modeHintTimer.current);
+    modeHintTimer.current = setTimeout(() => setModeHint(null), 3000);
+  };
   // Heights here are shares of the window, not constants: see useScreen. On a 667pt phone the
   // three panels below used to add up to more screen than there was, under an open keyboard.
   const screen = useScreen();
@@ -189,6 +214,39 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
 
         {(state.screen === 'questionBox' || state.screen === 'loop') && (
           <SafeAreaView edges={['bottom']}>
+            {/* ⚡ 티키타카 | 깊은 풀이 — the same segment SAVIS puts above its input, carried to the
+                server as the same `chat_mode`. The whole point is that a player who knows one app
+                knows the other. */}
+            {state.screen === 'loop' && !!onChatMode && (
+              <View>
+                <View style={styles.modeRow} accessibilityRole="radiogroup">
+                  {(['tiki', 'detail'] as ChatMode[]).map(m => {
+                    const on = chatMode === m;
+                    return (
+                      <Pressable
+                        key={m}
+                        style={[styles.modeSeg, on && styles.modeSegOn]}
+                        onPress={() => pickMode(m)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: on }}
+                      >
+                        <Text style={[styles.modeText, on && styles.modeTextOn]}>
+                          {m === 'tiki'
+                            ? `⚡ ${ui('mode.tiki', lang)}`
+                            : ui('mode.detail', lang)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                {!!modeHint && (
+                  <Text style={styles.modeHint}>
+                    {ui(modeHint === 'tiki' ? 'mode.tiki.hint' : 'mode.detail.hint', lang)}
+                  </Text>
+                )}
+              </View>
+            )}
+
             {/* Why the take failed, in the player's own language. Unity sends a key, never a
                 sentence — the copy for every one of these is here. */}
             {!!mic.error && (
@@ -562,4 +620,23 @@ const styles = StyleSheet.create({
 
   leave: { alignSelf: 'center', paddingVertical: spacing.sm },
   leaveText: { ...typography.caption, color: colors.textMuted },
+
+  modeRow: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  modeSeg: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.violetSoft,
+    backgroundColor: 'rgba(18, 18, 26, 0.94)',
+  },
+  modeSegOn: { backgroundColor: colors.violet, borderColor: colors.violet },
+  modeText: { ...typography.caption, color: colors.textSecondary },
+  modeTextOn: { color: colors.textPrimary },
+  modeHint: { ...typography.tiny, color: colors.textMuted, marginBottom: spacing.xs },
 });

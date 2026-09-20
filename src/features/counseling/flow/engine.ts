@@ -35,6 +35,7 @@ import { CounselorVoice, voiced } from './voice';
 import type { Lang } from '../../../shared/i18n';
 import { sayGlyphs } from '../api/sajuGlyphs';
 import type {
+  ChatMode,
   CounselorEmotion,
   CounselorScene,
   MicError,
@@ -347,6 +348,10 @@ export interface EngineOptions {
   /** Which register the counselor speaks the room's own lines in — see `voice.ts`. Defaults to the
    *  shared one, so a caller that does not know who is in the chair changes nothing. */
   voice?: CounselorVoice;
+  /** SAVIS's answer style for free-chat turns, read at ASK time rather than at construction: the
+   *  player flips it from the room, and the flip has to reach the very next question, not the
+   *  next session. Absent means the payload carries no mode and the server keeps its default. */
+  chatMode?: () => ChatMode;
 }
 
 /* ── The engine ───────────────────────────────────────────────────────────── */
@@ -1335,6 +1340,7 @@ export class ConsultationEngine {
       scope: this.scope,
       loop: true,
       interrupted: heard,
+      chatMode: this.opts.chatMode?.(),
     });
     // The answer is 15-20 s away. Rather than a typing indicator, the counselor
     // says so — a short prefetched line, spoken at once, so the wait reads as

@@ -156,12 +156,22 @@ export interface StageSpeakPayload {
 }
 
 /** RN asks for the reading. The answer comes back as one ORACLE_RESULT. */
+/**
+ * The two answer styles SAVIS has, by the names it sends them under (`setting.chat_mode`).
+ * `tiki` is the short rally; `detail` the full reading with its 명리 근거. See `chatModeStore`.
+ */
+export type ChatMode = 'tiki' | 'detail';
+
 export interface OracleAskPayload {
   question: string;
   topic: string;
   scope: string;
   /** A free-chat turn after the staged reading, not the reading itself. */
   loop?: boolean;
+  /** Which of SAVIS's two answer styles this turn wants. Only loop turns carry it — the staged
+   *  reading keeps the room's numbered shape. Absent means "whatever the server did before",
+   *  which is what an older embedded player keeps getting. */
+  chatMode?: ChatMode;
   /** What the counselor had already SAID OUT LOUD when the player cut in.
    *
    *  Only the spoken part — never the chunks still queued behind the voice. The whole point is the

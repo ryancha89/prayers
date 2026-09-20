@@ -14,6 +14,7 @@ import { useConversationsStore } from '../../conversations/store/conversationsSt
 import { fetchRecall } from '../api/prayersServer';
 import { devlog } from '../../../shared/devlog';
 import { useCounselingStore } from '../store/counselingStore';
+import { useChatModeStore } from '../store/chatModeStore';
 import { counselorAI, toneForCharacter } from '../api/counselorAI';
 import { getUnityBridge, isNativeUnity } from '../bridge';
 import { CounselorStage } from '../components/CounselorStage';
@@ -65,6 +66,9 @@ export const CounselingRoomScreen: React.FC = () => {
   const subject = useSubjectsStore(s => s.getById(params.subjectId));
   const topic = useCounselingStore(s => s.topic);
 
+  const chatMode = useChatModeStore(s => s.chatMode);
+  const setChatMode = useChatModeStore(s => s.setChatMode);
+
   const ensureSession = useConversationsStore(s => s.ensureSession);
   const appendMessage = useConversationsStore(s => s.appendMessage);
   const setLastTopicSummary = useConversationsStore(s => s.setLastTopicSummary);
@@ -108,7 +112,7 @@ export const CounselingRoomScreen: React.FC = () => {
       turn.current += 1;
     },
     onFinished: onExit,
-    mockReply: async question => {
+    mockReply: async (question, _loop, mode) => {
       const resp =
         turn.current <= 1
           ? await counselorAI.greeting({
@@ -130,6 +134,7 @@ export const CounselingRoomScreen: React.FC = () => {
               // answers in. Without either it falls back to the mock, silently by design.
               sessionId: params.sessionId,
               tone: toneForCharacter(counselor?.characterId),
+              chatMode: mode,
             });
       // The scenes go with the words. Dropping them here is what kept the server's break-up from
       // ever reaching a bubble — the greeting has none, and that is correct: it is the room's own
@@ -152,6 +157,8 @@ export const CounselingRoomScreen: React.FC = () => {
       topic,
       // Her own conversations, not the player's most recent one with anybody.
       counselorId: params.counselorId,
+      // How the 3D room's threads are found — they carry her persona, never the card id.
+      tone: toneForCharacter(counselor?.characterId),
       signal: ctrl.signal,
     })
       .then(recall => {
@@ -287,6 +294,8 @@ export const CounselingRoomScreen: React.FC = () => {
         onMicCancel={consultation.cancelMic}
         onHush={consultation.hush}
         micAvailable={consultation.micAvailable}
+        chatMode={chatMode}
+        onChatMode={setChatMode}
       />
 
       {/* Top controls — kept minimal, never covering the character (spec §27) */}

@@ -6,7 +6,7 @@
  * `StagePort`, and this is the one that speaks to the real player.
  */
 import type { StagePort } from '../flow/engine';
-import type { OracleAskPayload, StagePhasePayload, UnityBridge } from '../types';
+import type { ChatMode, OracleAskPayload, StagePhasePayload, UnityBridge } from '../types';
 
 export function createStagePort(bridge: UnityBridge, onExit: () => void): StagePort {
   return {
@@ -98,12 +98,13 @@ export function createMockStagePort(deps: {
   onOracle: (result: import('../types').OracleResultPayload) => void;
   onSpeakDone: (cacheKey: string) => void;
   onExit: () => void;
-  /** Answers a turn. Rejecting reports a connection failure, same as Unity. */
-  reply: (question: string, loop: boolean) => Promise<MockReply>;
+  /** Answers a turn. Rejecting reports a connection failure, same as Unity. The mode rides along
+   *  so the mock build asks the server in the same style the embedded room would. */
+  reply: (question: string, loop: boolean, chatMode?: ChatMode) => Promise<MockReply>;
 }): StagePort {
-  const ask = (question: string, loop: boolean) => {
+  const ask = (question: string, loop: boolean, chatMode?: ChatMode) => {
     deps
-      .reply(question, loop)
+      .reply(question, loop, chatMode)
       .then(({ text, scenes }) => {
         if (loop) {
           deps.onOracle({
@@ -158,7 +159,7 @@ export function createMockStagePort(deps: {
     prefetchText() {},
     stopSpeak() {},
     askOracle(payload) {
-      ask(payload.question, payload.loop === true);
+      ask(payload.question, payload.loop === true, payload.chatMode);
     },
     // No player, no device. The mic button is hidden in mock builds rather than offered and then
     // failing, so these exist only to satisfy the port.

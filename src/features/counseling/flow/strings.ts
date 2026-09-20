@@ -33,6 +33,10 @@ const KO: Bundle = {
   'mic.error.unavailable': '지금은 음성으로 물어볼 수 없어요. 글로 적어 주세요.',
   'loop.stopTalking': '그만 말하기',
   'mic.opening': '마이크를 여는 중',
+  'mode.tiki': '티키타카',
+  'mode.detail': '깊은 풀이',
+  'mode.tiki.hint': '티키타카: 메신저처럼 짧게 주고받아요.',
+  'mode.detail.hint': '깊은 풀이: 명리 근거를 갖춘 상세 풀이로 답해요.',
 };
 
 const EN: Bundle = {
@@ -57,6 +61,10 @@ const EN: Bundle = {
   'mic.error.unavailable': 'Asking out loud is not available right now. Please type instead.',
   'loop.stopTalking': 'Stop talking',
   'mic.opening': 'Opening the microphone',
+  'mode.tiki': 'Quick chat',
+  'mode.detail': 'Deep reading',
+  'mode.tiki.hint': 'Quick chat: short back-and-forth, like messaging.',
+  'mode.detail.hint': 'Deep reading: a detailed answer grounded in the chart.',
 };
 
 const JA: Bundle = {
@@ -81,6 +89,10 @@ const JA: Bundle = {
   'mic.error.unavailable': '今は音声で質問できません。文字で書いてください。',
   'loop.stopTalking': '話をとめる',
   'mic.opening': 'マイクを準備しています',
+  'mode.tiki': 'テンポ会話',
+  'mode.detail': '深い鑑定',
+  'mode.tiki.hint': 'テンポ会話: メッセージのように短くやり取りします。',
+  'mode.detail.hint': '深い鑑定: 命理の根拠を添えた詳しい解説で答えます。',
 };
 
 const ZH_CN: Bundle = {
@@ -105,6 +117,10 @@ const ZH_CN: Bundle = {
   'mic.error.unavailable': '现在还不能用语音提问，请用文字写下来。',
   'loop.stopTalking': '让他先停下',
   'mic.opening': '正在打开麦克风',
+  'mode.tiki': '快聊',
+  'mode.detail': '深度解读',
+  'mode.tiki.hint': '快聊：像发消息一样简短往来。',
+  'mode.detail.hint': '深度解读：以命理依据作详细解答。',
 };
 
 const ZH_TW: Bundle = {
@@ -129,6 +145,10 @@ const ZH_TW: Bundle = {
   'mic.error.unavailable': '現在還不能用語音提問，請用文字寫下來。',
   'loop.stopTalking': '讓他先停下',
   'mic.opening': '正在開啟麥克風',
+  'mode.tiki': '快聊',
+  'mode.detail': '深度解讀',
+  'mode.tiki.hint': '快聊：像傳訊息一樣簡短往來。',
+  'mode.detail.hint': '深度解讀：以命理依據作詳細解答。',
 };
 
 const VI: Bundle = {
@@ -153,6 +173,10 @@ const VI: Bundle = {
   'mic.error.unavailable': 'Bây giờ chưa hỏi bằng giọng nói được. Con viết ra giúp ta.',
   'loop.stopTalking': 'Xin thầy dừng',
   'mic.opening': 'Đang mở micro',
+  'mode.tiki': 'Trò chuyện nhanh',
+  'mode.detail': 'Luận giải sâu',
+  'mode.tiki.hint': 'Trò chuyện nhanh: trao đổi ngắn như nhắn tin.',
+  'mode.detail.hint': 'Luận giải sâu: trả lời chi tiết dựa trên căn cứ mệnh lý.',
 };
 
 // These are RN's own copy, so RN carries all six languages for them. The room's other lines

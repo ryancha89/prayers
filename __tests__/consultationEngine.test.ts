@@ -1271,3 +1271,36 @@ test('a long wait swaps its line in place, and pushes the camera in once', () =>
   expect(engine.getState().transcript.length).toBeGreaterThanOrEqual(answered);
   expect(engine.getState().transcript[engine.getState().transcript.length - 1].text).toContain('답이에요');
 });
+
+test('a loop turn carries the answer style the room has picked, and the reading does not', () => {
+  const sched = new FakeScheduler();
+  const stage = new StageDouble();
+  let mode: 'tiki' | 'detail' = 'detail';
+  const engine = new ConsultationEngine({
+    stage,
+    lang: 'ko',
+    scheduler: sched,
+    chatMode: () => mode,
+  });
+  stage.bind(engine);
+  intoLoop(stage, engine, sched);
+
+  // The staged reading keeps the room's numbered shape whatever the segment says.
+  expect(stage.asks[0].loop).toBeUndefined();
+  expect(stage.asks[0].chatMode).toBeUndefined();
+
+  engine.submitQuestion('올해는요?');
+  expect(stage.asks[stage.asks.length - 1]).toMatchObject({ loop: true, chatMode: 'detail' });
+  engine.onOracleResult({
+    ok: true,
+    loop: true,
+    followup: '',
+    beats: [{ phaseId: 'loop', lines: ['답.'] }],
+  });
+  sched.advance(60_000);
+
+  // Flipped mid-session: the NEXT question goes out in the new style, not the next session.
+  mode = 'tiki';
+  engine.submitQuestion('그럼 내년은요?');
+  expect(stage.asks[stage.asks.length - 1]).toMatchObject({ loop: true, chatMode: 'tiki' });
+});

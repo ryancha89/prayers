@@ -15,14 +15,11 @@ import path from 'path';
  * written here so they stay countable instead of dissolving back into the default.
  *
  * What this canNOT check: whether the cue is the RIGHT one, or whether a handler was attached at
- * all. HomeHeader is the warning — its two icons have no onPress whatever, so giving them a tick
- * would make a dead button feel like it worked.
+ * all. A sound alone does not prove that a control navigates to its destination.
  */
 const SRC = path.join(__dirname, '..', 'src');
 
 const SILENT: Record<string, string> = {
-  'features/counselors/components/HomeHeader.tsx':
-    'search and bell have NO onPress at all — a sound here would fake a button that does nothing',
   'features/counseling/screens/CounselingRoomScreen.tsx':
     'the room owns its own mix (Unity BGM + voice); RN must not tap over it',
   'features/counseling/screens/UnityEntryScreen.tsx':

@@ -3,6 +3,7 @@ import { apiHeaders } from '../../auth/api/headers';
 import { devlog } from '../../../shared/devlog';
 import { isLang } from '../../../shared/i18n';
 import type { Lang } from '../../../shared/i18n';
+import type { ChatMode } from '../types';
 
 /**
  * The Prayers consultation API on saju_server (`/api/v1/prayers/*`).
@@ -360,6 +361,16 @@ export async function fetchRecall(input: {
    * she was never in. The server scopes on the session key, which is built from this id.
    */
   counselorId?: string;
+  /**
+   * The persona she answers in (`coldgirl`, `sunyeo`, …) — `toneForCharacter`, the same value every
+   * turn carries as `setting.tone`.
+   *
+   * ⚠️ WITHOUT IT THE EMBEDDED ROOM NEVER REMEMBERS. Unity keys its threads from the subject and
+   * persona, not from the card id, so the `counselor` filter above matches none of them and every
+   * visit through the 3D room opened as a first visit (2026-09-20). The persona is on every row
+   * that path writes; it is how the server finds them.
+   */
+  tone?: string;
   signal?: AbortSignal;
 }): Promise<Recall | null> {
   const headers = await apiHeaders();
@@ -369,6 +380,7 @@ export async function fetchRecall(input: {
   if (input.topic) query.set('topic', input.topic);
   if (input.uniqId) query.set('uniq_id', input.uniqId);
   if (input.counselorId) query.set('counselor', input.counselorId);
+  if (input.tone) query.set('tone', input.tone);
 
   try {
     const res = await fetch(`${BASE()}/api/v1/prayers/consultations/recall?${query}`, {
@@ -401,6 +413,9 @@ export interface SendMessageInput {
   topic?: string;
   /** Ask for the 26-08 `scenes[]` break-up. Costs nothing when the room does not stage them. */
   scenes?: boolean;
+  /** SAVIS's answer style, by the name the server reads: `tiki` (짧은 랠리) or `detail` (깊은 풀이).
+   *  Omitted when unset so the server's own default applies, exactly as before it existed. */
+  chatMode?: ChatMode;
   signal?: AbortSignal;
 }
 
@@ -425,6 +440,7 @@ export async function sendConsultationMessage(
       lang: input.lang,
       ...(input.tone ? { tone: input.tone } : {}),
       ...(input.scenes ? { scenes: true } : {}),
+      ...(input.chatMode ? { chat_mode: input.chatMode } : {}),
     },
     // The server reads the topic from base_info.info.topic; `lang` is repeated here because it
     // accepts either place and the two are not guaranteed to be sent together by every client.

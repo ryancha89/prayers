@@ -580,7 +580,6 @@ const RAW: RawCounselor[] = [
     id: 'yunjung',
     accent: '#B07C9B',
     category: 'career',
-    isNew: true,
     characterId: 'yunjung_01',
     roomId: 'yunjung_room',
     previewActions: PREVIEW_ACTIONS_YUNJUNG,
@@ -747,7 +746,6 @@ const RAW: RawCounselor[] = [
     category: 'love',
     characterId: 'theo_01',
     roomId: 'theo_study',
-    isNew: true,
     previewActions: PREVIEW_ACTIONS_THEO,
     l10n: {
       ko: {
