@@ -13,6 +13,7 @@ import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
 import { fetchRecall } from '../api/prayersServer';
 import { devlog } from '../../../shared/devlog';
+import { WalkControls } from '../components/WalkControls';
 import { useCounselingStore } from '../store/counselingStore';
 import { useChatModeStore } from '../store/chatModeStore';
 import { counselorAI, toneForCharacter } from '../api/counselorAI';
@@ -280,6 +281,11 @@ export const CounselingRoomScreen: React.FC = () => {
           <LoadingTips />
         </View>
       )}
+
+      {/* While the player is on their feet the reading has not started, so the overlay below has
+          nothing to say and these are the only controls on screen. They unmount themselves the
+          moment the room reports the player seated — see useConsultationEngine.walking. */}
+      <WalkControls visible={consultation.walking} />
 
       <ConsultationOverlay
         voice={voice}

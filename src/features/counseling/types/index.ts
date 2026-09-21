@@ -259,7 +259,26 @@ export type RNToUnityEvent =
   | { type: 'MIC_CANCEL' }
   /** The session is over (back, error, any navigation away) — Unity must
    *  silence all audio immediately, ahead of the engine unload. */
-  | { type: 'SESSION_END' };
+  | { type: 'SESSION_END' }
+  /** Open the meditation room.
+   *
+   *  Its own message, not a SESSION_INIT with the counselor left out. SESSION_INIT carries a
+   *  counselor, a subject and a session id, spends a ticket and marks the stage host-driven; a
+   *  meditation has none of those and must not claim them — one that registered as a consultation
+   *  would show up in the player's history as a reading they never had. */
+  | { type: 'MEDITATION_INIT' }
+  /** Leaving the meditation room. Unity treats it exactly as SESSION_END. */
+  | { type: 'MEDITATION_END' }
+  /** A held direction key. x = right, y = forward, each in [-1, 1].
+   *
+   *  ONE MESSAGE PER PRESS: Unity keeps the last direction until told otherwise, so the press
+   *  sends the vector and the release sends {0,0}. That makes the RELEASE load-bearing — a missed
+   *  one leaves the player walking forever. (The magnitude is still honoured, from when this
+   *  carried an analogue stick; a key simply always sends 1.) */
+  | { type: 'WALK_INPUT'; payload: { x: number; y: number } }
+  /** The Talk button. Opens whoever the room currently has in reach — the room decides who, so
+   *  there is only ever one answer to "who is nearest". */
+  | { type: 'WALK_TALK' };
 
 export type UnityToRNEvent =
   /** The transport is up, before any room exists — Unity's very first message.
@@ -271,7 +290,17 @@ export type UnityToRNEvent =
    *  tsc called the comparison unintentional (TS2367). Unity has always sent it —
    *  see ConsultationHostChannel.BridgeReady. */
   | { type: 'BRIDGE_READY' }
-  | { type: 'UNITY_READY' }
+  /** The room exists and is on screen — lift the loading veil.
+   *
+   *  `walkIn` splits what this message used to say in one breath. In the seated rooms it stays
+   *  false and READY still means BOTH "there is a room" and "there is someone in the chair, start
+   *  reading". A walk-in room sends true: the player is on their feet crossing the floor, so the
+   *  veil must lift but the reading must NOT begin — it waits for UNITY_SEATED. Older Unity
+   *  builds omit the field entirely, which reads as false and keeps the old behaviour. */
+  | { type: 'UNITY_READY'; payload?: { walkIn?: boolean } }
+  /** The player walked up to the counselor and sat down. Only a walk-in room sends this, and it
+   *  is the go-ahead the engine held its first phase for. */
+  | { type: 'UNITY_SEATED' }
   | { type: 'USER_MESSAGE'; payload: { text: string } }
   /** A counselor line — mirrored so the app's history holds both halves. */
   | { type: 'COUNSELOR_MESSAGE'; payload: { text: string } }
@@ -285,6 +314,16 @@ export type UnityToRNEvent =
   | { type: 'MIC_STATE'; payload: { state: MicState; level: number } }
   /** The spoken question as text, or why there is none. `error` is a key — the copy is RN's. */
   | { type: 'MIC_RESULT'; payload: { ok: boolean; text: string; error: MicError | '' } }
+  /** The meditation room has finished loading and is on screen.
+   *
+   *  Separate from UNITY_READY because the host does different things with them: READY lifts a
+   *  veil over a counselor who is about to speak, and there is nobody here to speak. This one only
+   *  says "there is a room behind you now" — the screen fades its overlay in over it. */
+  | { type: 'MEDITATION_READY' }
+  /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
+   *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
+   *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
+  | { type: 'WALK_STATE'; payload: { canTalk: boolean; personaId: string } }
   | { type: 'SESSION_ERROR'; payload: { reason: string } }
   | { type: 'EXIT_SESSION' };
 

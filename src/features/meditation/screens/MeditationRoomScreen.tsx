@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, ImageBackground, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
 import { useNavigation } from '@react-navigation/native';
@@ -10,13 +10,23 @@ import { sfx } from '../../../shared/audio/sfx';
 import { backgroundMusic } from '../../../shared/audio/backgroundMusic';
 import { holdScreenAwake } from '../../../shared/device/keepAwake';
 import { BREATH, CYCLE_MS, MeditationSession, SESSION_MS, type Phase, type SessionState } from '../session';
+import { UnityHost } from '../../counseling/components/UnityHost';
+import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 
 /**
  * The meditation room: ten minutes, music and text, no guided voice (decided 15-09).
  *
- * WHY THERE IS NO UNITY HERE. Every other room in this app is a 3D scene behind a texture, and this
- * one deliberately is not: a breathing ring over the concept art does the same work with no export
- * cycle, no rig and no second audio owner. Nothing here assumes it can never move.
+ * THE ROOM IS UNITY NOW (21-09). It shipped as a breathing ring over concept art — the note here
+ * used to explain why that was enough, and ended "nothing here assumes it can never move". The art
+ * for a real room arrived, so it moved: `UnityHost` sits behind everything and Unity loads
+ * MeditationRoom, while the ring, the clock, the copy and the music all stay exactly where they
+ * were. The concept art is still the fallback, and is what renders in Expo/Jest and on any build
+ * without the embedded player.
+ *
+ * UNITY IS SCENERY HERE, NOT A SECOND AUDIO OWNER. It is opened with MEDITATION_INIT rather than
+ * SESSION_INIT — no counselor, no ticket, no thread, and pointedly no history row — and the scene
+ * itself carries no AudioSource. The music is still this screen's, started on Begin, paused with
+ * the breath and dropped on the way out.
  *
  * THE ONE THING ON SCREEN IS THE RING. Everything else gets out of its way: the title and the line
  * under it fade out the moment breathing starts, the clock drops to metadata weight, and the room
@@ -58,6 +68,9 @@ export const MeditationRoomScreen: React.FC = () => {
   const breath = useRef(new Animated.Value(RING_MIN)).current;
   const orbit = useRef(new Animated.Value(0)).current;
   const chrome = useRef(new Animated.Value(1)).current;
+  /** The concept art's opacity. 1 until Unity says the real room is on screen, then 0 — see the
+   *  effect below, and the warning in the render for why it is the ART that moves. */
+  const artOut = useRef(new Animated.Value(1)).current;
   const loops = useRef<Animated.CompositeAnimation[]>([]);
 
   const startAnimation = useCallback(() => {
@@ -112,6 +125,38 @@ export const MeditationRoomScreen: React.FC = () => {
     },
     [breath, orbit, chrome],
   );
+
+  // Ask Unity for the room, once, on the way in.
+  //
+  // On the way out it is closed explicitly rather than left to UnityHost's unmount. The host's
+  // teardown does send SESSION_END, which Unity treats identically — but relying on that would
+  // make this screen's exit depend on a component written for the counseling room, and the two
+  // are free to diverge. Both are idempotent, so the overlap costs nothing.
+  //
+  // ⚠️ THE FALLBACK STAYS UP UNTIL THE ROOM ANSWERS.
+  // A mounted UnityView is opaque from its first frame, so left bare it covers the concept art
+  // whether or not Unity has anything behind it — and a player whose room never loads then shows
+  // a black rectangle with a breathing ring on it. So the art is held over the top and dropped on
+  // MEDITATION_READY. An older player build, a bridge that never answered, an engine still waking
+  // up: all of them land on the photo this screen always had. A fallback is only a fallback if
+  // something can actually fall back to it.
+  useEffect(() => {
+    if (!isNativeUnity()) return undefined;
+    const off = nativeUnityBridge.onEvent(e => {
+      if (e.type !== 'MEDITATION_READY') return;
+      Animated.timing(artOut, {
+        toValue: 0,
+        duration: 420,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start();
+    });
+    nativeUnityBridge.openMeditationRoom();
+    return () => {
+      off();
+      nativeUnityBridge.closeMeditationRoom();
+    };
+  }, [artOut]);
 
   useEffect(() => {
     if (state.status !== 'running') return undefined;
@@ -204,7 +249,20 @@ export const MeditationRoomScreen: React.FC = () => {
   );
 
   return (
-    <ImageBackground source={require('../assets/room.jpg')} style={styles.bg} resizeMode="cover">
+    <View style={styles.bg}>
+      {/* ⚠️ THE UNITY VIEW IS NEVER HIDDEN. It sits at the back at full opacity for the whole life
+          of the screen, and the concept art FADES OUT on top of it once the room answers.
+          The obvious shape — mount Unity at opacity 0 and fade it in — was written first and is
+          wrong: an embedded UnityView inside a transparent parent is not composited, the player
+          stops being drawn, and its frame loop stops with it. Measured on device: BRIDGE_READY
+          (frame 1) still arrived, then the scene-load coroutine never advanced and
+          MEDITATION_READY never came. The same screen with the art on top loads the room fine. */}
+      {isNativeUnity() && <UnityHost style={styles.unity} />}
+      <Animated.Image
+        source={require('../assets/room.jpg')}
+        style={[styles.unity, { opacity: artOut }]}
+        resizeMode="cover"
+      />
       <Animated.View style={[styles.wash, { opacity: wash }]} />
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.header}>
@@ -257,7 +315,7 @@ export const MeditationRoomScreen: React.FC = () => {
           )}
         </View>
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 };
 
@@ -281,6 +339,9 @@ const Action: React.FC<{ label: string; onPress: () => void; quiet?: boolean }> 
 
 const styles = StyleSheet.create({
   bg: { flex: 1, backgroundColor: colors.bg },
+  // absoluteFill, not flex: the Unity view is scenery layered under the chrome, and giving it a
+  // place in the flex flow would push the ring and the clock off the bottom of the screen.
+  unity: { ...absoluteFill },
   wash: { ...absoluteFill, backgroundColor: '#181220' },
   safe: { flex: 1, justifyContent: 'space-between', paddingHorizontal: spacing.xl },
   header: { paddingTop: spacing.md },

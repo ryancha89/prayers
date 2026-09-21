@@ -33,7 +33,12 @@ const navTheme = {
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 /** Screens where embedded Unity (and its BGM) is allowed to be audible. */
-const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry']);
+// ⚠️ MeditationRoom is in here since 21-09, when that room became a Unity scene. Leave it out and
+// `stopAllAudio()` fires on arrival — it posts SESSION_END, which is Unity's teardown — so the
+// room would be silenced the instant the player walked into it. The app's own bed still stops:
+// `inUnity` and `selfScored` lead to the same `backgroundMusic.stop()`, and the meditation loop
+// is started by the screen on Begin, exactly as before.
+export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom']);
 
 /**
  * Screens whose audio is NOT the route's business.

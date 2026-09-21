@@ -53,6 +53,9 @@ export class NativeUnityBridge implements UnityBridge {
   private initRetry: ReturnType<typeof setTimeout> | null = null;
   private initTries = 0;
   private payload?: UnitySessionPayload;
+  /** A meditation room has been asked for and has not answered yet. The consultation path tracks
+   *  the same thing through `payload`; this room has no payload to track it with. */
+  private meditationPending = false;
   private outbox: RNToUnityEvent[] = [];
 
   /* ---- UnityBridge ---- */
@@ -131,6 +134,33 @@ export class NativeUnityBridge implements UnityBridge {
   onEvent(handler: (event: UnityToRNEvent) => void): () => void {
     this.handlers.add(handler);
     return () => this.handlers.delete(handler);
+  }
+
+  /**
+   * Open the meditation room.
+   *
+   * POSTS DIRECTLY rather than going through sendEvent, and that is the whole reason this method
+   * exists. `sendEvent` queues anything sent before `ready`, and `ready` is set by UNITY_READY —
+   * a message the meditation room never sends, because it has no counselor to be ready with. Sent
+   * the ordinary way, MEDITATION_INIT would sit in the outbox forever and the room would never
+   * open, with nothing in the log to say why.
+   *
+   * No payload, no retry, no ticket. If the view is not mounted yet the message is queued by
+   * `post` and flushed when it is — the same path SESSION_INIT already relies on.
+   */
+  openMeditationRoom(): void {
+    this.meditationPending = true;
+    devlog('[unity-bridge] MEDITATION_INIT');
+    this.post({ type: 'MEDITATION_INIT' });
+  }
+
+  /** Leaving the meditation room. Idempotent, and safe when Unity never booted. */
+  closeMeditationRoom(): void {
+    this.meditationPending = false;
+    try {
+      if (this.view) this.post({ type: 'MEDITATION_END' });
+    } catch {}
+    this.ready = false;
   }
 
   async closeCounselingRoom(): Promise<void> {
@@ -213,7 +243,42 @@ export class NativeUnityBridge implements UnityBridge {
     // exist yet and stage commands sent now are dropped on the far side.
     if (event.type === 'BRIDGE_READY') {
       this.everReady = true;
-      if (!this.initSent && this.payload) this.sendInit('bridge ready');
+      // ⚠️ RESEND EVEN IF WE ALREADY SENT ONE. BRIDGE_READY means the player has just booted and
+      // has no room — so any SESSION_INIT that went out BEFORE it was posted into a view whose
+      // scripting runtime was not up yet, and is gone. `initSent` records that we spoke, not that
+      // anybody heard.
+      //
+      // This became reachable on 21-09, when the meditation room mounted a second UnityHost.
+      // Unmounting a UnityView tears the whole engine down, so leaving that room and opening a
+      // consultation reboots Unity underneath a bridge that had already sent its SESSION_INIT on
+      // `registerView`. Measured: SESSION_INIT at 15.517, BRIDGE_READY at 15.577, then thirty
+      // seconds of nothing and the screen walked the player out. The retry could not save it
+      // either — it stops at the first word back, and BRIDGE_READY is a word back.
+      //
+      // Safe to repeat, for the reason armInitRetry already gives: SESSION_INIT is what LOADS the
+      // room, so sending it again before the room exists loads it once. `ready` guards the only
+      // case that would matter — a room already up must never be reloaded under the player.
+      if (this.payload && !this.ready) this.sendInit('bridge ready');
+
+      // The meditation room needs the same repeat, for the same reason and with no payload to
+      // hang it on. Measured 21-09: MEDITATION_INIT at 19.393, BRIDGE_READY at 20.420, and no
+      // MEDITATION_READY ever — the room stayed on its fallback photo with the real one never
+      // loading. Both openings have to survive the player booting underneath them, because since
+      // the meditation room mounts its own UnityHost, either one can be the boot.
+      if (this.meditationPending) {
+        devlog('[unity-bridge] MEDITATION_INIT (bridge ready)');
+        this.post({ type: 'MEDITATION_INIT' });
+      }
+    }
+
+    // The meditation room's equivalent of UNITY_READY for TRANSPORT purposes only: it proves the
+    // player is listening, so nothing after it needs queueing. It does NOT start anything — the
+    // screen decides what to do with it.
+    if (event.type === 'MEDITATION_READY') {
+      this.meditationPending = false;
+      this.ready = true;
+      this.everReady = true;
+      this.clearInitRetry();
     }
 
     if (event.type === 'UNITY_READY') {

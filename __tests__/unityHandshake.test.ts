@@ -101,3 +101,43 @@ it('gives up cleanly when the room is closed mid-handshake', () => {
   // Leaving before the player answered must not keep poking it — the next entry opens its own.
   expect(inits()).toHaveLength(0);
 });
+
+/**
+ * The engine can reboot UNDERNEATH a bridge that has already spoken.
+ *
+ * Since 21-09 the meditation room mounts a second UnityHost, and unmounting a UnityView tears the
+ * whole Unity engine down. So the order on a real device is: open a consultation (SESSION_INIT
+ * goes out on registerView) → the player is still booting and never receives it → the player
+ * finishes booting and says BRIDGE_READY. `initSent` is true by then, so the old code stayed
+ * silent and the room never loaded: thirty seconds of veil, then the screen walked the player out.
+ *
+ * `initSent` records that we spoke, not that anybody heard.
+ */
+it('says SESSION_INIT again when the player reboots after hearing nothing', async () => {
+  const { bridge, inits } = bridgeWithView();
+
+  // Unity booted once already this run — the meditation room did it. That is what makes
+  // openCounselingRoom take the resume path and send immediately.
+  bridge.markSurvivor();
+  await bridge.openCounselingRoom(payload);
+  expect(inits()).toHaveLength(1);
+
+  // The player comes up AFTER that first attempt — which means it was never delivered.
+  bridge.receiveFromUnity(JSON.stringify({ type: 'BRIDGE_READY' }));
+
+  expect(inits()).toHaveLength(2);
+});
+
+it('does not reload a room that is already up', () => {
+  const { bridge, inits } = bridgeWithView();
+
+  bridge.markSurvivor();
+  bridge.openCounselingRoom(payload);
+  bridge.receiveFromUnity(JSON.stringify({ type: 'UNITY_READY' }));
+  const before = inits().length;
+
+  // A stray BRIDGE_READY after the room exists must not restart the scene under the player.
+  bridge.receiveFromUnity(JSON.stringify({ type: 'BRIDGE_READY' }));
+
+  expect(inits()).toHaveLength(before);
+});
