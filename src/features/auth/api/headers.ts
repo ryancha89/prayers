@@ -1,6 +1,6 @@
 import { SAJU_ACCESS_TOKEN } from '../../counseling/api/devToken';
 import { devlog } from '../../../shared/devlog';
-import { getUserAuth } from '../store/authStore';
+import { getUserAuth, invalidateGameToken } from '../store/authStore';
 import { ensureGameToken } from './session';
 
 /**
@@ -45,4 +45,53 @@ export async function apiHeaders(): Promise<Record<string, string> | null> {
     devlog(line);
   }
   return null;
+}
+
+/**
+ * A server call that survives its own credential dying.
+ *
+ * WHY THIS EXISTS. Every call site used to be `const h = await apiHeaders(); fetch(url, {headers: h})`,
+ * and that shape cannot recover from the one failure the credential actually has. The game token
+ * lives in the server's Redis with a 24h TTL; the client only knows its own copy of the expiry. A
+ * Redis restart, a flush, an eviction or a different backend leaves the client holding a token the
+ * server has never heard of. `apiHeaders` returns the moment it HAS a token — so it does not send
+ * the `Saju-Authorization` fallback either — and `Api::V1::BaseController#authenticate` refuses
+ * the request outright. It never falls back to `User-Auth`; that header is only read later, by
+ * `current_user`.
+ *
+ * Measured on 2026-09-21: entering the room answered 401 to `consultations/recall`, `saju/tickets`
+ * and `consultations` while the same uid answered 200 the moment a fresh token was minted.
+ *
+ * So: a 401 is treated as the token having expired, which is what it is. The token is thrown away,
+ * a new one is minted by `apiHeaders` on the way back through, and the call is retried ONCE. Once,
+ * because the second 401 is about the account rather than the credential, and a client that keeps
+ * retrying an answer the server keeps giving is a loop.
+ *
+ * Returns null under exactly the condition `apiHeaders` does — there is no way to authenticate at
+ * all — so callers keep treating that as "do not send", not as an error.
+ */
+export async function authedFetch(
+  url: string,
+  init: RequestInit = {},
+): Promise<Response | null> {
+  const headers = await apiHeaders();
+  if (!headers) return null;
+
+  const send = (h: Record<string, string>) =>
+    fetch(url, { ...init, headers: { ...h, ...(init.headers as Record<string, string>) } });
+
+  const res = await send(headers);
+  // Only a game token is worth retrying. A 401 carrying the shared dev secret means that secret is
+  // wrong, and minting a token would not change it; a 401 carrying nothing cannot be retried at all.
+  if (res.status !== 401 || !headers['Game-Token']) return res;
+
+  devlog('[auth] 401 with a game token — the server does not know it; minting a new one');
+  invalidateGameToken();
+
+  const fresh = await apiHeaders();
+  // No new credential to be had (offline, or game/token itself refused) — hand back the 401 rather
+  // than a null the caller would read as "not signed in".
+  if (!fresh || fresh['Game-Token'] === headers['Game-Token']) return res;
+
+  return send(fresh);
 }

@@ -19,15 +19,27 @@
  *     message rather than twenty a second.
  *
  * A HELD BUTTON IS ONE MESSAGE. Unity keeps the last direction until it is told otherwise
- * (MapPlayerController.SetRemoteMove), so press sends the vector and release sends {0,0}. That
- * makes the RELEASE load-bearing: a missed one leaves the player walking into a wall forever,
- * which is why it is sent on every way a press can end — up, cancel, and unmount.
+ * (MapPlayerController.SetRemoteMove), so a change of direction sends the new vector and letting
+ * go of everything sends {0,0}. That makes the RELEASE load-bearing: a missed one leaves the
+ * player walking into a wall forever, which is why it is sent on every way a press can end — up,
+ * cancel, and unmount.
+ *
+ * ⚠️ WHAT IS HELD IS A SET, NOT THE LAST KEY. Each key used to send its own vector on press and a
+ * flat {0,0} on release, which has two consequences that both read as "the character is janky":
+ *   • Releasing ONE key while another is still down sent {0,0} and the player stopped dead, still
+ *     holding a direction. Rolling a thumb from ▲ to ▶ — the ordinary way anyone steers a d-pad —
+ *     therefore produced a stutter every single time.
+ *   • There were no diagonals, so reaching anything off-axis meant alternating two keys, which is
+ *     the same stutter on purpose.
+ * Tracking the held set and sending the SUM fixes both, and costs no extra messages: the vector is
+ * only sent when it actually changes. The sum is normalised so a diagonal is not 1.41× faster than
+ * a straight line — Unity honours the magnitude, and √2 would sprint.
  *
  * THE TALK BUTTON ONLY EXISTS WHEN THE ROOM SAYS SO. `WALK_STATE` arrives on change; a button that
  * could be pressed at any distance would be a second answer to "is anyone near?", and the two
  * would disagree.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
@@ -53,11 +65,35 @@ const GLYPH: Record<Dir, string> = { up: '▲', down: '▼', left: '◀', right:
 export const WalkControls: React.FC<{ visible: boolean }> = ({ visible }) => {
   const [canTalk, setCanTalk] = useState(false);
 
-  const send = useCallback((x: number, y: number) => {
+  /** Which keys are under a finger right now. A ref, not state: it changes on every touch and
+   *  nothing about it is drawn — Pressable colours its own pressed state. */
+  const held = useRef<Set<Dir>>(new Set());
+  /** The last vector actually sent, so an unchanged one is not sent twice. */
+  const sent = useRef({ x: 0, y: 0 });
+
+  const push = useCallback((x: number, y: number) => {
+    if (x === sent.current.x && y === sent.current.y) return;
+    sent.current = { x, y };
     getUnityBridge().sendEvent({ type: 'WALK_INPUT', payload: { x, y } });
   }, []);
 
-  const stop = useCallback(() => send(0, 0), [send]);
+  /** The sum of what is held, normalised. Empty set = {0,0}, which is the stop. */
+  const sync = useCallback(() => {
+    let x = 0;
+    let y = 0;
+    held.current.forEach(d => {
+      x += DIRECTIONS[d].x;
+      y += DIRECTIONS[d].y;
+    });
+    const len = Math.hypot(x, y);
+    push(len > 1 ? x / len : x, len > 1 ? y / len : y);
+  }, [push]);
+
+  /** Everything up. Used when the walk ends, which must never depend on a release arriving. */
+  const stop = useCallback(() => {
+    held.current.clear();
+    push(0, 0);
+  }, [push]);
 
   useEffect(() => {
     return getUnityBridge().onEvent((e: UnityToRNEvent) => {
@@ -77,9 +113,21 @@ export const WalkControls: React.FC<{ visible: boolean }> = ({ visible }) => {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={dir}
+      // A thumb that drifts a few pixels off a 62 px key must not read as letting go: without this
+      // the walk stops mid-stride for no reason the player can see, which is most of what made the
+      // pad feel unreliable. The slop is half the gap, so neighbouring keys still cannot both claim
+      // one touch.
+      hitSlop={GAP}
+      pressRetentionOffset={KEY / 2}
       style={({ pressed }) => [styles.key, style, pressed && styles.keyPressed]}
-      onPressIn={() => send(DIRECTIONS[dir].x, DIRECTIONS[dir].y)}
-      onPressOut={stop}>
+      onPressIn={() => {
+        held.current.add(dir);
+        sync();
+      }}
+      onPressOut={() => {
+        held.current.delete(dir);
+        sync();
+      }}>
       <Text style={styles.glyph}>{GLYPH[dir]}</Text>
     </Pressable>
   );

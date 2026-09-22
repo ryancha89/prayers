@@ -79,6 +79,25 @@ export function storeGameToken(token: string, expiresAtMs: number) {
   useAuthStore.setState({ gameToken: token, gameTokenExpiresAt: expiresAtMs });
 }
 
+/**
+ * Throw away the current game token, because the SERVER would not take it.
+ *
+ * ⚠️ THE CLOCK IS NOT THE ONLY WAY A TOKEN DIES. `validGameToken` only ever asked "has my own
+ * expiry passed?", but the token lives in the server's Redis (GameToken.issue → setex), and Redis
+ * forgets things the client's clock knows nothing about: a restart, a flush, an eviction, a
+ * different machine. In that window the client holds a token it believes in and the server has
+ * never heard of — and because `apiHeaders` returns as soon as it HAS a token, the request goes
+ * out with the dead one and without the fallback credential, `authenticate` refuses it, and
+ * nothing here noticed. Every call then 401s until the local clock happens to run out, which can
+ * be another 23 hours.
+ *
+ * So a 401 is the second expiry signal, and this is how it is spent. Clearing the token is enough
+ * to fix the next call: `ensureGameToken` mints a fresh one the moment `validGameToken` says null.
+ */
+export function invalidateGameToken() {
+  useAuthStore.setState({ gameToken: null, gameTokenExpiresAt: null });
+}
+
 /** One minute of slack, so a token cannot expire between the check and the request. */
 const EXPIRY_SLACK_MS = 60_000;
 

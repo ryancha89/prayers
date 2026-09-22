@@ -1,5 +1,5 @@
 import { apiBase } from '../../../shared/config/api';
-import { apiHeaders } from '../../auth/api/headers';
+import { authedFetch } from '../../auth/api/headers';
 import { devlog } from '../../../shared/devlog';
 
 /**
@@ -43,10 +43,9 @@ export interface SubscriptionStatus {
 }
 
 export async function fetchSubscription(signal?: AbortSignal): Promise<SubscriptionStatus | null> {
-  const headers = await apiHeaders();
-  if (!headers) return null;
   try {
-    const res = await fetch(`${apiBase()}/api/v1/ticket_subscription/status`, { headers, signal });
+    const res = await authedFetch(`${apiBase()}/api/v1/ticket_subscription/status`, { signal });
+    if (!res) return null;
     const body = await res.json().catch(() => null);
     if (!res.ok || !body?.success) return null;
     const sub = body.ticket_sub ?? {};
@@ -69,12 +68,9 @@ export async function activateSubscription(input: {
   originalTransactionId?: string;
   expiresAt?: string;
 }): Promise<boolean> {
-  const headers = await apiHeaders();
-  if (!headers) return false;
   try {
-    const res = await fetch(`${apiBase()}/api/v1/ticket_subscription/activate`, {
+    const res = await authedFetch(`${apiBase()}/api/v1/ticket_subscription/activate`, {
       method: 'POST',
-      headers,
       body: JSON.stringify({
         product_id: input.productId,
         transaction_id: input.transactionId,
@@ -83,6 +79,7 @@ export async function activateSubscription(input: {
         platform: 'ios',
       }),
     });
+    if (!res) return false;
     const body = await res.json().catch(() => null);
     if (!res.ok || body?.success !== true) {
       if (__DEV__) devlog(`[tickets] activate refused: ${res.status} ${body?.error_code ?? ''}`);
@@ -101,16 +98,14 @@ export async function activateSubscription(input: {
  * to remember to collect is an allowance they will be annoyed to discover they lost.
  */
 export async function claimDaily(): Promise<number> {
-  const headers = await apiHeaders();
-  if (!headers) return 0;
   try {
-    const res = await fetch(`${apiBase()}/api/v1/ticket_subscription/claim`, {
+    const res = await authedFetch(`${apiBase()}/api/v1/ticket_subscription/claim`, {
       method: 'POST',
-      headers,
       // The server defaults to its own today; sending the DEVICE's date is what makes the
       // allowance land on the day the player is actually living in.
       body: JSON.stringify({ local_date: new Date().toISOString().slice(0, 10) }),
     });
+    if (!res) return 0;
     const body = await res.json().catch(() => null);
     return typeof body?.granted === 'number' ? body.granted : 0;
   } catch {

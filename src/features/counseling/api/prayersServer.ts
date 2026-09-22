@@ -1,5 +1,5 @@
 import { apiBase } from '../../../shared/config/api';
-import { apiHeaders } from '../../auth/api/headers';
+import { apiHeaders, authedFetch } from '../../auth/api/headers';
 import { devlog } from '../../../shared/devlog';
 import { isLang } from '../../../shared/i18n';
 import type { Lang } from '../../../shared/i18n';
@@ -93,11 +93,9 @@ export const serverAvailable = async (): Promise<boolean> => (await apiHeaders()
  * value; it does NOT mean "no language".
  */
 export async function fetchAccountLanguage(signal?: AbortSignal): Promise<Lang | null> {
-  const headers = await apiHeaders();
-  if (!headers) return null;
   try {
-    const res = await fetch(`${BASE()}/api/v1/prayers/settings`, { headers, signal });
-    if (!res.ok) return null;
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/settings`, { signal });
+    if (!res || !res.ok) return null;
     const body = await res.json();
     const lang = body?.settings?.language;
     return isLang(lang) ? lang : null;
@@ -109,15 +107,12 @@ export async function fetchAccountLanguage(signal?: AbortSignal): Promise<Lang |
 /** Remember this language on the account. Best effort: a failure leaves the local choice alone,
  *  because a player who picked a language must see it applied whether or not the network agrees. */
 export async function saveAccountLanguage(lang: Lang): Promise<boolean> {
-  const headers = await apiHeaders();
-  if (!headers) return false;
   try {
-    const res = await fetch(`${BASE()}/api/v1/prayers/settings`, {
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/settings`, {
       method: 'POST',
-      headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ language: lang }),
     });
-    if (!res.ok) return false;
+    if (!res || !res.ok) return false;
     return (await res.json())?.success === true;
   } catch {
     return false;
@@ -158,19 +153,15 @@ export async function fetchConversations(input: {
   limit?: number;
   signal?: AbortSignal;
 }): Promise<RemoteConversation[] | null> {
-  const headers = await apiHeaders();
-  if (!headers) return null;
-
   const query = new URLSearchParams({ language: input.lang });
   if (input.counselorId) query.set('counselor', input.counselorId);
   if (input.limit) query.set('limit', String(input.limit));
 
   try {
-    const res = await fetch(`${BASE()}/api/v1/prayers/consultations?${query}`, {
-      headers,
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/consultations?${query}`, {
       signal: input.signal,
     });
-    if (!res.ok) return null;
+    if (!res || !res.ok) return null;
     const body: any = await res.json();
     if (body?.success !== true || !Array.isArray(body.conversations)) return null;
 
@@ -195,15 +186,11 @@ export async function fetchConversations(input: {
 }
 
 export async function fetchTopics(lang: Lang, signal?: AbortSignal): Promise<TopicCard[] | null> {
-  const headers = await apiHeaders();
-  if (!headers) return null;
-
   try {
-    const res = await fetch(`${BASE()}/api/v1/prayers/topics?language=${encodeURIComponent(lang)}`, {
-      headers,
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/topics?language=${encodeURIComponent(lang)}`, {
       signal,
     });
-    if (!res.ok) return null;
+    if (!res || !res.ok) return null;
 
     const body = await res.json();
     if (!body?.success || !Array.isArray(body.topics)) return null;
@@ -269,18 +256,14 @@ export async function saveSajuProfile(
   input: SajuProfileInput,
   signal?: AbortSignal,
 ): Promise<boolean> {
-  const headers = await apiHeaders();
-  if (!headers) return false;
-
   const date = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.birthDate.trim());
   if (!date) return false;
 
   const time = input.birthTime ? /^(\d{1,2}):(\d{2})$/.exec(input.birthTime.trim()) : null;
 
   try {
-    const res = await fetch(`${BASE()}/api/v1/saju/save`, {
+    const res = await authedFetch(`${BASE()}/api/v1/saju/save`, {
       method: 'POST',
-      headers,
       body: JSON.stringify({
         name: input.name,
         year: Number(date[1]),
@@ -296,7 +279,7 @@ export async function saveSajuProfile(
       }),
       signal,
     });
-    if (!res.ok) return false;
+    if (!res || !res.ok) return false;
 
     const body = await res.json();
     return body?.success === true;
@@ -308,12 +291,9 @@ export async function saveSajuProfile(
 export async function checkConsultationReadiness(
   signal?: AbortSignal,
 ): Promise<ConsultationReadiness> {
-  const headers = await apiHeaders();
-  if (!headers) return 'offline';
-
   try {
-    const res = await fetch(`${BASE()}/api/v1/saju/me`, { headers, signal });
-    if (!res.ok) return 'offline';
+    const res = await authedFetch(`${BASE()}/api/v1/saju/me`, { signal });
+    if (!res || !res.ok) return 'offline';
 
     const body = await res.json();
     if (body?.success !== true) return 'offline';
@@ -373,9 +353,6 @@ export async function fetchRecall(input: {
   tone?: string;
   signal?: AbortSignal;
 }): Promise<Recall | null> {
-  const headers = await apiHeaders();
-  if (!headers) return null;
-
   const query = new URLSearchParams({ language: input.lang });
   if (input.topic) query.set('topic', input.topic);
   if (input.uniqId) query.set('uniq_id', input.uniqId);
@@ -383,10 +360,10 @@ export async function fetchRecall(input: {
   if (input.tone) query.set('tone', input.tone);
 
   try {
-    const res = await fetch(`${BASE()}/api/v1/prayers/consultations/recall?${query}`, {
-      headers,
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/consultations/recall?${query}`, {
       signal: input.signal,
     });
+    if (!res) return null;
     const payload: any = await res.json();
     if (!res.ok || payload?.success !== true || payload?.has_history !== true) return null;
     if (typeof payload.opening !== 'string' || payload.opening.length === 0) return null;
@@ -430,9 +407,6 @@ export interface SendMessageInput {
 export async function sendConsultationMessage(
   input: SendMessageInput,
 ): Promise<ConsultationTurn | null> {
-  const headers = await apiHeaders();
-  if (!headers) return null;
-
   const body = {
     uniq_id: input.uniqId,
     message: { content: input.content },
@@ -452,12 +426,13 @@ export async function sendConsultationMessage(
 
   let res: Response;
   try {
-    res = await fetch(`${BASE()}/api/v1/prayers/consultations/message`, {
+    const sent = await authedFetch(`${BASE()}/api/v1/prayers/consultations/message`, {
       method: 'POST',
-      headers,
       body: JSON.stringify(body),
       signal: input.signal,
     });
+    if (!sent) return null;
+    res = sent;
   } catch {
     return null;
   }

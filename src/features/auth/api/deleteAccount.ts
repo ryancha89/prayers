@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiBase } from '../../../shared/config/api';
 import { devlog } from '../../../shared/devlog';
-import { apiHeaders } from './headers';
+import { authedFetch } from './headers';
 import { signedOut } from '../store/authStore';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
@@ -23,14 +23,11 @@ const EMPTY_SELF = { id: 'self', displayName: '', isUser: true as const };
  * their tickets in it. Only `deleted === true` counts.
  */
 export async function deleteAccount(): Promise<boolean> {
-  const headers = await apiHeaders();
-  if (!headers) return false;
-
   try {
-    const res = await fetch(`${apiBase()}/api/v1/users/delete_account`, {
+    const res = await authedFetch(`${apiBase()}/api/v1/users/delete_account`, {
       method: 'DELETE',
-      headers,
     });
+    if (!res) return false;
     const body = (await res.json().catch(() => null)) as { deleted?: boolean } | null;
     if (!res.ok || body?.deleted !== true) {
       if (__DEV__) devlog(`[auth] delete_account refused (${res.status} deleted=${body?.deleted})`);
