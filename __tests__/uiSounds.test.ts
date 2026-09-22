@@ -28,6 +28,9 @@ const SILENT: Record<string, string> = {
   'features/profile/screens/AccountScreen.tsx': 'not wired yet',
   'features/subjects/components/SubjectCard.tsx': 'not wired yet',
   'features/subjects/screens/AddSubjectScreen.tsx': 'not wired yet',
+  'features/counseling/components/CueTester.tsx':
+    'dev-only cue tester, never in a release bundle — and it fires cues in rows of a dozen, ' +
+    'so a tap per press would drown the very performance it exists to let you watch',
 };
 
 function walk(dir: string): string[] {

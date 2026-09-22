@@ -14,6 +14,7 @@ import { useConversationsStore } from '../../conversations/store/conversationsSt
 import { fetchRecall } from '../api/prayersServer';
 import { devlog } from '../../../shared/devlog';
 import { WalkControls } from '../components/WalkControls';
+import { CueTester } from '../components/CueTester';
 import { useCounselingStore } from '../store/counselingStore';
 import { useChatModeStore } from '../store/chatModeStore';
 import { counselorAI, toneForCharacter } from '../api/counselorAI';
@@ -286,7 +287,6 @@ export const CounselingRoomScreen: React.FC = () => {
           nothing to say and these are the only controls on screen. They unmount themselves the
           moment the room reports the player seated — see useConsultationEngine.walking. */}
       <WalkControls visible={consultation.walking} />
-
       <ConsultationOverlay
         voice={voice}
         state={consultation.state}
@@ -313,6 +313,11 @@ export const CounselingRoomScreen: React.FC = () => {
           <Icon name="speaker" size={18} />
         </Pressable>
       </SafeAreaView>
+
+      {/* Dev only, and mounted LAST on purpose: it has to sit above ConsultationOverlay, whose
+          bubble and input bar cover exactly the part of the screen a bottom sheet wants. Mounted
+          before it, the lower half of the cue list could be read and not tapped. */}
+      {__DEV__ && <CueTester />}
     </View>
   );
 };

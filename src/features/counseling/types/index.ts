@@ -278,7 +278,13 @@ export type RNToUnityEvent =
   | { type: 'WALK_INPUT'; payload: { x: number; y: number } }
   /** The Talk button. Opens whoever the room currently has in reach — the room decides who, so
    *  there is only ever one answer to "who is nearest". */
-  | { type: 'WALK_TALK' };
+  | { type: 'WALK_TALK' }
+  /** DEV ONLY. Play one cue on whoever is in the chair and report what the rig made of it.
+   *
+   *  It goes through the room's ordinary PlayAnimation, not a shortcut into the Animator, so what
+   *  the tester sees is what a phase would produce — vote, held-pose preference, bool clearing and
+   *  all. The answer comes back as CUE_RESULT. */
+  | { type: 'CUE_TEST'; payload: { cue: string } };
 
 export type UnityToRNEvent =
   /** The transport is up, before any room exists — Unity's very first message.
@@ -324,6 +330,10 @@ export type UnityToRNEvent =
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
   | { type: 'WALK_STATE'; payload: { canTalk: boolean; personaId: string } }
+  /** DEV ONLY: the answer to CUE_TEST — `"<cue> -> trigger Smile"`, `"… -> alias -> bool
+   *  Explaining"`, `"… -> gaze: look at player"` or `"… -> missing"`. The rig, its alias table and
+   *  its parameter set are runtime facts, so this is the only place the answer exists. */
+  | { type: 'CUE_RESULT'; payload: { reason: string } }
   | { type: 'SESSION_ERROR'; payload: { reason: string } }
   | { type: 'EXIT_SESSION' };
 
