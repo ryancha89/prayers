@@ -145,8 +145,12 @@ const WAIT_LINES = 4;
  * (same bubble, new words — a second bubble would look like she answered), and at 20 s the camera
  * pushes in once, because at that point only a change of shot still says "this is going somewhere".
  *
- * ⚠️ THE SWAPPED LINES ARE NOT SPOKEN. Only the first is: a take started mid-wait would still be
- * playing when the answer arrives, and cutting it off to start the answer sounds worse than silence.
+ * ⚠️ THE SWAPPED LINES ARE SPOKEN, TOO. They used not to be — the worry was a take still playing
+ * when the answer arrives — and the bubble then showed words she never said while the room sat in
+ * silence (seen on the simulator 23-09: she said "Mm, good question…", the bubble read "One moment,
+ * let me look at that part…", then 11 s of nothing). The worry was already answered elsewhere:
+ * onLoopResult starts the answer through afterSpeech, so it waits for a wait line to finish rather
+ * than cutting it off. A swap only happens while she is silent, so a line is never cut by the next.
  * The room's own `loading_messages` endpoint (which Unity's chat panel uses) is deliberately NOT
  * ported here — it is an LLM call on the same transport that is already busy generating the answer,
  * and a personalised waiting line that lands after the answer is worse than a generic one that
@@ -1380,11 +1384,16 @@ export class ConsultationEngine {
         this.stageBeat('LOOP_WAIT_LONG', 'Thinking', 'closeUp');
       }
 
-      const next = this.pickWait();
-      if (next.text && this.waitRow >= 0 && this.waitRow < this.state.transcript.length) {
-        const transcript = this.state.transcript.slice();
-        transcript[this.waitRow] = { role: 'counselor', text: next.text };
-        this.patch({ transcript });
+      // Words and voice change together, and only while she is quiet — the bubble must never show a
+      // line she has not said (see the note on WAIT_SWAP_AFTER_MS).
+      if (!this.speaking) {
+        const next = this.pickWait();
+        if (next.text && this.waitRow >= 0 && this.waitRow < this.state.transcript.length) {
+          const transcript = this.state.transcript.slice();
+          transcript[this.waitRow] = { role: 'counselor', text: next.text };
+          this.patch({ transcript });
+          this.speak(() => this.stage.speakText(next.text, next.key), next.key);
+        }
       }
       this.waitTimer = this.sched.set(tick, WAIT_SWAP_EVERY_MS);
     };

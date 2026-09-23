@@ -1238,28 +1238,32 @@ test('a long wait swaps its line in place, and pushes the camera in once', () =>
   expect(rows).toBe(before + 2);
   const first = engine.getState().transcript[rows - 1].text;
   expect(first.length).toBeGreaterThan(0);
+  expect(stage.spokenText[stage.spokenText.length - 1]).toBe(first);
+  const firstKey = stage.spoken[stage.spoken.length - 1];
 
   // Nothing happens for the first few seconds: a line replaced at once would be a flicker.
   sched.advance(7_000);
   expect(engine.getState().transcript[rows - 1].text).toBe(first);
   expect(engine.getState().transcript).toHaveLength(rows);
 
-  // 8s: new words, SAME bubble.
+  // 8s while she is STILL saying the first line: no swap. New words over her own voice would put
+  // the bubble and the speech out of step — the bug this replaced.
   sched.advance(1_500);
+  expect(engine.getState().transcript[rows - 1].text).toBe(first);
+
+  // She finishes; at the next swap the bubble changes AND she says what it now reads.
+  engine.onSpeakDone(firstKey);
+  sched.advance(6_000);
   const second = engine.getState().transcript[rows - 1].text;
   expect(second).not.toBe(first);
   expect(engine.getState().transcript).toHaveLength(rows);
-
-  // ...and nothing new was spoken for it: a take started mid-wait would still be playing when the
-  // answer arrives.
-  const spokenAfterSwap = stage.spoken.length;
-  sched.advance(6_000);
-  expect(stage.spoken.length).toBe(spokenAfterSwap);
+  expect(stage.spokenText[stage.spokenText.length - 1]).toBe(second);
+  stage.spoken.slice().forEach(k => engine.onSpeakDone(k));
 
   // 20s: one push-in, and only one.
   const shots = () => stage.phases.filter(p => p.phaseId === 'LOOP_WAIT_LONG').length;
   expect(shots()).toBe(0);
-  sched.advance(8_000);
+  sched.advance(6_000);
   expect(shots()).toBe(1);
   sched.advance(30_000);
   expect(shots()).toBe(1);

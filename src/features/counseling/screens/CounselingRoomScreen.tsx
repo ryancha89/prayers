@@ -289,6 +289,7 @@ export const CounselingRoomScreen: React.FC = () => {
       <WalkControls visible={consultation.walking} />
       <ConsultationOverlay
         voice={voice}
+        counselorName={counselor.name}
         state={consultation.state}
         onTap={consultation.tap}
         onChoose={consultation.choose}

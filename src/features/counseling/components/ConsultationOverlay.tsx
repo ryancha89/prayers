@@ -51,6 +51,12 @@ export interface ConsultationOverlayProps {
   onMicStop?(): void;
   /** Drop the take; the counselor picks her answer back up. */
   onMicCancel?(): void;
+  /**
+   * Who is speaking, by name ("Yuna"). The flow asset only knows ONE speaker and labels every line
+   * with the generic `consult_speaker_counselor` ("Counselor" / "Thầy"), so without this the card
+   * never said whose room the player was in. Falls back to that label when absent.
+   */
+  counselorName?: string;
   /** Stop her talking, with no question behind it. */
   onHush?(): void;
   /** False in builds with no embedded player — the button is hidden rather than offered and then
@@ -82,6 +88,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   micAvailable = false,
   chatMode = 'detail',
   onChatMode,
+  counselorName,
 }) => {
   const lang = useLang();
   // The one-line explanation of the style just picked, the way SAVIS toasts it. Shown under the
@@ -149,7 +156,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
         {!!state.line && state.screen !== 'loop' && (
           <View style={styles.card}>
             {!!state.speaker && (
-              <Text style={styles.speaker}>{state.speaker}</Text>
+              <Text style={styles.speaker}>{counselorName || state.speaker}</Text>
             )}
             <ScrollView
               style={[
