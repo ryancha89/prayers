@@ -260,7 +260,7 @@ export const MeditationRoomScreen: React.FC = () => {
       {isNativeUnity() && <UnityHost style={styles.unity} />}
       <Animated.Image
         source={require('../assets/room.jpg')}
-        style={[styles.unity, { opacity: artOut }]}
+        style={[styles.art, { opacity: artOut }]}
         resizeMode="cover"
       />
       <Animated.View style={[styles.wash, { opacity: wash }]} />
@@ -342,6 +342,12 @@ const styles = StyleSheet.create({
   // absoluteFill, not flex: the Unity view is scenery layered under the chrome, and giving it a
   // place in the flex flow would push the ring and the clock off the bottom of the screen.
   unity: { ...absoluteFill },
+  // ⚠️ The art needs an explicit SIZE, not just four zero insets. Given only absoluteFill, this
+  // Animated.Image laid out at the bitmap's own size — 1242 × 2688 pt on a 402 pt screen — and
+  // pinned to the top-left, so the first second of the room was a 3× close-up of the wall scroll
+  // and a curtain (reported from the simulator 23-09, "sao đang ở góc này?"). The Unity view
+  // under it sizes correctly with the same style; only the image needed telling.
+  art: { ...absoluteFill, width: '100%', height: '100%' },
   wash: { ...absoluteFill, backgroundColor: '#181220' },
   safe: { flex: 1, justifyContent: 'space-between', paddingHorizontal: spacing.xl },
   header: { paddingTop: spacing.md },
