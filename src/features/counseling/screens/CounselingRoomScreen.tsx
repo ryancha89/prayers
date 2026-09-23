@@ -318,10 +318,19 @@ export const CounselingRoomScreen: React.FC = () => {
       {/* Dev only, and mounted LAST on purpose: it has to sit above ConsultationOverlay, whose
           bubble and input bar cover exactly the part of the screen a bottom sheet wants. Mounted
           before it, the lower half of the cue list could be read and not tapped. */}
-      {__DEV__ && <CueTester />}
+      {SHOW_CUE_TESTER && <CueTester />}
     </View>
   );
 };
+
+/**
+ * The "CUE" tab (CueTester): fire any animation cue at the counselor by hand.
+ *
+ * OFF, even in dev builds. `__DEV__` alone put a purple tab on the edge of every room in every
+ * build the team plays, over the scene being judged (asked to hide it, 23-09). Release builds never
+ * showed it. Flip to `__DEV__` while tuning a counselor's cues.
+ */
+const SHOW_CUE_TESTER = false;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
