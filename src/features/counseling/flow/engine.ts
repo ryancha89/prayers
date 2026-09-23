@@ -30,6 +30,7 @@ import {
 import { phases as allPhases, indexOf, loc, format } from './flowData';
 import { splitReading, joinChunks, type ReadingChunk } from './splitReading';
 import { devlog } from '../../../shared/devlog';
+import { topicFromQuestion } from '../topicFromQuestion';
 import { ui } from './strings';
 import { CounselorVoice, voiced } from './voice';
 import type { Lang } from '../../../shared/i18n';
@@ -1016,6 +1017,7 @@ export class ConsultationEngine {
 
     this.question = trimmed;
     this.opts.onUserLine?.(trimmed);
+    this.followQuestionTopic(trimmed);
     this.oraclePending = true;
     this.oracleError = null;
     this.stage.askOracle({ question: trimmed, topic: this.topic, scope: this.scope });
@@ -1025,6 +1027,21 @@ export class ConsultationEngine {
 
   leave() {
     this.finish();
+  }
+
+  /**
+   * The topic follows the counselor until the player says what they are asking about (23-09).
+   *
+   * Set BEFORE the ask and before the cover phases: P06-P10 are recorded per topic and their
+   * variants key off `branches`, so a topic changed after them would read the question with the
+   * wrong takes. A question that matches nothing leaves the counselor's topic alone.
+   */
+  private followQuestionTopic(question: string) {
+    const topic = topicFromQuestion(question);
+    if (!topic || topic === this.topic) return;
+    this.topic = topic;
+    this.branches = [...this.branches.filter(b => !b.startsWith('topic:')), 'topic:' + topic];
+    this.patch({ topic });
   }
 
   /* ── The microphone ───────────────────────────────────────────────────────
@@ -1338,6 +1355,7 @@ export class ConsultationEngine {
     // He takes the question in before he starts thinking about it.
     this.stageBeat('LOOP_ASK', 'Agreeing');
     this.stage.thinking(true);
+    this.followQuestionTopic(text);
     this.stage.askOracle({
       question: text,
       topic: this.topic,

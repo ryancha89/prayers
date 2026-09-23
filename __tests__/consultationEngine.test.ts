@@ -1308,3 +1308,52 @@ test('a loop turn carries the answer style the room has picked, and the reading 
   engine.submitQuestion('그럼 내년은요?');
   expect(stage.asks[stage.asks.length - 1]).toMatchObject({ loop: true, chatMode: 'tiki' });
 });
+
+/**
+ * The topic follows the counselor, then the player's question (23-09). The question is read before
+ * the ask goes out and before the per-topic cover takes, so both carry the question's topic.
+ */
+describe('the question picks the topic', () => {
+  const withPreset = (presetTopic: string) => {
+    const sched = new FakeScheduler();
+    const stage = new StageDouble();
+    const engine = new ConsultationEngine({ stage, lang: 'ko', scheduler: sched, presetTopic });
+    stage.bind(engine);
+    stage.autoFinishSpeech = true;
+    engine.begin();
+    sched.advance(60_000);
+    return { sched, stage, engine };
+  };
+
+  test('a question about work moves a generalist off life', () => {
+    const { stage, engine } = withPreset('life');
+    engine.submitQuestion('올해 이직해도 될까요?');
+    expect(stage.asks[0].topic).toBe('career');
+    expect(engine.getState().topic).toBe('career');
+  });
+
+  test('a question that names nothing keeps the counselor topic', () => {
+    const { stage, engine } = withPreset('love');
+    engine.submitQuestion('이번 달에 뭘 조심해야 할까요?');
+    expect(stage.asks[0].topic).toBe('love');
+  });
+
+  test('a follow-up can change it again', () => {
+    const { sched, stage, engine } = withPreset('life');
+    engine.submitQuestion('올해 이직해도 될까요?');
+    engine.onOracleResult({
+      ok: true,
+      followup: '',
+      beats: [
+        { phaseId: 'P11', lines: ['하나'] },
+        { phaseId: 'P14', lines: ['둘'] },
+        { phaseId: 'P17', lines: ['셋'] },
+        { phaseId: 'P19', lines: ['넷'] },
+      ],
+    });
+    sched.advance(300_000);
+    expect(engine.getState().screen).toBe('loop');
+    engine.submitQuestion('그럼 남자친구랑은요?');
+    expect(stage.asks[stage.asks.length - 1]).toMatchObject({ loop: true, topic: 'love' });
+  });
+});
