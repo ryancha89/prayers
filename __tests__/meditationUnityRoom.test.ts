@@ -91,3 +91,61 @@ it('stops repeating once the room answers', () => {
 
   expect(types().filter(t => t === 'MEDITATION_INIT')).toHaveLength(1);
 });
+
+/* ── 24-09: the room could stay on its photo, and the girl in it now follows the session ── */
+
+it('repeats MEDITATION_INIT until the room answers, then stops', () => {
+  jest.useFakeTimers();
+  try {
+    const { bridge, types } = bridgeWithView();
+    bridge.openMeditationRoom();
+    // The first one was lost (it went to a view that was leaving). Nothing else will resend it.
+    jest.advanceTimersByTime(1500);
+    expect(types().filter(t => t === 'MEDITATION_INIT')).toHaveLength(2);
+
+    bridge.receiveFromUnity(JSON.stringify({ type: 'MEDITATION_READY' }));
+    jest.advanceTimersByTime(10_000);
+    expect(types().filter(t => t === 'MEDITATION_INIT')).toHaveLength(2);
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+it('gives up after a bounded number of retries', () => {
+  jest.useFakeTimers();
+  try {
+    const { bridge, types } = bridgeWithView();
+    bridge.openMeditationRoom();
+    jest.advanceTimersByTime(60_000);
+    expect(types().filter(t => t === 'MEDITATION_INIT')).toHaveLength(1 + 4);
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+it('sends MEDITATION_INIT again when a new view registers', () => {
+  const posted: string[] = [];
+  const bridge = new NativeUnityBridge();
+  bridge.registerView({ postMessage: () => {} });   // the consultation's view, about to go
+  bridge.openMeditationRoom();
+  bridge.registerView({ postMessage: (_g, _m, msg) => posted.push(JSON.parse(msg).type) });
+  expect(posted).toContain('MEDITATION_INIT');
+  bridge.closeMeditationRoom();
+});
+
+it('re-sends the session state when the room answers', () => {
+  const { bridge, types } = bridgeWithView();
+  bridge.openMeditationRoom();
+  // Begin pressed while the scene is still loading.
+  bridge.sendMeditationState({ state: 'breathing', inMs: 4000, holdMs: 4000, outMs: 6000, intoMs: 0 });
+  bridge.receiveFromUnity(JSON.stringify({ type: 'MEDITATION_READY' }));
+  expect(types().filter(t => t === 'MEDITATION_STATE')).toHaveLength(2);
+  bridge.closeMeditationRoom();
+});
+
+it('tells the room where in the 4-4-6 cycle the session is', () => {
+  const { breathSync } = require('../src/features/meditation/session');
+  expect(breathSync(0)).toEqual({ inMs: 4000, holdMs: 4000, outMs: 6000, intoMs: 0 });
+  // 15 s in = one full 14 s cycle plus one second of the next in-breath.
+  expect(breathSync(15_000).intoMs).toBe(1000);
+});

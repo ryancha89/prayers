@@ -269,6 +269,11 @@ export type RNToUnityEvent =
   | { type: 'MEDITATION_INIT' }
   /** Leaving the meditation room. Unity treats it exactly as SESSION_END. */
   | { type: 'MEDITATION_END' }
+  /** The meditation session as this app is running it, sent on every change of state. The girl in
+   *  the room closes her eyes while `breathing`, her chest follows the breath, and on `done` she
+   *  opens them and smiles. `intoMs` is how far into the breath cycle the session is at the moment
+   *  of sending; Unity clocks the breath on from there rather than being told every phase. */
+  | { type: 'MEDITATION_STATE'; payload: MeditationStatePayload }
   /** A held direction key. x = right, y = forward, each in [-1, 1].
    *
    *  ONE MESSAGE PER PRESS: Unity keeps the last direction until told otherwise, so the press
@@ -285,6 +290,14 @@ export type RNToUnityEvent =
    *  the tester sees is what a phase would produce — vote, held-pose preference, bool clearing and
    *  all. The answer comes back as CUE_RESULT. */
   | { type: 'CUE_TEST'; payload: { cue: string } };
+
+export interface MeditationStatePayload {
+  state: 'idle' | 'breathing' | 'paused' | 'done';
+  inMs: number;
+  holdMs: number;
+  outMs: number;
+  intoMs: number;
+}
 
 export type UnityToRNEvent =
   /** The transport is up, before any room exists — Unity's very first message.

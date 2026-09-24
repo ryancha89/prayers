@@ -9,7 +9,7 @@ import { absoluteFill, colors, radius, spacing, typography } from '../../../shar
 import { sfx } from '../../../shared/audio/sfx';
 import { backgroundMusic } from '../../../shared/audio/backgroundMusic';
 import { holdScreenAwake } from '../../../shared/device/keepAwake';
-import { BREATH, CYCLE_MS, MeditationSession, SESSION_MS, type Phase, type SessionState } from '../session';
+import { BREATH, CYCLE_MS, MeditationSession, SESSION_MS, breathSync, type Phase, type SessionState } from '../session';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 
@@ -72,6 +72,16 @@ export const MeditationRoomScreen: React.FC = () => {
    *  effect below, and the warning in the render for why it is the ART that moves. */
   const artOut = useRef(new Animated.Value(1)).current;
   const loops = useRef<Animated.CompositeAnimation[]>([]);
+
+  /** Tell the girl in the room what the session is doing: eyes shut and breathing with the ring
+   *  while it runs, eyes open when it pauses, a smile when it is done. */
+  const tellRoom = useCallback(
+    (roomState: 'idle' | 'breathing' | 'paused' | 'done') => {
+      if (!isNativeUnity()) return;
+      nativeUnityBridge.sendMeditationState({ state: roomState, ...breathSync(session.elapsed()) });
+    },
+    [session],
+  );
 
   const startAnimation = useCallback(() => {
     loops.current.forEach(l => l.stop());
@@ -174,11 +184,12 @@ export const MeditationRoomScreen: React.FC = () => {
   useEffect(() => {
     if (state.status !== 'done') return;
     stopAnimation(true);
+    tellRoom('done');
     sfx.bellOut();
     // The ten minutes are over; the room goes quiet with them rather than looping under an end
     // card. `stop` and not `pause`: the next session is a new sitting, not a continuation.
     backgroundMusic.stop();
-  }, [state.status, stopAnimation]);
+  }, [state.status, stopAnimation, tellRoom]);
 
   // Leaving the tab pauses the breath. It is a tab now, so "leaving" is one tap and costs nothing —
   // but a session that kept counting down behind the counselor list would hand the player back four
@@ -189,11 +200,12 @@ export const MeditationRoomScreen: React.FC = () => {
         session.pause();
         stopAnimation(true);
         setState(session.read());
+        tellRoom('paused');
         // The route rule swaps the app's bed back in on the way out; this only makes sure the
         // meditation loop is not the thing still playing while it does.
         backgroundMusic.stop();
       }),
-    [navigation, session, stopAnimation],
+    [navigation, session, stopAnimation, tellRoom],
   );
 
   useEffect(
@@ -211,6 +223,7 @@ export const MeditationRoomScreen: React.FC = () => {
     session.start();
     setState(session.read());
     startAnimation();
+    tellRoom('breathing');
     backgroundMusic.start('meditation');
   };
 
@@ -219,6 +232,7 @@ export const MeditationRoomScreen: React.FC = () => {
     session.pause();
     stopAnimation(true);
     setState(session.read());
+    tellRoom('paused');
     // Held, not dropped: Carry on picks the track up where it stopped, the way the breath does.
     backgroundMusic.pause();
   };

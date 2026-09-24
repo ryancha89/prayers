@@ -28,6 +28,13 @@ export const BREATH: readonly PhaseStep[] = [
 
 export const CYCLE_MS = BREATH.reduce((ms, s) => ms + s.seconds * 1000, 0);
 
+/** The breath pattern and where a session `elapsedMs` in sits in it — what the 3D room needs to
+ *  breathe in step with the ring. The room clocks the cycle on from `intoMs` itself. */
+export function breathSync(elapsedMs: number) {
+  const ms = (p: Phase) => (BREATH.find(s => s.phase === p)?.seconds ?? 0) * 1000;
+  return { inMs: ms('in'), holdMs: ms('hold'), outMs: ms('out'), intoMs: Math.max(0, elapsedMs) % CYCLE_MS };
+}
+
 /** The session length. One number, because the picker was cut: ten minutes, decided 15-09. */
 export const SESSION_MS = 10 * 60 * 1000;
 
