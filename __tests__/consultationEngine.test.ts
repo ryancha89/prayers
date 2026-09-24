@@ -1357,3 +1357,77 @@ describe('the question picks the topic', () => {
     expect(stage.asks[stage.asks.length - 1]).toMatchObject({ loop: true, topic: 'love' });
   });
 });
+
+/* ── A reading with no voice ───────────────────────────────────────────────
+ * Production has no TTS key, and the local synthesiser only runs on macOS, so every server-spoken
+ * line fails and SPEAK_DONE comes straight back. The phase used to leave after MAX_HOLD_MS (9 s)
+ * with a 290-character beat on the card — 40-50% of it read, measured on the simulator. */
+
+// ~290 characters, the size of a real reading beat. English, so the numbers are easy to check:
+// at 13 characters a second this takes ~22 s to read.
+const SILENT_BEAT =
+  'Your month pillar Xin Hai combines Direct Officer with resource support, suggesting that ' +
+  'preparation and credible references matter. For your weak Jia Day Master, useful Water ' +
+  'supports seeking guidance; I would treat the favorable timing as encouragement to apply, ' +
+  'not proof of an outcome.';
+
+/** Walk to P11 with the reading in hand; returns the fake time P11 went up at. */
+function toReading(sched: FakeScheduler, stage: StageDouble, engine: ConsultationEngine) {
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('question');
+  engine.onOracleResult({ ok: true, followup: '', beats: [{ phaseId: 'P11', lines: [SILENT_BEAT] }] });
+  for (let t = 0; t < 120_000 && engine.getState().phaseId !== 'P11'; t += 100) sched.advance(100);
+  expect(engine.getState().phaseId).toBe('P11');
+  return sched.now();
+}
+
+/** How long the phase on screen now stays up, to the nearest 100 ms. */
+function timeOnScreen(sched: FakeScheduler, engine: ConsultationEngine) {
+  const id = engine.getState().phaseId;
+  const from = sched.now();
+  while (engine.getState().phaseId === id && sched.now() - from < 120_000) sched.advance(100);
+  return sched.now() - from;
+}
+
+test('a reading that made no sound stays up long enough to read', () => {
+  const { sched, stage, engine } = build();
+  toReading(sched, stage, engine);
+  // The whole beat is on the card at once — nothing is being said to pace it.
+  expect(engine.getState().line.replace(/\s+/g, ' ')).toBe(SILENT_BEAT);
+  const shown = timeOnScreen(sched, engine);
+  const readMs = (SILENT_BEAT.length / 13) * 1000;
+  expect(shown).toBeGreaterThanOrEqual(readMs);
+  // …and not held forever either: reading time plus the usual tail.
+  expect(shown).toBeLessThan(readMs + 2000);
+});
+
+test('a spoken reading keeps the pace the voice sets', () => {
+  const { sched, stage, engine } = build();
+  stage.holdPrefix = 'P11#';
+  toReading(sched, stage, engine);
+  // Say every chunk at a real speaking pace (15 characters a second), by hand.
+  const from = sched.now();
+  for (let guard = 0; guard < 20; guard++) {
+    const key = stage.spoken[stage.spoken.length - 1];
+    if (!key.startsWith('P11#') || engine.getState().phaseId !== 'P11') break;
+    const chunkText = stage.spokenText[stage.spokenText.length - 1];
+    sched.advance((chunkText.length / 15) * 1000);
+    engine.onSpeakDone(key);
+    if (stage.spoken[stage.spoken.length - 1] === key) break; // no chunk after it: beat said
+  }
+  const spokeFor = sched.now() - from;
+  // Once she has finished, the phase goes after the tail — no reading-time pad on top of her.
+  const after = timeOnScreen(sched, engine);
+  expect(spokeFor).toBeGreaterThan(15_000);
+  expect(after).toBeLessThanOrEqual(1000);
+});
+
+test('a tap still moves a silent reading on', () => {
+  const { sched, stage, engine } = build();
+  toReading(sched, stage, engine);
+  sched.advance(2000);
+  engine.tap();
+  sched.advance(1000);
+  expect(engine.getState().phaseId).not.toBe('P11');
+});

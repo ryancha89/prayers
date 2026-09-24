@@ -94,6 +94,21 @@ const MAX_HOLD_MS = 9000;
 const TAIL_MS = 700;
 
 /**
+ * A line that made no sound is held for its READING time, up to this, instead of MAX_HOLD_MS.
+ *
+ * MAX_HOLD_MS was only ever safe because the voice outlasted it: a spoken take holds the phase
+ * through afterSpeech, so a 290-character reading beat stood for as long as she took to say it.
+ * With no voice — every TTS request failing, which is production today (no key, and the local
+ * synthesiser only runs on macOS) — SPEAK_DONE comes back in milliseconds, the whole beat lands on
+ * the card at once, and the phase left after 9 s: 40-50% of the reading, measured on the simulator
+ * 2026-09-24. Tap-to-continue is still there for anyone who reads faster.
+ */
+const MAX_UNVOICED_HOLD_MS = 30000;
+/** A take that reports done in under this share of its reading time made no sound. Real speech
+ *  runs at about reading pace, a failed synthesis in well under a second — the gap is wide. */
+const UNVOICED_FRACTION = 0.25;
+
+/**
  * Ceiling on the server's own `hold_ms`, as a guard rather than a policy.
  *
  * `Prayers::SceneBuilder#hold_ms` is how long a scene should STAND — reading time, floored by the
@@ -400,6 +415,11 @@ export class ConsultationEngine {
 
   /** Set while a spoken take is playing; SPEAK_DONE clears it. */
   private speaking: string | null = null;
+  /** When the current take was handed to Unity, and how many characters it carries. */
+  private speakStartedAt = 0;
+  private speakChars = 0;
+  /** A line of the current phase came back silent — see MAX_UNVOICED_HOLD_MS. */
+  private phaseUnvoiced = false;
   private speakDoneWaiter: (() => void) | null = null;
 
   private inLoop = false;
@@ -672,6 +692,7 @@ export class ConsultationEngine {
       resetVfx: opts.resetVfx === true,
     });
 
+    this.phaseUnvoiced = false;
     this.show(p);
 
     // Only unattended phases auto-advance. A Choices/QuestionBox phase waits
@@ -726,7 +747,11 @@ export class ConsultationEngine {
       for (let i = 1; i < chunks.length; i += 1) {
         this.stage.prefetchText(chunks[i].text, `${p.id}#${i}`);
       }
-      this.speak(() => this.stage.speakText(chunks[0].text, `${p.id}#0`), `${p.id}#0`);
+      this.speak(
+        () => this.stage.speakText(chunks[0].text, `${p.id}#0`),
+        `${p.id}#0`,
+        chunks[0].text.length,
+      );
       return;
     }
 
@@ -753,7 +778,11 @@ export class ConsultationEngine {
     // Spoken with the SAME keys the line was resolved from, variant included,
     // so a recorded take and the text on screen can never drift apart.
     if (keys && keys.length > 0) {
-      this.speak(() => this.stage.speakClip(keys, this.topic, p.id, spoken), p.id);
+      this.speak(
+        () => this.stage.speakClip(keys, this.topic, p.id, spoken),
+        p.id,
+        spoken.join('').length,
+      );
     }
   }
 
@@ -834,7 +863,7 @@ export class ConsultationEngine {
         this.timer = this.sched.set(() => {
           this.timer = null;
           this.advance();
-        }, TAIL_MS);
+        }, TAIL_MS + this.unvoicedRemaining(p, started));
       });
     };
 
@@ -863,9 +892,23 @@ export class ConsultationEngine {
     this.timer = this.sched.set(tick, Math.max(1, Math.min(COVER_POLL_MS, dwell)));
   }
 
-  private speak(fire: () => void, cacheKey: string) {
+  /** How much longer a silent phase still owes the player to finish reading the card. Zero once
+   *  any line of it was actually heard, since the voice then set the pace. */
+  private unvoicedRemaining(p: ConsultationPhase, started: number): number {
+    if (!this.phaseUnvoiced) return 0;
+    const mult = p.ui === 'report' ? REPORT_HOLD_MULTIPLIER : 1;
+    const read = (this.state.line.length / CHARS_PER_SECOND) * 1000 * mult;
+    const want = Math.min(read, MAX_UNVOICED_HOLD_MS * mult);
+    return Math.max(0, want - (this.sched.now() - started));
+  }
+
+  /** `chars` is what the take says, for telling a silent take from a spoken one (0 = don't judge:
+   *  the loop's answers stay in the chat after they are said, so a silent one loses nothing). */
+  private speak(fire: () => void, cacheKey: string, chars = 0) {
     this.stage.stopSpeak();
     this.speaking = cacheKey;
+    this.speakStartedAt = this.sched.now();
+    this.speakChars = chars;
     // Mirrored into the state because the UI has to tell "she is talking" from "the box is shut".
     // In the loop those came apart the day the player was allowed to cut in: the box is open while
     // she speaks, and the send button has to offer to interrupt rather than to send.
@@ -884,6 +927,12 @@ export class ConsultationEngine {
   /** Unity finished a spoken take. */
   onSpeakDone(cacheKey: string) {
     if (this.speaking && this.speaking !== cacheKey) return;
+    if (this.speaking && this.speakChars > 0) {
+      const expected = (this.speakChars / CHARS_PER_SECOND) * 1000;
+      if (this.sched.now() - this.speakStartedAt < expected * UNVOICED_FRACTION) {
+        this.phaseUnvoiced = true;
+      }
+    }
     this.speaking = null;
     if (this.state.speaking) this.patch({ speaking: false });
     // A reading beat still has chunks to say. Take the take, leave the phase's
@@ -1506,7 +1555,11 @@ export class ConsultationEngine {
         emotion: current.chunks[i].emotion ?? 'neutral',
       });
       const key = `${current.key}#${i}`;
-      this.speak(() => this.stage.speakText(current.chunks[i].text, key), key);
+      this.speak(
+        () => this.stage.speakText(current.chunks[i].text, key),
+        key,
+        current.chunks[i].text.length,
+      );
     });
     return true;
   }
