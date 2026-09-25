@@ -12,6 +12,7 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -37,6 +38,8 @@ import { CounselorVoice, voiced } from '../flow/voice';
 import type { FlowState } from '../flow/engine';
 import type { PhaseChoice } from '../flow/types';
 import type { ChatMode } from '../types';
+
+const QUICK_CHAT_ICON = require('../../../shared/assets/icons/quick_chat.png');
 
 export interface ConsultationOverlayProps {
   state: FlowState;
@@ -237,11 +240,22 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                         accessibilityRole="radio"
                         accessibilityState={{ selected: on }}
                       >
-                        <Text style={[styles.modeText, on && styles.modeTextOn]}>
-                          {m === 'tiki'
-                            ? `⚡ ${ui('mode.tiki', lang)}`
-                            : ui('mode.detail', lang)}
-                        </Text>
+                        <View style={styles.modeLabel}>
+                          {/* An image, not the ⚡ emoji it replaced: the app font has no glyph
+                              for it, so on device it drew as a boxed "?" (25-09). Tinted to the
+                              label so it follows the selected state with it. */}
+                          {m === 'tiki' && (
+                            <Image
+                              source={QUICK_CHAT_ICON}
+                              style={[styles.modeIcon, { tintColor: on ? colors.textPrimary : colors.textSecondary }]}
+                              accessibilityElementsHidden
+                              importantForAccessibility="no"
+                            />
+                          )}
+                          <Text style={[styles.modeText, on && styles.modeTextOn]}>
+                            {ui(m === 'tiki' ? 'mode.tiki' : 'mode.detail', lang)}
+                          </Text>
+                        </View>
                       </Pressable>
                     );
                   })}
@@ -643,6 +657,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(18, 18, 26, 0.94)',
   },
   modeSegOn: { backgroundColor: colors.violet, borderColor: colors.violet },
+  modeLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  modeIcon: { width: 16, height: 16 },
   modeText: { ...typography.caption, color: colors.textSecondary },
   modeTextOn: { color: colors.textPrimary },
   modeHint: { ...typography.tiny, color: colors.textMuted, marginBottom: spacing.xs },
