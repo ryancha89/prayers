@@ -24,7 +24,6 @@
       ],
       "camera": "establishing",
       "vfx": [
-        "DoorLightTransition",
         "AmbientParticles"
       ],
       "sound": [
