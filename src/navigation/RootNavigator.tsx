@@ -14,6 +14,7 @@ import { AccountScreen } from '../features/profile/screens/AccountScreen';
 import { LibraryScreen } from '../features/profile/screens/LibraryScreen';
 import { MeditationRoomScreen } from '../features/meditation/screens/MeditationRoomScreen';
 import { TicketsScreen } from '../features/tickets/screens/TicketsScreen';
+import { ArchiveSectionScreen } from '../features/archive/screens/ArchiveSectionScreen';
 import { LegalScreen } from '../features/profile/screens/LegalScreen';
 import { useAuthStore } from '../features/auth/store/authStore';
 
@@ -60,6 +61,7 @@ export const RootNavigator: React.FC = () => {
     <Stack.Screen name="Account" component={AccountScreen} />
     <Stack.Screen name="Library" component={LibraryScreen} />
     <Stack.Screen name="Tickets" component={TicketsScreen} />
+    <Stack.Screen name="ArchiveSection" component={ArchiveSectionScreen} />
     <Stack.Screen name="MeditationRoom" component={MeditationRoomScreen} />
     <Stack.Screen name="Legal" component={LegalScreen} />
     <Stack.Screen name="CounselorDetail" component={CounselorDetailScreen} />

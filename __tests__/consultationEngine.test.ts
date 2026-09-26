@@ -1304,3 +1304,58 @@ test('a loop turn carries the answer style the room has picked, and the reading 
   engine.submitQuestion('그럼 내년은요?');
   expect(stage.asks[stage.asks.length - 1]).toMatchObject({ loop: true, chatMode: 'tiki' });
 });
+
+/* ── Chat-first rooms (the pixel cat) ───────────────────────────────────────── */
+
+describe('a chat-first room', () => {
+  function chatFirst(opts: { voice?: 'cat' } = {}) {
+    const sched = new FakeScheduler();
+    const stage = new StageDouble();
+    const engine = new ConsultationEngine({
+      stage,
+      lang: 'ko',
+      scheduler: sched,
+      chatFirst: true,
+      voice: opts.voice,
+      chatMode: () => 'auto',
+    });
+    stage.bind(engine);
+    return { engine, stage, sched };
+  }
+
+  it('skips the staged reading and greets straight into free chat', () => {
+    const { engine, stage, sched } = chatFirst({ voice: 'cat' });
+    engine.begin();
+    sched.advance(1500);
+    const s = engine.getState();
+    expect(s.screen).toBe('loop');
+    expect(s.inputEnabled).toBe(true);
+    expect(s.line).toContain('냥');
+    // No scripted phase was staged — only the loop's own opening beat.
+    expect(stage.phaseIds).toEqual(['LOOP_OPEN']);
+  });
+
+  it('asks the server on the very first question, in the pinned style', () => {
+    const { engine, stage, sched } = chatFirst();
+    engine.begin();
+    sched.advance(1500);
+    engine.submitQuestion('요즘 일이 너무 많아');
+    expect(stage.asks).toHaveLength(1);
+    expect(stage.asks[0].loop).toBe(true);
+    expect(stage.asks[0].chatMode).toBe('auto');
+  });
+
+  it('opens with the memory of last time when it arrives in the grace window', () => {
+    const { engine, sched } = chatFirst();
+    engine.begin();
+    sched.advance(300);
+    engine.setRecallOpening('지난번엔 이직 이야기를 했었죠.');
+    expect(engine.getState().line).toBe('지난번엔 이직 이야기를 했었죠.');
+    // …and a late one never interrupts a conversation already under way.
+    const late = chatFirst();
+    late.engine.begin();
+    late.sched.advance(1500);
+    late.engine.setRecallOpening('늦은 기억');
+    expect(late.engine.getState().line).not.toBe('늦은 기억');
+  });
+});

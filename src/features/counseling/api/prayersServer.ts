@@ -47,6 +47,8 @@ export interface ConsultationTurn {
   /** Set when the classifier thinks the question has drifted somewhere else. */
   suggestSwitch?: string | null;
   scenes?: Scene[];
+  /** 아카이브 "기억 후보": what the counsellor heard about the player this turn. */
+  discoveries?: { category: string; content: string }[];
 }
 
 /** The 402 from step 9a. Distinct from a failure: the question is fine, the wallet is not. */
@@ -469,5 +471,10 @@ export async function sendConsultationMessage(
     mainTopic: payload.topic?.main ?? undefined,
     suggestSwitch: payload.topic?.suggest_switch ?? null,
     scenes: Array.isArray(payload.scenes) ? (payload.scenes as Scene[]) : undefined,
+    discoveries: Array.isArray(payload.discoveries)
+      ? payload.discoveries
+          .filter((d: any) => d && typeof d.content === 'string' && d.content.length > 0)
+          .map((d: any) => ({ category: String(d.category ?? 'diary'), content: String(d.content) }))
+      : undefined,
   };
 }

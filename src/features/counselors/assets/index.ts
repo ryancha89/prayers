@@ -27,6 +27,8 @@ export const COUNSELOR_CARD_ART: Record<string, ImageSourcePropType> = {
   yunjung: require('./yunjung.jpg'),
   // Cut from his character sheet, not drawn: Tools/gen_theo_sheet_art.py.
   theo: require('./theo.jpg'),
+  // Pixel art, cut from his own sprite: tools/pixelcat/gen_pixel_cat.py.
+  nabi: require('./nabi.png'),
 };
 
 export const COUNSELOR_AVATAR_ART: Record<string, ImageSourcePropType> = {
@@ -39,4 +41,5 @@ export const COUNSELOR_AVATAR_ART: Record<string, ImageSourcePropType> = {
   breathe: require('./breathe_avatar.jpg'),
   yunjung: require('./yunjung_avatar.jpg'),
   theo: require('./theo_avatar.jpg'),
+  nabi: require('./nabi_avatar.png'),
 };

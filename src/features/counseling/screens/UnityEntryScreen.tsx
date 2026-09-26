@@ -11,6 +11,7 @@ import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useCounselingStore } from '../store/counselingStore';
 import { defaultTopicFor } from '../topicsForCounselor';
 import { getUnityBridge, isNativeUnity, unityApiBase } from '../bridge';
+import { isPixelCounselor } from '../pixel/pixelCounselors';
 import { getUserAuth } from '../../auth/store/authStore';
 import { CounselingTopic, UnityToRNEvent } from '../types';
 import { fetchTicketBalance } from '../api/tickets';
@@ -73,6 +74,12 @@ export const UnityEntryScreen: React.FC = () => {
         resuming: params.resuming,
       });
     };
+
+    // A pixel counselor's room is drawn by the app — there is no player to boot.
+    if (isPixelCounselor(counselor.characterId)) {
+      goToRoom();
+      return;
+    }
 
     // Mock boots here and signals UNITY_READY. The real engine only boots when
     // the room mounts its UnityHost, so we hand over immediately and let the

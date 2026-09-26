@@ -8,18 +8,21 @@ import { sfx } from '../shared/audio/sfx';
 import { HomeScreen } from '../features/home/screens/HomeScreen';
 import { ConversationsScreen } from '../features/conversations/screens/ConversationsScreen';
 import { MyPageScreen } from '../features/profile/screens/MyPageScreen';
+import { ArchiveScreen } from '../features/archive/screens/ArchiveScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
 const ICONS: Record<keyof TabParamList, IconName> = {
   Home: 'home',
   Conversations: 'chat',
+  Archive: 'archive',
   My: 'person',
 };
 
 const LABEL_KEYS: Record<keyof TabParamList, TranslationKey> = {
   Home: 'tab.home',
   Conversations: 'tab.conversations',
+  Archive: 'tab.archive',
   My: 'tab.my',
 };
 
@@ -48,6 +51,7 @@ export const BottomTabNavigator: React.FC = () => {
       })}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Conversations" component={ConversationsScreen} />
+      <Tab.Screen name="Archive" component={ArchiveScreen} />
       <Tab.Screen name="My" component={MyPageScreen} />
     </Tab.Navigator>
   );

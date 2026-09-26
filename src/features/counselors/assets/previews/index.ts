@@ -83,4 +83,5 @@ export const PREVIEW_STRIPS: Record<string, Record<string, ImageSourcePropType>>
     explaining: require('./theo_explaining.jpg'),
     surprised: require('./theo_surprised.jpg'),
   },
+
 };

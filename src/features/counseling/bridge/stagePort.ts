@@ -52,6 +52,8 @@ export function createStagePort(bridge: UnityBridge, onExit: () => void): StageP
 export interface MockReply {
   text: string;
   scenes?: import('../types').CounselorScene[];
+  /** 아카이브 "기억 후보" the server sent with the answer. */
+  discoveries?: { category: string; content: string }[];
 }
 
 /**
@@ -105,13 +107,14 @@ export function createMockStagePort(deps: {
   const ask = (question: string, loop: boolean, chatMode?: ChatMode) => {
     deps
       .reply(question, loop, chatMode)
-      .then(({ text, scenes }) => {
+      .then(({ text, scenes, discoveries }) => {
         if (loop) {
           deps.onOracle({
             ok: true,
             loop,
             followup: '',
             beats: [{ phaseId: 'loop', lines: [text], scenes }],
+            discoveries,
           });
           return;
         }
@@ -131,6 +134,7 @@ export function createMockStagePort(deps: {
               lines: spread[i].map(sc => sc.text),
               scenes: spread[i],
             })).filter(b => b.lines.length > 0),
+            discoveries,
           });
           return;
         }
@@ -140,7 +144,7 @@ export function createMockStagePort(deps: {
           phaseId,
           lines: [parts[i] ?? (i === 0 ? text : '')],
         }));
-        deps.onOracle({ ok: true, loop, followup: '', beats });
+        deps.onOracle({ ok: true, loop, followup: '', beats, discoveries });
       })
       .catch(() => deps.onOracle({ ok: false, loop, followup: '', beats: [], error: 'connection' }));
   };

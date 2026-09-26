@@ -6,6 +6,7 @@ import { useT } from '../../../shared/i18n';
 import { CounselorPreview } from '../types';
 import { PREVIEW_ASPECT, PREVIEW_FPS, PREVIEW_FRAMES } from '../assets/previews';
 import { SpriteStrip } from './SpriteStrip';
+import { PixelCatClip } from '../../counseling/pixel/PixelCatClip';
 import { sfx } from '../../../shared/audio/sfx';
 
 /**
@@ -27,7 +28,9 @@ export const CounselorPreviewCarousel: React.FC<{
 
   return (
     <View style={styles.wrap}>
-      {current?.strip ? (
+      {current?.pixelClip ? (
+        <PixelCatClip clip={current.pixelClip} borderRadius={radius.lg} />
+      ) : current?.strip ? (
         <SpriteStrip
           source={current.strip}
           frames={PREVIEW_FRAMES}
@@ -49,7 +52,7 @@ export const CounselorPreviewCarousel: React.FC<{
         {previews.map(p => {
           const isActive = p.id === active;
           // `!!`: a required() asset is a NUMBER under Metro, and `0` would land in a style array.
-          const hasClip = !!p.strip;
+          const hasClip = !!p.strip || !!p.pixelClip;
           return (
             <Pressable
               key={p.id}

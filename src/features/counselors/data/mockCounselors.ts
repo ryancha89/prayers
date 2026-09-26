@@ -3,6 +3,7 @@ import { Lang } from '../../../shared/i18n';
 import { COUNSELOR_AVATAR_ART, COUNSELOR_CARD_ART } from '../assets';
 import { PREVIEW_STRIPS } from '../assets/previews';
 import { builtCharacterIds, registryFor } from './registry';
+import { isPixelCounselor } from '../../counseling/pixel/pixelCounselors';
 
 /**
  * Mock counselor catalog (spec §47), bilingual (KO default / EN). At least six
@@ -126,6 +127,15 @@ const PREVIEW_ACTIONS_JIHO: PreviewAction[] = [
  * about what is planned without pretending it is ready.
  */
 const BUILT_CHARACTER_IDS = builtCharacterIds;
+
+/** A pixel counselor's preview actions → the sprite clip that shows each one. */
+const PIXEL_PREVIEW_CLIP: Record<string, string> = {
+  hello: 'wave',
+  smile: 'idle_happy',
+  thinking: 'think',
+  explaining: 'explain',
+  nod: 'nod',
+};
 
 const RAW: RawCounselor[] = [
   {
@@ -562,6 +572,85 @@ const RAW: RawCounselor[] = [
     },
   },
   /**
+   * Nabi (나비) — the pixel dosa cat, and the first counselor whose room is drawn by the APP.
+   *
+   * He has no row in the generated registry because he has nothing Unity would stage: his room is
+   * `PixelCatStage` and his clips are code (`tools/pixelcat/gen_pixel_cat.py`, which also cuts his
+   * card, avatar and preview strips). `PIXEL_COUNSELORS` is where he is declared playable. His
+   * preview list is the generic five because he has all five — each strip is his own sprite.
+   */
+  {
+    id: 'nabi',
+    accent: '#E9B949',
+    category: 'saju',
+    isNew: true,
+    characterId: 'nabi_01',
+    roomId: 'nabi_room',
+    previewActions: PREVIEW_ACTIONS,
+    l10n: {
+      ko: {
+        name: '나비',
+        title: '도사 고양이 · 사주 상담냥',
+        hook: '냥, 앉아요. 당신 사주에 뭐가 적혔는지 같이 봐줄게요.',
+        about:
+          '갓을 쓴 도사 고양이 나비는 달 창 아래에서 사주 두루마리를 펼쳐요. 어려운 말은 쉽게, 무거운 얘기는 가볍게 풀어주는 게 특기예요.',
+        personality: ['다정함', '호기심', '느긋함'],
+        specialties: ['사주', '연애', '커리어', '인생'],
+        tags: ['#사주', '#고양이', '#힐링'],
+      },
+      en: {
+        name: 'Nabi',
+        title: 'The Dosa Cat · Saju Reader',
+        hook: "Mrrow — sit down. Let's see what your chart says.",
+        about:
+          'Nabi is a scholar cat in a horsehair gat who unrolls your four pillars under the moon window. Hard words made easy, heavy things made lighter — that is his whole trick.',
+        personality: ['Kind', 'Curious', 'Unhurried'],
+        specialties: ['Saju', 'Love', 'Career', 'Life'],
+        tags: ['#Saju', '#Cat', '#Cozy'],
+      },
+      ja: {
+        name: 'ナビ',
+        title: '道士ネコ・四柱の読み手',
+        hook: 'にゃ、座って。あなたの四柱に何が書いてあるか、一緒に見よう。',
+        about:
+          'カッをかぶった道士ネコのナビは、月の窓の下で四柱の巻物を広げます。難しい話はやさしく、重い話は軽く。それが得意技です。',
+        personality: ['やさしい', '好奇心', 'のんびり'],
+        specialties: ['四柱', '恋愛', '仕事', '人生'],
+        tags: ['#四柱', '#ネコ', '#癒し'],
+      },
+      'zh-CN': {
+        name: '纳比',
+        title: '道士猫 · 四柱解读师',
+        hook: '喵，坐吧。我们一起看看你的八字写了什么。',
+        about:
+          '戴着笠帽的道士猫纳比，会在月窗下展开你的四柱卷轴。难懂的话讲得简单，沉重的事说得轻松，这就是他的本事。',
+        personality: ['亲切', '好奇', '悠闲'],
+        specialties: ['四柱', '恋爱', '事业', '人生'],
+        tags: ['#四柱', '#猫', '#治愈'],
+      },
+      'zh-TW': {
+        name: '納比',
+        title: '道士貓 · 四柱解讀師',
+        hook: '喵，坐吧。我們一起看看你的八字寫了什麼。',
+        about:
+          '戴著笠帽的道士貓納比，會在月窗下展開你的四柱卷軸。難懂的話講得簡單，沉重的事說得輕鬆，這就是他的本事。',
+        personality: ['親切', '好奇', '悠閒'],
+        specialties: ['四柱', '戀愛', '事業', '人生'],
+        tags: ['#四柱', '#貓', '#療癒'],
+      },
+      vi: {
+        name: 'Nabi',
+        title: 'Mèo đạo sĩ · Xem tứ trụ',
+        hook: 'Meo, ngồi xuống đi. Cùng xem lá số của bạn viết gì nhé.',
+        about:
+          'Nabi là chú mèo đạo sĩ đội mũ gat, mở cuộn tứ trụ của bạn dưới ô cửa trăng. Chuyện khó nói cho dễ, chuyện nặng nói cho nhẹ — đó là tài của cậu.',
+        personality: ['Dịu dàng', 'Tò mò', 'Thong thả'],
+        specialties: ['Tứ trụ', 'Tình duyên', 'Sự nghiệp', 'Cuộc sống'],
+        tags: ['#TứTrụ', '#Mèo', '#ChữaLành'],
+      },
+    },
+  },
+  /**
    * Go Yunjung — the career specialist, and since 16-09 the roster's first counsellor whose CARD is
    * held to what her room actually does.
    *
@@ -829,7 +918,7 @@ function localize(raw: RawCounselor, lang: Lang): CounselorSummary {
     roomId: raw.roomId,
     // Derived, not authored: the flag follows the model list above, so it cannot drift out of
     // sync with reality the way six hand-set booleans would.
-    comingSoon: !BUILT_CHARACTER_IDS.has(raw.characterId),
+    comingSoon: !BUILT_CHARACTER_IDS.has(raw.characterId) && !isPixelCounselor(raw.characterId),
     name: c.name,
     title: c.title,
     hook: c.hook,
@@ -843,6 +932,7 @@ function localize(raw: RawCounselor, lang: Lang): CounselorSummary {
       // Undefined for a counselor with no 3D model — there is nothing to render, and the carousel
       // says so rather than offering a play button over a colour block.
       strip: PREVIEW_STRIPS[raw.id]?.[a.key],
+      pixelClip: isPixelCounselor(raw.characterId) ? PIXEL_PREVIEW_CLIP[a.key] : undefined,
     })),
   };
 }

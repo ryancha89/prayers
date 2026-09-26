@@ -83,6 +83,8 @@ export interface CounselorResponse {
   followUp?: boolean;
   /** Present only when the server broke this answer up and the caller asked for it. */
   scenes?: CounselorScene[];
+  /** 아카이브 "기억 후보" the server sent with this answer. */
+  discoveries?: { category: string; content: string }[];
 }
 
 /* ---- Unity session payload (spec §40) ---- */
@@ -160,7 +162,9 @@ export interface StageSpeakPayload {
  * The two answer styles SAVIS has, by the names it sends them under (`setting.chat_mode`).
  * `tiki` is the short rally; `detail` the full reading with its 명리 근거. See `chatModeStore`.
  */
-export type ChatMode = 'tiki' | 'detail';
+/** `auto` has no switch in the room: the server sizes each answer to its question (a thank-you gets
+ *  a line, "explain it properly" gets paragraphs). The pixel cat talks this way. */
+export type ChatMode = 'tiki' | 'detail' | 'auto';
 
 export interface OracleAskPayload {
   question: string;
@@ -233,6 +237,9 @@ export interface OracleResultPayload {
   error?: OracleErrorKind;
   /** A loop answer rather than the staged reading. */
   loop?: boolean;
+  /** What the counsellor noticed about the player this turn — 아카이브 "기억 후보". Mirrored by
+   *  Unity's `RNOracleResult.discoveries`; the app asks the player whether to keep each one. */
+  discoveries?: { category: string; content: string }[];
 }
 
 /* ---- Bridge events (spec §41). Serialized as JSON across the boundary. ---- */

@@ -9,6 +9,7 @@ import Svg, { Circle, Line, Path, Polygon, Polyline } from 'react-native-svg';
  */
 export type IconName =
   | 'home'
+  | 'archive'
   | 'chat'
   | 'compass'
   | 'person'
@@ -123,6 +124,14 @@ const ICONS: Record<IconName, Draw> = {
     <Path d="M12 3l2.1 5.6L20 11l-5.9 2.4L12 19l-2.1-5.6L4 11l5.9-2.4Z" stroke={c} />
   ),
   play: c => <Polygon points="7 4 20 12 7 20" stroke={c} fill={c} />,
+  // A closed book with a bookmark — the 아카이브 tab.
+  archive: c => (
+    <>
+      <Path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5V4.5Z" stroke={c} />
+      <Path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3" stroke={c} />
+      <Path d="M14 3v7l-2-1.5L10 10V3" stroke={c} />
+    </>
+  ),
 };
 
 export const Icon: React.FC<{

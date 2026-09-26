@@ -1,6 +1,7 @@
 import { Lang } from '../../../shared/i18n';
 import { sendConsultationMessage, type Scene } from './prayersServer';
 import { toneByCharacter } from '../../counselors/data/registry';
+import { PIXEL_COUNSELORS } from '../pixel/pixelCounselors';
 import { sayGlyphs } from './sajuGlyphs';
 import {
   CounselingSubject,
@@ -328,7 +329,7 @@ export class MockCounselorAI implements CounselorAIService {
  * a consultation cannot be started with them anyway.
  */
 export const toneForCharacter = (characterId?: string): string | undefined =>
-  characterId ? toneByCharacter[characterId] : undefined;
+  characterId ? toneByCharacter[characterId] ?? PIXEL_COUNSELORS[characterId]?.tone : undefined;
 
 /**
  * The server's 20 tones, mapped into the 5 this app can draw.
@@ -456,6 +457,7 @@ export class ServerCounselorAI implements CounselorAIService {
           camera: turn.followUp ? 'closeUp' : 'default',
           followUp: turn.followUp,
           scenes,
+          discoveries: turn.discoveries,
         };
       }
     }

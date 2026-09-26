@@ -17,6 +17,7 @@ import { createMockStagePort, createStagePort, type MockReply } from '../bridge/
 import { getUnityBridge, isNativeUnity } from '../bridge';
 import { useChatModeStore } from '../store/chatModeStore';
 import type { PhaseChoice } from '../flow/types';
+import { withCatCues, type CatCue } from '../pixel/cues';
 import type { ChatMode, UnityToRNEvent } from '../types';
 
 export interface UseConsultationOptions {
@@ -35,7 +36,19 @@ export interface UseConsultationOptions {
   /** Mirrored into the app's conversation history. */
   onCounselorLine?: (text: string) => void;
   onUserLine?: (text: string) => void;
+  /** 아카이브 "기억 후보" from a turn — the room files them for the player's verdict. */
+  onDiscoveries?: (found: { category: string; content: string }[]) => void;
   onFinished?: () => void;
+  /** A pixel counselor's room: RN draws him (`PixelCatStage`), so Unity is never asked, even in a
+   *  build that has it. The mock stage answers the turns — through the real server, via
+   *  `mockReply` — and the staging calls it would drop become `onCue`s for the sprite. */
+  pixel?: boolean;
+  onCue?: (cue: CatCue) => void;
+  /** Open straight into free chat — see `EngineOptions.chatFirst`. */
+  chatFirst?: boolean;
+  /** Pin the answer style instead of reading the player's stored choice (and the room then hides
+   *  the switch). */
+  fixedChatMode?: ChatMode;
 }
 
 export interface Consultation {
@@ -66,7 +79,10 @@ export interface Consultation {
 
 export function useConsultationEngine(opts: UseConsultationOptions): Consultation {
   const lang = useLang();
-  const [ready, setReady] = useState(!isNativeUnity());
+  // Fixed for the life of the room: a counselor does not change rooms mid-session.
+  const isPixel = useRef(opts.pixel === true).current;
+  const usesUnity = useRef(!isPixel && isNativeUnity()).current;
+  const [ready, setReady] = useState(!usesUnity);
   // Is there someone in the chair? True from the start everywhere except a walk-in room, because
   // that is the only place where a room can exist with nobody seated in it. UNITY_READY flips it
   // to false when it arrives with walkIn:true, and UNITY_SEATED turns it back on.
@@ -80,20 +96,19 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
   const cbs = useRef(opts);
   cbs.current = opts;
 
-  const stage: StagePort = useMemo(
-    () =>
-      isNativeUnity()
-        ? createStagePort(getUnityBridge(), () => cbs.current.onFinished?.())
-        : createMockStagePort({
-            onOracle: result => engineRef.current?.onOracleResult(result),
-            onSpeakDone: key => engineRef.current?.onSpeakDone(key),
-            onExit: () => cbs.current.onFinished?.(),
-            reply: (question, loop, chatMode) =>
-              cbs.current.mockReply?.(question, loop, chatMode) ??
-              Promise.reject(new Error('no mock reply')),
-          }),
-    [],
-  );
+  const stage: StagePort = useMemo(() => {
+    if (usesUnity) return createStagePort(getUnityBridge(), () => cbs.current.onFinished?.());
+    const mock = createMockStagePort({
+      onOracle: result => engineRef.current?.onOracleResult(result),
+      onSpeakDone: key => engineRef.current?.onSpeakDone(key),
+      onExit: () => cbs.current.onFinished?.(),
+      reply: (question, loop, chatMode) =>
+        cbs.current.mockReply?.(question, loop, chatMode) ??
+        Promise.reject(new Error('no mock reply')),
+    });
+    return isPixel ? withCatCues(mock, cue => cbs.current.onCue?.(cue)) : mock;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // One engine per mounted room.
   useEffect(() => {
@@ -104,9 +119,11 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
       voice: opts.voice,
       // Read from the store at ask time, not captured here: the segment in the room flips it
       // mid-session and the next question has to go out in the new style.
-      chatMode: () => useChatModeStore.getState().chatMode,
+      chatMode: () => cbs.current.fixedChatMode ?? useChatModeStore.getState().chatMode,
+      chatFirst: opts.chatFirst,
       onCounselorLine: text => cbs.current.onCounselorLine?.(text),
       onUserLine: text => cbs.current.onUserLine?.(text),
+      onDiscoveries: found => cbs.current.onDiscoveries?.(found),
       onFinished: () => cbs.current.onFinished?.(),
     });
     engineRef.current = engine;
@@ -129,6 +146,8 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
   // Unity → engine. ORACLE_RESULT and SPEAK_DONE are the only two replies the
   // walk actually waits on; everything else on the channel belongs to the room.
   useEffect(() => {
+    // A pixel room has no player; anything on the channel belongs to some other room.
+    if (isPixel) return;
     return getUnityBridge().onEvent((e: UnityToRNEvent) => {
       if (e.type === 'UNITY_READY') {
         // Order matters: mark the hold BEFORE lifting the veil, or the begin effect below runs
@@ -142,7 +161,7 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
       else if (e.type === 'MIC_STATE') engineRef.current?.onMicState(e.payload.state, e.payload.level);
       else if (e.type === 'MIC_RESULT') engineRef.current?.onMicResult(e.payload);
     });
-  }, []);
+  }, [isPixel]);
 
   // Begin once, when the stage is actually there to be staged.
   const begun = useRef(false);
@@ -172,7 +191,7 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
     // failing — the same rule the room follows everywhere else about not pretending. The second
     // half of that rule: a server with no transcription route makes the button pretend too, so the
     // engine lowers `offered` the first time it hears so.
-    micAvailable: isNativeUnity() && state.mic.offered,
+    micAvailable: usesUnity && state.mic.offered,
   };
 }
 

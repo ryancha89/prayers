@@ -63,7 +63,8 @@ describe('counselor card art', () => {
     // "Has a model" is not the same as "can be entered" since 15-09: the meditation guide's room
     // is a 2D screen, so she is enterable with no model, no clips and therefore no strip.
     const withModel = localizeCounselors('en')
-      .filter(c => !c.comingSoon && c.category !== 'meditation')
+      // Pixel counselors are drawn live (PixelCatClip), never from a strip.
+      .filter(c => !c.comingSoon && c.category !== 'meditation' && !c.previews.some(p => p.pixelClip))
       .map(c => c.id)
       .sort();
     expect(Object.keys(PREVIEW_STRIPS).sort()).toEqual(withModel);
@@ -73,7 +74,7 @@ describe('counselor card art', () => {
     localizeCounselors('en')
       .filter(c => !c.comingSoon)
       .forEach(c => {
-        const missing = c.previews.filter(p => !p.strip).map(p => p.id);
+        const missing = c.previews.filter(p => !p.strip && !p.pixelClip).map(p => p.id);
         expect(missing).toEqual([]);
       });
   });
@@ -85,7 +86,8 @@ describe('counselor card art', () => {
     // offers a name the engine cannot seat.
     const enterable = localizeCounselors('en').filter(c => !c.comingSoon);
     // Theo joined on 2026-09-16 with m_char_004 and ConsultationSolo03.
-    expect(enterable.map(c => c.id).sort()).toEqual(['breathe', 'jiho', 'theo', 'yuna', 'yunjung']);
+    // Nabi joined on 2026-09-24 — a pixel counselor, drawn by the app (pixel/PixelCatStage).
+    expect(enterable.map(c => c.id).sort()).toEqual(['breathe', 'jiho', 'nabi', 'theo', 'yuna', 'yunjung']);
     enterable.forEach(c => expect(c.cardImage).toBeDefined());
   });
 });

@@ -17,6 +17,7 @@ import { WalkControls } from '../components/WalkControls';
 import { CueTester } from '../components/CueTester';
 import { useCounselingStore } from '../store/counselingStore';
 import { useChatModeStore } from '../store/chatModeStore';
+import { useArchiveStore } from '../../archive/store/archiveStore';
 import { counselorAI, toneForCharacter } from '../api/counselorAI';
 import { getUnityBridge, isNativeUnity } from '../bridge';
 import { CounselorStage } from '../components/CounselorStage';
@@ -24,6 +25,9 @@ import { UnityHost } from '../components/UnityHost';
 import { ConsultationOverlay } from '../components/ConsultationOverlay';
 import { useConsultationEngine } from '../hooks/useConsultationEngine';
 import { voiceFor } from '../flow/voice';
+import { PixelCatStage } from '../pixel/PixelCatStage';
+import { isPixelCounselor } from '../pixel/pixelCounselors';
+import type { CatCue, CatGesture } from '../pixel/cues';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'CounselingRoom'>;
@@ -70,6 +74,7 @@ export const CounselingRoomScreen: React.FC = () => {
 
   const chatMode = useChatModeStore(s => s.chatMode);
   const setChatMode = useChatModeStore(s => s.setChatMode);
+  const addDiscoveries = useArchiveStore(s => s.addDiscoveries);
 
   const ensureSession = useConversationsStore(s => s.ensureSession);
   const appendMessage = useConversationsStore(s => s.appendMessage);
@@ -103,10 +108,28 @@ export const CounselingRoomScreen: React.FC = () => {
   // the player picked: a career counselor asked about love still talks like a career counselor.
   const voice = voiceFor(counselor?.characterId);
 
+  // A pixel counselor is drawn here, not staged in Unity — see pixel/pixelCounselors.ts.
+  const pixel = isPixelCounselor(counselor?.characterId);
+  const [catThinking, setCatThinking] = useState(false);
+  const [catGesture, setCatGesture] = useState<{ name: CatGesture; seq: number } | null>(null);
+  const onCue = useCallback((cue: CatCue) => {
+    if (cue.type === 'thinking') setCatThinking(cue.on);
+    else setCatGesture(g => ({ name: cue.gesture, seq: (g?.seq ?? 0) + 1 }));
+  }, []);
+
   const consultation = useConsultationEngine({
     topic,
     voice,
+    pixel,
+    onCue,
+    // He is a talker, not a stage show: no scripted reading, and each answer as long as its
+    // question deserves — a line for a thank-you, paragraphs for "explain it properly".
+    chatFirst: pixel,
+    fixedChatMode: pixel ? 'auto' : undefined,
     onCounselorLine: text => record('counselor', text),
+    // What she noticed about the player, parked for their verdict in the 아카이브 tab — never
+    // written as a memory from here.
+    onDiscoveries: found => addDiscoveries(found, params.sessionId),
     onUserLine: text => {
       record('user', text);
       // The first question is what the Conversations row is titled by.
@@ -116,7 +139,9 @@ export const CounselingRoomScreen: React.FC = () => {
     onFinished: onExit,
     mockReply: async (question, _loop, mode) => {
       const resp =
-        turn.current <= 1
+        // A chat-first room has no scripted question phase for the local greeting to answer — its
+        // very first turn is already a real question.
+        turn.current <= 1 && !pixel
           ? await counselorAI.greeting({
               counselorName: counselor?.name ?? '',
               subject: subject!,
@@ -141,7 +166,7 @@ export const CounselingRoomScreen: React.FC = () => {
       // The scenes go with the words. Dropping them here is what kept the server's break-up from
       // ever reaching a bubble — the greeting has none, and that is correct: it is the room's own
       // copy, not a reading.
-      return { text: resp.text, scenes: resp.scenes };
+      return { text: resp.text, scenes: resp.scenes, discoveries: resp.discoveries };
     },
   });
 
@@ -238,13 +263,13 @@ export const CounselingRoomScreen: React.FC = () => {
   // Leaving is the same answer SESSION_ERROR gets, on purpose: the player lands back on
   // Conversations where their session is waiting, instead of guessing at a spinner.
   useEffect(() => {
-    if (!isNativeUnity() || consultation.ready) return;
+    if (pixel || !isNativeUnity() || consultation.ready) return;
     const timer = setTimeout(() => {
       console.warn('[room] the player never answered SESSION_INIT — leaving instead of hanging.');
       onExit();
     }, UNITY_HANDSHAKE_TIMEOUT_MS);
     return () => clearTimeout(timer);
-  }, [consultation.ready, onExit]);
+  }, [pixel, consultation.ready, onExit]);
 
   if (!counselor || !subject) {
     return (
@@ -256,7 +281,16 @@ export const CounselingRoomScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {isNativeUnity() ? (
+      {pixel ? (
+        <PixelCatStage
+          speaking={consultation.state.speaking}
+          utterance={lastCounselorWords(consultation.state)}
+          thinking={catThinking || consultation.state.pending}
+          listening={consultation.state.inputEnabled && !consultation.state.speaking}
+          emotion={consultation.state.emotion}
+          gesture={catGesture}
+        />
+      ) : isNativeUnity() ? (
         <UnityHost style={StyleSheet.absoluteFill} />
       ) : (
         <CounselorStage
@@ -300,8 +334,8 @@ export const CounselingRoomScreen: React.FC = () => {
         onMicCancel={consultation.cancelMic}
         onHush={consultation.hush}
         micAvailable={consultation.micAvailable}
-        chatMode={chatMode}
-        onChatMode={setChatMode}
+        chatMode={pixel ? 'auto' : chatMode}
+        onChatMode={pixel ? undefined : setChatMode}
       />
 
       {/* Top controls — kept minimal, never covering the character (spec §27) */}
@@ -321,6 +355,16 @@ export const CounselingRoomScreen: React.FC = () => {
     </View>
   );
 };
+
+/** What the counselor is saying right now: the phase card's line, or — in the free chat, where the
+ *  card is empty — the newest counselor entry in the transcript, which grows as the answer does. */
+function lastCounselorWords(s: { line: string; transcript: { role: string; text: string }[] }): string {
+  if (s.line) return s.line;
+  for (let i = s.transcript.length - 1; i >= 0; i -= 1) {
+    if (s.transcript[i].role === 'counselor') return s.transcript[i].text;
+  }
+  return '';
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },

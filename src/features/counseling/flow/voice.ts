@@ -26,8 +26,9 @@
  */
 import type { Lang } from '../../../shared/i18n';
 import { registryFor } from '../../counselors/data/registry';
+import { isPixelCounselor } from '../pixel/pixelCounselors';
 
-export type CounselorVoice = 'default' | 'business';
+export type CounselorVoice = 'default' | 'business' | 'cat';
 
 /** Specialties that speak in the business register. `wealth` is here too: the roster splits money
  *  and career into two cards, but it is one reading and one way of talking. */
@@ -36,6 +37,7 @@ const BUSINESS_SPECIALTIES = new Set(['career', 'wealth']);
 /** Which register this counselor speaks in. Unknown counselor → the default; there is no guessing
  *  from a name, because the name is not what decides it. */
 export function voiceFor(characterId: string | undefined): CounselorVoice {
+  if (isPixelCounselor(characterId)) return 'cat';
   const specialty = registryFor(characterId)?.specialty;
   return specialty && BUSINESS_SPECIALTIES.has(specialty) ? 'business' : 'default';
 }
@@ -164,9 +166,73 @@ const BUSINESS: Record<Lang, Bundle> = {
   },
 };
 
+/**
+ * The pixel cat's register (nabi_01). He opens straight into chat (`chatFirst`), so the greeting
+ * and the waiting lines are most of what the room itself says in his voice — kept light, a "냥" at
+ * most once a line, and nothing that promises a chart being laid out: there is no table show here,
+ * just talk.
+ */
+const CAT: Record<Lang, Bundle> = {
+  ko: {
+    thinking: '꼬리 흔들며 생각하는 중',
+    'loop.hello': '냥, 어서 와요! 오늘은 무슨 얘기 할까요?',
+    'loop.placeholder': '나비한테 편하게 말 걸어보세요',
+    'loop.wait.0': '음냥, 잠깐만요.',
+    'loop.wait.1': '오, 그거 좋은 질문이다냥.',
+    'loop.wait.2': '잠깐, 수염으로 느껴볼게요.',
+    'loop.wait.3': '흠흠, 생각 중이에요.',
+  },
+  en: {
+    thinking: 'Thinking with his tail',
+    'loop.hello': 'Mrrow, welcome! What shall we talk about today?',
+    'loop.placeholder': 'Say anything to Nabi',
+    'loop.wait.0': 'Mm, one sec.',
+    'loop.wait.1': 'Ooh, good question, meow.',
+    'loop.wait.2': 'Hold on, let me feel it out with my whiskers.',
+    'loop.wait.3': 'Hmm, thinking.',
+  },
+  ja: {
+    thinking: 'しっぽを揺らして考え中',
+    'loop.hello': 'にゃ、いらっしゃい！今日は何の話をしようか？',
+    'loop.placeholder': 'ナビに気軽に話しかけてね',
+    'loop.wait.0': 'うーん、ちょっと待ってにゃ。',
+    'loop.wait.1': 'お、いい質問だにゃ。',
+    'loop.wait.2': 'ちょっと待って、ひげで感じてみる。',
+    'loop.wait.3': 'ふむふむ、考え中。',
+  },
+  'zh-CN': {
+    thinking: '摇着尾巴想一想',
+    'loop.hello': '喵，欢迎！今天想聊点什么？',
+    'loop.placeholder': '随便跟纳比说点什么吧',
+    'loop.wait.0': '嗯喵，等一下。',
+    'loop.wait.1': '哦，好问题喵。',
+    'loop.wait.2': '等等，我用胡须感觉一下。',
+    'loop.wait.3': '嗯嗯，想一想。',
+  },
+  'zh-TW': {
+    thinking: '搖著尾巴想一想',
+    'loop.hello': '喵，歡迎！今天想聊點什麼？',
+    'loop.placeholder': '隨便跟納比說點什麼吧',
+    'loop.wait.0': '嗯喵，等一下。',
+    'loop.wait.1': '哦，好問題喵。',
+    'loop.wait.2': '等等，我用鬍鬚感覺一下。',
+    'loop.wait.3': '嗯嗯，想一想。',
+  },
+  vi: {
+    thinking: 'Đang vẫy đuôi suy nghĩ',
+    'loop.hello': 'Meo, chào bạn! Hôm nay mình nói chuyện gì nhé?',
+    'loop.placeholder': 'Cứ nói gì với Nabi cũng được',
+    'loop.wait.0': 'Ừm meo, chờ chút.',
+    'loop.wait.1': 'Ồ, câu hỏi hay đó meo.',
+    'loop.wait.2': 'Khoan, để tôi dò bằng râu đã.',
+    'loop.wait.3': 'Hừm, đang nghĩ.',
+  },
+};
+
 const REGISTERS: Record<CounselorVoice, Record<Lang, Bundle> | null> = {
   default: null,
   business: BUSINESS,
+  cat: CAT,
 };
 
 /**

@@ -3,6 +3,8 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 export type TabParamList = {
   Home: undefined;
   Conversations: undefined;
+  /** 아카이브 — the player's long-term memory, and the counsellors' (features/archive). */
+  Archive: undefined;
   My: undefined;
 };
 
@@ -36,6 +38,8 @@ export type RootStackParamList = {
   Library: { list: 'people' | 'favorites' };
   /** Question tickets: the balance, the allowance, and the only way to buy more. */
   Tickets: undefined;
+  /** One category of the 아카이브: its entries and the form. */
+  ArchiveSection: { category: import('../features/archive/types').ArchiveCategory };
   /**
    * Ten minutes of breathing — the meditation guide's room.
    *

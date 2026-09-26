@@ -342,6 +342,9 @@ export interface EngineOptions {
   /** Mirrored into the app's conversation history. */
   onCounselorLine?: (text: string) => void;
   onUserLine?: (text: string) => void;
+  /** 아카이브 "기억 후보" the counsellor sent back with an answer. The engine never keeps them —
+   *  they go straight to whoever asks the player. */
+  onDiscoveries?: (found: { category: string; content: string }[]) => void;
   onFinished?: () => void;
   scheduler?: Scheduler;
   phases?: ConsultationPhase[];
@@ -352,7 +355,17 @@ export interface EngineOptions {
    *  player flips it from the room, and the flip has to reach the very next question, not the
    *  next session. Absent means the payload carries no mode and the server keeps its default. */
   chatMode?: () => ChatMode;
+  /** Skip the staged reading and open straight into free chat — the counselor greets and the
+   *  player talks, turn by turn. For a counselor whose room is a conversation rather than a
+   *  performance (the pixel cat): the 20 phases were written for a 3D table with a chart laid on
+   *  it, and read as a script when there is no table. Leaving the chat still says goodbye through
+   *  P20. */
+  chatFirst?: boolean;
 }
+
+/** How long a chat-first room waits for the recall before greeting without it. The fetch is free
+ *  and usually back well inside this; a greeting that opens with "last time…" is worth a beat. */
+const RECALL_GRACE_MS = 1200;
 
 /* ── The engine ───────────────────────────────────────────────────────────── */
 
@@ -484,6 +497,16 @@ export class ConsultationEngine {
    */
   setRecallOpening(opening: string): void {
     if (!opening || this.recallOpening) return;
+    if (this.opts.chatFirst) {
+      // Only while the greeting is still being held for it.
+      if (this.inLoop) return;
+      this.recallOpening = opening;
+      if (this.running) {
+        this.clearTimer();
+        this.openLoop();
+      }
+      return;
+    }
     if (this.phaseIndexOf(RECALL_PHASE) <= this.index) return;
     this.recallOpening = opening;
   }
@@ -578,6 +601,16 @@ export class ConsultationEngine {
     this.running = true;
     this.index = -1;
     this.state = { ...emptyState, topic: this.topic };
+    if (this.opts.chatFirst) {
+      this.timer = this.recallOpening
+        ? null
+        : this.sched.set(() => {
+            this.timer = null;
+            this.openLoop();
+          }, RECALL_GRACE_MS);
+      if (this.recallOpening) this.openLoop();
+      return;
+    }
     this.enter(0, { resetVfx: true });
   }
 
@@ -1256,6 +1289,7 @@ export class ConsultationEngine {
   }
 
   onOracleResult(payload: OracleResultPayload) {
+    if (payload.discoveries && payload.discoveries.length > 0) this.opts.onDiscoveries?.(payload.discoveries);
     // Every mounted room hears every ORACLE_RESULT; only the engine that asked
     // may act on it (see loopPending).
     if (!this.running) return;
@@ -1294,8 +1328,11 @@ export class ConsultationEngine {
       notice: null,
       suggestion: this.followup,
       // The loop's opening line never had a Unity string key — it was an
-      // inspector field on ConsultationLoop. It is RN copy now.
-      line: this.uiV('loop.intro'),
+      // inspector field on ConsultationLoop. It is RN copy now. A chat-first room opens HERE, so
+      // its line is the greeting — or what the counselor remembers of last time.
+      line: this.opts.chatFirst
+        ? (this.recallOpening ?? this.uiV('loop.hello'))
+        : this.uiV('loop.intro'),
     });
     const intro = this.state.line;
     if (intro) {

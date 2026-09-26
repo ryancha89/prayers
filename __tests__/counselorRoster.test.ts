@@ -23,6 +23,7 @@ import {
 } from '../src/features/counselors/data/mockCounselors';
 import { groupTopicsFor } from '../src/features/counseling/topicsForCounselor';
 import { toneForCharacter } from '../src/features/counseling/api/counselorAI';
+import { isPixelCounselor, PIXEL_COUNSELORS } from '../src/features/counseling/pixel/pixelCounselors';
 
 describe('the generated registry', () => {
   it('gives every playable counselor the four names the two sides need', () => {
@@ -76,6 +77,9 @@ describe('the app roster agrees with it', () => {
     const disagreements = localizeCounselors('en')
       .filter(c => {
         const entry = registryFor(c.characterId);
+        // A pixel counselor is playable with no registry row by design — his room is RN's, not a
+        // Unity scene (see pixel/pixelCounselors.ts) — so for him the registry has no say.
+        if (isPixelCounselor(c.characterId)) return c.comingSoon;
         return !c.comingSoon !== (entry != null && entry.available);
       })
       .map(c => `${c.id} (${c.characterId}): app says ${c.comingSoon ? 'coming soon' : 'offered'}`);
@@ -91,6 +95,26 @@ describe('the app roster agrees with it', () => {
     for (const [characterId, tone] of Object.entries(toneByCharacter)) {
       expect(toneForCharacter(characterId)).toBe(tone);
     }
+  });
+
+  it('gives a pixel counselor a server voice and keeps him out of the Unity catalogue', () => {
+    // No tone means the server answers in its default voice — or, with no tone at all, the room
+    // falls back to scripted replies without a word. Neither is him.
+    for (const id of Object.keys(PIXEL_COUNSELORS)) {
+      expect(toneForCharacter(id)).toBe(PIXEL_COUNSELORS[id].tone);
+      // A registry row would mean Unity thinks it stages him too, and two rooms would claim him.
+      expect(registryFor(id)).toBeUndefined();
+    }
+  });
+
+  it('never lets two counselors share a server tone', () => {
+    // The server keeps each counselor's memory apart BY TONE (recall, the last-visit summary). Two
+    // cards on one tone would remember each other's conversations.
+    const tones = [
+      ...Object.values(toneByCharacter),
+      ...Object.values(PIXEL_COUNSELORS).map(p => p.tone),
+    ];
+    expect(new Set(tones).size).toBe(tones.length);
   });
 
   it('has no tone for a counselor who cannot be consulted', () => {
@@ -127,8 +151,10 @@ describe('card order', () => {
     // and that it leads with the counselor who takes any question.
     const order = ids();
     expect(order[0]).toBe('yuna');
-    expect(order).toEqual(expect.arrayContaining(['yuna', 'jiho', 'yunjung', 'theo', 'breathe']));
-    expect(order).toHaveLength(5);
+    expect(order).toEqual(
+      expect.arrayContaining(['yuna', 'jiho', 'nabi', 'yunjung', 'theo', 'breathe']),
+    );
+    expect(order).toHaveLength(6);
   });
 });
 

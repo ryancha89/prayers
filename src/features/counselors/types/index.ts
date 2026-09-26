@@ -23,6 +23,9 @@ export interface CounselorPreview {
    * animation clip. Undefined when the counselor has no model — see `assets/previews`.
    */
   strip?: ImageSourcePropType;
+  /** A pixel counselor's clip name (`CAT_ART.anims`), drawn live by `PixelCatClip` instead of a
+   *  strip — a bitmap of pixel art blurs when RN scales it. */
+  pixelClip?: string;
 }
 
 export interface CounselorSummary {

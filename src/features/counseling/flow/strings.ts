@@ -13,6 +13,7 @@ type Bundle = Record<string, string>;
 
 const KO: Bundle = {
   'loop.intro': '더 궁금한 것이 있으신가요?',
+  'loop.hello': '어서 오세요. 오늘은 어떤 이야기를 해볼까요?',
   'loop.placeholder': '무엇이든 물어보세요',
   'loop.leave': '상담 마치기',
   'loop.send': '보내기',
@@ -41,6 +42,7 @@ const KO: Bundle = {
 
 const EN: Bundle = {
   'loop.intro': 'Is there anything else you would like to ask?',
+  'loop.hello': 'Welcome. What would you like to talk about today?',
   'loop.placeholder': 'Ask me anything',
   'loop.leave': 'End the consultation',
   'loop.send': 'Send',
@@ -69,6 +71,7 @@ const EN: Bundle = {
 
 const JA: Bundle = {
   'loop.intro': 'ほかに気がかりなことはありますか？',
+  'loop.hello': 'いらっしゃい。今日はどんな話をしましょうか？',
   'loop.placeholder': '何でも聞いてください',
   'loop.leave': '相談を終える',
   'loop.send': '送る',
@@ -97,6 +100,7 @@ const JA: Bundle = {
 
 const ZH_CN: Bundle = {
   'loop.intro': '还有别的想问吗？',
+  'loop.hello': '欢迎。今天想聊点什么？',
   'loop.placeholder': '想问什么都可以',
   'loop.leave': '结束这次咨询',
   'loop.send': '发送',
@@ -125,6 +129,7 @@ const ZH_CN: Bundle = {
 
 const ZH_TW: Bundle = {
   'loop.intro': '還有別的想問嗎？',
+  'loop.hello': '歡迎。今天想聊點什麼？',
   'loop.placeholder': '想問什麼都可以',
   'loop.leave': '結束這次諮詢',
   'loop.send': '送出',
@@ -153,6 +158,7 @@ const ZH_TW: Bundle = {
 
 const VI: Bundle = {
   'loop.intro': 'Con còn muốn hỏi gì nữa không?',
+  'loop.hello': 'Chào con. Hôm nay con muốn nói chuyện gì?',
   'loop.placeholder': 'Hỏi gì cũng được',
   'loop.leave': 'Kết thúc buổi tư vấn',
   'loop.send': 'Gửi',
