@@ -34,12 +34,13 @@ const base: FlowState = {
 
 const noop = () => {};
 
-function textOf(state: FlowState): string[] {
+function textOf(state: FlowState, counselorName?: string): string[] {
   let tree!: ReactTestRenderer.ReactTestRenderer;
   ReactTestRenderer.act(() => {
     tree = ReactTestRenderer.create(
       <ConsultationOverlay
         state={state}
+        counselorName={counselorName}
         onTap={noop}
         onChoose={noop}
         onSubmit={noop}
@@ -65,6 +66,13 @@ test('a dialogue beat shows the speaker, the line and the continue hint', () => 
   expect(text).toContain('어서 오세요.');
   expect(text).toContain('상담사');
   expect(text.join(' ')).toMatch(/탭하여 계속|Tap to continue/);
+});
+
+test('the card is signed with the counselor name, not the generic label', () => {
+  // The flow asset labels every line "상담사" / "Counselor"; the room knows who is actually there.
+  const text = textOf(base, '유나');
+  expect(text).toContain('유나');
+  expect(text).not.toContain('상담사');
 });
 
 test('choices are rendered one per option', () => {

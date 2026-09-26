@@ -7,7 +7,7 @@ import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
 import { PrimaryButton } from '../../../shared/components/PrimaryButton';
-import { useSubjectsStore } from '../store/subjectsStore';
+import { SELF, useSubjectsStore } from '../store/subjectsStore';
 import { maskBirthDate, maskBirthTime } from '../birthMask';
 import type { RootStackParamList } from '../../../navigation/types';
 import type { CounselingSubject } from '../../counseling/types';
@@ -34,9 +34,14 @@ export const AddSubjectScreen: React.FC = () => {
   const updateSubject = useSubjectsStore(s => s.updateSubject);
   const existing = useSubjectsStore(s => (params?.subjectId ? s.getById(params.subjectId) : undefined));
 
-  // The stored self carries a placeholder name nobody chose; showing it as a filled-in field would
-  // invite the user to accept "Myself" as their name.
-  const initialName = existing && !existing.isUser ? existing.displayName : '';
+  // The stored self STARTS with a placeholder name nobody chose; showing that as a filled-in field
+  // would invite the user to accept "Myself" as their name. Only the placeholder is hidden, though:
+  // blanking every self name meant a user who HAD entered one saw an empty box, and — the name
+  // being required — could not save a changed birth time without typing it again (23-09).
+  const initialName =
+    existing && !(existing.isUser && existing.displayName === SELF.displayName)
+      ? existing.displayName
+      : '';
 
   const [name, setName] = useState(initialName);
   const [birthDate, setBirthDate] = useState(existing?.birthDate ?? '');

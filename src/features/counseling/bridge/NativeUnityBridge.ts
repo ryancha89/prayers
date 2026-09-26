@@ -1,5 +1,6 @@
 import { devlog } from '../../../shared/devlog';
 import {
+  MeditationStatePayload,
   RNToUnityEvent,
   UnityBridge,
   UnitySessionPayload,
@@ -40,6 +41,9 @@ const BRIDGE_METHOD = 'OnMessage';
  *  invisible when they work and cost nothing when the player really is not there. */
 const INIT_RETRY_MS = 1500;
 const INIT_MAX_TRIES = 3;
+/** MEDITATION_INIT is repeated until the room answers — see openMeditationRoom. */
+const MEDITATION_RETRY_MS = 1500;
+const MEDITATION_MAX_TRIES = 4;
 
 export class NativeUnityBridge implements UnityBridge {
   private handlers = new Set<(e: UnityToRNEvent) => void>();
@@ -56,6 +60,11 @@ export class NativeUnityBridge implements UnityBridge {
   /** A meditation room has been asked for and has not answered yet. The consultation path tracks
    *  the same thing through `payload`; this room has no payload to track it with. */
   private meditationPending = false;
+  private meditationRetry: ReturnType<typeof setTimeout> | null = null;
+  private meditationTries = 0;
+  /** The last session state sent to the room, re-sent when the room answers: Begin can be pressed
+   *  while the scene is still loading, and that message reaches a room that is not there yet. */
+  private meditationState?: MeditationStatePayload;
   private outbox: RNToUnityEvent[] = [];
 
   /* ---- UnityBridge ---- */
@@ -150,13 +159,55 @@ export class NativeUnityBridge implements UnityBridge {
    */
   openMeditationRoom(): void {
     this.meditationPending = true;
+    this.meditationTries = 0;
+    this.meditationState = undefined;
     devlog('[unity-bridge] MEDITATION_INIT');
     this.post({ type: 'MEDITATION_INIT' });
+    this.armMeditationRetry();
+  }
+
+  /**
+   * ⚠️ REPEATED UNTIL MEDITATION_READY, because the first one can be lost with nothing to resend it.
+   * Measured 24-09: straight from a consultation to the meditation tab, MEDITATION_INIT went to the
+   * view the consultation was leaving, Unity did not reboot (so no BRIDGE_READY), and the room stayed
+   * on its fallback photo for the whole session. Unity's StartMeditation is idempotent — a repeat
+   * that lands on a room already open is answered with MEDITATION_READY and nothing reloads.
+   */
+  private armMeditationRetry(): void {
+    this.clearMeditationRetry();
+    this.meditationRetry = setTimeout(() => {
+      this.meditationRetry = null;
+      if (!this.meditationPending || !this.view) return;
+      if (this.meditationTries >= MEDITATION_MAX_TRIES) {
+        devlog(`[unity-bridge] no MEDITATION_READY after ${this.meditationTries} retries — staying on the photo`);
+        return;
+      }
+      this.meditationTries += 1;
+      devlog(`[unity-bridge] MEDITATION_INIT (retry ${this.meditationTries})`);
+      this.post({ type: 'MEDITATION_INIT' });
+      this.armMeditationRetry();
+    }, MEDITATION_RETRY_MS);
+  }
+
+  private clearMeditationRetry(): void {
+    if (this.meditationRetry !== null) {
+      clearTimeout(this.meditationRetry);
+      this.meditationRetry = null;
+    }
+  }
+
+  /** Tell the room what the session is doing. Posted straight away when there is a view (the room
+   *  keeps the latest even if its scene is still loading) and remembered for MEDITATION_READY. */
+  sendMeditationState(payload: MeditationStatePayload): void {
+    this.meditationState = payload;
+    if (this.view) this.post({ type: 'MEDITATION_STATE', payload });
   }
 
   /** Leaving the meditation room. Idempotent, and safe when Unity never booted. */
   closeMeditationRoom(): void {
     this.meditationPending = false;
+    this.meditationState = undefined;
+    this.clearMeditationRetry();
     try {
       if (this.view) this.post({ type: 'MEDITATION_END' });
     } catch {}
@@ -197,6 +248,12 @@ export class NativeUnityBridge implements UnityBridge {
     // The view arriving is also what makes a retry possible at all — before it there is nowhere to
     // post to, and `post` would only queue.
     if (this.payload && !this.ready) this.armInitRetry();
+    // Same for the meditation room: a MEDITATION_INIT posted to the view that just went away is gone.
+    if (this.meditationPending) {
+      devlog('[unity-bridge] MEDITATION_INIT (view registered)');
+      this.post({ type: 'MEDITATION_INIT' });
+      this.armMeditationRetry();
+    }
   }
 
   unregisterView(view: UnityViewLike): void {
@@ -276,6 +333,8 @@ export class NativeUnityBridge implements UnityBridge {
     // screen decides what to do with it.
     if (event.type === 'MEDITATION_READY') {
       this.meditationPending = false;
+      this.clearMeditationRetry();
+      if (this.meditationState) this.post({ type: 'MEDITATION_STATE', payload: this.meditationState });
       this.ready = true;
       this.everReady = true;
       this.clearInitRetry();

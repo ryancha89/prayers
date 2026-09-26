@@ -358,7 +358,7 @@ export const translations = {
     'addSubject.namePlaceholder': 'e.g. Minji Kim',
     'addSubject.birthDate': 'Birth date',
     'addSubject.birthTime': 'Birth time (optional)',
-    'addSubject.save': 'Save Person',
+    'addSubject.save': 'Save',
     'addSubject.start': 'Get started',
     'addSubject.later': 'Do this later',
     'addSubject.required': 'Name, birth date and gender are needed. The time is optional.',
