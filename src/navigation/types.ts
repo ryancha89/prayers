@@ -38,6 +38,14 @@ export type RootStackParamList = {
   Library: { list: 'people' | 'favorites' };
   /** Question tickets: the balance, the allowance, and the only way to buy more. */
   Tickets: undefined;
+  /** Season journeys (2027 신년운세 여행 …): choose the guide, ride, arrive. */
+  JourneyCounselor: { journeyId: string };
+  /** The paid journey's boarding pass (purchase). Redirects to JourneyCounselor once owned. */
+  JourneyPass: { journeyId: string };
+  Journey: undefined;
+  JourneyResult: undefined;
+  /** The daily check-in: calendar and rules. `justChecked` when arriving from a check-in just made. */
+  Attendance: { justChecked?: { granted: number; capReached: boolean } } | undefined;
   /** One category of the 아카이브: its entries and the form. */
   ArchiveSection: { category: import('../features/archive/types').ArchiveCategory };
   /**

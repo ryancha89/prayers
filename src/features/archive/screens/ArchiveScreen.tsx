@@ -13,6 +13,11 @@ import { syncArchive } from '../api/memoriesApi';
 import { CATEGORIES, CATEGORY_ICON, MOOD_ICON, type ArchiveCategory } from '../types';
 import { dayKey, questionFor } from '../questions';
 import { MemoryEditor } from '../components/MemoryEditor';
+import { useSavedJourneys } from '../../journey/store/savedJourneysStore';
+import { useJourneyPlayer } from '../../journey/player/journeyPlayer';
+import { JOURNEYS } from '../../journey/data/journeys';
+import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
+import { useLang } from '../../../shared/i18n';
 
 /**
  * 아카이브 — the tab.
@@ -33,6 +38,11 @@ export const ArchiveScreen: React.FC = () => {
   const approveDiscovery = useArchiveStore(s => s.approveDiscovery);
   const dismissDiscovery = useArchiveStore(s => s.dismissDiscovery);
   const completion = useArchiveStore(s => s.completion)();
+  const lang = useLang();
+  const savedJourneys = useSavedJourneys(x => x.journeys);
+  const touchJourney = useSavedJourneys(x => x.touch);
+  const openSaved = useJourneyPlayer(x => x.openSaved);
+  const journeyRows = [...savedJourneys].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   // Sync on every visit: push what changed here, pull what another device (or a counsellor's
   // approved discovery elsewhere) added. Never awaited by the screen.
@@ -175,6 +185,41 @@ export const ArchiveScreen: React.FC = () => {
           )}
         </View>
 
+        {/* 저장한 여행(신년운세) — opened again from here, like 나의 리포트 in the saju app. */}
+        {journeyRows.length > 0 && (
+          <View style={styles.recent}>
+            <Text style={styles.sectionTitle}>{t('archive.journeys.title')}</Text>
+            {journeyRows.map(j => {
+              const journey = JOURNEYS[j.journeyId];
+              const guide = getLocalizedCounselor(j.counselorId, lang);
+              const date = j.updatedAt.slice(0, 10).replace(/-/g, '.');
+              return (
+                <Pressable
+                  key={j.id}
+                  style={styles.diaryRow}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    sfx.select();
+                    touchJourney(j.id);
+                    openSaved(j);
+                    navigation.navigate('JourneyResult');
+                  }}>
+                  <Text style={styles.diaryMood}>🚂</Text>
+                  <View style={styles.diaryBody}>
+                    <Text style={styles.diaryDate}>
+                      {t('archive.journeys.with', { name: guide?.name ?? '', date })}
+                    </Text>
+                    <Text style={styles.diaryText} numberOfLines={2}>
+                      {journey ? t(journey.title, { year: j.year }) : String(j.year)}
+                    </Text>
+                  </View>
+                  <Text style={styles.journeyOpen}>{t('archive.journeys.open')} ›</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
         <Text style={styles.sectionTitle}>{t('archive.sections')}</Text>
         <View style={styles.grid}>
           {CATEGORIES.map(c => (
@@ -276,4 +321,5 @@ const styles = StyleSheet.create({
   diaryBody: { flex: 1, gap: 2 },
   diaryDate: { ...typography.tiny, color: colors.textMuted },
   diaryText: { ...typography.body, color: colors.textPrimary },
+  journeyOpen: { ...typography.tiny, color: colors.violetSoft, alignSelf: 'center' },
 });

@@ -57,6 +57,15 @@ let track: Bed = 'app';
  */
 const TARGET_VOLUME = 0.35;
 
+/**
+ * Where the bed sits while somebody is TALKING over it — the meditation guide (26-09). The guide
+ * is -18 LUFS and the bed at 0.35 lands ~5 dB under it; at 0.18 the gap is ~11 dB, which is where
+ * speech stops competing with music for the same ear.
+ */
+const DUCKED_VOLUME = 0.18;
+let ducked = false;
+const level = () => (ducked ? DUCKED_VOLUME : TARGET_VOLUME);
+
 const FADE_MS = 800;
 const FADE_STEP_MS = 50;
 
@@ -194,7 +203,7 @@ export const start = (bed: Bed = 'app') => {
     if (!wanted || !sound) return;
     if (sound.isPlaying?.()) {
       devlog('[bgm] already playing — fading back to target');
-      fadeTo(TARGET_VOLUME);
+      fadeTo(level());
       return;
     }
     devlog('[bgm] playing ' + TRACKS[track]);
@@ -205,7 +214,7 @@ export const start = (bed: Bed = 'app') => {
         console.warn('[bgm] playback failed');
       }
     });
-    fadeTo(TARGET_VOLUME);
+    fadeTo(level());
   });
 };
 
@@ -257,4 +266,15 @@ useSoundStore.subscribe((state, prev) => {
   else if (wanted) start();
 });
 
-export const backgroundMusic = { start, pause, stop, release };
+/**
+ * Lower the bed under a voice, and bring it back. Remembered, so a bed that (re)starts while ducked
+ * comes in at the ducked level rather than jumping over the speech.
+ */
+export const duck = (on: boolean) => {
+  if (ducked === on) return;
+  ducked = on;
+  devlog(`[bgm] ${on ? 'duck' : 'unduck'}`);
+  if (sound && wanted && !backgrounded && sound.isPlaying?.()) fadeTo(level());
+};
+
+export const backgroundMusic = { start, pause, stop, release, duck };

@@ -141,20 +141,24 @@ describe('card order', () => {
     expect(getLocalizedCounselor('mina', 'en')?.comingSoon).toBe(true);
   });
 
-  it('opens on the generalist', () => {
-    expect(ids()[0]).toBe('yuna');
+  // 27-09: 고윤정 first, Theo second — asked for by name.
+  it('opens on 고윤정, then Theo', () => {
+    expect(ids().slice(0, 2)).toEqual(['yunjung', 'theo']);
   });
 
-  it('opens on the generalist and ends on the guide, with nobody unreleased between', () => {
+  it('leads with 고윤정 and Theo, with nobody unreleased in the feed', () => {
     // The three-band order (enterable, seeded, placeholder) is unobservable while the last two bands
     // are hidden; what is still worth pinning is that the visible feed is exactly the enterable set
     // and that it leads with the counselor who takes any question.
     const order = ids();
-    expect(order[0]).toBe('yuna');
+    expect(order.slice(0, 2)).toEqual(['yunjung', 'theo']);
     expect(order).toEqual(
-      expect.arrayContaining(['yuna', 'jiho', 'nabi', 'yunjung', 'theo', 'breathe']),
+      expect.arrayContaining(['yuna', 'jiho', 'yunjung', 'theo', 'breathe']),
     );
-    expect(order).toHaveLength(6);
+    // Nabi (the pixel cat) is playable but hidden from the feed for now (27-09) — resolvable by id.
+    expect(order).not.toContain('nabi');
+    expect(getLocalizedCounselor('nabi', 'ko')?.name).toBe('나비');
+    expect(order).toHaveLength(5);
   });
 });
 
@@ -177,21 +181,13 @@ describe('what a counselor card promises', () => {
     }
   });
 
-  it('advertises the career reader exactly the subjects her picker offers', () => {
-    const options = [
-      { key: 'career' }, { key: 'wealth' }, { key: 'love' },
-      { key: 'relationships' }, { key: 'life' }, { key: 'health' },
-    ];
-    const ground = groupTopicsFor('yunjung_01', options)[0].items.map(o => o.key);
-    expect(ground).toEqual(['career', 'wealth']);
-
-    // The card's own word for each of those keys. `wealth` is "Money" on a card and nothing else.
+  it('never advertises 고윤정 as a career reader (26-09)', () => {
+    // She is a generalist whose specialty is HOW she reads. A card saying "Career, Money" is what
+    // made every one of her sessions open on 직업운.
     const advertised = getLocalizedCounselor('yunjung', 'en')!.specialties.map(s => s.toLowerCase());
-    expect(advertised).toContain('career');
-    expect(advertised).toContain('money');
-    // The three it used to claim it read. A menu of two under a card offering "Life" is the
-    // specialty made decorative.
-    expect(advertised).not.toContain('life');
+    expect(advertised).not.toContain('career');
+    expect(advertised).not.toContain('money');
+    expect(registryFor('yunjung_01')?.specialty).toBe('general');
   });
 
   it('keeps the career reader on her own pronouns in Vietnamese', () => {

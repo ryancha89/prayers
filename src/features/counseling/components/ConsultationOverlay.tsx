@@ -156,8 +156,11 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
 
         {state.screen === 'report' && state.report && <Report state={state} />}
 
+        {/* The card takes the tap too (26-09: "탭하여 계속하면 다음으로 안넘어감"). It sits ABOVE
+            the full-screen catcher, so a tap on the card — right where "tap to continue" is
+            written — never reached it; only taps on the empty scene did. */}
         {!!state.line && state.screen !== 'loop' && (
-          <View style={styles.card}>
+          <Pressable style={styles.card} onPress={state.canTap ? onTap : undefined} disabled={!state.canTap}>
             {!!state.speaker && (
               <Text style={styles.speaker}>{counselorName || state.speaker}</Text>
             )}
@@ -174,7 +177,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
             {state.canTap && (
               <Text style={styles.hint}>{ui('tap.continue', lang)}</Text>
             )}
-          </View>
+          </Pressable>
         )}
 
         {state.screen === 'notice' && state.notice && (
@@ -227,10 +230,12 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
             {/* ⚡ 티키타카 | 깊은 풀이 — the same segment SAVIS puts above its input, carried to the
                 server as the same `chat_mode`. The whole point is that a player who knows one app
                 knows the other. */}
-            {state.screen === 'loop' && !!onChatMode && (
+            {/* At the question box too (26-09): the style decides how the FIRST question is
+                answered — a quick reply, or the staged reading — so it has to be pickable before it. */}
+            {(state.screen === 'loop' || state.screen === 'questionBox') && !!onChatMode && (
               <View>
                 <View style={styles.modeRow} accessibilityRole="radiogroup">
-                  {(['tiki', 'detail'] as ChatMode[]).map(m => {
+                  {(['short', 'tiki', 'detail'] as ChatMode[]).map(m => {
                     const on = chatMode === m;
                     return (
                       <Pressable
@@ -244,7 +249,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                           {/* An image, not the ⚡ emoji it replaced: the app font has no glyph
                               for it, so on device it drew as a boxed "?" (25-09). Tinted to the
                               label so it follows the selected state with it. */}
-                          {m === 'tiki' && (
+                          {m === 'short' && (
                             <Image
                               source={QUICK_CHAT_ICON}
                               style={[styles.modeIcon, { tintColor: on ? colors.textPrimary : colors.textSecondary }]}
@@ -253,7 +258,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                             />
                           )}
                           <Text style={[styles.modeText, on && styles.modeTextOn]}>
-                            {ui(m === 'tiki' ? 'mode.tiki' : 'mode.detail', lang)}
+                            {ui(m === 'short' ? 'mode.short' : m === 'tiki' ? 'mode.tiki' : 'mode.detail', lang)}
                           </Text>
                         </View>
                       </Pressable>
@@ -262,7 +267,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                 </View>
                 {!!modeHint && (
                   <Text style={styles.modeHint}>
-                    {ui(modeHint === 'tiki' ? 'mode.tiki.hint' : 'mode.detail.hint', lang)}
+                    {ui(modeHint === 'short' ? 'mode.short.hint' : modeHint === 'tiki' ? 'mode.tiki.hint' : 'mode.detail.hint', lang)}
                   </Text>
                 )}
               </View>

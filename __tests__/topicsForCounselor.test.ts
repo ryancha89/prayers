@@ -1,4 +1,5 @@
 import { defaultTopicFor, groupTopicsFor } from '../src/features/counseling/topicsForCounselor';
+import { counselorRegistry } from '../src/features/counselors/data/registry';
 
 /**
  * The picker used to ask every counselor the same six questions — including the career specialist
@@ -21,37 +22,24 @@ const SIX = [
   { key: 'life' },
 ];
 
+/**
+ * 26-09: nobody owns a subject. "각 캐릭터별 애정운 직업운 담당 이런거 없이 모두 다 볼 수
+ * 있어야함" — every counsellor you can enter offers every topic and opens on none in particular;
+ * the player's question picks it. What is pinned is that this holds for EVERY playable card, so a
+ * seed that grows a specialty again cannot quietly narrow one of them.
+ */
+const PLAYABLE = counselorRegistry.filter(c => c.available && !c.silent).map(c => c.characterId);
+
 describe('topics for a counselor', () => {
-  it('offers a career counselor career and money, and nothing else', () => {
-    // yunjung_01 is `career` in the generated roster.
-    const groups = groupTopicsFor('yunjung_01', SIX);
-
-    expect(groups).toHaveLength(1);
-    expect(groups[0].headingKey).toBe('topic.herGround');
-    expect(groups[0].items.map(i => i.key)).toEqual(['career', 'wealth']);
+  it('has the counsellors to check', () => {
+    expect(PLAYABLE).toEqual(expect.arrayContaining(['yuna_01', 'yunjung_01', 'jiho_01', 'theo_01']));
   });
 
-  it('offers the relationship counselor love and relationships only', () => {
-    // theo_01 is `love` in the roster — the brief, not the sheet's "career & money".
-    const groups = groupTopicsFor('theo_01', SIX);
-
-    expect(groups).toHaveLength(1);
-    expect(groups[0].items.map(i => i.key)).toEqual(['love', 'relationships']);
-  });
-
-  it('drops what is not hers — and that is the point of the change', () => {
-    const all = groupTopicsFor('yunjung_01', SIX).flatMap(g => g.items.map(i => i.key));
-    expect(all).toEqual(['career', 'wealth']);
-    expect(all).not.toContain('love');
-  });
-
-  it('leaves the generalist flat — a heading over all six says nothing', () => {
-    // yuna_01 is `general`: she takes any question, and the card says so.
-    const groups = groupTopicsFor('yuna_01', SIX);
-
+  it.each(PLAYABLE)('offers %s every topic, flat, with no "her ground" heading', id => {
+    const groups = groupTopicsFor(id, SIX);
     expect(groups).toHaveLength(1);
     expect(groups[0].headingKey).toBeNull();
-    expect(groups[0].items).toHaveLength(6);
+    expect(groups[0].items).toEqual(SIX);
   });
 
   it('falls flat for an unknown counselor rather than guessing', () => {
@@ -59,13 +47,11 @@ describe('topics for a counselor', () => {
     expect(groupTopicsFor('nobody_99', SIX)[0].headingKey).toBeNull();
   });
 
-  it('does not open a section it cannot fill', () => {
-    // The server's list is what it is; if her ground is missing from it, there is no heading.
-    const withoutCareer = SIX.filter(t => t.key !== 'career' && t.key !== 'wealth');
-    const groups = groupTopicsFor('yunjung_01', withoutCareer);
-
-    expect(groups).toHaveLength(1);
-    expect(groups[0].headingKey).toBeNull();
+  it('never narrows even a counsellor the roster still calls a specialist', () => {
+    // Theo was `love` and 고윤정 `career`; both are general now, but the rule must not depend on it.
+    const all = groupTopicsFor('theo_01', SIX).flatMap(g => g.items.map(i => i.key));
+    expect(all).toContain('career');
+    expect(all).toContain('love');
   });
 });
 
@@ -76,16 +62,12 @@ describe('topics for a counselor', () => {
  * so an empty one drops those lines into live synthesis.
  */
 describe('the topic when nobody picks one', () => {
-  it('opens a specialist on her own ground', () => {
-    expect(defaultTopicFor('yunjung_01')).toBe('career');
-  });
-
-  it('gives the generalist the topic that does not narrow her', () => {
-    expect(defaultTopicFor('yuna_01')).toBe('life');
+  it.each(PLAYABLE)('opens %s on life — the topic that narrows nobody', id => {
+    expect(defaultTopicFor(id)).toBe('life');
   });
 
   it('never returns empty, whoever is asked', () => {
-    for (const id of [undefined, 'nobody_99', 'yuna_01', 'yunjung_01']) {
+    for (const id of [undefined, 'nobody_99', 'yuna_01', 'yunjung_01', 'theo_01']) {
       expect(defaultTopicFor(id)).toBeTruthy();
     }
   });

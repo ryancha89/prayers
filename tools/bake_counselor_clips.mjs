@@ -29,7 +29,7 @@ const TOKEN = process.env.SAJU_ACCESS_TOKEN ||
 
 // Unity persona folder → the server tone (TTS preset) and the app register it speaks in.
 const PERSONAS = {
-  coldgirl: { preset: 'coldgirl', register: 'business' }, // 고윤정
+  coldgirl: { preset: 'coldgirl', register: 'direct' },   // 고윤정
   metal: { preset: 'sudam', register: 'default' },        // 테오
   wood: { preset: 'sunyeo', register: 'default' },        // 유나
   dosa: { preset: 'dosa', register: 'default' },          // 지호
@@ -63,7 +63,14 @@ function registerTable(name) {
   }
   return Function(`return (${src.slice(open, end + 1)});`)();
 }
-const REGISTERS = { default: null, business: registerTable('BUSINESS') };
+const BUSINESS = registerTable('BUSINESS');
+const DIRECT_OVERRIDES = registerTable('DIRECT_OVERRIDES');
+const REGISTERS = {
+  default: null,
+  business: BUSINESS,
+  // voice.ts builds `direct` the same way: the business register with its career lines replaced.
+  direct: Object.fromEntries(Object.keys(BUSINESS).map(l => [l, { ...BUSINESS[l], ...DIRECT_OVERRIDES[l] }])),
+};
 
 // flow/voice.ts voiced(): register[lang] → register.en → the shared table.
 function lineFor(register, key, lang) {

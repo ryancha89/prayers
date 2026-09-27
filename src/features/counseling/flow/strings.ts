@@ -34,9 +34,11 @@ const KO: Bundle = {
   'mic.error.unavailable': '지금은 음성으로 물어볼 수 없어요. 글로 적어 주세요.',
   'loop.stopTalking': '그만 말하기',
   'mic.opening': '마이크를 여는 중',
+  'mode.short': '짧게',
   'mode.tiki': '티키타카',
   'mode.detail': '깊은 풀이',
-  'mode.tiki.hint': '티키타카: 메신저처럼 짧게 주고받아요.',
+  'mode.short.hint': '짧게: 한두 마디로 바로바로 답해요.',
+  'mode.tiki.hint': '티키타카: 서너 문장으로 대화하듯 답해요.',
   'mode.detail.hint': '깊은 풀이: 명리 근거를 갖춘 상세 풀이로 답해요.',
 };
 
@@ -63,9 +65,11 @@ const EN: Bundle = {
   'mic.error.unavailable': 'Asking out loud is not available right now. Please type instead.',
   'loop.stopTalking': 'Stop talking',
   'mic.opening': 'Opening the microphone',
+  'mode.short': 'Short',
   'mode.tiki': 'Quick chat',
   'mode.detail': 'Deep reading',
-  'mode.tiki.hint': 'Quick chat: short back-and-forth, like messaging.',
+  'mode.short.hint': 'Short: a line or two, straight back.',
+  'mode.tiki.hint': 'Quick chat: a few sentences, like talking.',
   'mode.detail.hint': 'Deep reading: a detailed answer grounded in the chart.',
 };
 
@@ -92,9 +96,11 @@ const JA: Bundle = {
   'mic.error.unavailable': '今は音声で質問できません。文字で書いてください。',
   'loop.stopTalking': '話をとめる',
   'mic.opening': 'マイクを準備しています',
+  'mode.short': 'ひとこと',
   'mode.tiki': 'テンポ会話',
   'mode.detail': '深い鑑定',
-  'mode.tiki.hint': 'テンポ会話: メッセージのように短くやり取りします。',
+  'mode.short.hint': 'ひとこと: 一言二言ですぐに答えます。',
+  'mode.tiki.hint': 'テンポ会話: 会話するように三、四文で答えます。',
   'mode.detail.hint': '深い鑑定: 命理の根拠を添えた詳しい解説で答えます。',
 };
 
@@ -121,9 +127,11 @@ const ZH_CN: Bundle = {
   'mic.error.unavailable': '现在还不能用语音提问，请用文字写下来。',
   'loop.stopTalking': '让他先停下',
   'mic.opening': '正在打开麦克风',
+  'mode.short': '简短',
   'mode.tiki': '快聊',
   'mode.detail': '深度解读',
-  'mode.tiki.hint': '快聊：像发消息一样简短往来。',
+  'mode.short.hint': '简短：一两句话，马上回答。',
+  'mode.tiki.hint': '快聊：像聊天一样用三四句话回答。',
   'mode.detail.hint': '深度解读：以命理依据作详细解答。',
 };
 
@@ -150,9 +158,11 @@ const ZH_TW: Bundle = {
   'mic.error.unavailable': '現在還不能用語音提問，請用文字寫下來。',
   'loop.stopTalking': '讓他先停下',
   'mic.opening': '正在開啟麥克風',
+  'mode.short': '簡短',
   'mode.tiki': '快聊',
   'mode.detail': '深度解讀',
-  'mode.tiki.hint': '快聊：像傳訊息一樣簡短往來。',
+  'mode.short.hint': '簡短：一兩句話，馬上回答。',
+  'mode.tiki.hint': '快聊：像聊天一樣用三四句話回答。',
   'mode.detail.hint': '深度解讀：以命理依據作詳細解答。',
 };
 
@@ -179,9 +189,11 @@ const VI: Bundle = {
   'mic.error.unavailable': 'Bây giờ chưa hỏi bằng giọng nói được. Con viết ra giúp ta.',
   'loop.stopTalking': 'Xin thầy dừng',
   'mic.opening': 'Đang mở micro',
+  'mode.short': 'Ngắn gọn',
   'mode.tiki': 'Trò chuyện nhanh',
   'mode.detail': 'Luận giải sâu',
-  'mode.tiki.hint': 'Trò chuyện nhanh: trao đổi ngắn như nhắn tin.',
+  'mode.short.hint': 'Ngắn gọn: một hai câu, trả lời ngay.',
+  'mode.tiki.hint': 'Trò chuyện nhanh: ba bốn câu, như đang nói chuyện.',
   'mode.detail.hint': 'Luận giải sâu: trả lời chi tiết dựa trên căn cứ mệnh lý.',
 };
 

@@ -86,8 +86,10 @@ describe('counselor card art', () => {
     // offers a name the engine cannot seat.
     const enterable = localizeCounselors('en').filter(c => !c.comingSoon);
     // Theo joined on 2026-09-16 with m_char_004 and ConsultationSolo03.
-    // Nabi joined on 2026-09-24 — a pixel counselor, drawn by the app (pixel/PixelCatStage).
-    expect(enterable.map(c => c.id).sort()).toEqual(['breathe', 'jiho', 'nabi', 'theo', 'yuna', 'yunjung']);
+    // Nabi joined on 2026-09-24 — a pixel counselor, drawn by the app (pixel/PixelCatStage) — and is
+    // hidden from the feed since 2026-09-27 (HIDDEN_FROM_FEED); his card art is still checked by id.
+    expect(enterable.map(c => c.id).sort()).toEqual(['breathe', 'jiho', 'theo', 'yuna', 'yunjung']);
     enterable.forEach(c => expect(c.cardImage).toBeDefined());
+    expect(getLocalizedCounselor('nabi', 'en')?.cardImage).toBeDefined();
   });
 });

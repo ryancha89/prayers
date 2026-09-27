@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLang } from '../../../shared/i18n';
 import { ConsultationEngine, FlowState, StagePort } from '../flow/engine';
 import { CounselorVoice } from '../flow/voice';
-import { createMockStagePort, createStagePort, type MockReply } from '../bridge/stagePort';
+import { createMockStagePort, createStagePort, engineKey, type MockReply } from '../bridge/stagePort';
 import { getUnityBridge, isNativeUnity } from '../bridge';
 import { useChatModeStore } from '../store/chatModeStore';
 import type { PhaseChoice } from '../flow/types';
@@ -157,7 +157,7 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
         setReady(true);
       } else if (e.type === 'UNITY_SEATED') setSeated(true);
       else if (e.type === 'ORACLE_RESULT') engineRef.current?.onOracleResult(e.payload);
-      else if (e.type === 'SPEAK_DONE') engineRef.current?.onSpeakDone(e.payload.cacheKey);
+      else if (e.type === 'SPEAK_DONE') engineRef.current?.onSpeakDone(engineKey(e.payload.cacheKey));
       else if (e.type === 'MIC_STATE') engineRef.current?.onMicState(e.payload.state, e.payload.level);
       else if (e.type === 'MIC_RESULT') engineRef.current?.onMicResult(e.payload);
     });

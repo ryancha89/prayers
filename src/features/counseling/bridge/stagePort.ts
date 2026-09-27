@@ -8,7 +8,25 @@
 import type { StagePort } from '../flow/engine';
 import type { ChatMode, OracleAskPayload, StagePhasePayload, UnityBridge } from '../types';
 
+/**
+ * Every take Unity is asked for is filed under `<key>@<room nonce>`.
+ *
+ * Unity's voice keeps synthesised clips BY KEY for as long as the player lives
+ * (ConsultationVoice._runtimeClips) and plays a cached clip without looking at the text. The engine's
+ * keys are per-session counters — `loop_1.0`, `P11#0` — so a second engine against the same
+ * resident player (a room re-entered, a JS reload) asked for `loop_1.0` and got the LAST session's
+ * `loop_1.0`: the bubble said one thing and the voice another (26-09, "목소리 나오는 내용도 다름").
+ * A nonce per room makes every key new to the player; SPEAK_DONE is mapped back with `engineKey`.
+ */
+export const KEY_SEP = '@';
+export function engineKey(unityKey: string): string {
+  const i = unityKey.lastIndexOf(KEY_SEP);
+  return i < 0 ? unityKey : unityKey.slice(0, i);
+}
+
 export function createStagePort(bridge: UnityBridge, onExit: () => void): StagePort {
+  const nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const k = (cacheKey: string) => `${cacheKey}${KEY_SEP}${nonce}`;
   return {
     phase(payload: StagePhasePayload) {
       bridge.sendEvent({ type: 'STAGE_PHASE', payload });
@@ -19,14 +37,14 @@ export function createStagePort(bridge: UnityBridge, onExit: () => void): StageP
     speakClip(locKeys: string[], topic: string, cacheKey: string, texts?: string[]) {
       bridge.sendEvent({
         type: 'STAGE_SPEAK',
-        payload: { mode: 'clip', locKeys, topic, cacheKey, texts },
+        payload: { mode: 'clip', locKeys, topic, cacheKey: k(cacheKey), texts },
       });
     },
     speakText(text: string, cacheKey: string) {
-      bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey } });
+      bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey: k(cacheKey) } });
     },
     prefetchText(text: string, cacheKey: string) {
-      bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey, prefetch: true } });
+      bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey: k(cacheKey), prefetch: true } });
     },
     stopSpeak() {
       bridge.sendEvent({ type: 'STAGE_STOP_SPEAK' });

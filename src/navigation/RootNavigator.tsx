@@ -14,6 +14,11 @@ import { AccountScreen } from '../features/profile/screens/AccountScreen';
 import { LibraryScreen } from '../features/profile/screens/LibraryScreen';
 import { MeditationRoomScreen } from '../features/meditation/screens/MeditationRoomScreen';
 import { TicketsScreen } from '../features/tickets/screens/TicketsScreen';
+import { AttendanceScreen } from '../features/tickets/screens/AttendanceScreen';
+import { JourneyCounselorScreen } from '../features/journey/screens/JourneyCounselorScreen';
+import { JourneyPassScreen } from '../features/journey/screens/JourneyPassScreen';
+import { JourneyScreen } from '../features/journey/screens/JourneyScreen';
+import { JourneyResultScreen } from '../features/journey/screens/JourneyResultScreen';
 import { ArchiveSectionScreen } from '../features/archive/screens/ArchiveSectionScreen';
 import { LegalScreen } from '../features/profile/screens/LegalScreen';
 import { useAuthStore } from '../features/auth/store/authStore';
@@ -61,6 +66,11 @@ export const RootNavigator: React.FC = () => {
     <Stack.Screen name="Account" component={AccountScreen} />
     <Stack.Screen name="Library" component={LibraryScreen} />
     <Stack.Screen name="Tickets" component={TicketsScreen} />
+    <Stack.Screen name="Attendance" component={AttendanceScreen} />
+    <Stack.Screen name="JourneyPass" component={JourneyPassScreen} />
+    <Stack.Screen name="JourneyCounselor" component={JourneyCounselorScreen} />
+    <Stack.Screen name="Journey" component={JourneyScreen} options={{ animation: 'fade' }} />
+    <Stack.Screen name="JourneyResult" component={JourneyResultScreen} options={{ animation: 'fade' }} />
     <Stack.Screen name="ArchiveSection" component={ArchiveSectionScreen} />
     <Stack.Screen name="MeditationRoom" component={MeditationRoomScreen} />
     <Stack.Screen name="Legal" component={LegalScreen} />

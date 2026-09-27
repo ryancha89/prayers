@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleProp, ViewStyle } from 'react-native';
-import Svg, { Circle, Line, Path, Polygon, Polyline } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Polygon, Polyline, Text as SvgText } from 'react-native-svg';
 
 /**
  * Feather-style stroke icons on a 24×24 grid so every glyph shares one visual
@@ -26,6 +26,11 @@ export type IconName =
   | 'plus'
   | 'sparkle'
   | 'play'
+  | 'pause'
+  | 'prev'
+  | 'next'
+  | 'back15'
+  | 'fwd15'
   | 'lotus';
 
 type Draw = (color: string) => React.ReactNode;
@@ -124,6 +129,39 @@ const ICONS: Record<IconName, Draw> = {
     <Path d="M12 3l2.1 5.6L20 11l-5.9 2.4L12 19l-2.1-5.6L4 11l5.9-2.4Z" stroke={c} />
   ),
   play: c => <Polygon points="7 4 20 12 7 20" stroke={c} fill={c} />,
+  // The Journey player's transport (27-09).
+  pause: c => (
+    <>
+      <Path d="M7 5h3v14H7z" stroke={c} fill={c} />
+      <Path d="M14 5h3v14h-3z" stroke={c} fill={c} />
+    </>
+  ),
+  prev: c => (
+    <>
+      <Polygon points="18 5 8 12 18 19" stroke={c} fill={c} />
+      <Line x1="6" y1="5" x2="6" y2="19" stroke={c} />
+    </>
+  ),
+  next: c => (
+    <>
+      <Polygon points="6 5 16 12 6 19" stroke={c} fill={c} />
+      <Line x1="18" y1="5" x2="18" y2="19" stroke={c} />
+    </>
+  ),
+  back15: c => (
+    <>
+      <Path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3" stroke={c} />
+      <Polyline points="4 3.5 6.7 6.7 3.5 8.6" stroke={c} />
+      <SvgText x="12" y="15.2" fontSize="7.5" fontWeight="700" fill={c} stroke="none" textAnchor="middle">15</SvgText>
+    </>
+  ),
+  fwd15: c => (
+    <>
+      <Path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" stroke={c} />
+      <Polyline points="20 3.5 17.3 6.7 20.5 8.6" stroke={c} />
+      <SvgText x="12" y="15.2" fontSize="7.5" fontWeight="700" fill={c} stroke="none" textAnchor="middle">15</SvgText>
+    </>
+  ),
   // A closed book with a bookmark — the 아카이브 tab.
   archive: c => (
     <>

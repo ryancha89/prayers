@@ -503,7 +503,7 @@ const RAW: RawCounselor[] = [
   {
     id: 'jiho',
     accent: '#34D399',
-    category: 'life',
+    category: 'saju',
     conversationCount: 720_000,
     characterId: 'jiho_01',
     roomId: 'jiho_room',
@@ -511,63 +511,63 @@ const RAW: RawCounselor[] = [
     l10n: {
       ko: {
         name: '지호',
-        title: '인생 · 의미 상담사',
+        title: '따뜻한 사주 상담사',
         hook: '삶이 멈춘 것 같을 때, 다음의 솔직한 한 걸음을 함께 찾아요.',
         about:
           '지호는 따뜻하고 사려 깊어서, 잘못된 건 없는데 아무것도 맞지 않는 계절에 잘 맞아요. 당신이 진짜 원하는 것에 이름을 붙이도록 도와줍니다.',
         personality: ['따뜻함', '성찰적', '인내심'],
-        specialties: ['인생', '의미', '성장'],
-        tags: ['#인생', '#의미', '#성장'],
+        specialties: ['연애', '커리어', '재물', '인생'],
+        tags: ['#사주', '#따뜻함', '#성찰'],
       },
       en: {
         name: 'Jiho',
-        title: 'Life Path & Meaning Counselor',
+        title: 'The warm saju reader',
         hook: "When life feels stuck, let's find the next honest step.",
         about:
           'Jiho is warm and reflective, good for the seasons when nothing is wrong yet nothing feels right. He helps you name what you actually want.',
         personality: ['Warm', 'Reflective', 'Patient'],
-        specialties: ['Life', 'Meaning', 'Growth'],
-        tags: ['#Life', '#Meaning', '#Growth'],
+        specialties: ['Love', 'Career', 'Money', 'Life'],
+        tags: ['#Saju', '#Warm', '#Reflective'],
       },
       ja: {
         name: 'ジホ',
-        title: '人生・意味の相談者',
+        title: '温かな四柱の読み手',
         hook: '人生が止まって見えるとき、次の正直な一歩を一緒に探しましょう。',
         about:
           'ジホは温かく、よく考える人。何も間違っていないのに何もしっくりこない季節に合います。あなたが本当に望んでいるものに、名前をつける手助けをしてくれます。',
         personality: ['温かい', '思慮深い', '辛抱強い'],
-        specialties: ['人生', '意味', '成長'],
-        tags: ['#人生', '#意味', '#成長'],
+        specialties: ['恋愛', '仕事', '金運', '人生'],
+        tags: ['#四柱', '#温かさ', '#内省'],
       },
       'zh-CN': {
         name: '志豪',
-        title: '人生 · 意义咨询师',
+        title: '温和的八字顾问',
         hook: '当日子像卡住了，我们一起找出下一步该怎么走才不违心。',
         about:
           '志豪温和又爱琢磨，很适合那种什么都没出错、却什么都不对劲的时节。他帮你给心里真正想要的东西起个名字。',
         personality: ['温和', '爱琢磨', '有耐心'],
-        specialties: ['人生', '意义', '成长'],
-        tags: ['#人生', '#意义', '#成长'],
+        specialties: ['恋爱', '事业', '财运', '人生'],
+        tags: ['#八字', '#温和', '#反思'],
       },
       'zh-TW': {
         name: '志豪',
-        title: '人生 · 意義諮詢師',
+        title: '溫和的八字顧問',
         hook: '當日子像卡住了，我們一起找出下一步該怎麼走才不違心。',
         about:
           '志豪溫和又愛琢磨，很適合那種什麼都沒出錯、卻什麼都不對勁的時節。他幫你給心裡真正想要的東西起個名字。',
         personality: ['溫和', '愛琢磨', '有耐心'],
-        specialties: ['人生', '意義', '成長'],
-        tags: ['#人生', '#意義', '#成長'],
+        specialties: ['戀愛', '事業', '財運', '人生'],
+        tags: ['#八字', '#溫和', '#反思'],
       },
       vi: {
         name: 'Jiho',
-        title: 'Thầy xem vận trình · ý nghĩa',
+        title: 'Thầy xem tứ trụ ấm áp',
         hook: 'Khi đời như khựng lại, cùng tìm bước kế tiếp mà con thấy thật lòng.',
         about:
           'Jiho ấm áp và hay ngẫm, hợp với những mùa chẳng có gì sai mà cũng chẳng có gì vừa vặn. Anh giúp con gọi tên đúng thứ mình thật sự muốn.',
         personality: ['Ấm áp', 'Hay ngẫm', 'Kiên nhẫn'],
-        specialties: ['Vận trình', 'Ý nghĩa', 'Trưởng thành'],
-        tags: ['#VậnTrình', '#ÝNghĩa', '#TrưởngThành'],
+        specialties: ['Tình cảm', 'Sự nghiệp', 'Tiền bạc', 'Cuộc sống'],
+        tags: ['#TứTrụ', '#ẤmÁp', '#SuyNgẫm'],
       },
     },
   },
@@ -651,24 +651,25 @@ const RAW: RawCounselor[] = [
     },
   },
   /**
-   * Go Yunjung — the career specialist, and since 16-09 the roster's first counsellor whose CARD is
-   * held to what her room actually does.
+   * Go Yunjung — the one who looks straight at reality, and since 16-09 the roster's first
+   * counsellor whose CARD is held to what her room actually does.
    *
-   * ⚠️ `specialties` is not decoration: her topic picker shows `career` + `wealth` and nothing else
-   * (`groupTopicsFor`), so the card has to advertise those two. It used to read "Career, Decisions,
-   * Life" — a menu of one thing under a card promising three is the specialty made decorative, the
-   * exact failure the filter was introduced to fix.
+   * ⚠️ NOT A CAREER SPECIALIST (26-09). She was seeded `career`, and the room took it literally:
+   * every session opened on 직업운, and "알겠습니다. 직업운의 흐름이 궁금하신 거군요" was said to
+   * players who never mentioned work. She is a generalist now (CounselorCatalogBuilder seed); her
+   * specialty is HOW she reads — the facts first, no softening — so that is what the card
+   * advertises, and the player's question picks the topic.
    *
    * ⚠️ VIETNAMESE PRONOUNS ARE THE REGISTER. Her hook said "Ta … con", the grandmaster-to-disciple
    * pairing every other card uses — while her own room speaks "tôi / bạn" (`flow/voice.ts`). One
    * counsellor cannot address the player two ways in one session, and it is the CARD that was
-   * wrong: she talks straight to an adult about work and money. The other five languages already
+   * wrong: she talks straight to an adult. The other five languages already
    * carried that in their politeness level and needed no change.
    */
   {
     id: 'yunjung',
     accent: '#B07C9B',
-    category: 'career',
+    category: 'saju',
     characterId: 'yunjung_01',
     roomId: 'yunjung_room',
     previewActions: PREVIEW_ACTIONS_YUNJUNG,
@@ -680,8 +681,8 @@ const RAW: RawCounselor[] = [
         about:
           '고윤정은 사주를 위로가 아니라 자료로 읽습니다. 지금 무엇이 사실인지 먼저 정리하고, 그 위에서 고를 수 있는 길을 짚어줍니다.',
         personality: ['직설적', '냉철함', '현실적'],
-        specialties: ['커리어', '재물', '선택'],
-        tags: ['#커리어', '#재물', '#직설'],
+        specialties: ['현실 진단', '선택', '인생'],
+        tags: ['#직설', '#현실', '#선택'],
       },
       en: {
         name: 'Go Yunjung',
@@ -690,8 +691,8 @@ const RAW: RawCounselor[] = [
         about:
           'Yunjung reads a chart as evidence, not as comfort. She settles what is actually true first, and only then points at the choices that are still open.',
         personality: ['Direct', 'Clear-eyed', 'Practical'],
-        specialties: ['Career', 'Money', 'Decisions'],
-        tags: ['#Career', '#Money', '#Straight'],
+        specialties: ['Reality check', 'Decisions', 'Life'],
+        tags: ['#Straight', '#Reality', '#Decisions'],
       },
       ja: {
         name: 'コ・ユンジョン',
@@ -700,8 +701,8 @@ const RAW: RawCounselor[] = [
         about:
           'ユンジョンは四柱を慰めではなく資料として読みます。まず事実を整理し、その上で残されている選択肢を示します。',
         personality: ['率直', '冷静', '現実的'],
-        specialties: ['仕事', '金運', '決断'],
-        tags: ['#仕事', '#金運', '#率直'],
+        specialties: ['現実診断', '決断', '人生'],
+        tags: ['#率直', '#現実', '#決断'],
       },
       'zh-CN': {
         name: '高允祯',
@@ -710,8 +711,8 @@ const RAW: RawCounselor[] = [
         about:
           '允祯把八字当资料读，不当安慰。她先把现在真实的情况理清楚，再指出还能选的路。',
         personality: ['直接', '冷静', '务实'],
-        specialties: ['事业', '财运', '抉择'],
-        tags: ['#事业', '#财运', '#直说'],
+        specialties: ['现实诊断', '抉择', '人生'],
+        tags: ['#直说', '#现实', '#抉择'],
       },
       'zh-TW': {
         name: '高允禎',
@@ -720,8 +721,8 @@ const RAW: RawCounselor[] = [
         about:
           '允禎把八字當資料讀，不當安慰。她先把現在真實的情況理清楚，再指出還能選的路。',
         personality: ['直接', '冷靜', '務實'],
-        specialties: ['事業', '財運', '抉擇'],
-        tags: ['#事業', '#財運', '#直說'],
+        specialties: ['現實診斷', '抉擇', '人生'],
+        tags: ['#直說', '#現實', '#抉擇'],
       },
       vi: {
         name: 'Go Yunjung',
@@ -730,8 +731,8 @@ const RAW: RawCounselor[] = [
         about:
           'Yunjung đọc lá số như đọc dữ liệu, không phải như lời an ủi. Cô chốt lại điều gì đang là sự thật trước đã, rồi mới chỉ ra những đường còn chọn được.',
         personality: ['Thẳng thắn', 'Tỉnh táo', 'Thực tế'],
-        specialties: ['Sự nghiệp', 'Tiền bạc', 'Quyết định'],
-        tags: ['#SựNghiệp', '#TiềnBạc', '#NóiThẳng'],
+        specialties: ['Nhìn thẳng thực tế', 'Quyết định', 'Cuộc sống'],
+        tags: ['#NóiThẳng', '#ThựcTế', '#QuyếtĐịnh'],
       },
     },
   },
@@ -829,73 +830,75 @@ const RAW: RawCounselor[] = [
    * the sheet. What is still missing is his MODEL, so the room's seat holds a stand-in sage and the
    * card stays locked — `comingSoon` is derived from the built-model list, never hand-set.
    */
+  // ⚠️ 26-09: no longer the relationship counsellor. Nobody owns a subject any more — he reads
+  // whatever the player asks, like everyone else — so the card says who he is, not what he covers.
   {
     id: 'theo',
     accent: '#3B4E8C',
-    category: 'love',
+    category: 'saju',
     characterId: 'theo_01',
     roomId: 'theo_study',
     previewActions: PREVIEW_ACTIONS_THEO,
     l10n: {
       ko: {
         name: '테오',
-        title: '인연 · 관계 상담사',
-        hook: '끊을 인연인지 이어갈 인연인지, 같이 봅시다.',
+        title: '냉철한 사주 상담사',
+        hook: '무엇이 궁금하든, 차분하게 같이 봅시다.',
         about:
-          '테오는 사람 사이의 일을 운으로만 풀지 않습니다. 두 사람의 기운이 어디서 어긋나는지 차분히 짚고, 지금 이 관계에서 당신이 쥘 수 있는 선택까지 함께 정리합니다.',
+          '테오는 삶의 일을 운으로만 풀지 않습니다. 사주의 기운이 어디서 어긋나는지 차분히 짚고, 지금 당신이 쥘 수 있는 선택까지 함께 정리합니다.',
         personality: ['냉철함', '논리적', '은근한 다정함'],
-        specialties: ['연애', '인간관계', '가족'],
-        tags: ['#연애', '#인연', '#관계'],
+        specialties: ['연애', '커리어', '재물', '인생'],
+        tags: ['#사주', '#냉철', '#선택'],
       },
       en: {
         name: 'Theo',
-        title: 'Ties & relationships counsellor',
-        hook: 'A tie worth keeping, or worth ending — let us look at it together.',
+        title: 'The cool-headed saju reader',
+        hook: 'Whatever is on your mind — let us look at it calmly, together.',
         about:
-          'Theo does not explain people away with fortune alone. He finds, calmly, where two charts pull against each other, and settles what is actually yours to decide in the relationship you are in now.',
+          'Theo does not explain life away with fortune alone. He finds, calmly, where your chart pulls against itself, and settles what is actually yours to decide right now.',
         personality: ['Cool-headed', 'Logical', 'Quietly kind'],
-        specialties: ['Love', 'Relationships', 'Family'],
-        tags: ['#Love', '#Ties', '#Relationships'],
+        specialties: ['Love', 'Career', 'Money', 'Life'],
+        tags: ['#Saju', '#CoolHeaded', '#Choices'],
       },
       ja: {
         name: 'テオ',
-        title: '縁・関係の相談役',
-        hook: '切る縁か、続ける縁か。一緒に見ていきましょう。',
+        title: '冷静な四柱の読み手',
+        hook: '何が気になっていても、落ち着いて一緒に見ていきましょう。',
         about:
-          'テオは人と人の問題を運だけで片づけません。二人の気がどこで食い違うのかを静かに示し、今のその関係であなたが選べることまで一緒に整理します。',
+          'テオは人生の問題を運だけで片づけません。命式の気がどこで食い違うのかを静かに示し、今あなたが選べることまで一緒に整理します。',
         personality: ['冷静', '論理的', 'さりげない優しさ'],
-        specialties: ['恋愛', '人間関係', '家族'],
-        tags: ['#恋愛', '#縁', '#関係'],
+        specialties: ['恋愛', '仕事', '金運', '人生'],
+        tags: ['#四柱', '#冷静', '#選択'],
       },
       'zh-CN': {
         name: '泰奥',
-        title: '缘分 · 关系顾问',
-        hook: '该断的缘还是该续的缘，我们一起看。',
+        title: '冷静的八字顾问',
+        hook: '不管你想问什么，我们一起冷静地看。',
         about:
-          '泰奥不把人与人的事只推给运气。他冷静地指出两个人的气在哪里相冲，再把此刻这段关系里你真正能决定的事一条条理清。',
+          '泰奥不把人生的事只推给运气。他冷静地指出命盘里的气在哪里相冲，再把此刻你真正能决定的事一条条理清。',
         personality: ['冷静', '有逻辑', '不动声色的体贴'],
-        specialties: ['恋爱', '人际', '家庭'],
-        tags: ['#恋爱', '#缘分', '#关系'],
+        specialties: ['恋爱', '事业', '财运', '人生'],
+        tags: ['#八字', '#冷静', '#选择'],
       },
       'zh-TW': {
         name: '泰奧',
-        title: '緣分 · 關係顧問',
-        hook: '該斷的緣還是該續的緣，我們一起看。',
+        title: '冷靜的八字顧問',
+        hook: '不管你想問什麼，我們一起冷靜地看。',
         about:
-          '泰奧不把人與人的事只推給運氣。他冷靜地指出兩個人的氣在哪裡相沖，再把此刻這段關係裡你真正能決定的事一條條理清。',
+          '泰奧不把人生的事只推給運氣。他冷靜地指出命盤裡的氣在哪裡相沖，再把此刻你真正能決定的事一條條理清。',
         personality: ['冷靜', '有邏輯', '不動聲色的體貼'],
-        specialties: ['戀愛', '人際', '家庭'],
-        tags: ['#戀愛', '#緣分', '#關係'],
+        specialties: ['戀愛', '事業', '財運', '人生'],
+        tags: ['#八字', '#冷靜', '#選擇'],
       },
       vi: {
         name: 'Theo',
-        title: 'Cố vấn nhân duyên · quan hệ',
-        hook: 'Duyên nên giữ hay nên buông, ta cùng nhìn cho rõ.',
+        title: 'Thầy xem tứ trụ điềm tĩnh',
+        hook: 'Chuyện gì cũng được, ta cùng nhìn cho rõ.',
         about:
-          'Theo không đổ chuyện người với người cho số phận. Anh điềm tĩnh chỉ ra khí của hai người vênh nhau ở đâu, rồi cùng con sắp lại những điều con thật sự quyết được trong mối quan hệ lúc này.',
+          'Theo không đổ chuyện đời cho số phận. Anh điềm tĩnh chỉ ra khí trong lá số vênh nhau ở đâu, rồi cùng con sắp lại những điều con thật sự quyết được lúc này.',
         personality: ['Lạnh đầu', 'Có logic', 'Tử tế ngầm'],
-        specialties: ['Tình cảm', 'Quan hệ', 'Gia đình'],
-        tags: ['#TìnhCảm', '#NhânDuyên', '#QuanHệ'],
+        specialties: ['Tình cảm', 'Sự nghiệp', 'Tiền bạc', 'Cuộc sống'],
+        tags: ['#TứTrụ', '#ĐiềmTĩnh', '#LựaChọn'],
       },
     },
   },
@@ -963,8 +966,25 @@ function localize(raw: RawCounselor, lang: Lang): CounselorSummary {
  */
 const SHOW_UNRELEASED = false;
 
+/**
+ * Who leads the feed (27-09: "고윤정 1번 테오 2번으로"). Pinned by id, then everyone else in the
+ * order RAW lists them — so adding a counsellor never reshuffles the top of the feed by accident.
+ */
+const FEED_FIRST = ['yunjung', 'theo'];
+
+function feedOrder<T extends { id: string }>(list: T[]): T[] {
+  const pinned = FEED_FIRST.map(id => list.find(c => c.id === id)).filter((c): c is T => !!c);
+  return [...pinned, ...list.filter(c => !FEED_FIRST.includes(c.id))];
+}
+
+/**
+ * Hidden from the feed for now (2026-09-27: "고양이 상담사 일단 비표시"). Still resolvable by id —
+ * rooms, journeys and saved conversations that name him keep working; he just is not offered.
+ */
+const HIDDEN_FROM_FEED = new Set(['nabi']);
+
 export function localizeCounselors(lang: Lang): CounselorSummary[] {
-  const all = RAW.map(r => localize(r, lang));
+  const all = feedOrder(RAW.map(r => localize(r, lang)).filter(c => !HIDDEN_FROM_FEED.has(c.id)));
   if (!SHOW_UNRELEASED) return all.filter(c => !c.comingSoon);
   const soon = all.filter(c => c.comingSoon);
   // Three bands, not two. "Coming soon" covered two very different things once the 15-09 pair was

@@ -65,6 +65,21 @@ type SpokenChunk = ReadingChunk & {
 
 /** Scenes as chunks. Every scene opens its own paragraph: the server broke the answer there because
  *  the delivery changes, and running two tones into one paragraph hides exactly that. */
+/**
+ * Drop the score card's line from anything the counselor would say (26-09).
+ *
+ * The room hands the model four chart-derived scores to echo back as part 5 of a 1)…9) answer —
+ * for the P18 report card, which is skipped. When the model writes that line without its "5)" it
+ * falls into the last reading beat and the counselor ends on "Khả năng kiếm tiền=61, Khả năng giữ
+ * tiền=35, …" — numbers read aloud, in whatever language the labels defaulted to. A run of two or
+ * more `label=number` pairs is never speech, whoever wrote it, so it goes wherever it lands.
+ */
+export function stripScoreLines(text: string): string {
+  const PAIR = String.raw`[^\n=,，、]{1,40}=\s*\d{1,3}`;
+  const RUN = new RegExp(String.raw`(^|\n)[ \t]*${PAIR}(?:\s*[,，、]\s*${PAIR})+[ \t.]*(?=\n|$)`, 'g');
+  return text.replace(RUN, '$1').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 function chunksOfScenes(scenes: CounselorScene[]): SpokenChunk[] {
   return scenes.map((sc, i) => ({
     text: sc.text,
@@ -148,6 +163,20 @@ const SKIP_PHASES = ['P03', 'P04', 'P12', 'P13', 'P15', 'P16', 'P18'];
 
 /** Phases that exist only to cover the wait for the server. */
 const COVER_PHASES = ['P06', 'P07', 'P08', 'P09', 'P10'];
+
+/**
+ * Question → one line → the answer (26-09, asked for on the simulator: "질문하고 한마디만 버퍼말
+ * 준비해둔거 말하고 바로 대답하게").
+ *
+ * The cover phases were five scripted beats between the question and the reading — "알겠습니다.
+ * {0}의 흐름이 궁금하신 거군요", the pillars, the elements — played whether or not the answer was
+ * already back, and they named a topic the player may never have asked about. Now the walk goes
+ * straight to the reading and the wait is covered by the one prepared line (`consult_thinking`,
+ * "사주를 좀 더 자세히 살펴보겠습니다") at the reading's hold. That line is said to the end even
+ * when the answer lands first, capped so a SPEAK_DONE that never comes cannot hold the room.
+ */
+const SKIPPED_COVER_PHASES = COVER_PHASES;
+const BUFFER_LINE_MAX_MS = 5000;
 
 /** How many `loop.wait.N` lines strings.ts carries per language. */
 const WAIT_LINES = 4;
@@ -626,6 +655,7 @@ export class ConsultationEngine {
     this.running = true;
     this.index = -1;
     this.state = { ...emptyState, topic: this.topic };
+    this.prefetchWaitLines();
     if (this.opts.chatFirst) {
       this.timer = this.recallOpening
         ? null
@@ -710,7 +740,7 @@ export class ConsultationEngine {
 
     // Talk-first: step straight over the gates. `index` is already set, so
     // advance() walks on exactly as if the phase had played out.
-    if (SKIP_PHASES.includes(p.id)) {
+    if (SKIP_PHASES.includes(p.id) || SKIPPED_COVER_PHASES.includes(p.id)) {
       this.advance();
       return;
     }
@@ -755,9 +785,7 @@ export class ConsultationEngine {
       const text = reading.join('\n');
       // The server's break-up wins over the length heuristic: those breaks are where the delivery
       // changes, and re-splitting the joined text at ~110 characters would cut straight across them.
-      const scenes = this.beatScenes[p.id];
-      const chunks: SpokenChunk[] =
-        scenes && scenes.length > 0 ? chunksOfScenes(scenes) : splitReading(text);
+      const chunks = this.chunksFor(p.id, text);
       this.patch({
         phaseId: p.id,
         screen: p.ui,
@@ -1097,6 +1125,17 @@ export class ConsultationEngine {
       return;
     }
 
+    // 티키타카 (26-09): the first question is answered like every later one — a short reply in the
+    // free chat — instead of the staged four-beat reading. "한번 질문하면 대답이 너무 길어": the
+    // player asked for a conversation. 깊은 풀이 keeps the full reading below.
+    const mode = this.opts.chatMode?.();
+    if (mode === 'tiki' || mode === 'short') {
+      this.question = trimmed;
+      this.openLoop({ intro: false });
+      this.askLoop(trimmed);
+      return;
+    }
+
     this.question = trimmed;
     this.opts.onUserLine?.(trimmed);
     this.followQuestionTopic(trimmed);
@@ -1278,9 +1317,14 @@ export class ConsultationEngine {
       THINKING_KEY,
     );
 
+    const heldAt = this.sched.now();
     const poll = () => {
       if (!this.running) return;
-      if (this.oraclePending) {
+      // The answer is back but the buffer line is still being said: let it finish, so the room says
+      // its one line whole before the reading starts.
+      const bufferStillTalking =
+        this.speaking === THINKING_KEY && this.sched.now() - heldAt < BUFFER_LINE_MAX_MS;
+      if (this.oraclePending || bufferStillTalking) {
         this.timer = this.sched.set(poll, COVER_POLL_MS);
         return;
       }
@@ -1354,8 +1398,16 @@ export class ConsultationEngine {
    * bridge as ORACLE_RESULT. The tests passed, the build shipped, and the screenshot still had
    * 庚辰 in the bubble. See sajuGlyphs.ts for what the transliteration is and why.
    */
+  /** How a reading beat is spoken — ONE place, because the prefetch at the result and the phase
+   *  that speaks it must cut the same chunks or the prefetched take is never used. */
+  private chunksFor(phaseId: string, text: string): SpokenChunk[] {
+    const scenes = this.beatScenes[phaseId];
+    // Server scenes stay whole: the server broke the answer there, with a tone per scene.
+    return scenes && scenes.length > 0 ? chunksOfScenes(scenes) : splitReading(text);
+  }
+
   private said(text: string): string {
-    return sayGlyphs(text, this.lang);
+    return sayGlyphs(stripScoreLines(text), this.lang);
   }
 
   onOracleResult(payload: OracleResultPayload) {
@@ -1379,17 +1431,29 @@ export class ConsultationEngine {
       // beat at a time. Cleaning either alone leaves the other exactly as broken.
       this.beats[beat.phaseId] = beat.lines.map(l => this.said(l));
       if (beat.scenes && beat.scenes.length > 0) {
-        this.beatScenes[beat.phaseId] = beat.scenes.map(sc => ({ ...sc, text: this.said(sc.text) }));
+        this.beatScenes[beat.phaseId] = beat.scenes
+          .map(sc => ({ ...sc, text: this.said(sc.text) }))
+          .filter(sc => sc.text.trim().length > 0);
       }
+    }
+    // Start the reading's first take NOW, while the buffer line is still being said — not when the
+    // reading phase opens. With a Gemini voice the first chunk is the whole of the wait the player
+    // hears (7-9 s measured, 26-09); begun here it overlaps the buffer line instead of following it.
+    const opening = this.beats[READING_PHASE];
+    if (!this.oracleError && opening && opening.length > 0) {
+      const first = this.chunksFor(READING_PHASE, opening.join('\n'))[0];
+      if (first) this.stage.prefetchText(first.text, `${READING_PHASE}#0`);
     }
   }
 
   /* ── The free-chat loop ───────────────────────────────────────────────── */
 
-  private openLoop() {
+  private openLoop(opts: { intro?: boolean } = {}) {
     this.inLoop = true;
     this.clearTimer();
-    this.stageBeat('LOOP_OPEN', 'Laugh');
+    // Opened by a question (티키타카's first turn), not by the end of a reading: no laugh — the
+    // question's own beat (LOOP_ASK) follows at once.
+    if (opts.intro !== false) this.stageBeat('LOOP_OPEN', 'Laugh');
     this.patch({
       screen: 'loop',
       canTap: false,
@@ -1400,7 +1464,9 @@ export class ConsultationEngine {
       // The loop's opening line never had a Unity string key — it was an
       // inspector field on ConsultationLoop. It is RN copy now. A chat-first room opens HERE, so
       // its line is the greeting — or what the counselor remembers of last time.
-      line: this.opts.chatFirst
+      line: opts.intro === false
+        ? ''
+        : this.opts.chatFirst
         ? (this.recallOpening ?? this.uiV('loop.hello'))
         : this.uiV('loop.intro'),
     });
@@ -1412,9 +1478,13 @@ export class ConsultationEngine {
       // table, so this one is synthesised like the reading beats are.
       this.speak(() => this.stage.speakText(intro, 'loop_intro'), 'loop_intro');
     }
-    // The "one moment" lines are spoken the instant a question goes out, so
-    // they have to be in memory already — synthesising them then would put the
-    // same 2-3 s of silence in front of them that they exist to cover.
+    this.prefetchWaitLines();
+  }
+
+  /** The "one moment" lines are spoken the instant a question goes out, so they have to be in
+   *  memory already — synthesising them then would put the same 2-3 s of silence in front of them
+   *  that they exist to cover. Also called at begin(): 티키타카's FIRST question uses them too. */
+  private prefetchWaitLines() {
     for (let i = 0; i < WAIT_LINES; i++) {
       const line = this.uiV(`loop.wait.${i}` as UiKey);
       if (line) this.stage.prefetchText(line, `loop_wait_${i}`);
@@ -1453,6 +1523,12 @@ export class ConsultationEngine {
     // The answer is 15-20 s away. Rather than a typing indicator, the counselor
     // says so — a short prefetched line, spoken at once, so the wait reads as
     // her thinking rather than the app hanging.
+    //
+    // NOT in 짧게 (26-09: "짧게 대답할때는 버퍼 없이 바로 대답하게"). There the answer is a line or
+    // two and comes back in a few seconds; a buffer line would be as long as the answer, and the
+    // answer waits for it to finish (afterSpeech in onLoopResult). The thinking pose and the dots
+    // still show she heard.
+    if (this.opts.chatMode?.() === 'short') return;
     const wait = this.pickWait();
     if (wait.text) {
       this.appendTranscript('counselor', wait.text);

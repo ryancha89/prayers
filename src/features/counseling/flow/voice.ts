@@ -28,7 +28,7 @@ import type { Lang } from '../../../shared/i18n';
 import { registryFor } from '../../counselors/data/registry';
 import { isPixelCounselor } from '../pixel/pixelCounselors';
 
-export type CounselorVoice = 'default' | 'business' | 'cat';
+export type CounselorVoice = 'default' | 'business' | 'direct' | 'cat';
 
 /** Specialties that speak in the business register. `wealth` is here too: the roster splits money
  *  and career into two cards, but it is one reading and one way of talking. */
@@ -36,9 +36,23 @@ const BUSINESS_SPECIALTIES = new Set(['career', 'wealth']);
 
 /** Which register this counselor speaks in. Unknown counselor → the default; there is no guessing
  *  from a name, because the name is not what decides it. */
+/**
+ * Registers that follow the PERSONA rather than a specialty.
+ *
+ * 고윤정 (coldgirl) was seeded `career` and spoke the business register because of it; on 26-09 she
+ * became a generalist ("직업 전문가가 아님" — every session had opened on 직업운). What stays is
+ * how she talks — straight, tôi/bạn in Vietnamese — so she keeps the business register's manner
+ * with its work-and-money lines taken out: `direct`.
+ */
+const REGISTER_BY_TONE: Readonly<Record<string, CounselorVoice>> = {
+  coldgirl: 'direct',
+};
+
 export function voiceFor(characterId: string | undefined): CounselorVoice {
   if (isPixelCounselor(characterId)) return 'cat';
-  const specialty = registryFor(characterId)?.specialty;
+  const entry = registryFor(characterId);
+  if (entry && REGISTER_BY_TONE[entry.tone]) return REGISTER_BY_TONE[entry.tone];
+  const specialty = entry?.specialty;
   return specialty && BUSINESS_SPECIALTIES.has(specialty) ? 'business' : 'default';
 }
 
@@ -229,9 +243,65 @@ const CAT: Record<Lang, Bundle> = {
   },
 };
 
+/**
+ * `direct` = the business register minus what made it a CAREER register: the lines that name work,
+ * money or the wealth star. Written as overrides on top of BUSINESS so the manner (and the
+ * Vietnamese pronouns) cannot drift apart between the two. tools/bake_counselor_clips.mjs reads
+ * this table by name — keep it a plain object literal.
+ */
+const DIRECT_OVERRIDES: Record<Lang, Bundle> = {
+  ko: {
+    thinking: '사주를 있는 그대로 읽는 중',
+    consult_thinking: '사주를 있는 그대로 읽는 중',
+    'loop.placeholder': '돌려 말하지 않을게요. 무엇이든 물어보세요',
+    'loop.wait.2': '잠깐만요, 사주에서 근거부터 확인할게요.',
+    consult_p07_l0: '사주를 펴고 사실부터 보겠습니다.',
+  },
+  en: {
+    thinking: 'Reading your chart as it is',
+    consult_thinking: 'Reading your chart as it is',
+    'loop.placeholder': 'Ask me anything. I will not soften it',
+    'loop.wait.2': 'Give me a second. I want the evidence in your chart first.',
+    consult_p07_l0: 'Let me open your chart and look at what is actually there.',
+  },
+  ja: {
+    thinking: '命式をありのままに読んでいます',
+    consult_thinking: '命式をありのままに読んでいます',
+    'loop.placeholder': '何でも聞いてください。遠回しには言いません',
+    'loop.wait.2': '少しだけ。命式の根拠を先に確かめます。',
+    consult_p07_l0: '命式を開いて、まず事実から見ます。',
+  },
+  'zh-CN': {
+    thinking: '正在如实解读你的命盘',
+    consult_thinking: '正在如实解读你的命盘',
+    'loop.placeholder': '尽管问，我不绕弯子',
+    'loop.wait.2': '等一下，我先在命盘里找依据。',
+    consult_p07_l0: '我把命盘打开，先看事实。',
+  },
+  'zh-TW': {
+    thinking: '正在如實解讀你的命盤',
+    consult_thinking: '正在如實解讀你的命盤',
+    'loop.placeholder': '儘管問，我不繞彎子',
+    'loop.wait.2': '等一下，我先在命盤裡找依據。',
+    consult_p07_l0: '我把命盤打開，先看事實。',
+  },
+  vi: {
+    thinking: 'Đang đọc lá số của bạn đúng như nó là',
+    consult_thinking: 'Đang đọc lá số của bạn đúng như nó là',
+    'loop.placeholder': 'Cứ hỏi, tôi nói thẳng',
+    'loop.wait.2': 'Chờ một chút, tôi tìm căn cứ trong lá số trước.',
+    consult_p07_l0: 'Tôi mở lá số, xem sự thật trước đã.',
+  },
+};
+
+const DIRECT = Object.fromEntries(
+  (Object.keys(BUSINESS) as Lang[]).map(lang => [lang, { ...BUSINESS[lang], ...DIRECT_OVERRIDES[lang] }]),
+) as Record<Lang, Bundle>;
+
 const REGISTERS: Record<CounselorVoice, Record<Lang, Bundle> | null> = {
   default: null,
   business: BUSINESS,
+  direct: DIRECT,
   cat: CAT,
 };
 

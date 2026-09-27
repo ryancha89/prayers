@@ -14,6 +14,9 @@ import { RootNavigator } from './navigation/RootNavigator';
 import { SplashScreen } from './shared/components/SplashScreen';
 import { backgroundMusic } from './shared/audio/backgroundMusic';
 import { preload as preloadSfx } from './shared/audio/sfx';
+import { create } from 'zustand';
+import { JourneyMiniPlayer } from './features/journey/components/JourneyMiniPlayer';
+import { useJourneyPlayer } from './features/journey/player/journeyPlayer';
 
 const queryClient = new QueryClient();
 
@@ -56,6 +59,14 @@ const SELF_SCORED_SCREENS = new Set(['MeditationRoom']);
 let musicAllowed = false;
 
 /**
+ * The app's own bed (`prayers_ambient`) under the ordinary screens — OFF since 26-09 ("앱 배경음
+ * 안나오게해"). Only the app bed: the meditation room's music is that session's content and is
+ * started by the screen itself, and the rooms' music is Unity's. The track and all of the plumbing
+ * stay, so bringing it back is this one line.
+ */
+const APP_BED_ENABLED = false;
+
+/**
  * One speaker, one owner, decided by the route.
  *
  * Inside the room Unity owns the mix — the counselor's track, her voice, the ritual — so the app's
@@ -68,20 +79,32 @@ let musicAllowed = false;
 // The four taps are opened at import, not on first press: see sfx.preload().
 preloadSfx();
 
+/** The route on screen, for what floats above the navigator (the journey's mini player). */
+const useCurrentRoute = create<{ name: string | null }>(() => ({ name: null }));
+
+/** Screens the mini player stays off: the journey's own screens, and the rooms that own the sound. */
+const NO_MINI_PLAYER = new Set(['Journey', 'JourneyResult', 'JourneyCounselor', 'JourneyPass', 'Login', 'ProfileSetup']);
+
 const syncAudioToRoute = () => {
   const route = navigationRef.isReady() ? navigationRef.getCurrentRoute() : undefined;
   const inUnity = !!route && UNITY_SCREENS.has(route.name);
+  useCurrentRoute.setState({ name: route?.name ?? null });
 
   if (!inUnity) nativeUnityBridge.stopAllAudio();
 
   const selfScored = !!route && SELF_SCORED_SCREENS.has(route.name);
 
-  if (inUnity || selfScored || !musicAllowed) backgroundMusic.stop();
+  // A journey's narration must not talk over a counsellor or the meditation bell: it pauses there
+  // and waits in the mini player.
+  if (inUnity || selfScored) useJourneyPlayer.getState().pause();
+
+  if (inUnity || selfScored || !musicAllowed || !APP_BED_ENABLED) backgroundMusic.stop();
   else backgroundMusic.start('app');
 };
 
 const App: React.FC = () => {
   const [splashDone, setSplashDone] = useState(false);
+  const routeName = useCurrentRoute(s => s.name);
   const onSplashDone = useCallback(() => {
     setSplashDone(true);
     // The splash chime has finished; the bed can come up under whatever screen is showing.
@@ -100,6 +123,17 @@ const App: React.FC = () => {
           onStateChange={syncAudioToRoute}>
           <RootNavigator />
         </NavigationContainer>
+        <JourneyMiniPlayer
+          aboveTabs={routeName === 'Home' || routeName === 'Conversations' || routeName === 'Archive' || routeName === 'My'}
+          hidden={
+            !splashDone ||
+            routeName == null ||
+            NO_MINI_PLAYER.has(routeName) ||
+            UNITY_SCREENS.has(routeName) ||
+            SELF_SCORED_SCREENS.has(routeName)
+          }
+          onOpen={() => navigationRef.isReady() && navigationRef.navigate('Journey')}
+        />
         {/* Overlay splash: the home screen is already mounted beneath, so the
             final fade lands directly on the main screen (storyboard 4.0s). */}
         {!splashDone && <SplashScreen onDone={onSplashDone} />}

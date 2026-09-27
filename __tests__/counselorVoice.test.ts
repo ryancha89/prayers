@@ -10,9 +10,16 @@ import { ui } from '../src/features/counseling/flow/strings';
  * and an un-overridden key still comes back as the shared copy so nothing goes blank.
  */
 describe('counselor register', () => {
-  it('gives the career reader the business register', () => {
-    // yunjung_01 is `career` in the generated roster.
-    expect(voiceFor('yunjung_01')).toBe('business');
+  it('gives 고윤정 the direct register — her manner, none of the career lines', () => {
+    // She stopped being `career` on 26-09; how she talks follows her persona, not a specialty.
+    expect(voiceFor('yunjung_01')).toBe('direct');
+    for (const lang of ['ko', 'en', 'ja', 'zh-CN', 'zh-TW', 'vi'] as const) {
+      for (const key of ['thinking', 'consult_thinking', 'loop.placeholder', 'loop.wait.2', 'consult_p07_l0']) {
+        expect(voiced('direct', key, lang)).not.toMatch(/직업|재물|재성|work|money|仕事|金|事业|事業|财|財|sự nghiệp|tài/i);
+      }
+    }
+    // …and keeps the business register's Vietnamese pronouns.
+    expect(voiced('direct', 'consult_p05_l0', 'vi')).toBe(voiced('business', 'consult_p05_l0', 'vi'));
   });
 
   it('leaves the generalist and the relationship reader on the shared one', () => {

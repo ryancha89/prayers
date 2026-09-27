@@ -1,7 +1,9 @@
 /**
  * A meditation session, without a screen.
  *
- * Ten minutes of breathing, paced by text and music — no guided voice (decided 15-09). The pacing
+ * Ten minutes of breathing, paced by text and music — no guided voice (decided 15-09), except the
+ * guides recorded on 26-09 for English, Japanese and Chinese, which talk over the start of the
+ * session (guideVoice.ts). The pacing
  * is the whole feature, so it lives here as a pure state machine with an injectable clock: a ten
  * minute session can then be walked in a millisecond of fake time, which is the only way anyone is
  * going to check that the last breath ends where the session does.

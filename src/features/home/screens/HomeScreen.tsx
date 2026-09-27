@@ -17,6 +17,11 @@ import { HomeHeader } from '../../counselors/components/HomeHeader';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
 import { syncConversationsFromServer } from '../../conversations/syncConversations';
 import { fetchTicketBalance } from '../../counseling/api/tickets';
+import { checkIn, fetchAttendance, type AttendanceStatus } from '../../tickets/api/attendance';
+import { PRAYER_TICKET_ART } from '../../tickets/assets/art';
+import { JourneyHeroCard } from '../../journey/components/JourneyHeroCard';
+import { NEWYEAR_2027 } from '../../journey/data/journeys';
+import { journeyActive, useJourneyPlayer } from '../../journey/player/journeyPlayer';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,6 +31,13 @@ export const HomeScreen: React.FC = () => {
   const lang = useLang();
   const [category, setCategory] = useState<string>('recommended');
   const [tickets, setTickets] = useState<number | null>(null);
+  // The daily check-in (27-09): two free tickets a day, up to ten kept. Null = not known yet, and
+  // then the card is not drawn at all rather than guessing a state.
+  const [attendance, setAttendance] = useState<AttendanceStatus | null>(null);
+  const [attendMsg, setAttendMsg] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  // The season feature: a journey already under way resumes instead of asking for a guide again.
+  const journeyRunning = useJourneyPlayer(s => journeyActive(s) && s.journeyId === NEWYEAR_2027.id);
   const order = useConversationsStore(s => s.order);
   const byId = useConversationsStore(s => s.byId);
   const roster = useMemo(() => localizeCounselors(lang), [lang]);
@@ -51,9 +63,39 @@ export const HomeScreen: React.FC = () => {
     fetchTicketBalance(ac.signal).then(balance => {
       if (!ac.signal.aborted) setTickets(balance?.tickets ?? null);
     });
+    fetchAttendance(ac.signal).then(status => {
+      if (!ac.signal.aborted) setAttendance(status);
+    });
     void syncConversationsFromServer(lang, ac.signal);
     return () => ac.abort();
   }, [lang]));
+
+  const onCheckIn = async () => {
+    if (checking || !attendance) return;
+    // Already done today: the card is the way to the calendar.
+    if (attendance.checkedToday) {
+      sfx.tap();
+      navigation.navigate('Attendance');
+      return;
+    }
+    sfx.select();
+    setChecking(true);
+    const r = await checkIn();
+    setChecking(false);
+    if (!r) return;
+    setAttendance(a => (a ? { ...a, checkedToday: true, freeBalance: r.freeBalance, freeCap: r.freeCap } : a));
+    if (r.tickets != null) setTickets(r.tickets);
+    else fetchTicketBalance().then(b => setTickets(b?.tickets ?? null));
+    setAttendMsg(
+      r.granted > 0
+        ? t('home.attend.granted', { count: r.granted })
+        : r.capReached
+          ? t('home.attend.full', { cap: r.freeCap })
+          : t('home.attend.done'),
+    );
+    // "누르면 출석체크했습니다 하고 페이지 이동" — the page opens on the result and the calendar.
+    navigation.navigate('Attendance', { justChecked: { granted: r.granted, capReached: r.capReached } });
+  };
 
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
@@ -66,6 +108,38 @@ export const HomeScreen: React.FC = () => {
               balanceLabel={tickets == null ? t('tickets.title') : t('home.balance', { count: tickets })}
               onPressBalance={() => navigation.navigate('Tickets')}
             />
+            {attendance && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: attendance.checkedToday }}
+                disabled={checking}
+                onPress={onCheckIn}
+                style={({ pressed }) => [
+                  styles.attend,
+                  !attendance.checkedToday && styles.attendOpen,
+                  pressed && styles.pressed,
+                ]}>
+                <Image
+                  source={PRAYER_TICKET_ART}
+                  style={[styles.attendTicket, attendance.checkedToday && styles.attendTicketDone]}
+                  resizeMode="contain"
+                />
+                <View style={styles.cardBody}>
+                  <Text style={styles.eyebrow}>{t('home.attend.title')}</Text>
+                  <Text style={attendance.checkedToday ? styles.attendDone : styles.name}>
+                    {attendMsg ??
+                      (attendance.checkedToday
+                        ? t('home.attend.done')
+                        : attendance.freeBalance >= attendance.freeCap
+                          ? t('home.attend.full', { cap: attendance.freeCap })
+                          : t('home.attend.cta', { count: attendance.dailyTickets }))}
+                  </Text>
+                </View>
+                <Text style={styles.attendWallet}>
+                  {t('home.attend.wallet', { free: attendance.freeBalance, cap: attendance.freeCap })}
+                </Text>
+              </Pressable>
+            )}
             {recent && recentCounselor && (
               <Pressable
                 accessibilityRole="button"
@@ -90,6 +164,16 @@ export const HomeScreen: React.FC = () => {
                 <Icon name="play" size={20} color={colors.violetSoft} />
               </Pressable>
             )}
+            <JourneyHeroCard
+              journey={NEWYEAR_2027}
+              inProgress={journeyRunning}
+              onPress={() => {
+                sfx.select();
+                if (journeyRunning) navigation.navigate('Journey');
+                // Through the boarding pass: it buys the journey, or sends an owner straight on.
+                else navigation.navigate('JourneyPass', { journeyId: NEWYEAR_2027.id });
+              }}
+            />
             <Text style={styles.title}>{t('home.prompt')}</Text>
             <Text style={styles.intro}>{t('home.intro')}</Text>
             <View style={styles.filters}>
@@ -131,6 +215,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.violetDim, borderRadius: radius.lg,
   },
   avatar: { width: 52, height: 52, borderRadius: 26 },
+  attend: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    padding: spacing.lg, marginBottom: spacing.md,
+    backgroundColor: colors.card, borderRadius: radius.lg,
+  },
+  // Not yet checked in: gold-edged, so it reads as something to press today.
+  attendOpen: { borderWidth: 1, borderColor: colors.gold },
+  attendTicket: { width: 40, height: 27 },
+  attendTicketDone: { opacity: 0.45 },
+  attendDone: { ...typography.body, color: colors.textSecondary },
+  attendWallet: { ...typography.tiny, color: colors.textMuted },
   cardBody: { flex: 1, gap: spacing.xs },
   eyebrow: { ...typography.tiny, color: colors.violetSoft },
   name: { ...typography.h3, color: colors.textPrimary },

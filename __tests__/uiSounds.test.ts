@@ -25,6 +25,8 @@ const SILENT: Record<string, string> = {
   'features/counseling/screens/UnityEntryScreen.tsx':
     'the handover screen — the next thing the player hears is the room fading up',
   'features/auth/screens/LoginScreen.tsx': 'not wired yet',
+  'features/journey/components/JourneyHeroCard.tsx': 'the caller answers the press (HomeScreen plays select)',
+  'features/journey/components/RailwayProgress.tsx': 'the caller answers the press (JourneyScreen plays tap)',
   'features/profile/screens/AccountScreen.tsx': 'not wired yet',
   'features/subjects/components/SubjectCard.tsx': 'not wired yet',
   'features/subjects/screens/AddSubjectScreen.tsx': 'not wired yet',

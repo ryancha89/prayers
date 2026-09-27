@@ -14,6 +14,18 @@
       "sha1": "b11b06eca6ae503bd99f6c6f6f75f979850052d5"
     },
     {
+      "path": "src/shared/assets/sounds/meditation_guide_en.m4a",
+      "sha1": "abb83b462d3c01b1c94496767286bd3ab2c007b9"
+    },
+    {
+      "path": "src/shared/assets/sounds/meditation_guide_ja.m4a",
+      "sha1": "c8b6c1b26272130b8a17adb6a06898338d70bad8"
+    },
+    {
+      "path": "src/shared/assets/sounds/meditation_guide_zh.m4a",
+      "sha1": "ed794d761b56a5eea09bf6213fb94d8b9a71dfa8"
+    },
+    {
       "path": "src/shared/assets/sounds/prayers_ambient.m4a",
       "sha1": "72857b9a2d197c0c1502ac22718c9f4b45424a84"
     },

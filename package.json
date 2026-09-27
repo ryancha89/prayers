@@ -21,6 +21,8 @@
     "@tanstack/react-query": "^5.101.4",
     "react": "19.2.3",
     "react-native": "0.86.0",
+    "react-native-iap": "^16.7.1",
+    "react-native-nitro-modules": "^0.37.1",
     "react-native-safe-area-context": "^5.9.1",
     "react-native-screens": "^4.27.0",
     "react-native-sound": "^0.13.0",

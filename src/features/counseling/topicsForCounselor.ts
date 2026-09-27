@@ -38,10 +38,20 @@ const GROUND: Record<string, readonly string[]> = {
   horoscope: [],
 };
 
+/**
+ * ⚠️ NOBODY OWNS A SUBJECT (26-09): "각 캐릭터별 애정운 직업운 담당 이런거 없이 모두 다 볼 수
+ * 있어야함". Every counsellor offers every topic and opens on none in particular; the player's own
+ * question picks it (topicFromQuestion). The specialty machinery below stays in place — a seed can
+ * still say what a counsellor is FOR, and the Unity catalogue still carries it — but it no longer
+ * narrows what a player can ask. Flip this to bring the 16-09 filter back.
+ */
+const SPECIALTIES_NARROW_TOPICS = false;
+
 export function groupTopicsFor<T extends { key: string }>(
   characterId: string | undefined,
   options: T[],
 ): TopicGroup<T>[] {
+  if (!SPECIALTIES_NARROW_TOPICS) return [{ headingKey: null, items: options }];
   const specialty = registryFor(characterId)?.specialty ?? 'general';
   const ground = GROUND[specialty] ?? [];
   if (ground.length === 0) return [{ headingKey: null, items: options }];
@@ -77,6 +87,7 @@ export function groupTopicsFor<T extends { key: string }>(
  * All seven topics have takes in every language, so no default here can land on a missing clip.
  */
 export function defaultTopicFor(characterId: string | undefined): string {
+  if (!SPECIALTIES_NARROW_TOPICS) return 'life';
   const specialty = registryFor(characterId)?.specialty ?? 'general';
   return GROUND[specialty]?.[0] ?? 'life';
 }

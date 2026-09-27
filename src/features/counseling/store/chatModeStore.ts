@@ -24,21 +24,27 @@ interface ChatModeState {
   toggleChatMode: () => void;
 }
 
-const coerce = (v: unknown): ChatMode => (v === 'tiki' ? 'tiki' : 'detail');
+/**
+ * ⚠️ 티키타카 IS THE DEFAULT since 26-09 ("티키타카모드 추가해서 바로바로 대화하는것처럼 …
+ * 한번 질문하면 대답이 너무 길어"), and it now applies from the FIRST question — see
+ * ConsultationEngine.submitQuestion. The store key moved to v2 so every player starts there once;
+ * 깊은 풀이 stays one tap away and is remembered as before.
+ */
+const coerce = (v: unknown): ChatMode => (v === 'detail' || v === 'short' ? v : 'tiki');
 
 export const useChatModeStore = create<ChatModeState>()(
   persist(
     (set, get) => ({
-      chatMode: 'detail',
+      chatMode: 'tiki',
       setChatMode: mode => set({ chatMode: coerce(mode) }),
       toggleChatMode: () => set({ chatMode: get().chatMode === 'tiki' ? 'detail' : 'tiki' }),
     }),
     {
-      name: 'prayers.chatMode.v1',
+      name: 'prayers.chatMode.v2',
       storage: createJSONStorage(() => AsyncStorage),
       merge: (persisted, current) => ({
         ...current,
-        // Anything but a stored 'tiki' is the default — the same coercion SAVIS's reducer does.
+        // Anything but a stored 'detail' is the default (tiki).
         chatMode: coerce((persisted as Partial<ChatModeState> | undefined)?.chatMode),
       }),
     },

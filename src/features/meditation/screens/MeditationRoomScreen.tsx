@@ -4,13 +4,14 @@ import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useT } from '../../../shared/i18n';
+import { useLang, useT } from '../../../shared/i18n';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
 import { sfx } from '../../../shared/audio/sfx';
 import { backgroundMusic } from '../../../shared/audio/backgroundMusic';
 import { holdScreenAwake } from '../../../shared/device/keepAwake';
 import { BREATH, CYCLE_MS, MeditationSession, SESSION_MS, breathSync, type Phase, type SessionState } from '../session';
 import { UnityHost } from '../../counseling/components/UnityHost';
+import { guideVoice } from '../guideVoice';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 
 /**
@@ -59,6 +60,14 @@ const clock = (ms: number) => {
 
 export const MeditationRoomScreen: React.FC = () => {
   const t = useT();
+  const lang = useLang();
+  // The guide waits for the bell to ring out on a fresh start; this is that wait, so a Pause or a
+  // Leave pressed inside it cancels the guide instead of letting it start talking afterwards.
+  const guideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearGuideTimer = () => {
+    if (guideTimer.current) clearTimeout(guideTimer.current);
+    guideTimer.current = null;
+  };
   const navigation = useNavigation();
   const session = useRef(new MeditationSession()).current;
   const [state, setState] = useState<SessionState>(() => session.read());
@@ -186,6 +195,7 @@ export const MeditationRoomScreen: React.FC = () => {
     stopAnimation(true);
     tellRoom('done');
     sfx.bellOut();
+    guideVoice.stop();
     // The ten minutes are over; the room goes quiet with them rather than looping under an end
     // card. `stop` and not `pause`: the next session is a new sitting, not a continuation.
     backgroundMusic.stop();
@@ -201,6 +211,8 @@ export const MeditationRoomScreen: React.FC = () => {
         stopAnimation(true);
         setState(session.read());
         tellRoom('paused');
+        clearGuideTimer();
+        guideVoice.pause();
         // The route rule swaps the app's bed back in on the way out; this only makes sure the
         // meditation loop is not the thing still playing while it does.
         backgroundMusic.stop();
@@ -211,6 +223,8 @@ export const MeditationRoomScreen: React.FC = () => {
   useEffect(
     () => () => {
       stopAnimation(false);
+      clearGuideTimer();
+      guideVoice.stop();
       backgroundMusic.stop();
     },
     [stopAnimation],
@@ -220,11 +234,17 @@ export const MeditationRoomScreen: React.FC = () => {
     // The bell, not the UI tick: this press is the last thing the player looks at before their eyes
     // close, and a 55 ms mallet is an interface answering a tap rather than a room opening.
     sfx.bellIn();
+    const fresh = session.read().status === 'idle';
     session.start();
     setState(session.read());
     startAnimation();
     tellRoom('breathing');
     backgroundMusic.start('meditation');
+    // The spoken guide (English only, for now — see guideVoice.ts). A fresh start lets the bell ring
+    // out first; Carry on picks the voice up at once, where it stopped.
+    clearGuideTimer();
+    if (fresh) guideTimer.current = setTimeout(() => guideVoice.play(lang), 1500);
+    else guideVoice.play(lang);
   };
 
   const pause = () => {
@@ -233,6 +253,8 @@ export const MeditationRoomScreen: React.FC = () => {
     stopAnimation(true);
     setState(session.read());
     tellRoom('paused');
+    clearGuideTimer();
+    guideVoice.pause();
     // Held, not dropped: Carry on picks the track up where it stopped, the way the breath does.
     backgroundMusic.pause();
   };
@@ -243,6 +265,7 @@ export const MeditationRoomScreen: React.FC = () => {
   };
 
   const again = () => {
+    guideVoice.stop();
     session.reset();
     setState(session.read());
     begin();

@@ -164,7 +164,8 @@ export interface StageSpeakPayload {
  */
 /** `auto` has no switch in the room: the server sizes each answer to its question (a thank-you gets
  *  a line, "explain it properly" gets paragraphs). The pixel cat talks this way. */
-export type ChatMode = 'tiki' | 'detail' | 'auto';
+/** `short` (26-09): the "완전 짧은" half of 티키타카 — one or two lines, like texting. */
+export type ChatMode = 'short' | 'tiki' | 'detail' | 'auto';
 
 export interface OracleAskPayload {
   question: string;

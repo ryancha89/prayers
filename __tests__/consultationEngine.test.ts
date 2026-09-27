@@ -1486,3 +1486,162 @@ test('a tap still moves a silent reading on', () => {
   sched.advance(1000);
   expect(engine.getState().phaseId).not.toBe('P11');
 });
+
+/* ── Question → one line → the answer (26-09) ─────────────────────────────── */
+
+describe('after the question', () => {
+  function asked(opts: { bufferHangs?: boolean } = {}) {
+    const { sched, stage, engine } = build();
+    engine.begin();
+    sched.advance(60_000);
+    expect(engine.getState().screen).toBe('questionBox');
+    const before = stage.phaseIds.length;
+    // Hang only the buffer line: it is still being said when the answer lands.
+    if (opts.bufferHangs) stage.holdPrefix = 'THINKING';
+    engine.submitQuestion('올해 어때요?');
+    return { sched, stage, engine, before };
+  }
+
+  it('skips the scripted cover beats and says the one prepared line', () => {
+    const { stage, engine, before } = asked();
+    // No P06-P10: nothing named a topic the player did not ask about.
+    expect(stage.phaseIds.slice(before)).not.toEqual(expect.arrayContaining(['P06']));
+    for (const id of ['P06', 'P07', 'P08', 'P09', 'P10']) expect(stage.phaseIds).not.toContain(id);
+    expect(engine.getState().screen).toBe('thinking');
+    expect(stage.spoken.filter(k => k === 'THINKING')).toHaveLength(1);
+  });
+
+  it('goes to the answer as soon as it lands, once the line has been said', () => {
+    const { sched, engine } = asked({ bufferHangs: true }); // the buffer line is still being said…
+    engine.onOracleResult({ ok: true, followup: '', beats: [{ phaseId: 'P11', lines: ['답입니다.'] }] });
+    sched.advance(1000);
+    expect(engine.getState().phaseId).not.toBe('P11'); // …so the answer waits for it
+    engine.onSpeakDone('THINKING');
+    sched.advance(400);
+    expect(engine.getState().phaseId).toBe('P11');
+  });
+
+  it('never lets a buffer line that never ends hold the answer', () => {
+    const { sched, engine } = asked({ bufferHangs: true });
+    engine.onOracleResult({ ok: true, followup: '', beats: [{ phaseId: 'P11', lines: ['답입니다.'] }] });
+    sched.advance(6000);
+    expect(engine.getState().phaseId).toBe('P11');
+  });
+});
+
+/* ── The score card's line never reaches a bubble (26-09) ──────────────────── */
+
+describe('stripScoreLines', () => {
+  const { stripScoreLines } = jest.requireActual('../src/features/counseling/flow/engine');
+
+  it('drops the report card line the model appended to the last beat', () => {
+    const beat =
+      '결국 정인의 기운이 당신을 도우니, 당신의 몫은 반드시 당신의 손으로 들어오게 마련입니다.\n\n' +
+      'Khả năng kiếm tiền=61, Khả năng giữ tiền=35, Thời điểm=59, Kiểm soát rủi ro=53';
+    expect(stripScoreLines(beat)).toBe(
+      '결국 정인의 기운이 당신을 도우니, 당신의 몫은 반드시 당신의 손으로 들어오게 마련입니다.',
+    );
+  });
+
+  it('drops it in any language and leaves nothing when it was all there was', () => {
+    expect(stripScoreLines('돈 버는 힘=61, 지키는 힘=35, 타이밍=59')).toBe('');
+    expect(stripScoreLines('Earning=61, Keeping=35.')).toBe('');
+  });
+
+  it('leaves ordinary sentences with numbers and commas alone', () => {
+    const s = '2027년에는 기회가 옵니다, 3월과 9월이 특히 좋습니다.';
+    expect(stripScoreLines(s)).toBe(s);
+    expect(stripScoreLines('a=b is not a score')).toBe('a=b is not a score');
+  });
+
+  it('is applied to the reading before anyone sees it', () => {
+    const { sched, stage, engine } = build();
+    engine.begin();
+    sched.advance(60_000);
+    engine.submitQuestion('어때요?');
+    engine.onOracleResult({
+      ok: true,
+      followup: '',
+      beats: [{ phaseId: 'P11', lines: ['좋은 흐름입니다.\n\nKhả năng kiếm tiền=61, Thời điểm=59'] }],
+    });
+    for (let t = 0; t < 30_000 && engine.getState().phaseId !== 'P11'; t += 100) sched.advance(100);
+    expect(engine.getState().line).toBe('좋은 흐름입니다.');
+    expect(stage.spokenText.join(' ')).not.toContain('=');
+  });
+});
+
+/* ── 티키타카 from the first question (26-09) ─────────────────────────────── */
+
+describe('티키타카', () => {
+  function room(mode: 'tiki' | 'detail') {
+    const sched = new FakeScheduler();
+    const stage = new StageDouble();
+    const engine = new ConsultationEngine({ stage, lang: 'ko', scheduler: sched, chatMode: () => mode });
+    stage.bind(engine);
+    engine.begin();
+    sched.advance(60_000);
+    expect(engine.getState().screen).toBe('questionBox');
+    return { sched, stage, engine };
+  }
+
+  it('answers the first question as a short turn, not the staged reading', () => {
+    const { stage, engine } = room('tiki');
+    const staged = stage.phaseIds.length;
+    engine.submitQuestion('이번 달 운세 어때?');
+    expect(stage.asks).toHaveLength(1);
+    expect(stage.asks[0]).toMatchObject({ loop: true, chatMode: 'tiki', question: '이번 달 운세 어때?' });
+    // Straight into the chat: no reading phases staged, no laugh, just the question's own beat.
+    expect(stage.phaseIds.slice(staged)).toEqual(['LOOP_ASK']);
+    expect(engine.getState().screen).toBe('loop');
+    expect(engine.getState().transcript[0]).toEqual({ role: 'user', text: '이번 달 운세 어때?' });
+  });
+
+  it('then keeps the conversation going turn by turn', () => {
+    const { sched, stage, engine } = room('tiki');
+    engine.submitQuestion('이번 달 운세 어때?');
+    engine.onOracleResult({ ok: true, loop: true, followup: '', beats: [{ phaseId: 'loop', lines: ['괜찮은 달이에요.'] }] });
+    sched.advance(10_000);
+    engine.submitQuestion('연애는?');
+    expect(stage.asks).toHaveLength(2);
+    expect(stage.asks[1]).toMatchObject({ loop: true, chatMode: 'tiki' });
+  });
+
+  it('has the wait lines ready before the first question', () => {
+    const { stage } = room('tiki');
+    expect(stage.prefetched).toEqual(expect.arrayContaining(['loop_wait_0', 'loop_wait_3']));
+  });
+
+  it('still gives 깊은 풀이 the full staged reading', () => {
+    const { stage, engine } = room('detail');
+    engine.submitQuestion('이번 달 운세 어때?');
+    expect(stage.asks[0].loop).toBeUndefined();
+    expect(engine.getState().screen).toBe('thinking');
+  });
+});
+
+it('짧게 also answers the first question as a turn, and says so to the server', () => {
+  const sched = new FakeScheduler();
+  const stage = new StageDouble();
+  const engine = new ConsultationEngine({ stage, lang: 'ko', scheduler: sched, chatMode: () => 'short' });
+  stage.bind(engine);
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('내일 미팅 괜찮을까?');
+  expect(stage.asks[0]).toMatchObject({ loop: true, chatMode: 'short' });
+  expect(engine.getState().screen).toBe('loop');
+});
+
+it('짧게 answers with no buffer line — the answer is spoken the moment it lands', () => {
+  const sched = new FakeScheduler();
+  const stage = new StageDouble();
+  const engine = new ConsultationEngine({ stage, lang: 'ko', scheduler: sched, chatMode: () => 'short' });
+  stage.bind(engine);
+  engine.begin();
+  sched.advance(60_000);
+  const spokenBefore = stage.spoken.length;
+  engine.submitQuestion('내일 괜찮을까?');
+  // No "잠시만요" line: nothing was said between the question and the answer.
+  expect(stage.spoken.slice(spokenBefore).filter(k => k.startsWith('loop_wait'))).toEqual([]);
+  engine.onOracleResult({ ok: true, loop: true, followup: '', beats: [{ phaseId: 'loop', lines: ['괜찮아요.'] }] });
+  expect(stage.spoken[stage.spoken.length - 1]).toMatch(/^loop_1\./);
+});
