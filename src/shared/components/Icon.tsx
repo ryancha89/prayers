@@ -18,6 +18,7 @@ export type IconName =
   | 'heart'
   | 'heartFilled'
   | 'back'
+  | 'arrowRight'
   | 'more'
   | 'send'
   | 'mic'
@@ -89,6 +90,12 @@ const ICONS: Record<IconName, Draw> = {
   heart: c => <Path d={HEART_PATH} stroke={c} />,
   heartFilled: c => <Path d={HEART_PATH} stroke={c} fill={c} />,
   back: c => <Polyline points="15 5 8 12 15 19" stroke={c} />,
+  arrowRight: c => (
+    <>
+      <Line x1="5" y1="12" x2="19" y2="12" stroke={c} />
+      <Polyline points="13 6 19 12 13 18" stroke={c} />
+    </>
+  ),
   more: c => (
     <>
       <Circle cx="5" cy="12" r="1.4" stroke={c} fill={c} />

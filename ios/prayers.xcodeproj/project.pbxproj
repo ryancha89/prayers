@@ -15,11 +15,13 @@
 		13D9BB617D6A43ECB2CA6A85 /* ui_select.m4a in Resources */ = {isa = PBXBuildFile; fileRef = DDB7BFE7DC584CE480F4AB88 /* ui_select.m4a */; };
 		15F2145FDC3845E1A910AA5C /* ui_tap.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 36EF57491C8B427EAC73EC6C /* ui_tap.m4a */; };
 		2E0434C422CD4435918500C5 /* meditation_guide_ja.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 4A020D0517254B89BAAE5A4F /* meditation_guide_ja.m4a */; };
+		3AAEADBCD2D84C60944B3024 /* med_ping.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 1A9191C1D1E6482FAE67E0A2 /* med_ping.m4a */; };
 		5704AE1ED9D749A0ACA3E022 /* ui_send.m4a in Resources */ = {isa = PBXBuildFile; fileRef = D0B2B26D4D8A45AFB254CF36 /* ui_send.m4a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		77451139A41E45E4B156101C /* prayers_ambient.m4a in Resources */ = {isa = PBXBuildFile; fileRef = D227253D2B664DF9A2E310F2 /* prayers_ambient.m4a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		908BF3160A3F428AB1E9A368 /* meditation_guide_en.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 74987CB612FC46B1ABF798EB /* meditation_guide_en.m4a */; };
+		BCA1A1D3010A492E8EF39A8A /* train_ambience.m4a in Resources */ = {isa = PBXBuildFile; fileRef = C78E08BAAACA44F4905B93E7 /* train_ambience.m4a */; };
 		C503E9102A8249A5A561C0DB /* meditation_bed.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 8E9AB7E73CAD478E920E652E /* meditation_bed.m4a */; };
 		D14E31D163966341A8A078D4 /* UnityLifecycle.m in Sources */ = {isa = PBXBuildFile; fileRef = B49997535B81B46293E2F292 /* UnityLifecycle.m */; };
 		D36536069254401685C2FFAE /* splash_sound.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 689E9E97097942948C5F96E4 /* splash_sound.m4a */; };
@@ -32,6 +34,7 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = prayers/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = prayers/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = prayers/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		1A9191C1D1E6482FAE67E0A2 /* med_ping.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = med_ping.m4a; path = ../src/shared/assets/sounds/med_ping.m4a; sourceTree = "<group>"; };
 		25D64D234F6C48769DCB12BF /* ui_back.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = ui_back.m4a; path = ../src/shared/assets/sounds/ui_back.m4a; sourceTree = "<group>"; };
 		29417F66B3DE49B5A150C6B6 /* med_bell_in.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = med_bell_in.m4a; path = ../src/shared/assets/sounds/med_bell_in.m4a; sourceTree = "<group>"; };
 		336CF45A3F874F06BAAA7803 /* meditation_guide_zh.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = meditation_guide_zh.m4a; path = ../src/shared/assets/sounds/meditation_guide_zh.m4a; sourceTree = "<group>"; };
@@ -47,6 +50,7 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = prayers/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		8E9AB7E73CAD478E920E652E /* meditation_bed.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = meditation_bed.m4a; path = ../src/shared/assets/sounds/meditation_bed.m4a; sourceTree = "<group>"; };
 		B49997535B81B46293E2F292 /* UnityLifecycle.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = prayers/UnityLifecycle.m; sourceTree = "<group>"; };
+		C78E08BAAACA44F4905B93E7 /* train_ambience.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = train_ambience.m4a; path = ../src/shared/assets/sounds/train_ambience.m4a; sourceTree = "<group>"; };
 		D0B2B26D4D8A45AFB254CF36 /* ui_send.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = ui_send.m4a; path = ../src/shared/assets/sounds/ui_send.m4a; sourceTree = "<group>"; };
 		D227253D2B664DF9A2E310F2 /* prayers_ambient.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = prayers_ambient.m4a; path = ../src/shared/assets/sounds/prayers_ambient.m4a; sourceTree = "<group>"; };
 		DDB7BFE7DC584CE480F4AB88 /* ui_select.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = ui_select.m4a; path = ../src/shared/assets/sounds/ui_select.m4a; sourceTree = "<group>"; };
@@ -102,6 +106,8 @@
 				74987CB612FC46B1ABF798EB /* meditation_guide_en.m4a */,
 				4A020D0517254B89BAAE5A4F /* meditation_guide_ja.m4a */,
 				336CF45A3F874F06BAAA7803 /* meditation_guide_zh.m4a */,
+				1A9191C1D1E6482FAE67E0A2 /* med_ping.m4a */,
+				C78E08BAAACA44F4905B93E7 /* train_ambience.m4a */,
 			);
 			name = Resources;
 			path = "";
@@ -221,6 +227,8 @@
 				908BF3160A3F428AB1E9A368 /* meditation_guide_en.m4a in Resources */,
 				2E0434C422CD4435918500C5 /* meditation_guide_ja.m4a in Resources */,
 				12E2DFF86163432C9D44A3D1 /* meditation_guide_zh.m4a in Resources */,
+				3AAEADBCD2D84C60944B3024 /* med_ping.m4a in Resources */,
+				BCA1A1D3010A492E8EF39A8A /* train_ambience.m4a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

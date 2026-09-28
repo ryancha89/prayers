@@ -13,7 +13,7 @@ import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { toneForCharacter } from '../../counseling/api/counselorAI';
 import { JOURNEYS } from '../data/journeys';
 import { useJourneyPlayer } from '../player/journeyPlayer';
-import { JourneyBackdrop } from '../components/JourneyBackdrop';
+import { JourneyTrainArt } from '../components/JourneyTrainArt';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'JourneyCounselor'>;
@@ -43,8 +43,7 @@ export const JourneyCounselorScreen: React.FC = () => {
   return (
     <View style={styles.root}>
       <View style={styles.sky}>
-        <JourneyBackdrop media={journey.thumbnail} speed={0.2} />
-        <View style={styles.skyFade} />
+        <JourneyTrainArt fadeTo={colors.bg} />
       </View>
       <SafeAreaView edges={['top']} style={styles.flex}>
         <View style={styles.header}>
@@ -88,7 +87,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   sky: { position: 'absolute', left: 0, right: 0, top: 0, height: 320 },
-  skyFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 180, backgroundColor: 'rgba(10,10,15,0.75)' },
   header: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm },
   scroll: { padding: spacing.xl, paddingTop: 150, gap: spacing.md },
   eyebrow: { ...typography.tiny, color: colors.gold, letterSpacing: 3 },

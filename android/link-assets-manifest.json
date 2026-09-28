@@ -10,6 +10,10 @@
       "sha1": "ba73656c411de270ec4981918628e9ec3b5379e2"
     },
     {
+      "path": "src/shared/assets/sounds/med_ping.m4a",
+      "sha1": "19eabdb7e0a36f38f5e461815d89d068e90d3e54"
+    },
+    {
       "path": "src/shared/assets/sounds/meditation_bed.m4a",
       "sha1": "b11b06eca6ae503bd99f6c6f6f75f979850052d5"
     },
@@ -32,6 +36,10 @@
     {
       "path": "src/shared/assets/sounds/splash_sound.m4a",
       "sha1": "6ed3bec66f3a9e875ac313a31866b61053f8ebaa"
+    },
+    {
+      "path": "src/shared/assets/sounds/train_ambience.m4a",
+      "sha1": "326a578ac5a865f4f201ed525f21e8ba971f3924"
     },
     {
       "path": "src/shared/assets/sounds/ui_back.m4a",

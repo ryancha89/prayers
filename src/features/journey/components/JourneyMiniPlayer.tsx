@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
@@ -9,6 +9,7 @@ import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { journeyActive, useJourneyPlayer } from '../player/journeyPlayer';
 import { sfx } from '../../../shared/audio/sfx';
 import { JOURNEYS } from '../data/journeys';
+import { JOURNEY_HERO_ART } from './JourneyTrainArt';
 
 /**
  * The journey, kept alive while the player looks at something else: 🚂 title, the station and the
@@ -36,7 +37,8 @@ export const JourneyMiniPlayer: React.FC<{ aboveTabs: boolean; hidden: boolean; 
   return (
     <Pressable style={[styles.bar, { bottom }]} onPress={() => { sfx.tap(); onOpen(); }} accessibilityRole="button">
       <View style={styles.row}>
-        <Text style={styles.train}>🚂</Text>
+        {/* The key art, not 🚂: the emoji drew as a "?" box on the simulator's font set. */}
+        <Image source={JOURNEY_HERO_ART} style={styles.thumb} />
         <View style={styles.body}>
           <Text style={styles.title} numberOfLines={1}>
             {t('journey.mini.title', { year: journey?.year ?? '' })}
@@ -65,7 +67,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
-  train: { fontSize: 22 },
+  thumb: { width: 40, height: 40, borderRadius: radius.sm, borderWidth: 1, borderColor: 'rgba(233,196,106,0.5)' },
   body: { flex: 1 },
   title: { ...typography.caption, color: colors.textPrimary, fontWeight: '700' },
   sub: { ...typography.tiny, color: colors.textSecondary, marginTop: 2 },

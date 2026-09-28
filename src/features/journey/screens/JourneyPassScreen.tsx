@@ -12,7 +12,7 @@ import type { RootStackParamList } from '../../../navigation/types';
 import { buyProduct, finishPurchase, productPrice, storeAvailable } from '../../tickets/providers/purchase';
 import { confirmJourneyPurchase, fetchJourneyAccess, type JourneyAccess } from '../api/journeyApi';
 import { JOURNEYS } from '../data/journeys';
-import { JourneyBackdrop } from '../components/JourneyBackdrop';
+import { JourneyTrainArt } from '../components/JourneyTrainArt';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'JourneyPass'>;
@@ -93,8 +93,7 @@ export const JourneyPassScreen: React.FC = () => {
   return (
     <View style={styles.root}>
       <View style={styles.sky}>
-        <JourneyBackdrop media={journey.thumbnail} speed={0.25} />
-        <View style={styles.skyFade} />
+        <JourneyTrainArt fadeTo={colors.bg} />
       </View>
       <SafeAreaView edges={['top', 'bottom']} style={styles.flex}>
         <Pressable style={styles.back} hitSlop={12} onPress={() => { sfx.back(); navigation.goBack(); }} accessibilityRole="button">
@@ -141,7 +140,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   sky: { position: 'absolute', left: 0, right: 0, top: 0, height: 380 },
-  skyFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 200, backgroundColor: 'rgba(10,10,15,0.72)' },
   back: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm },
   scroll: { padding: spacing.xl, paddingTop: 170, gap: spacing.md },
   eyebrow: { ...typography.tiny, color: colors.gold, letterSpacing: 3 },

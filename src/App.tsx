@@ -42,6 +42,11 @@ const navigationRef = createNavigationContainerRef<RootStackParamList>();
 // `inUnity` and `selfScored` lead to the same `backgroundMusic.stop()`, and the meditation loop
 // is started by the screen on Begin, exactly as before.
 export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom']);
+/** Screens that host the Unity player but NOT as a room that owns the sound: the train journey
+ *  (spec 003) draws its cabin in Unity while its own narration keeps playing. They must not tear
+ *  Unity down (stopAllAudio → SESSION_END), and must not pause the journey either — which is why
+ *  they are not in UNITY_SCREENS. */
+const UNITY_SCENERY_SCREENS = new Set(['Journey']);
 
 /**
  * Screens whose audio is NOT the route's business.
@@ -63,8 +68,15 @@ let musicAllowed = false;
  * 안나오게해"). Only the app bed: the meditation room's music is that session's content and is
  * started by the screen itself, and the rooms' music is Unity's. The track and all of the plumbing
  * stay, so bringing it back is this one line.
+ *
+ * ON again 28-09, softer (0.22, set in backgroundMusic.ts) — asked for "nhạc nhẹ nhẹ". Off while a
+ * journey owns the speaker: the journey plays this SAME track as its own bed, and two copies of one
+ * loop out of phase is a flanger, not music.
  */
-const APP_BED_ENABLED = false;
+const APP_BED_ENABLED = true;
+
+/** Journey states whose own audio (bed + carriage + narration) is live. Paused/done hand it back. */
+const JOURNEY_SOUNDING = new Set(['boarding', 'playing', 'transition']);
 
 /**
  * One speaker, one owner, decided by the route.
@@ -90,7 +102,7 @@ const syncAudioToRoute = () => {
   const inUnity = !!route && UNITY_SCREENS.has(route.name);
   useCurrentRoute.setState({ name: route?.name ?? null });
 
-  if (!inUnity) nativeUnityBridge.stopAllAudio();
+  if (!inUnity && !(route && UNITY_SCENERY_SCREENS.has(route.name))) nativeUnityBridge.stopAllAudio();
 
   const selfScored = !!route && SELF_SCORED_SCREENS.has(route.name);
 
@@ -98,9 +110,18 @@ const syncAudioToRoute = () => {
   // and waits in the mini player.
   if (inUnity || selfScored) useJourneyPlayer.getState().pause();
 
-  if (inUnity || selfScored || !musicAllowed || !APP_BED_ENABLED) backgroundMusic.stop();
+  const journeySounding =
+    (!!route && UNITY_SCENERY_SCREENS.has(route.name)) || JOURNEY_SOUNDING.has(useJourneyPlayer.getState().status);
+
+  if (inUnity || selfScored || journeySounding || !musicAllowed || !APP_BED_ENABLED) backgroundMusic.stop();
   else backgroundMusic.start('app');
 };
+
+// The journey keeps playing from the mini player on other screens, so its start/stop must hand the
+// speaker over even when no navigation happens.
+useJourneyPlayer.subscribe((st, prev) => {
+  if (JOURNEY_SOUNDING.has(st.status) !== JOURNEY_SOUNDING.has(prev.status)) syncAudioToRoute();
+});
 
 const App: React.FC = () => {
   const [splashDone, setSplashDone] = useState(false);

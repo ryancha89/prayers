@@ -55,14 +55,15 @@ let track: Bed = 'app';
  * Under the interface, not over it. The splash chime is an event and can be heard; this is a room
  * tone and should be the thing you notice only when it stops.
  */
-const TARGET_VOLUME = 0.35;
+// 0.35 → 0.22 (28-09, "nhạc nhẹ nhẹ"): the bed came back on after two days off, softer than before.
+const TARGET_VOLUME = 0.22;
 
 /**
  * Where the bed sits while somebody is TALKING over it — the meditation guide (26-09). The guide
  * is -18 LUFS and the bed at 0.35 lands ~5 dB under it; at 0.18 the gap is ~11 dB, which is where
  * speech stops competing with music for the same ear.
  */
-const DUCKED_VOLUME = 0.18;
+const DUCKED_VOLUME = 0.12;
 let ducked = false;
 const level = () => (ducked ? DUCKED_VOLUME : TARGET_VOLUME);
 

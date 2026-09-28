@@ -1,4 +1,5 @@
 import { apiBase } from '../../../shared/config/api';
+import { devlog } from '../../../shared/devlog';
 import { authedFetch } from '../../auth/api/headers';
 import type { Lang } from '../../../shared/i18n';
 import type { JourneyContent } from '../types';
@@ -107,12 +108,20 @@ export async function fetchJourneyContent(
   }
 }
 
+export interface NarrationClip {
+  url: string;
+  duration: number;
+  /** The clip's loudness, `fps` values a second, 0–100 — what the cabin counsellor's mouth
+   *  follows. Null from an older server. */
+  envelope: { fps: number; levels: number[] } | null;
+}
+
 /** A narration's audio, as a URL a player can stream (stored server-side, synthesised once). */
 export async function narrationUrl(
   text: string,
   preset: string,
   lang: Lang,
-): Promise<{ url: string; duration: number } | null> {
+): Promise<NarrationClip | null> {
   if (!text.trim()) return null;
   try {
     const res = await authedFetch(`${apiBase()}/api/v1/prayers/tts/url`, {
@@ -120,10 +129,22 @@ export async function narrationUrl(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, preset, lang }),
     });
-    if (!res?.ok) return null;
-    const b = await res.json();
-    return b?.success && b.url ? { url: String(b.url), duration: Number(b.duration ?? 0) } : null;
-  } catch {
+    const b = await res?.json().catch(() => null);
+    if (!res?.ok || !b?.success || !b.url) {
+      // Without this a refused line is just "running silent" in the log (28-09: "clip not stored").
+      devlog(`[journey] narration refused: HTTP ${res?.status ?? '-'} ${b?.error ?? ''}`);
+      return null;
+    }
+    const env = b.envelope;
+    return {
+      url: String(b.url),
+      duration: Number(b.duration ?? 0),
+      envelope: env && Array.isArray(env.levels) && env.fps > 0
+        ? { fps: Number(env.fps), levels: env.levels.map((v: unknown) => Number(v) || 0) }
+        : null,
+    };
+  } catch (e) {
+    devlog(`[journey] narration failed: ${String(e)}`);
     return null;
   }
 }

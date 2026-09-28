@@ -282,6 +282,22 @@ export type RNToUnityEvent =
    *  opens them and smiles. `intoMs` is how far into the breath cycle the session is at the moment
    *  of sending; Unity clocks the breath on from there rather than being told every phase. */
   | { type: 'MEDITATION_STATE'; payload: MeditationStatePayload }
+  /** Open the train journey cabin (spec 003). Like MEDITATION_INIT: no ticket, no thread — the
+   *  reading is this app's; Unity is the cabin and the counsellor across the table. Repeated
+   *  until JOURNEY_READY. */
+  | { type: 'JOURNEY_INIT'; payload: JourneyInitPayload }
+  /** The WHOLE desired state of the cabin, on every change. Unity reconciles to the latest one,
+   *  so a lost or repeated message never leaves the wrong landscape in the window. */
+  | { type: 'JOURNEY_STATE'; payload: JourneyStatePayload }
+  /** Leaving the journey. Unity treats it exactly as SESSION_END. */
+  | { type: 'JOURNEY_END' }
+  /** The player's pinch on the cabin: 0 = the wide corner view, 0.5 = the starting framing
+   *  (counsellor + window), 1 = the close-up.
+   *  Sent many times a second while fingers move; Unity eases the camera toward the latest. */
+  | { type: 'JOURNEY_ZOOM'; payload: { zoom: number } }
+  /** The chapter narration's loudness (server `tts/url` envelope), sent as the chapter starts. The
+   *  voice plays here in RN; this is how the counsellor's mouth in the cabin follows it. */
+  | { type: 'JOURNEY_VOICE'; payload: JourneyVoicePayload }
   /** A held direction key. x = right, y = forward, each in [-1, 1].
    *
    *  ONE MESSAGE PER PRESS: Unity keeps the last direction until told otherwise, so the press
@@ -298,6 +314,39 @@ export type RNToUnityEvent =
    *  the tester sees is what a phase would produce — vote, held-pose preference, bool clearing and
    *  all. The answer comes back as CUE_RESULT. */
   | { type: 'CUE_TEST'; payload: { cue: string } };
+
+export interface JourneyInitPayload {
+  journeyId: string;
+  /** Roster card id: yuna / jiho / yunjung / theo. */
+  counselorId: string;
+  lang: string;
+}
+
+export interface JourneyStatePayload {
+  /** SceneKey of the current chapter's backdrop (journey data `background.scene`). */
+  scene: string;
+  status: 'idle' | 'boarding' | 'playing' | 'paused' | 'transition' | 'done' | 'error';
+  /** SceneKey the train is travelling to during `transition`, else ''. */
+  transitionTo: string;
+  transitionMs: number;
+  /** The LAST month card shown in the current chapter (1-12, sticky between cards), else 0.
+   *  Turns the window through the seasons in the outro. */
+  month: number;
+  /** The narration voice is playing — the counsellor gestures while it does. */
+  speaking: boolean;
+}
+
+export interface JourneyVoicePayload {
+  /** New per chapter start; Unity restarts the mouth's clock when it changes. */
+  key: string;
+  /** Values per second in `levels`. */
+  fps: number;
+  /** 0–100 loudness, one per 1/fps s of the clip. Mirrors Unity's RNJourneyVoice by NAME. */
+  levels: number[];
+  /** Seconds into the clip the audio is at now (0 at a chapter start; the new place after a seek
+   *  or a resume). */
+  startAt: number;
+}
 
 export interface MeditationStatePayload {
   state: 'idle' | 'breathing' | 'paused' | 'done';
@@ -347,6 +396,8 @@ export type UnityToRNEvent =
    *  veil over a counselor who is about to speak, and there is nobody here to speak. This one only
    *  says "there is a room behind you now" — the screen fades its overlay in over it. */
   | { type: 'MEDITATION_READY' }
+  /** The train cabin is on screen (spec 003) — the journey screen fades its SVG window out. */
+  | { type: 'JOURNEY_READY' }
   /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */

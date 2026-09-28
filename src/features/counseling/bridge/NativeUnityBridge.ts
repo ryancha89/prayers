@@ -1,6 +1,9 @@
 import { devlog } from '../../../shared/devlog';
 import {
   MeditationStatePayload,
+  JourneyInitPayload,
+  JourneyStatePayload,
+  JourneyVoicePayload,
   RNToUnityEvent,
   UnityBridge,
   UnitySessionPayload,
@@ -65,6 +68,15 @@ export class NativeUnityBridge implements UnityBridge {
   /** The last session state sent to the room, re-sent when the room answers: Begin can be pressed
    *  while the scene is still loading, and that message reaches a room that is not there yet. */
   private meditationState?: MeditationStatePayload;
+  /** The train journey cabin: the same open-until-answered rule as the meditation room. */
+  private journeyInit?: JourneyInitPayload;
+  private journeyPending = false;
+  private journeyRetry: ReturnType<typeof setTimeout> | null = null;
+  private journeyTries = 0;
+  private journeyState?: JourneyStatePayload;
+  private journeyVoice?: JourneyVoicePayload;
+  /** 0.5 = the framing the cabin starts on (TrainJourneyDirector.DefaultZoom). */
+  private journeyZoom = 0.5;
   private outbox: RNToUnityEvent[] = [];
 
   /* ---- UnityBridge ---- */
@@ -203,6 +215,78 @@ export class NativeUnityBridge implements UnityBridge {
     if (this.view) this.post({ type: 'MEDITATION_STATE', payload });
   }
 
+  /**
+   * Open the train journey cabin (spec 003). Posts directly and repeats until JOURNEY_READY, for
+   * exactly the reasons openMeditationRoom gives — this room never sends UNITY_READY either.
+   */
+  openJourneyRoom(init: JourneyInitPayload): void {
+    this.journeyInit = init;
+    this.journeyPending = true;
+    this.journeyTries = 0;
+    this.journeyState = undefined;
+    devlog(`[unity-bridge] JOURNEY_INIT ${init.counselorId}`);
+    this.post({ type: 'JOURNEY_INIT', payload: init });
+    this.armJourneyRetry();
+  }
+
+  private armJourneyRetry(): void {
+    this.clearJourneyRetry();
+    this.journeyRetry = setTimeout(() => {
+      this.journeyRetry = null;
+      if (!this.journeyPending || !this.view || !this.journeyInit) return;
+      if (this.journeyTries >= MEDITATION_MAX_TRIES) {
+        devlog(`[unity-bridge] no JOURNEY_READY after ${this.journeyTries} retries — staying on the drawn window`);
+        return;
+      }
+      this.journeyTries += 1;
+      devlog(`[unity-bridge] JOURNEY_INIT (retry ${this.journeyTries})`);
+      this.post({ type: 'JOURNEY_INIT', payload: this.journeyInit });
+      this.armJourneyRetry();
+    }, MEDITATION_RETRY_MS);
+  }
+
+  private clearJourneyRetry(): void {
+    if (this.journeyRetry !== null) {
+      clearTimeout(this.journeyRetry);
+      this.journeyRetry = null;
+    }
+  }
+
+  /** The whole cabin state. Remembered and re-sent on JOURNEY_READY, since it can be sent while
+   *  the scene is still loading. */
+  sendJourneyState(payload: JourneyStatePayload): void {
+    this.journeyState = payload;
+    if (this.view) this.post({ type: 'JOURNEY_STATE', payload });
+  }
+
+  /** The cabin camera's zoom, 0..1. Posted straight through (a pinch is many messages a second and
+   *  a late one is worthless), and remembered for JOURNEY_READY. */
+  sendJourneyZoom(zoom: number): void {
+    this.journeyZoom = Math.max(0, Math.min(1, zoom));
+    if (this.view) this.post({ type: 'JOURNEY_ZOOM', payload: { zoom: this.journeyZoom } });
+  }
+
+  /** The chapter voice's loudness envelope. Remembered and re-sent on JOURNEY_READY with the
+   *  state: the first chapter can start while the cabin is still loading. */
+  sendJourneyVoice(payload: JourneyVoicePayload): void {
+    this.journeyVoice = payload;
+    if (this.view) this.post({ type: 'JOURNEY_VOICE', payload });
+  }
+
+  /** Leaving the journey. Idempotent, and safe when Unity never booted. */
+  closeJourneyRoom(): void {
+    this.journeyPending = false;
+    this.journeyState = undefined;
+    this.journeyVoice = undefined;
+    this.journeyInit = undefined;
+    this.journeyZoom = 0.5;
+    this.clearJourneyRetry();
+    try {
+      if (this.view) this.post({ type: 'JOURNEY_END' });
+    } catch {}
+    this.ready = false;
+  }
+
   /** Leaving the meditation room. Idempotent, and safe when Unity never booted. */
   closeMeditationRoom(): void {
     this.meditationPending = false;
@@ -253,6 +337,11 @@ export class NativeUnityBridge implements UnityBridge {
       devlog('[unity-bridge] MEDITATION_INIT (view registered)');
       this.post({ type: 'MEDITATION_INIT' });
       this.armMeditationRetry();
+    }
+    if (this.journeyPending && this.journeyInit) {
+      devlog('[unity-bridge] JOURNEY_INIT (view registered)');
+      this.post({ type: 'JOURNEY_INIT', payload: this.journeyInit });
+      this.armJourneyRetry();
     }
   }
 
@@ -326,6 +415,10 @@ export class NativeUnityBridge implements UnityBridge {
         devlog('[unity-bridge] MEDITATION_INIT (bridge ready)');
         this.post({ type: 'MEDITATION_INIT' });
       }
+      if (this.journeyPending && this.journeyInit) {
+        devlog('[unity-bridge] JOURNEY_INIT (bridge ready)');
+        this.post({ type: 'JOURNEY_INIT', payload: this.journeyInit });
+      }
     }
 
     // The meditation room's equivalent of UNITY_READY for TRANSPORT purposes only: it proves the
@@ -335,6 +428,18 @@ export class NativeUnityBridge implements UnityBridge {
       this.meditationPending = false;
       this.clearMeditationRetry();
       if (this.meditationState) this.post({ type: 'MEDITATION_STATE', payload: this.meditationState });
+      this.ready = true;
+      this.everReady = true;
+      this.clearInitRetry();
+    }
+
+    if (event.type === 'JOURNEY_READY') {
+      this.journeyPending = false;
+      this.clearJourneyRetry();
+      // The voice before the state: the state is what starts the mouth's clock.
+      if (this.journeyVoice) this.post({ type: 'JOURNEY_VOICE', payload: this.journeyVoice });
+      if (this.journeyState) this.post({ type: 'JOURNEY_STATE', payload: this.journeyState });
+      if (this.journeyZoom !== 0.5) this.post({ type: 'JOURNEY_ZOOM', payload: { zoom: this.journeyZoom } });
       this.ready = true;
       this.everReady = true;
       this.clearInitRetry();
@@ -363,7 +468,10 @@ export class NativeUnityBridge implements UnityBridge {
       this.outbox.push(event);
       return;
     }
-    devlog('[unity->] ' + JSON.stringify(event));
+    // An envelope is ~1,500 numbers a chapter; the trace needs to know it went, not what it held.
+    devlog('[unity->] ' + (event.type === 'JOURNEY_VOICE'
+      ? `JOURNEY_VOICE ${event.payload.key} ${event.payload.levels.length} levels @${event.payload.fps}`
+      : JSON.stringify(event)));
     this.view.postMessage(BRIDGE_OBJECT, BRIDGE_METHOD, JSON.stringify(event));
   }
 }

@@ -15,7 +15,7 @@ import { useArchiveStore } from '../../archive/store/archiveStore';
 import { useSavedJourneys } from '../store/savedJourneysStore';
 import { JOURNEYS } from '../data/journeys';
 import { useJourneyPlayer } from '../player/journeyPlayer';
-import { JourneyBackdrop } from '../components/JourneyBackdrop';
+import { JourneyTrainArt } from '../components/JourneyTrainArt';
 import { FortuneTicket } from '../components/FortuneTicket';
 import { monthWithYear, monthsLabel, ticketMonths } from '../format';
 
@@ -97,8 +97,7 @@ export const JourneyResultScreen: React.FC = () => {
   return (
     <View style={styles.root}>
       <View style={styles.sky}>
-        <JourneyBackdrop media={journey.chapters[journey.chapters.length - 1].background} speed={0.15} />
-        <View style={styles.skyFade} />
+        <JourneyTrainArt still fadeTo={colors.bg} />
       </View>
       <SafeAreaView edges={['top', 'bottom']} style={styles.flex}>
         <Pressable
@@ -189,7 +188,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   sky: { position: 'absolute', left: 0, right: 0, top: 0, height: 360 },
-  skyFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 200, backgroundColor: 'rgba(10,10,15,0.7)' },
   close: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm },
   scroll: { padding: spacing.xl, paddingTop: 170, gap: spacing.md },
   eyebrow: { ...typography.tiny, color: colors.gold, letterSpacing: 3 },

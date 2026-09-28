@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { Lang } from '../../../shared/i18n';
 import { devlog } from '../../../shared/devlog';
 import { bundledSoundBase, bundledSoundPath } from '../../../shared/audio/bundledSound';
-import { fetchJourneyContent, journeyBirthOf, narrationUrl, type JourneyContentError } from '../api/journeyApi';
+import { fetchJourneyContent, journeyBirthOf, narrationUrl, type JourneyContentError, type NarrationClip } from '../api/journeyApi';
 import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { JOURNEYS } from '../data/journeys';
 import type { FortuneCard, Journey, JourneyContent } from '../types';
@@ -58,6 +58,9 @@ interface JourneyState {
   shownCards: string[];
   /** Why boarding failed. `no-chart` needs the player's birth data, not a retry. */
   error: JourneyContentError | null;
+  /** The playing narration's loudness, for the cabin counsellor's mouth (JOURNEY_VOICE). `key`
+   *  changes whenever the audio position jumps; `startAt` is where, in seconds. */
+  voice: { key: string; fps: number; levels: number[]; startAt: number } | null;
 
   board(journeyId: string, counselorId: string, tone: string, lang: Lang): Promise<void>;
   play(): void;
@@ -91,7 +94,15 @@ let poll: ReturnType<typeof setInterval> | null = null;
 let transitionTimer: ReturnType<typeof setTimeout> | null = null;
 /** Bumped on every chapter change and stop: a load that lands late must not start talking. */
 let generation = 0;
-const urls = new Map<number, Promise<{ url: string; duration: number } | null>>();
+const urls = new Map<number, Promise<NarrationClip | null>>();
+
+/** The voice's envelope, re-keyed from `at` seconds — on a chapter start, a seek and a resume, the
+ *  three moments the cabin's mouth clock must be put back in step with the audio. */
+function syncMouth(at: number) {
+  const s = useJourneyPlayer.getState();
+  if (!s.voice) return;
+  useJourneyPlayer.setState({ voice: { ...s.voice, key: `${generation}:${s.chapterIndex}:${Date.now()}`, startAt: at } });
+}
 const layers: { bgm: any; ambient: any } = { bgm: null, ambient: null };
 
 const journeyOf = (id: string | null): Journey | null => (id ? JOURNEYS[id] ?? null : null);
@@ -139,7 +150,12 @@ function loadVoice(url: string): Promise<any> {
 function startLayer(which: 'bgm' | 'ambient', file: string | null, volume: number) {
   if (!file || !SoundModule || layers[which]) return;
   const s = new SoundModule(bundledSoundPath(file), bundledSoundBase(SoundModule), (err: unknown) => {
-    if (err) return;
+    // Logged both ways: a loop that fails to load is otherwise silence nobody can tell from "quiet".
+    if (err) {
+      devlog(`[journey] ${which} ${file} did not load: ${String((err as { message?: string })?.message ?? err)}`);
+      return;
+    }
+    devlog(`[journey] ${which} ${file} playing at ${volume}`);
     s.setNumberOfLoops?.(-1);
     s.setVolume?.(volume);
     s.play?.();
@@ -219,10 +235,14 @@ async function startChapter(index: number, gen: number) {
   if (sound) {
     voice = sound;
     voiceIsSilent = false;
-    useJourneyPlayer.setState({ duration: sound.getDuration?.() ?? clip?.duration ?? 0 });
+    useJourneyPlayer.setState({
+      duration: sound.getDuration?.() ?? clip?.duration ?? 0,
+      voice: clip?.envelope ? { key: `${gen}:${index}:0`, ...clip.envelope, startAt: 0 } : null,
+    });
   } else {
     // No voice to be had — the chapter still runs, paced by its text, rather than stalling the train.
     devlog(`[journey] chapter ${index} has no audio; running silent`);
+    useJourneyPlayer.setState({ voice: null });
     voiceIsSilent = true;
     silentOffset = 0;
     silentStart = Date.now();
@@ -287,6 +307,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
   activeCard: null,
   shownCards: [],
   error: null,
+  voice: null,
 
   async board(journeyId, counselorId, tone, lang) {
     get().stop();
@@ -325,6 +346,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     if (voiceIsSilent) {
       silentStart = Date.now();
     } else {
+      syncMouth(s.position);
       const gen = generation;
       voice?.play?.((ok: boolean) => {
         if (gen === generation && ok) chapterEnded();
@@ -360,6 +382,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
       voice?.setCurrentTime?.(to);
     }
     set({ position: to });
+    if (!voiceIsSilent) syncMouth(to);
   },
 
   next() {
@@ -411,6 +434,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
       activeCard: null,
       shownCards: [],
       error: null,
+      voice: null,
     });
   },
 

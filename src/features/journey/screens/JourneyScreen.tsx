@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -13,13 +13,26 @@ import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useArchiveStore } from '../../archive/store/archiveStore';
 import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { JOURNEYS } from '../data/journeys';
-import { useJourneyPlayer, type ActiveCard } from '../player/journeyPlayer';
+import { TRANSITION_MS, useJourneyPlayer, type ActiveCard } from '../player/journeyPlayer';
 import { TrainWindow } from '../components/TrainWindow';
 import { JourneyBackdrop } from '../components/JourneyBackdrop';
 import { RailwayProgress } from '../components/RailwayProgress';
 import { FortuneCardOverlay } from '../components/FortuneCardOverlay';
 import { StationTransition } from '../components/StationTransition';
 import { clock, monthsLabel } from '../format';
+import { UnityHost } from '../../counseling/components/UnityHost';
+import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
+import type { JourneyStatePayload } from '../../counseling/types';
+import type { BackgroundMedia } from '../types';
+import { useCabinZoom } from '../components/useCabinZoom';
+
+/** The window's landscape key for Unity: a drawn scene is its own key; media carries its poster. */
+function sceneKeyOf(media?: BackgroundMedia): string {
+  if (!media) return '';
+  if (media.type === 'scene') return media.scene;
+  if (media.type === 'video') return media.poster ?? '';
+  return '';
+}
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -68,6 +81,59 @@ export const JourneyScreen: React.FC = () => {
 
   const index = s.transitionTo ?? s.chapterIndex;
   const chapter = journey?.chapters[index];
+
+  // ── The 3D cabin (spec 003) ─────────────────────────────────────────────────────────────
+  // With the Unity player in the build, the drawn window gives way to the train cabin: Unity sits
+  // behind the whole screen and this screen stays opaque over it until JOURNEY_READY, so a player
+  // that never answers leaves the drawn window exactly as it was.
+  const unity = isNativeUnity();
+  const [cabinUp, setCabinUp] = useState(false);
+  useEffect(() => {
+    if (!unity || !s.journeyId || !s.counselorId) return undefined;
+    const off = nativeUnityBridge.onEvent(e => {
+      if (e.type === 'JOURNEY_READY') setCabinUp(true);
+    });
+    nativeUnityBridge.openJourneyRoom({ journeyId: s.journeyId, counselorId: s.counselorId, lang });
+    return () => {
+      off();
+      nativeUnityBridge.closeJourneyRoom();
+      setCabinUp(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unity, s.journeyId, s.counselorId]);
+
+  // The month in the window: the LAST month card of this chapter, held between cards so the
+  // seasons do not flick back to the chapter's own landscape while the voice moves on.
+  const lastMonth = useRef<{ chapter: number; month: number }>({ chapter: -1, month: 0 });
+  if (lastMonth.current.chapter !== s.chapterIndex) lastMonth.current = { chapter: s.chapterIndex, month: 0 };
+  if (s.activeCard && s.activeCard.months.length === 1) lastMonth.current.month = s.activeCard.months[0];
+  const month = s.status === 'transition' ? 0 : lastMonth.current.month;
+
+  const cabinState: JourneyStatePayload | null = journey
+    ? {
+        scene: sceneKeyOf(journey.chapters[s.chapterIndex]?.background),
+        status: s.status,
+        transitionTo: s.transitionTo != null ? sceneKeyOf(journey.chapters[s.transitionTo]?.background) : '',
+        transitionMs: TRANSITION_MS,
+        month,
+        speaking: s.status === 'playing',
+      }
+    : null;
+  const cabinKey = cabinState ? JSON.stringify(cabinState) : '';
+  const cabinZoom = useCabinZoom(cabinUp);
+  // The narration's loudness, so the counsellor's mouth follows the real voice. Declared BEFORE the
+  // state effect: the voice has to be there when `speaking` starts the mouth's clock.
+  useEffect(() => {
+    if (unity && s.voice) {
+      const { key, fps, levels, startAt } = s.voice;
+      nativeUnityBridge.sendJourneyVoice({ key, fps, levels, startAt });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unity, s.voice?.key]);
+  useEffect(() => {
+    if (unity && cabinState) nativeUnityBridge.sendJourneyState(cabinState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unity, cabinKey]);
   const guide = s.counselorId ? getLocalizedCounselor(s.counselorId, lang) : undefined;
   const narration = s.content?.chapters.find(c => c.id === chapter?.id)?.narration ?? '';
   const sentences = useMemo(() => sentencesOf(narration), [narration]);
@@ -105,8 +171,54 @@ export const JourneyScreen: React.FC = () => {
     index >= numbered ? t('journey.destination') : t('journey.chapter', { n: index + 1, total: numbered });
   const speed = s.status === 'transition' ? 3.2 : s.status === 'boarding' ? 0.25 : s.status === 'paused' ? 0 : 1;
 
+  const overlays = (
+    <>
+      {s.status === 'transition' && chapter.subtitle && (
+        <StationTransition station={chapter.subtitle} final={index === journey.chapters.length - 1} />
+      )}
+      {s.status === 'boarding' && (
+        <View style={styles.boarding}>
+          <ActivityIndicator color={colors.gold} />
+          <Text style={styles.boardingTitle}>{t('journey.boarding')}</Text>
+          <Text style={styles.boardingSub}>{t('journey.boarding.sub', { year: journey.year })}</Text>
+        </View>
+      )}
+      {s.status === 'error' && s.error === 'no-chart' && (
+        <View style={styles.boarding}>
+          <Text style={styles.boardingTitle}>{t('journey.error.noChart')}</Text>
+          <Text style={styles.boardingSub}>{t('journey.error.noChart.sub')}</Text>
+          <Pressable
+            style={styles.retry}
+            onPress={() => {
+              sfx.select();
+              navigation.navigate('AddSubject', { subjectId: 'self' });
+            }}>
+            <Text style={styles.retryText}>{t('journey.error.addProfile')}</Text>
+          </Pressable>
+        </View>
+      )}
+      {s.status === 'error' && s.error !== 'no-chart' && (
+        <View style={styles.boarding}>
+          <Text style={styles.boardingTitle}>{t('journey.error')}</Text>
+          <Pressable style={styles.retry} onPress={reboard}>
+            <Text style={styles.retryText}>{t('journey.retry')}</Text>
+          </Pressable>
+        </View>
+      )}
+      {s.activeCard && (
+        <View style={styles.cardLayer} pointerEvents="box-none">
+          <FortuneCardOverlay card={s.activeCard} year={journey.year} onDone={s.dismissCard} onSave={saveCard} />
+        </View>
+      )}
+    </>
+  );
+
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.root}>
+    <View style={styles.stage}>
+      {/* Never hidden or faded: an embedded UnityView under a transparent PARENT stops being
+          drawn (meditation room, measured on device). The screen above it is what changes. */}
+      {unity && <UnityHost style={styles.unity} />}
+    <SafeAreaView edges={['top', 'bottom']} style={[styles.root, cabinUp && styles.rootOverCabin]}>
       <View style={styles.header}>
         <Pressable
           hitSlop={12}
@@ -121,47 +233,20 @@ export const JourneyScreen: React.FC = () => {
         <Text style={styles.chapter}>{chapterLabel}</Text>
       </View>
 
-      <TrainWindow style={styles.window}>
-        <JourneyBackdrop media={chapter.background} speed={speed} />
-        {s.status === 'transition' && chapter.subtitle && (
-          <StationTransition station={chapter.subtitle} final={index === journey.chapters.length - 1} />
-        )}
-        {s.status === 'boarding' && (
-          <View style={styles.boarding}>
-            <ActivityIndicator color={colors.gold} />
-            <Text style={styles.boardingTitle}>{t('journey.boarding')}</Text>
-            <Text style={styles.boardingSub}>{t('journey.boarding.sub', { year: journey.year })}</Text>
-          </View>
-        )}
-        {s.status === 'error' && s.error === 'no-chart' && (
-          <View style={styles.boarding}>
-            <Text style={styles.boardingTitle}>{t('journey.error.noChart')}</Text>
-            <Text style={styles.boardingSub}>{t('journey.error.noChart.sub')}</Text>
-            <Pressable
-              style={styles.retry}
-              onPress={() => {
-                sfx.select();
-                navigation.navigate('AddSubject', { subjectId: 'self' });
-              }}>
-              <Text style={styles.retryText}>{t('journey.error.addProfile')}</Text>
-            </Pressable>
-          </View>
-        )}
-        {s.status === 'error' && s.error !== 'no-chart' && (
-          <View style={styles.boarding}>
-            <Text style={styles.boardingTitle}>{t('journey.error')}</Text>
-            <Pressable style={styles.retry} onPress={reboard}>
-              <Text style={styles.retryText}>{t('journey.retry')}</Text>
-            </Pressable>
-          </View>
-        )}
-        {s.activeCard && (
-          <View style={styles.cardLayer} pointerEvents="box-none">
-            <FortuneCardOverlay card={s.activeCard} year={journey.year} onDone={s.dismissCard} onSave={saveCard} />
-          </View>
-        )}
-      </TrainWindow>
+      {cabinUp ? (
+        // The cabin is the window now: this area is clear, only the overlays ride on it.
+        // Pinch (two fingers) or double-tap here to zoom the cabin camera — see useCabinZoom.
+        <View style={styles.window} {...cabinZoom.panHandlers} onTouchEnd={cabinZoom.onTouchEnd}>
+          {overlays}
+        </View>
+      ) : (
+        <TrainWindow style={styles.window}>
+          <JourneyBackdrop media={chapter.background} speed={speed} />
+          {overlays}
+        </TrainWindow>
+      )}
 
+      <View style={cabinUp ? styles.panel : undefined}>
       <View style={styles.narrator}>
         {guide?.avatarImage ? <Image source={guide.avatarImage} style={styles.avatar} /> : null}
         <Text style={styles.guideName}>{guide?.name}</Text>
@@ -213,12 +298,25 @@ export const JourneyScreen: React.FC = () => {
         progress={s.status === 'transition' ? 0 : progress}
         onStation={i => { sfx.tap(); s.goTo(i); }}
       />
+      </View>
     </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  stage: { flex: 1, backgroundColor: '#07061A' },
+  unity: { ...absoluteFill },
   root: { flex: 1, backgroundColor: '#07061A' },
+  rootOverCabin: { backgroundColor: 'transparent' },
+  // Over the cabin the controls sit on a dark glass panel: the table and the counsellor's lap are
+  // under it, the counsellor's face and the window above it.
+  panel: {
+    backgroundColor: 'rgba(7,6,26,0.78)',
+    borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg,
+    borderTopWidth: 1, borderColor: 'rgba(233,196,106,0.25)',
+    paddingTop: spacing.xs,
+  },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.xl, paddingVertical: spacing.sm,

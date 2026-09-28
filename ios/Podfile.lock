@@ -2388,7 +2388,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   AsyncStorage: 163ab23f6aa37a58b7f2379d0b4ee7ac84d6655c
   FBLazyVector: b3e7ad108f0d882e30445c5527d774e3fd432f3d
-  hermes-engine: 36db7f611b0381e55437fb2eb6648f2764f8c8a0
+  hermes-engine: 418babf4b0d5a4bc415fe8503f3634170a789067
   NitroIap: 24d3015812d0b011564e428fdaec41d5a58de15e
   NitroModules: 38f8754287858ff1294e43fd43f614a664e54050
   openiap: 3b94b5e9a33aae0146664d828ae229ac7546b13b
@@ -2431,7 +2431,7 @@ SPEC CHECKSUMS:
   React-mutationobservernativemodule: f0a0d5ae9b51caf7becbeabf836d716cfedb6bf2
   react-native-keep-awake: 33963ef637f3e90a56974379fba6c4a1e0519129
   react-native-safe-area-context: 8368d1052ccc8fe8725adfb6a83498c8bdb48250
-  react-native-unity: 540216364eb15f7550a5a5039d47101a957625c3
+  react-native-unity: 902e26546c36bd2d7a2f0f19e2a32c708308d25e
   React-NativeModulesApple: a092d89b58f635ebfab88048b0eda9fb516819fd
   React-networking: 968bbbe73590149feb1e72b2af4f6a68e4796ece
   React-oscompat: 0b72a7e926954a0415ccd83e0748b6561fe45367

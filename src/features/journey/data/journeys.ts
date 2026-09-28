@@ -25,8 +25,9 @@ export const NEWYEAR_2027: Journey = {
     { id: 'overall', order: 5, title: 'journey.st.overall', subtitle: 'journey.sub.overall', background: { type: 'scene', scene: 'sunrise' } },
     { id: 'outro', order: 6, title: 'journey.st.outro', subtitle: 'journey.sub.outro', background: { type: 'scene', scene: 'arrival' } },
   ],
-  // No bundled tracks yet: the layers exist so a BGM or train ambience is a file and a name here.
-  audio: { bgm: null, ambient: null },
+  // Music: the app's own bed (194 s, -12.7 LUFS; ~-25 LUFS at the player's 0.25 — under the voice).
+  // Carriage: rumble, rail joints, wind (Tools/audio/gen_train_ambience.py, -18 LUFS).
+  audio: { bgm: 'prayers_ambient.m4a', ambient: 'train_ambience.m4a' },
 };
 
 export const JOURNEYS: Record<string, Journey> = { [NEWYEAR_2027.id]: NEWYEAR_2027 };
