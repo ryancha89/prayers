@@ -1,0 +1,17 @@
+default_platform(:android)
+
+platform :android do
+  # Upload an AAB that is already built (versionCode is bumped by hand in app/build.gradle).
+  desc "이미 빌드된 AAB를 내부 테스트 트랙에 업로드"
+  lane :upload_internal do |options|
+    upload_to_play_store(
+      track: "internal",
+      aab: options[:aab] || "app/build/outputs/bundle/release/app-release.aab",
+      release_status: options[:status] || "completed",
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+  end
+end
