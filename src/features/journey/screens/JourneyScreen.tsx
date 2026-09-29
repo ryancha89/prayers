@@ -29,6 +29,8 @@ import { useCabinCamera } from '../components/useCabinCamera';
 /** What shows while the 3D cabin loads: the station's night sky, the platform's own painting — not
  *  the drawn 2D window, which flashed up for a moment before every 3D journey (29-09). */
 const PLATFORM_NIGHT = require('../assets/platform_night.jpg');
+/** How long the counsellor's invitation is on screen before they lead the player aboard. */
+const AUTO_BOARD_MS = 3500;
 
 /** The window's landscape key for Unity: a drawn scene is its own key; media carries its poster. */
 function sceneKeyOf(media?: BackgroundMedia): string {
@@ -141,6 +143,14 @@ export const JourneyScreen: React.FC = () => {
   useEffect(() => {
     if (s.status !== 'platform' && s.status !== 'boarding') setEmbarking(false);
   }, [s.status]);
+  // After payment the counsellor says "let's go on a train journey together" and leads the way
+  // (Jeongmin 29-09): the line is up for AUTO_BOARD_MS, then the boarding starts by itself. The
+  // button stays for anyone who does not want to wait.
+  useEffect(() => {
+    if (!onPlatform || s.status !== 'platform' || embarking) return undefined;
+    const timer = setTimeout(board, AUTO_BOARD_MS);
+    return () => clearTimeout(timer);
+  }, [onPlatform, s.status, embarking, board]);
   // The walk to the seat takes ~11 s (door hold, platform, aisle, sitting down). A cabin that never
   // answers must not strand the player on the platform: start the reading anyway.
   useEffect(() => {
