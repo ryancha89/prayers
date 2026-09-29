@@ -75,8 +75,10 @@ export class NativeUnityBridge implements UnityBridge {
   private journeyTries = 0;
   private journeyState?: JourneyStatePayload;
   private journeyVoice?: JourneyVoicePayload;
-  /** 0.5 = the framing the cabin starts on (TrainJourneyDirector.DefaultZoom). */
-  private journeyZoom = 0.5;
+  /** 0 = the wide framing the cabin starts on (TrainJourneyDirector.StartZoom). */
+  private journeyZoom = 0;
+  /** The player's look-around, -1..1 each (0,0 = straight ahead). */
+  private journeyLook = { yaw: 0, pitch: 0 };
   private outbox: RNToUnityEvent[] = [];
 
   /* ---- UnityBridge ---- */
@@ -266,6 +268,19 @@ export class NativeUnityBridge implements UnityBridge {
     if (this.view) this.post({ type: 'JOURNEY_ZOOM', payload: { zoom: this.journeyZoom } });
   }
 
+  /** "Board the train" on the platform. Only offered once the cabin is up, so no replay is needed. */
+  sendJourneyBoard(): void {
+    if (this.view) this.post({ type: 'JOURNEY_BOARD' });
+  }
+
+  /** The player turning the cabin camera (one-finger drag), -1..1 each: + = right / up. Posted and
+   *  remembered exactly like the zoom. */
+  sendJourneyLook(yaw: number, pitch: number): void {
+    const clamp = (v: number) => Math.max(-1, Math.min(1, v));
+    this.journeyLook = { yaw: clamp(yaw), pitch: clamp(pitch) };
+    if (this.view) this.post({ type: 'JOURNEY_LOOK', payload: this.journeyLook });
+  }
+
   /** The chapter voice's loudness envelope. Remembered and re-sent on JOURNEY_READY with the
    *  state: the first chapter can start while the cabin is still loading. */
   sendJourneyVoice(payload: JourneyVoicePayload): void {
@@ -279,7 +294,8 @@ export class NativeUnityBridge implements UnityBridge {
     this.journeyState = undefined;
     this.journeyVoice = undefined;
     this.journeyInit = undefined;
-    this.journeyZoom = 0.5;
+    this.journeyZoom = 0;
+    this.journeyLook = { yaw: 0, pitch: 0 };
     this.clearJourneyRetry();
     try {
       if (this.view) this.post({ type: 'JOURNEY_END' });
@@ -439,7 +455,10 @@ export class NativeUnityBridge implements UnityBridge {
       // The voice before the state: the state is what starts the mouth's clock.
       if (this.journeyVoice) this.post({ type: 'JOURNEY_VOICE', payload: this.journeyVoice });
       if (this.journeyState) this.post({ type: 'JOURNEY_STATE', payload: this.journeyState });
-      if (this.journeyZoom !== 0.5) this.post({ type: 'JOURNEY_ZOOM', payload: { zoom: this.journeyZoom } });
+      // Always: an older Unity build starts at another zoom, and one message is cheap.
+      this.post({ type: 'JOURNEY_ZOOM', payload: { zoom: this.journeyZoom } });
+      if (this.journeyLook.yaw !== 0 || this.journeyLook.pitch !== 0)
+        this.post({ type: 'JOURNEY_LOOK', payload: this.journeyLook });
       this.ready = true;
       this.everReady = true;
       this.clearInitRetry();

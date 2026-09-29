@@ -291,10 +291,16 @@ export type RNToUnityEvent =
   | { type: 'JOURNEY_STATE'; payload: JourneyStatePayload }
   /** Leaving the journey. Unity treats it exactly as SESSION_END. */
   | { type: 'JOURNEY_END' }
-  /** The player's pinch on the cabin: 0 = the wide corner view, 0.5 = the starting framing
-   *  (counsellor + window), 1 = the close-up.
+  /** "Board the train" on the station platform: Unity walks the player to the door and into the
+   *  seat, then answers JOURNEY_SEATED. */
+  | { type: 'JOURNEY_BOARD' }
+  /** The player's pinch on the cabin: 0 = the wide view with the whole window (where every
+   *  journey starts), 0.5 = counsellor + window, 1 = the close-up.
    *  Sent many times a second while fingers move; Unity eases the camera toward the latest. */
   | { type: 'JOURNEY_ZOOM'; payload: { zoom: number } }
+  /** The player turning the cabin camera with one finger, -1..1 each (+ = right / up); Unity maps
+   *  it to degrees (TrainJourneyDirector._lookYawMax / _lookPitchMax) and eases like the zoom. */
+  | { type: 'JOURNEY_LOOK'; payload: { yaw: number; pitch: number } }
   /** The chapter narration's loudness (server `tts/url` envelope), sent as the chapter starts. The
    *  voice plays here in RN; this is how the counsellor's mouth in the cabin follows it. */
   | { type: 'JOURNEY_VOICE'; payload: JourneyVoicePayload }
@@ -319,6 +325,8 @@ export interface JourneyInitPayload {
   journeyId: string;
   /** Roster card id: yuna / jiho / yunjung / theo. */
   counselorId: string;
+  /** A NEW journey opens on the station platform; a resumed one goes straight to the seat. */
+  platform?: boolean;
   lang: string;
 }
 
@@ -398,6 +406,8 @@ export type UnityToRNEvent =
   | { type: 'MEDITATION_READY' }
   /** The train cabin is on screen (spec 003) — the journey screen fades its SVG window out. */
   | { type: 'JOURNEY_READY' }
+  /** The platform walk is over and the player is in the cabin seat: start the reading. */
+  | { type: 'JOURNEY_SEATED' }
   /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */

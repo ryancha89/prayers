@@ -90,3 +90,30 @@ describe('boarding with the player\'s own chart', () => {
     expect(p.error).toBe('no-chart');
   });
 });
+
+describe('the station platform (3D cabin)', () => {
+  const api = require('../src/features/journey/api/journeyApi');
+  const { useSubjectsStore } = require('../src/features/subjects/store/subjectsStore');
+
+  it('waits on the platform once loaded, and only depart() starts the reading', async () => {
+    useSubjectsStore.setState({ self: { id: 'self', displayName: 'me', isUser: true, birthDate: '1990-01-01', gender: 'male' } });
+    const spy = jest.spyOn(api, 'fetchJourneyContent').mockResolvedValue({ content: content('p') });
+    await useJourneyPlayer.getState().board('newyear-2027', 'theo', 'theo', 'ko', { platform: true });
+    expect(useJourneyPlayer.getState().status).toBe('platform');
+    expect(useJourneyPlayer.getState().chapterIndex).toBe(0);
+
+    useJourneyPlayer.getState().depart();
+    // startChapter awaits the chapter's voice URL (none here: it runs silent) before it plays.
+    for (let i = 0; i < 20 && useJourneyPlayer.getState().status === 'platform'; i++)
+      await new Promise(r => setImmediate(r));
+    expect(useJourneyPlayer.getState().status).toBe('playing');
+    spy.mockRestore();
+    useJourneyPlayer.getState().stop();
+  });
+
+  it('ignores depart() anywhere but the platform', () => {
+    useJourneyPlayer.setState({ status: 'paused' });
+    useJourneyPlayer.getState().depart();
+    expect(useJourneyPlayer.getState().status).toBe('paused');
+  });
+});

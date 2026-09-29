@@ -29,7 +29,9 @@ try {
   SoundModule = null;
 }
 
-export type JourneyStatus = 'idle' | 'boarding' | 'playing' | 'paused' | 'transition' | 'done' | 'error';
+/** `platform`: the content is in and the player stands on the station platform (the 3D cabin's
+ *  JourneyPlatform) until they press "board the train" — `depart()` starts the reading. */
+export type JourneyStatus = 'idle' | 'boarding' | 'platform' | 'playing' | 'paused' | 'transition' | 'done' | 'error';
 
 export interface ActiveCard extends FortuneCard {
   key: string;
@@ -62,7 +64,10 @@ interface JourneyState {
    *  changes whenever the audio position jumps; `startAt` is where, in seconds. */
   voice: { key: string; fps: number; levels: number[]; startAt: number } | null;
 
-  board(journeyId: string, counselorId: string, tone: string, lang: Lang): Promise<void>;
+  /** `platform`: wait on the station platform once loaded instead of starting the reading. */
+  board(journeyId: string, counselorId: string, tone: string, lang: Lang, opts?: { platform?: boolean }): Promise<void>;
+  /** From the platform: start the reading (the player is seated, or the cabin never answered). */
+  depart(): void;
   play(): void;
   pause(): void;
   toggle(): void;
@@ -309,7 +314,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
   error: null,
   voice: null,
 
-  async board(journeyId, counselorId, tone, lang) {
+  async board(journeyId, counselorId, tone, lang, opts) {
     get().stop();
     generation += 1;
     const gen = generation;
@@ -334,7 +339,16 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     startLayer('bgm', journey.audio.bgm, 0.25);
     startLayer('ambient', journey.audio.ambient, 0.35);
     ensureUrl(1);
+    if (opts?.platform) {
+      set({ status: 'platform' });
+      return;
+    }
     await startChapter(0, gen);
+  },
+
+  depart() {
+    if (get().status !== 'platform') return;
+    void startChapter(0, generation);
   },
 
   play() {
@@ -473,4 +487,4 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
 
 /** True while a journey is under way (the mini player's condition). */
 export const journeyActive = (s: JourneyState) =>
-  s.status === 'playing' || s.status === 'paused' || s.status === 'transition' || s.status === 'boarding';
+  s.status === 'playing' || s.status === 'paused' || s.status === 'transition' || s.status === 'boarding' || s.status === 'platform';

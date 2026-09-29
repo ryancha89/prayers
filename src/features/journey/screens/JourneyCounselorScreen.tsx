@@ -11,6 +11,7 @@ import { sfx } from '../../../shared/audio/sfx';
 import type { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { toneForCharacter } from '../../counseling/api/counselorAI';
+import { isNativeUnity } from '../../counseling/bridge';
 import { JOURNEYS } from '../data/journeys';
 import { useJourneyPlayer } from '../player/journeyPlayer';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
@@ -36,7 +37,8 @@ export const JourneyCounselorScreen: React.FC = () => {
     const tone = toneForCharacter(c?.characterId);
     if (!c || !tone) return;
     sfx.select();
-    void board(journey.id, counselorId, tone, lang);
+    // With the 3D cabin the journey opens on the station platform (JourneyPlatform in Unity).
+    void board(journey.id, counselorId, tone, lang, { platform: isNativeUnity() });
     navigation.replace('Journey');
   };
 

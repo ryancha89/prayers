@@ -76,7 +76,7 @@ let musicAllowed = false;
 const APP_BED_ENABLED = true;
 
 /** Journey states whose own audio (bed + carriage + narration) is live. Paused/done hand it back. */
-const JOURNEY_SOUNDING = new Set(['boarding', 'playing', 'transition']);
+const JOURNEY_SOUNDING = new Set(['boarding', 'platform', 'playing', 'transition']);
 
 /**
  * One speaker, one owner, decided by the route.

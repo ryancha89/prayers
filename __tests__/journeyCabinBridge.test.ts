@@ -80,3 +80,35 @@ it('clamps the pinch zoom and re-sends it when the cabin comes up', () => {
   bridge.receiveFromUnity(JSON.stringify({ type: 'JOURNEY_READY' }));
   expect(of('JOURNEY_ZOOM').pop()?.payload).toEqual({ zoom: 0.4 });
 });
+
+it('starts the cabin on the wide view, even for a Unity build that starts elsewhere', () => {
+  const { bridge, of } = bridgeWithView();
+  bridge.openJourneyRoom(init);
+  bridge.receiveFromUnity(JSON.stringify({ type: 'JOURNEY_READY' }));
+  expect(of('JOURNEY_ZOOM').pop()?.payload).toEqual({ zoom: 0 });
+  expect(of('JOURNEY_LOOK')).toHaveLength(0);
+});
+
+it('clamps the look-around, re-sends it when the cabin comes up, and forgets it on leaving', () => {
+  const { bridge, of } = bridgeWithView();
+  bridge.openJourneyRoom(init);
+  bridge.sendJourneyLook(-2, 0.3);
+  expect(of('JOURNEY_LOOK').pop()?.payload).toEqual({ yaw: -1, pitch: 0.3 });
+  bridge.receiveFromUnity(JSON.stringify({ type: 'JOURNEY_READY' }));
+  expect(of('JOURNEY_LOOK').pop()?.payload).toEqual({ yaw: -1, pitch: 0.3 });
+
+  bridge.closeJourneyRoom();
+  const before = of('JOURNEY_LOOK').length;
+  bridge.openJourneyRoom(init);
+  bridge.receiveFromUnity(JSON.stringify({ type: 'JOURNEY_READY' }));
+  expect(of('JOURNEY_LOOK')).toHaveLength(before);
+});
+
+it('carries the platform flag on JOURNEY_INIT and posts JOURNEY_BOARD', () => {
+  const { bridge, of } = bridgeWithView();
+  bridge.openJourneyRoom({ ...init, platform: true });
+  expect(of('JOURNEY_INIT')[0].payload).toEqual({ ...init, platform: true });
+  bridge.receiveFromUnity(JSON.stringify({ type: 'JOURNEY_READY' }));
+  bridge.sendJourneyBoard();
+  expect(of('JOURNEY_BOARD')).toHaveLength(1);
+});
