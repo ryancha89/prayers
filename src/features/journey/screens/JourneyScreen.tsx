@@ -101,12 +101,20 @@ export const JourneyScreen: React.FC = () => {
   // Seated for good: the platform sheet never comes back after this, even while chapter 1's voice
   // is still loading (measured 29-09: seated at +11 s, reading at +17 s).
   const [seated, setSeated] = useState(false);
+  // The storyboard step Unity is on, and the last line it gave (step 4, the walk, has none).
+  const [beat, setBeat] = useState(0);
+  const [beatLine, setBeatLine] = useState(1);
   useEffect(() => {
     if (!unity || !s.journeyId || !s.counselorId) return undefined;
     const st = useJourneyPlayer.getState().status;
     onPlatformTrip.current = st === 'boarding' || st === 'platform';
     const off = nativeUnityBridge.onEvent(e => {
       if (e.type === 'JOURNEY_READY') setCabinUp(true);
+      if (e.type === 'JOURNEY_BEAT') {
+        const n = e.payload?.beat ?? 0;
+        setBeat(n);
+        if (n > 0 && n !== 4) setBeatLine(n);
+      }
       // Seated: start the reading. `embarking` stays on until it really starts (the first chapter's
       // voice takes a few seconds) — cleared then, or the button lit up again over the cabin.
       if (e.type === 'JOURNEY_SEATED') {
@@ -123,6 +131,9 @@ export const JourneyScreen: React.FC = () => {
       setCabinUp(false);
       setEmbarking(false);
       setSeated(false);
+      setBeat(0);
+      setBeatLine(1);
+      readingStarted.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unity, s.journeyId, s.counselorId]);
@@ -146,11 +157,20 @@ export const JourneyScreen: React.FC = () => {
   // After payment the counsellor says "let's go on a train journey together" and leads the way
   // (Jeongmin 29-09): the line is up for AUTO_BOARD_MS, then the boarding starts by itself. The
   // button stays for anyone who does not want to wait.
+  // Timed from the invitation (step 2). A Unity build without the storyboard never sends it: board
+  // anyway after the line has been up a while.
   useEffect(() => {
     if (!onPlatform || s.status !== 'platform' || embarking) return undefined;
-    const timer = setTimeout(board, AUTO_BOARD_MS);
+    const timer = setTimeout(board, beat >= 2 ? AUTO_BOARD_MS : AUTO_BOARD_MS + 5000);
     return () => clearTimeout(timer);
-  }, [onPlatform, s.status, embarking, board]);
+  }, [onPlatform, s.status, embarking, board, beat]);
+  // The storyboard's lines stay up from the platform until the first chapter really plays.
+  // Once the first chapter has played, the storyboard is over: the station transitions between
+  // chapters are not 'playing' either, and step 10's line came back at every tunnel (29-09).
+  const readingStarted = useRef(false);
+  if (s.status === 'playing') readingStarted.current = true;
+  const storyShowing = cabinUp && onPlatformTrip.current && !readingStarted.current
+    && (onPlatform || embarking || (seated && s.status !== 'playing'));
   // The walk to the seat takes ~11 s (door hold, platform, aisle, sitting down). A cabin that never
   // answers must not strand the player on the platform: start the reading anyway.
   useEffect(() => {
@@ -305,7 +325,7 @@ export const JourneyScreen: React.FC = () => {
         </TrainWindow>
       )}
 
-      {onPlatform && embarking ? null : onPlatform ? (
+      {storyShowing ? (
         // The station platform: the counsellor's question and the one way on (the concept's
         // "이제, 2027년으로 출발할까요?" / "기차에 탑승하기 →"). Once pressed, the sheet goes away
         // and the whole screen is the walk to the seat; the reading panel comes back with chapter 1.
@@ -314,11 +334,10 @@ export const JourneyScreen: React.FC = () => {
             {guide?.avatarImage ? <Image source={guide.avatarImage} style={styles.avatar} /> : null}
             <Text style={styles.guideName}>{guide?.name}</Text>
           </View>
-          {!embarking && (
-            <View style={styles.bubble}>
-              <Text style={styles.bubbleText}>{t('journey.platform.ask', { year: journey.year })}</Text>
-            </View>
-          )}
+          <View style={styles.bubble}>
+            <Text style={styles.bubbleText}>{t(`journey.beat.${beatLine}` as 'journey.beat.1')}</Text>
+          </View>
+          {onPlatform && !embarking && (
           <Pressable
             style={[styles.boardBtn, (s.status !== 'platform' || embarking) && styles.boardBtnWait]}
             disabled={s.status !== 'platform' || embarking}
@@ -330,6 +349,7 @@ export const JourneyScreen: React.FC = () => {
               <Text style={styles.boardText}>{t('journey.platform.board')} →</Text>
             )}
           </Pressable>
+          )}
         </View>
       ) : (
       <View style={cabinUp ? styles.panel : undefined}>

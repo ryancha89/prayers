@@ -408,6 +408,9 @@ export type UnityToRNEvent =
   | { type: 'JOURNEY_READY' }
   /** The platform walk is over and the player is in the cabin seat: start the reading. */
   | { type: 'JOURNEY_SEATED' }
+  /** A step of the boarding storyboard (1-10, Jeongmin 29-09): the screen shows that step's line
+   *  (`journey.beat.<n>`; step 4, the walk, has none and keeps the previous one). */
+  | { type: 'JOURNEY_BEAT'; payload: { beat: number } }
   /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
