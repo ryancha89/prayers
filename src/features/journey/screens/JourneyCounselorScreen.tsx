@@ -14,6 +14,7 @@ import { toneForCharacter } from '../../counseling/api/counselorAI';
 import { isNativeUnity } from '../../counseling/bridge';
 import { JOURNEYS } from '../data/journeys';
 import { useJourneyPlayer } from '../player/journeyPlayer';
+import { BEAT_LINES, prefetchBeatLines } from '../player/beatVoice';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -37,6 +38,9 @@ export const JourneyCounselorScreen: React.FC = () => {
     const tone = toneForCharacter(c?.characterId);
     if (!c || !tone) return;
     sfx.select();
+    // The storyboard's lines go to the server BEFORE the reading does: line 1 is needed ~4 s after
+    // the platform opens, the first chapter's narration only after the walk to the seat.
+    if (isNativeUnity()) prefetchBeatLines(BEAT_LINES.map(n => t(`journey.beat.${n}` as 'journey.beat.1')), tone, lang);
     // With the 3D cabin the journey opens on the station platform (JourneyPlatform in Unity).
     void board(journey.id, counselorId, tone, lang, { platform: isNativeUnity() });
     navigation.replace('Journey');

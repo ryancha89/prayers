@@ -3,6 +3,7 @@ import type { Lang } from '../../../shared/i18n';
 import { devlog } from '../../../shared/devlog';
 import { bundledSoundBase, bundledSoundPath } from '../../../shared/audio/bundledSound';
 import { fetchJourneyContent, journeyBirthOf, narrationUrl, type JourneyContentError, type NarrationClip } from '../api/journeyApi';
+import { beatVoiceSettled } from './beatVoice';
 import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { JOURNEYS } from '../data/journeys';
 import type { FortuneCard, Journey, JourneyContent } from '../types';
@@ -235,6 +236,12 @@ async function startChapter(index: number, gen: number) {
     return;
   }
 
+  // The first chapter follows the boarding storyboard: let the counsellor finish the line they are
+  // saying ("Shall we explore your first stop?") instead of talking over it (QA 30-09: cut by 0.2 s).
+  if (index === 0) {
+    await beatVoiceSettled();
+    if (gen !== generation) { sound?.release?.(); return; }
+  }
   releaseVoice();
   const text = narrationFor(useJourneyPlayer.getState().content, journey, index);
   if (sound) {

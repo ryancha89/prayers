@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,6 +14,7 @@ import { useArchiveStore } from '../../archive/store/archiveStore';
 import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { JOURNEYS } from '../data/journeys';
 import { TRANSITION_MS, useJourneyPlayer, type ActiveCard } from '../player/journeyPlayer';
+import { BEAT_LINES, dropPendingBeatLines, openStoryboard, prefetchBeatLines, sayBeatLine, stopBeatVoice } from '../player/beatVoice';
 import { TrainWindow } from '../components/TrainWindow';
 import { JourneyBackdrop } from '../components/JourneyBackdrop';
 import { RailwayProgress } from '../components/RailwayProgress';
@@ -94,6 +95,14 @@ export const JourneyScreen: React.FC = () => {
   // that never answers leaves the drawn window exactly as it was.
   const unity = isNativeUnity();
   const [cabinUp, setCabinUp] = useState(false);
+  // The loading art fades off the cabin instead of vanishing on the frame Unity is ready — that was a
+  // one-frame cut from the starry poster to the platform, on the first spoken line (QA 30-09).
+  const curtain = useRef(new Animated.Value(1)).current;
+  const [curtainGone, setCurtainGone] = useState(false);
+  useEffect(() => {
+    if (!cabinUp) { curtain.setValue(1); setCurtainGone(false); return; }
+    Animated.timing(curtain, { toValue: 0, duration: 700, useNativeDriver: true }).start(() => setCurtainGone(true));
+  }, [cabinUp, curtain]);
   // A journey that has not started reading yet opens on the station platform (Jeongmin 29-09:
   // "when user press onboard button consultant take the user to the seat"); a resumed one does not.
   const onPlatformTrip = useRef(false);
@@ -104,16 +113,38 @@ export const JourneyScreen: React.FC = () => {
   // The storyboard step Unity is on, and the last line it gave (step 4, the walk, has none).
   const [beat, setBeat] = useState(0);
   const [beatLine, setBeatLine] = useState(1);
+  // The counsellor is saying a storyboard line right now: the cabin's mouth follows it (beats 9–10,
+  // once seated; on the platform the stand-in has no lip sync).
+  const [beatSpeaking, setBeatSpeaking] = useState(false);
   useEffect(() => {
     if (!unity || !s.journeyId || !s.counselorId) return undefined;
     const st = useJourneyPlayer.getState().status;
     onPlatformTrip.current = st === 'boarding' || st === 'platform';
+    const tone = useJourneyPlayer.getState().tone;
+    // Every line of the storyboard, voiced in the counsellor's own reading voice (30-09: they were
+    // subtitles only). Fetched now so no beat waits on synthesis.
+    const lineOf = (n: number) => t(`journey.beat.${n}` as 'journey.beat.1');
+    if (onPlatformTrip.current && tone) {
+      prefetchBeatLines(BEAT_LINES.map(lineOf), tone, lang);
+      openStoryboard();   // chapter 1 waits for the last line, "Shall we explore your first stop?"
+    }
     const off = nativeUnityBridge.onEvent(e => {
       if (e.type === 'JOURNEY_READY') setCabinUp(true);
       if (e.type === 'JOURNEY_BEAT') {
         const n = e.payload?.beat ?? 0;
         setBeat(n);
-        if (n > 0 && n !== 4) setBeatLine(n);
+        if (n > 0 && n !== 4) {
+          setBeatLine(n);
+          // Not once the reading has begun: step 10 can land after chapter 1's voice started.
+          if (onPlatformTrip.current && tone && useJourneyPlayer.getState().status !== 'playing') {
+            sayBeatLine(lineOf(n), tone, lang, clip => {
+              setBeatSpeaking(true);
+              if (clip.envelope) {
+                nativeUnityBridge.sendJourneyVoice({ key: `beat:${n}:${Date.now()}`, ...clip.envelope, startAt: 0 });
+              }
+            }, () => setBeatSpeaking(false), n === BEAT_LINES[BEAT_LINES.length - 1], n <= 2);
+          }
+        }
       }
       // Seated: start the reading. `embarking` stays on until it really starts (the first chapter's
       // voice takes a few seconds) — cleared then, or the button lit up again over the cabin.
@@ -127,6 +158,8 @@ export const JourneyScreen: React.FC = () => {
     });
     return () => {
       off();
+      stopBeatVoice();
+      setBeatSpeaking(false);
       nativeUnityBridge.closeJourneyRoom();
       setCabinUp(false);
       setEmbarking(false);
@@ -169,8 +202,14 @@ export const JourneyScreen: React.FC = () => {
   // chapters are not 'playing' either, and step 10's line came back at every tunnel (29-09).
   const readingStarted = useRef(false);
   if (s.status === 'playing') readingStarted.current = true;
-  const storyShowing = cabinUp && onPlatformTrip.current && !readingStarted.current
-    && (onPlatform || embarking || (seated && s.status !== 'playing'));
+  // The reading has begun (it waited for the last line — journeyPlayer): nothing more is queued.
+  useEffect(() => {
+    if (s.status === 'playing') dropPendingBeatLines();
+  }, [s.status]);
+  // While the cabin is still loading too: otherwise chapter 1's first line and a live play button
+  // showed for a few seconds before the platform's greeting (30-09).
+  const storyShowing = unity && onPlatformTrip.current && !readingStarted.current
+    && (!cabinUp || onPlatform || embarking || (seated && s.status !== 'playing'));
   // The walk to the seat takes ~11 s (door hold, platform, aisle, sitting down). A cabin that never
   // answers must not strand the player on the platform: start the reading anyway.
   useEffect(() => {
@@ -190,7 +229,7 @@ export const JourneyScreen: React.FC = () => {
         transitionTo: s.transitionTo != null ? sceneKeyOf(journey.chapters[s.transitionTo]?.background) : '',
         transitionMs: TRANSITION_MS,
         month,
-        speaking: s.status === 'playing',
+        speaking: s.status === 'playing' || beatSpeaking,
       }
     : null;
   const cabinKey = cabinState ? JSON.stringify(cabinState) : '';
@@ -292,6 +331,10 @@ export const JourneyScreen: React.FC = () => {
       {/* Never hidden or faded: an embedded UnityView under a transparent PARENT stops being
           drawn (meditation room, measured on device). The screen above it is what changes. */}
       {unity && <UnityHost style={styles.unity} />}
+      {/* Beside the UnityView, never its parent (a transparent parent stops it drawing). */}
+      {unity && cabinUp && !curtainGone && (
+        <Animated.View pointerEvents="none" style={[styles.curtain, { opacity: curtain }]} />
+      )}
     <SafeAreaView edges={['top', 'bottom']} style={[styles.root, cabinUp && styles.rootOverCabin]}>
       <View style={styles.header}>
         <Pressable
@@ -311,6 +354,10 @@ export const JourneyScreen: React.FC = () => {
         // The cabin is the window now: this area is clear, only the overlays ride on it.
         // Drag to turn, pinch to zoom, double-tap to toggle the close-up — see useCabinCamera.
         <View style={styles.window} {...cabinCamera.panHandlers} onTouchEnd={cabinCamera.onTouchEnd}>
+          {!curtainGone && (
+            <Animated.Image source={PLATFORM_NIGHT} resizeMode="cover"
+              style={[styles.loadingArt, { opacity: curtain.interpolate({ inputRange: [0, 1], outputRange: [0, 0.85] }) }]} />
+          )}
           {overlays}
         </View>
       ) : unity ? (
@@ -325,33 +372,10 @@ export const JourneyScreen: React.FC = () => {
         </TrainWindow>
       )}
 
-      {storyShowing ? (
-        // The station platform: the counsellor's question and the one way on (the concept's
-        // "이제, 2027년으로 출발할까요?" / "기차에 탑승하기 →"). Once pressed, the sheet goes away
-        // and the whole screen is the walk to the seat; the reading panel comes back with chapter 1.
-        <View style={[styles.panel, styles.platformSheet]}>
-          <View style={styles.narrator}>
-            {guide?.avatarImage ? <Image source={guide.avatarImage} style={styles.avatar} /> : null}
-            <Text style={styles.guideName}>{guide?.name}</Text>
-          </View>
-          <View style={styles.bubble}>
-            <Text style={styles.bubbleText}>{t(`journey.beat.${beatLine}` as 'journey.beat.1')}</Text>
-          </View>
-          {onPlatform && !embarking && (
-          <Pressable
-            style={[styles.boardBtn, (s.status !== 'platform' || embarking) && styles.boardBtnWait]}
-            disabled={s.status !== 'platform' || embarking}
-            onPress={board}
-            accessibilityRole="button">
-            {s.status !== 'platform' || embarking ? (
-              <ActivityIndicator color="#1A1330" />
-            ) : (
-              <Text style={styles.boardText}>{t('journey.platform.board')} →</Text>
-            )}
-          </Pressable>
-          )}
-        </View>
-      ) : (
+      {/* One panel from the platform to the last station (30-09, "UI lúc mở đầu nên đồng bộ với phần
+          còn lại"): during the boarding storyboard the counsellor's lines sit where the reading's
+          lines will, the player controls keep their place (dimmed), and the round play button IS
+          "board the train". */}
       <View style={cabinUp ? styles.panel : undefined}>
       <View style={styles.narrator}>
         {guide?.avatarImage ? <Image source={guide.avatarImage} style={styles.avatar} /> : null}
@@ -361,11 +385,11 @@ export const JourneyScreen: React.FC = () => {
 
       <View style={styles.lineBox}>
         <Text style={styles.line} numberOfLines={3}>
-          {line}
+          {storyShowing ? t(`journey.beat.${beatLine}` as 'journey.beat.1') : line}
         </Text>
       </View>
 
-      <View style={styles.progress}>
+      <View style={[styles.progress, storyShowing && styles.dimmed]} pointerEvents={storyShowing ? 'none' : 'auto'}>
         <View style={styles.bar}>
           <View style={[styles.barFill, { width: `${progress * 100}%` }]} />
           <View style={[styles.knob, { left: `${progress * 100}%` }]} />
@@ -377,27 +401,46 @@ export const JourneyScreen: React.FC = () => {
       </View>
 
       <View style={styles.controls}>
-        <Pressable hitSlop={10} onPress={() => { sfx.tap(); s.prev(); }} accessibilityRole="button">
+        <Pressable hitSlop={10} disabled={storyShowing} style={storyShowing && styles.dimmed}
+          onPress={() => { sfx.tap(); s.prev(); }} accessibilityRole="button">
           <Icon name="prev" size={20} color={colors.textSecondary} />
         </Pressable>
-        <Pressable hitSlop={10} onPress={() => s.seekBy(-15)} accessibilityRole="button">
+        <Pressable hitSlop={10} disabled={storyShowing} style={storyShowing && styles.dimmed}
+          onPress={() => s.seekBy(-15)} accessibilityRole="button">
           <Icon name="back15" size={30} />
         </Pressable>
-        <Pressable
-          onPress={() => { sfx.tap(); s.toggle(); }}
-          style={styles.playBtn}
-          disabled={s.status === 'boarding' || s.status === 'transition'}
-          accessibilityRole="button">
-          <Icon name={s.status === 'playing' ? 'pause' : 'play'} size={26} color="#1A1330" />
-        </Pressable>
-        <Pressable hitSlop={10} onPress={() => s.seekBy(15)} accessibilityRole="button">
+        {storyShowing ? (
+          // On the platform: board the train. Afterwards: waiting for the seat and the first line.
+          <Pressable
+            onPress={board}
+            style={styles.playBtn}
+            disabled={!onPlatform || embarking || s.status !== 'platform'}
+            accessibilityRole="button"
+            accessibilityLabel={t('journey.platform.board')}>
+            {onPlatform && !embarking && s.status === 'platform'
+              ? <Icon name="play" size={26} color="#1A1330" />
+              : <ActivityIndicator color="#1A1330" />}
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={() => { sfx.tap(); s.toggle(); }}
+            style={styles.playBtn}
+            disabled={s.status === 'boarding' || s.status === 'transition'}
+            accessibilityRole="button">
+            <Icon name={s.status === 'playing' ? 'pause' : 'play'} size={26} color="#1A1330" />
+          </Pressable>
+        )}
+        <Pressable hitSlop={10} disabled={storyShowing} style={storyShowing && styles.dimmed}
+          onPress={() => s.seekBy(15)} accessibilityRole="button">
           <Icon name="fwd15" size={30} />
         </Pressable>
-        <Pressable hitSlop={10} onPress={() => { sfx.tap(); s.next(); }} accessibilityRole="button">
+        <Pressable hitSlop={10} disabled={storyShowing} style={storyShowing && styles.dimmed}
+          onPress={() => { sfx.tap(); s.next(); }} accessibilityRole="button">
           <Icon name="next" size={20} color={colors.textSecondary} />
         </Pressable>
       </View>
 
+      <View style={storyShowing && styles.dimmed} pointerEvents={storyShowing ? 'none' : 'auto'}>
       <RailwayProgress
         chapters={journey.chapters}
         current={index}
@@ -405,7 +448,7 @@ export const JourneyScreen: React.FC = () => {
         onStation={i => { sfx.tap(); s.goTo(i); }}
       />
       </View>
-      )}
+      </View>
     </SafeAreaView>
     </View>
   );
@@ -416,6 +459,7 @@ const styles = StyleSheet.create({
   unity: { ...absoluteFill },
   root: { flex: 1, backgroundColor: '#07061A' },
   rootOverCabin: { backgroundColor: 'transparent' },
+  curtain: { ...absoluteFill, backgroundColor: '#07061A' },
   // Over the cabin the controls sit on a dark glass panel: the table and the counsellor's lap are
   // under it, the counsellor's face and the window above it.
   panel: {
@@ -432,20 +476,7 @@ const styles = StyleSheet.create({
   chapter: { ...typography.tiny, color: colors.textSecondary, letterSpacing: 1 },
   window: { flex: 1, marginHorizontal: spacing.md, marginTop: spacing.xs },
   loadingArt: { ...absoluteFill, width: '100%', height: '100%', borderRadius: radius.lg, opacity: 0.85 },
-  platformSheet: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md },
-  bubble: {
-    alignSelf: 'flex-start', maxWidth: '92%',
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderRadius: radius.lg, borderBottomLeftRadius: 4,
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
-  },
-  bubbleText: { ...typography.body, color: '#1A1330' },
-  boardBtn: {
-    height: 54, borderRadius: 27, backgroundColor: colors.gold,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  boardBtnWait: { opacity: 0.7 },
-  boardText: { ...typography.body, fontWeight: '700', color: '#1A1330' },
+  dimmed: { opacity: 0.35 },
   boarding: {
     ...absoluteFill,
     alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
