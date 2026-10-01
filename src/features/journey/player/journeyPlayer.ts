@@ -928,7 +928,10 @@ export function cabinMomentOf(
     moment: s.moment,
     cue: s.cue,
     cueSeq: s.cueSeq,
-    shot: s.moment === 'locked' ? 'close' : s.moment === 'premium' ? 'built' : '',
+    // 'wide' (the start framing) between moments, never '': Unity keeps the camera on '' and the
+    // close-up of the last lock stayed on through the next stations (sim QA 01-10). Unity applies a
+    // shot only when it CHANGES, so the player's own pinch still holds within a stretch.
+    shot: s.moment === 'locked' ? 'close' : s.moment === 'premium' ? 'built' : 'wide',
   };
 }
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
@@ -118,7 +118,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
               </Pressable>
             )))}
           </ScrollView>
-          <UnlockNote error={s.unlockError} coins={coins} />
+          <UnlockNote error={s.unlockError} coins={coins} price={price} />
           <Primary label={t('journey.stationEnd.next')} onPress={() => { sfx.tap(); s.nextStation(); }} />
         </View>
       </View>
@@ -146,7 +146,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
         <Pressable style={styles.secondary} disabled={s.unlocking} onPress={() => { sfx.tap(); s.later(); }} accessibilityRole="button">
           <Text style={styles.secondaryText}>{t('journey.moment.later')}</Text>
         </Pressable>
-        <UnlockNote error={s.unlockError} coins={coins} />
+        <UnlockNote error={s.unlockError} coins={coins} price={price} />
       </View>
     );
   }
@@ -155,17 +155,19 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   if (s.stage === 'reveal' && s.reveal) {
     return (
       <View style={styles.center}>
+        <RevealIn>
         <View style={styles.reveal}>
           <Image source={REVEAL_ART[chapter.id] ?? REVEAL_ART_DEFAULT} style={styles.revealArt} resizeMode="cover" />
           <View style={styles.revealBody}>
             <Text style={styles.eyebrow}>{t('journey.card.eyebrow', { year: journey.year })}</Text>
             <Text style={styles.heading}>{s.reveal.title}</Text>
             {s.reveal.months.length > 0 && <Text style={styles.months}>{monthsLabel(s.reveal.months, lang)}</Text>}
-            {s.reveal.description ? <Text style={styles.blurb}>{s.reveal.description}</Text> : null}
+            {s.reveal.description ? <Text style={styles.blurb} numberOfLines={4}>{s.reveal.description}</Text> : null}
             <Text style={styles.stars}>{'★'.repeat(s.reveal.stars)}{'☆'.repeat(Math.max(0, 5 - s.reveal.stars))}</Text>
             <Primary label={t('journey.continue')} onPress={() => { sfx.tap(); s.continueReveal(); }} />
           </View>
         </View>
+        </RevealIn>
       </View>
     );
   }
@@ -183,10 +185,26 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   return null;
 };
 
+/** The reveal card waits for the cabin's unlock burst (Unity plays it on locked → premium) and then
+ *  fades in — shown at once it covered the burst completely (sim QA 01-10). */
+const REVEAL_DELAY_MS = 1200;
+const RevealIn: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const fade = React.useRef(new Animated.Value(0)).current;
+  React.useEffect(() => {
+    const a = Animated.sequence([Animated.delay(REVEAL_DELAY_MS), Animated.timing(fade, { toValue: 1, duration: 450, useNativeDriver: true })]);
+    a.start();
+    return () => a.stop();
+  }, [fade]);
+  return <Animated.View style={[styles.revealIn, { opacity: fade }]}>{children}</Animated.View>;
+};
+
 /** Under an unlock: what went wrong, else the coins the player has. */
-const UnlockNote: React.FC<{ error: string | null; coins: number | null }> = ({ error, coins }) => {
+const UnlockNote: React.FC<{ error: string | null; coins: number | null; price: number | null }> = ({ error, coins, price }) => {
   const t = useT();
-  if (error === 'insufficient') return <Text style={styles.error}>{t('journey.moment.noCoins', { balance: coins ?? 0 })}</Text>;
+  // Stale once the shop has topped the wallet up past the price (sim QA 01-10: "Not enough coins
+  // (you have 500)" stayed under the button after buying 500).
+  const short = coins == null || price == null || coins < price;
+  if (error === 'insufficient' && short) return <Text style={styles.error}>{t('journey.moment.noCoins', { balance: coins ?? 0 })}</Text>;
   if (error === 'failed' || error === 'unknown') return <Text style={styles.error}>{t('journey.moment.failed')}</Text>;
   return coins != null ? <Text style={styles.note}>{t('journey.moment.balance', { balance: coins.toLocaleString() })}</Text> : null;
 };
@@ -247,11 +265,14 @@ const styles = StyleSheet.create({
   error: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
   note: { ...typography.tiny, color: colors.textMuted, textAlign: 'center' },
   reveal: {
-    width: '84%', borderRadius: radius.xl, overflow: 'hidden',
+    width: '84%', maxHeight: '100%', borderRadius: radius.xl, overflow: 'hidden',
     backgroundColor: 'rgba(18,14,40,0.95)', borderWidth: 1, borderColor: 'rgba(233,196,106,0.6)',
   },
-  revealArt: { width: '100%', height: 150 },
-  revealBody: { padding: spacing.lg, gap: spacing.sm, alignItems: 'center' },
+  // The card must fit the window between the header and the panel: past it, its Continue button
+  // left the overlay's bounds and no tap reached it (sim QA 01-10). The art gives way first.
+  revealIn: { width: '100%', maxHeight: '100%', alignItems: 'center' },
+  revealArt: { width: '100%', height: 150, minHeight: 56, flexShrink: 1 },
+  revealBody: { padding: spacing.lg, gap: spacing.sm, alignItems: 'center', flexShrink: 0 },
   eyebrow: { ...typography.tiny, color: colors.gold, letterSpacing: 2 },
   months: { ...typography.h3, color: colors.gold },
   stars: { fontSize: 16, color: colors.gold, letterSpacing: 3 },

@@ -396,7 +396,7 @@ describe('JOURNEY_STATE carries the moment', () => {
     const states = posted.filter(p => p.type === 'JOURNEY_STATE').map(p => p.payload as JourneyStatePayload);
     expect(states.length).toBeGreaterThanOrEqual(2);
     for (const st of states) expect(st).toMatchObject({ moment: 'locked', cue: 'coins', cueSeq: 3, shot: 'close', month: 4 });
-    expect(cabinMomentOf({ moment: '', cue: '', cueSeq: 0 }).shot).toBe('');
+    expect(cabinMomentOf({ moment: '', cue: '', cueSeq: 0 }).shot).toBe('wide');
   });
 
   it('the monthly station rides through the arrival seasons, the end of the line is the ending scene', () => {
