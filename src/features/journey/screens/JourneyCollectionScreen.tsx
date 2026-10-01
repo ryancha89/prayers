@@ -36,13 +36,32 @@ export const JourneyCollectionScreen: React.FC = () => {
     keepJourney({ journeyId: journey.id, counselorId: s.counselorId, tone: s.tone, lang: s.lang, year: journey.year, content: s.content });
   }, [journey, s.content, s.counselorId, s.tone, s.lang, keepJourney]);
 
-  if (!journey) return null;
+  // Back from the collection leaves the journey: it is the end of the line.
+  const leave = () => {
+    sfx.back();
+    s.stop();
+    navigation.goBack();
+  };
+
+  // Never an empty screen: with no journey in the player (stopped elsewhere) a bare `null` was a
+  // black page with no back button (sim 01-10). The header still gets the player out.
+  if (!journey) {
+    return (
+      <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.root}>
+        <View style={styles.header}>
+          <Pressable hitSlop={12} onPress={leave} accessibilityRole="button">
+            <Icon name="back" size={22} />
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
   const rows = collectionOf(journey, s.content, heard ?? []);
 
   return (
     <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.root}>
       <View style={styles.header}>
-        <Pressable hitSlop={12} onPress={() => { sfx.back(); navigation.goBack(); }} accessibilityRole="button">
+        <Pressable hitSlop={12} onPress={leave} accessibilityRole="button">
           <Icon name="back" size={22} />
         </Pressable>
         <View style={styles.flex} />

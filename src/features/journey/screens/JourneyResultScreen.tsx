@@ -106,7 +106,11 @@ export const JourneyResultScreen: React.FC = () => {
           hitSlop={12}
           onPress={() => {
             sfx.back();
-            s.stop();
+            // Opened from the collection ("내 컬렉션 보기"): back is a step back to it, the journey
+            // stays. Stopping here emptied the collection and left a black screen with no way out
+            // (sim 01-10). From anywhere else the result is the last screen: back leaves the journey.
+            const fromCollection = navigation.getState().routes.some(r => r.name === 'JourneyCollection');
+            if (!fromCollection) s.stop();
             navigation.goBack();
           }}
           accessibilityRole="button">
