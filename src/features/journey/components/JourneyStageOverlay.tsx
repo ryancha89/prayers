@@ -6,7 +6,7 @@ import { absoluteFill, colors, radius, spacing, typography } from '../../../shar
 import { useLang, useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import { partsOf, teaserOf, useJourneyPlayer } from '../player/journeyPlayer';
-import { REVEAL_ART, REVEAL_ART_DEFAULT } from '../art';
+import { CARD_BACKS, REVEAL_ART, REVEAL_ART_DEFAULT } from '../art';
 import { monthsLabel } from '../format';
 import { useCoins } from '../../coins/store/coinStore';
 import { useScreen } from '../../../shared/device/screen';
@@ -65,7 +65,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
               {[0, 1, 2].map(i => (
                 <Pressable key={i} style={[styles.cardBack, landscape && styles.cardBackSide]} onPress={() => { sfx.select(); s.pickCard(i); }}
                   accessibilityRole="button" accessibilityLabel={`${i + 1}`}>
-                  <Text style={styles.cardBackMark}>✦</Text>
+                  <Image source={CARD_BACKS[i]} style={styles.cardBackArt} resizeMode="cover" />
                 </Pressable>
               ))}
             </View>
@@ -267,11 +267,11 @@ const styles = StyleSheet.create({
   prompt: { ...typography.bodyStrong, color: colors.textPrimary, textAlign: 'center' },
   cardRow: { flexDirection: 'row', gap: spacing.md },
   cardBack: {
-    width: 86, height: 128, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#2A1F5A', borderWidth: 2, borderColor: colors.gold,
+    width: 86, height: 128, borderRadius: radius.md, overflow: 'hidden',
+    backgroundColor: '#2A1F5A', borderWidth: 1, borderColor: colors.gold,
   },
   cardBackSide: { width: 72, height: 108 },
-  cardBackMark: { fontSize: 30, color: colors.gold },
+  cardBackArt: { width: '100%', height: '100%' },
   choice: {
     alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
     paddingVertical: spacing.md, paddingHorizontal: spacing.lg, borderRadius: radius.pill,
