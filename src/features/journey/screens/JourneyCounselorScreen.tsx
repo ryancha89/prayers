@@ -16,6 +16,7 @@ import { JOURNEYS } from '../data/journeys';
 import { useJourneyPlayer } from '../player/journeyPlayer';
 import { BEAT_LINES, prefetchBeatLines } from '../player/beatVoice';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
+import { CoinPill } from '../../coins/components/CoinPill';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'JourneyCounselor'>;
@@ -56,6 +57,7 @@ export const JourneyCounselorScreen: React.FC = () => {
           <Pressable hitSlop={12} onPress={() => { sfx.back(); navigation.goBack(); }} accessibilityRole="button">
             <Icon name="back" size={22} />
           </Pressable>
+          <CoinPill />
         </View>
         <ScrollView contentContainerStyle={styles.scroll}>
           <Text style={styles.eyebrow}>{t(journey.eyebrow)}</Text>
@@ -93,7 +95,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
   sky: { position: 'absolute', left: 0, right: 0, top: 0, height: 320 },
-  header: { paddingHorizontal: spacing.xl, paddingTop: spacing.sm },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingTop: spacing.sm },
   scroll: { padding: spacing.xl, paddingTop: 150, gap: spacing.md },
   eyebrow: { ...typography.tiny, color: colors.gold, letterSpacing: 3 },
   title: { ...typography.hero, color: colors.textPrimary },

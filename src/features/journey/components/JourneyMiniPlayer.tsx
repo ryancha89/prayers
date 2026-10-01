@@ -48,7 +48,10 @@ export const JourneyMiniPlayer: React.FC<{ aboveTabs: boolean; hidden: boolean; 
             {guide ? ` · ${guide.name}` : ''}
           </Text>
         </View>
-        <Pressable hitSlop={12} onPress={() => { sfx.tap(); s.toggle(); }} accessibilityRole="button" style={styles.play}>
+        {/* At a lock or an overlay (a title card, a choice) play cannot carry on — the answer lives
+            on the train, so go there. */}
+        <Pressable hitSlop={12} onPress={() => { sfx.tap(); if (s.moment === 'locked' || s.stage !== '') onOpen(); else s.toggle(); }}
+          accessibilityRole="button" style={styles.play}>
           <Icon name={s.status === 'playing' ? 'pause' : 'play'} size={16} color={colors.bg} />
         </Pressable>
       </View>

@@ -20,7 +20,7 @@ import { fetchTicketBalance } from '../../counseling/api/tickets';
 import { checkIn, fetchAttendance, type AttendanceStatus } from '../../tickets/api/attendance';
 import { PRAYER_TICKET_ART } from '../../tickets/assets/art';
 import { JourneyHeroCard } from '../../journey/components/JourneyHeroCard';
-import { NEWYEAR_2027 } from '../../journey/data/journeys';
+import { NEWYEAR_2027, journeyEntryRoute } from '../../journey/data/journeys';
 import { journeyActive, useJourneyPlayer } from '../../journey/player/journeyPlayer';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -170,8 +170,9 @@ export const HomeScreen: React.FC = () => {
               onPress={() => {
                 sfx.select();
                 if (journeyRunning) navigation.navigate('Journey');
-                // Through the boarding pass: it buys the journey, or sends an owner straight on.
-                else navigation.navigate('JourneyPass', { journeyId: NEWYEAR_2027.id });
+                // A journey sold whole goes through its boarding pass; 2027 is free to board (coins
+                // by the moment, 01-10) and goes straight to choosing the guide.
+                else navigation.navigate(journeyEntryRoute(NEWYEAR_2027), { journeyId: NEWYEAR_2027.id });
               }}
             />
             <Text style={styles.title}>{t('home.prompt')}</Text>

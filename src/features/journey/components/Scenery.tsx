@@ -110,6 +110,18 @@ export const SCENES: Record<SceneKey, Scene> = {
     ],
     ground: '#120E26',
   },
+  // The end of the line (01-10): the train pulling in to its final station at dawn — the 2D stand-in
+  // for Unity's own 'ending' scene.
+  ending: {
+    sky: ['#1E1A4A', '#8A5A8E', '#FFD9A0'],
+    stars: 6,
+    body: { kind: 'sun', x: 0.5, y: 0.74, r: 0.12, color: '#FFE6B0', glow: 'rgba(255,220,170,0.5)', rise: true },
+    layers: [
+      { kind: 'hills', color: '#3E2E66', base: 0.8, amp: 0.05, seed: 71, period: 140000 },
+      { kind: 'poles', color: '#140F2A', period: 30000, lamp: '#FFE0A6' },
+    ],
+    ground: '#120E26',
+  },
 };
 
 // ── Deterministic shapes ─────────────────────────────────────────────────────────────────────

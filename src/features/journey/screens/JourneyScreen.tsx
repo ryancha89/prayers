@@ -13,11 +13,14 @@ import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useArchiveStore } from '../../archive/store/archiveStore';
 import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { JOURNEYS } from '../data/journeys';
-import { TRANSITION_MS, useJourneyPlayer, type ActiveCard } from '../player/journeyPlayer';
+import { TRANSITION_MS, cabinMomentOf, currentPart, teaserOf, useJourneyPlayer, type ActiveCard } from '../player/journeyPlayer';
 import { BEAT_LINES, dropPendingBeatLines, openStoryboard, prefetchBeatLines, sayBeatLine, stopBeatVoice } from '../player/beatVoice';
 import { TrainWindow } from '../components/TrainWindow';
 import { JourneyBackdrop } from '../components/JourneyBackdrop';
 import { RailwayProgress } from '../components/RailwayProgress';
+import { JourneyStageOverlay } from '../components/JourneyStageOverlay';
+import { CoinPill } from '../../coins/components/CoinPill';
+import { useCoins } from '../../coins/store/coinStore';
 import { FortuneCardOverlay } from '../components/FortuneCardOverlay';
 import { StationTransition } from '../components/StationTransition';
 import { clock, monthsLabel } from '../format';
@@ -30,6 +33,11 @@ import { useCabinCamera } from '../components/useCabinCamera';
 /** What shows while the 3D cabin loads: the station's night sky, the platform's own painting — not
  *  the drawn 2D window, which flashed up for a moment before every 3D journey (29-09). */
 const PLATFORM_NIGHT = require('../assets/platform_night.jpg');
+/** A hard month on screen shakes the carriage: 1★ hardest, 2★ or one of the reading's own caution
+ *  months half (the model often rates those 3★), anything else rides smooth. */
+const roughOf = (card: { stars: number; months: number[] } | null | undefined, caution: number[] = []) =>
+  !card ? 0 : card.stars <= 1 ? 1 : card.stars <= 2 || card.months.some(m => caution.includes(m)) ? 0.5 : 0;
+
 /** How long the counsellor's invitation is on screen before they lead the player aboard. */
 const AUTO_BOARD_MS = 3500;
 
@@ -68,10 +76,25 @@ export const JourneyScreen: React.FC = () => {
   const addMemory = useArchiveStore(a => a.add);
   const journey = s.journeyId ? JOURNEYS[s.journeyId] : null;
 
-  // The last station reached → the destination.
+  // The journey finished → the ending painting, then the collection (mockup panels 21-22).
   useEffect(() => {
-    if (s.status === 'done') navigation.replace('JourneyResult');
+    if (s.status === 'done') navigation.replace('JourneyEnding');
   }, [s.status, navigation]);
+
+  // An unlock refused because the journey pass is not owned: for a journey sold through the pass,
+  // the pass screen is the way on. A coin journey (2027, `pass: false`) never goes there. The
+  // error is cleared so coming back does not bounce.
+  useEffect(() => {
+    if (s.unlockError !== 'purchase' || !s.journeyId) return;
+    useJourneyPlayer.setState({ unlockError: null });
+    if (JOURNEYS[s.journeyId]?.pass) navigation.navigate('JourneyPass', { journeyId: s.journeyId });
+  }, [s.unlockError, s.journeyId, navigation]);
+
+  // Not enough coins for an unlock: the coin shop opens on the spot (mockup, 01-10). Nothing was
+  // charged; the lock is still there when the sheet closes.
+  useEffect(() => {
+    if (s.unlockError === 'insufficient') useCoins.getState().openShop();
+  }, [s.unlockError]);
 
   // Boarding refused for want of birth data → the player went to the form → came back with it.
   // Leave again on their behalf; a "try again" tap after filling in a form reads as the app not
@@ -229,7 +252,9 @@ export const JourneyScreen: React.FC = () => {
         transitionTo: s.transitionTo != null ? sceneKeyOf(journey.chapters[s.transitionTo]?.background) : '',
         transitionMs: TRANSITION_MS,
         month,
-        speaking: s.status === 'playing' || beatSpeaking,
+        speaking: s.status === 'playing' || beatSpeaking || s.teaserSpeaking,
+        rough: roughOf(s.activeCard, s.content?.summary.cautionMonths),
+        ...cabinMomentOf(s),
       }
     : null;
   const cabinKey = cabinState ? JSON.stringify(cabinState) : '';
@@ -248,12 +273,23 @@ export const JourneyScreen: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unity, cabinKey]);
   const guide = s.counselorId ? getLocalizedCounselor(s.counselorId, lang) : undefined;
-  const narration = s.content?.chapters.find(c => c.id === chapter?.id)?.narration ?? '';
+  // The line on screen follows the part being told — each part is its own clip.
+  const narration = currentPart(s)?.text ?? '';
   const sentences = useMemo(() => sentencesOf(narration), [narration]);
   const progress = s.duration > 0 ? Math.min(1, s.position / s.duration) : 0;
+  // A lock or an overlay holds the narration: the transport waits with it.
+  const waiting = s.moment === 'locked' || s.stage !== '';
+  // At a lock the counsellor's offer is the line; leaving a station has its own; an overlay that
+  // carries its own words leaves the box empty rather than repeat a stale sentence.
   const line = s.status === 'transition' || s.status === 'boarding'
     ? ''
-    : [...sentences].reverse().find(x => x.start <= progress)?.text ?? sentences[0]?.text ?? '';
+    : s.moment === 'locked' && s.stage === ''
+      ? teaserOf(s)
+      : s.stage === 'stationEnd'
+        ? t('journey.stationEnd.line')
+        : s.stage !== '' && s.stage !== 'ending'
+          ? ''
+          : [...sentences].reverse().find(x => x.start <= progress)?.text ?? sentences[0]?.text ?? '';
 
   const saveCard = useCallback(
     (card: ActiveCard) => {
@@ -278,10 +314,6 @@ export const JourneyScreen: React.FC = () => {
     );
   }
 
-  // "Chapter 2/6": the stations with a reading on them — departure counts, the terminus does not.
-  const numbered = journey.chapters.length - 1;
-  const chapterLabel =
-    index >= numbered ? t('journey.destination') : t('journey.chapter', { n: index + 1, total: numbered });
   const speed = s.status === 'transition' ? 3.2 : s.status === 'boarding' ? 0.25 : s.status === 'paused' ? 0 : 1;
 
   const overlays = (
@@ -323,6 +355,7 @@ export const JourneyScreen: React.FC = () => {
           <FortuneCardOverlay card={s.activeCard} year={journey.year} onDone={s.dismissCard} onSave={saveCard} />
         </View>
       )}
+      <JourneyStageOverlay journey={journey} />
     </>
   );
 
@@ -347,7 +380,7 @@ export const JourneyScreen: React.FC = () => {
           <Icon name="back" size={22} />
         </Pressable>
         <Text style={styles.brand}>{t('journey.header', { year: journey.year })}</Text>
-        <Text style={styles.chapter}>{chapterLabel}</Text>
+        <CoinPill />
       </View>
 
       {cabinUp ? (
@@ -377,16 +410,19 @@ export const JourneyScreen: React.FC = () => {
           lines will, the player controls keep their place (dimmed), and the round play button IS
           "board the train". */}
       <View style={cabinUp ? styles.panel : undefined}>
-      <View style={styles.narrator}>
-        {guide?.avatarImage ? <Image source={guide.avatarImage} style={styles.avatar} /> : null}
-        <Text style={styles.guideName}>{guide?.name}</Text>
-        <Text style={styles.station}>{chapter.subtitle ? t(chapter.subtitle) : ''}</Text>
-      </View>
-
-      <View style={styles.lineBox}>
-        <Text style={styles.line} numberOfLines={3}>
-          {storyShowing ? t(`journey.beat.${beatLine}` as 'journey.beat.1') : line}
-        </Text>
+      {/* The dialogue box (mockup): who is speaking, the line, and "››" while the voice goes on. */}
+      <View style={styles.dialogue}>
+        <View style={styles.narrator}>
+          {guide?.avatarImage ? <Image source={guide.avatarImage} style={styles.avatar} /> : null}
+          <Text style={styles.guideName}>{guide?.name}</Text>
+          <Text style={styles.station}>{chapter.subtitle ? t(chapter.subtitle) : ''}</Text>
+        </View>
+        <View style={styles.lineBox}>
+          <Text style={styles.line} numberOfLines={3}>
+            {storyShowing ? t(`journey.beat.${beatLine}` as 'journey.beat.1') : line}
+          </Text>
+        </View>
+        {s.status === 'playing' && <Text style={styles.more}>››</Text>}
       </View>
 
       <View style={[styles.progress, storyShowing && styles.dimmed]} pointerEvents={storyShowing ? 'none' : 'auto'}>
@@ -424,8 +460,8 @@ export const JourneyScreen: React.FC = () => {
         ) : (
           <Pressable
             onPress={() => { sfx.tap(); s.toggle(); }}
-            style={styles.playBtn}
-            disabled={s.status === 'boarding' || s.status === 'transition'}
+            disabled={s.status === 'boarding' || s.status === 'transition' || waiting}
+            style={[styles.playBtn, waiting && styles.dimmed]}
             accessibilityRole="button">
             <Icon name={s.status === 'playing' ? 'pause' : 'play'} size={26} color="#1A1330" />
           </Pressable>
@@ -491,6 +527,11 @@ const styles = StyleSheet.create({
   avatar: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(233,196,106,0.5)' },
   guideName: { ...typography.caption, color: colors.textPrimary, fontWeight: '700' },
   station: { ...typography.caption, color: colors.textMuted },
+  dialogue: {
+    marginHorizontal: spacing.md, marginTop: spacing.md, paddingBottom: spacing.sm, borderRadius: radius.lg,
+    borderWidth: 1, borderColor: 'rgba(233,196,106,0.3)', backgroundColor: 'rgba(18,14,40,0.55)',
+  },
+  more: { position: 'absolute', right: spacing.lg, bottom: spacing.xs, ...typography.bodyStrong, color: colors.gold },
   lineBox: { minHeight: 76, justifyContent: 'center', paddingHorizontal: spacing.xl, marginTop: spacing.sm },
   line: { fontSize: 18, lineHeight: 27, fontWeight: '600', color: colors.textPrimary },
   progress: { paddingHorizontal: spacing.xl, marginTop: spacing.sm },

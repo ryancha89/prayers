@@ -44,6 +44,10 @@ export type RootStackParamList = {
   JourneyPass: { journeyId: string };
   Journey: undefined;
   JourneyResult: undefined;
+  /** After the last station: the ending painting, then the collection (mockup panels 21-22). */
+  JourneyEnding: undefined;
+  /** The journey's stations with how much of each is open; tapping one rides back to it. */
+  JourneyCollection: undefined;
   /** The daily check-in: calendar and rules. `justChecked` when arriving from a check-in just made. */
   Attendance: { justChecked?: { granted: number; capReached: boolean } } | undefined;
   /** One category of the 아카이브: its entries and the form. */

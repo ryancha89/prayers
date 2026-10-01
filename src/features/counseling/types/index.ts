@@ -342,6 +342,18 @@ export interface JourneyStatePayload {
   month: number;
   /** The narration voice is playing — the counsellor gestures while it does. */
   speaking: boolean;
+  /** 0-1: a hard month's card is up (1★ = 1; 2★ or a caution month = 0.5; else 0) — the cabin
+   *  jolts while it is. */
+  rough: number;
+  /** A paid moment (spec 003 "Paid moments — Unity side"): '' none, `locked` the unlock button is
+   *  up, `premium` the unlocked segment is playing. locked → premium is the cabin's unlock burst. */
+  moment?: '' | 'locked' | 'premium';
+  /** One-shot effect over the table: reveal · sparkle · stars · coins · hearts · leaves. Fired once
+   *  per NEW cueSeq; the first state after JOURNEY_READY is a replay and is not fired. */
+  cue?: string;
+  cueSeq?: number;
+  /** Camera stop, applied when it changes: wide · built · close; '' leaves the camera alone. */
+  shot?: '' | 'wide' | 'built' | 'close';
 }
 
 export interface JourneyVoicePayload {

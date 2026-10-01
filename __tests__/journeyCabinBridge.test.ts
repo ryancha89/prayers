@@ -10,7 +10,7 @@ import type { JourneyStatePayload } from '../src/features/counseling/types';
 
 const init = { journeyId: 'newyear-2027', counselorId: 'yunjung', lang: 'ko' };
 const state: JourneyStatePayload = {
-  scene: 'station', status: 'playing', transitionTo: '', transitionMs: 2800, month: 0, speaking: true,
+  scene: 'station', status: 'playing', transitionTo: '', transitionMs: 2800, month: 0, speaking: true, rough: 0,
 };
 
 function bridgeWithView() {

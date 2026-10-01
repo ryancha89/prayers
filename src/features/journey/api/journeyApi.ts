@@ -2,7 +2,7 @@ import { apiBase } from '../../../shared/config/api';
 import { devlog } from '../../../shared/devlog';
 import { authedFetch } from '../../auth/api/headers';
 import type { Lang } from '../../../shared/i18n';
-import type { JourneyContent } from '../types';
+import type { JourneyCard, JourneyContent, JourneyPart, JourneySummary, StationCard } from '../types';
 import type { CounselingSubject } from '../../counseling/types';
 
 /**
@@ -43,7 +43,61 @@ export function journeyBirthOf(subject?: CounselingSubject): JourneyBirth | null
 }
 
 export type JourneyContentError = 'no-chart' | 'purchase' | 'content';
-export type JourneyContentResult = { content: JourneyContent } | { error: JourneyContentError };
+/** `coinBalance`: the account's coins as of this answer (null from a server without moments). */
+export type JourneyContentResult = { content: JourneyContent; coinBalance?: number | null } | { error: JourneyContentError };
+
+export function mapCard(k: any): JourneyCard {
+  return {
+    at: Number(k?.at ?? 0.5),
+    title: String(k?.title ?? ''),
+    months: Array.isArray(k?.months) ? k.months.map(Number) : [],
+    description: String(k?.description ?? ''),
+    stars: Number(k?.stars ?? 3),
+  };
+}
+
+/** A server part. A locked one is kept text-less even if a field slipped through: what plays is
+ *  only ever what was unlocked. */
+export function mapPart(p: any): JourneyPart {
+  const unlocked = p?.unlocked !== false;
+  return {
+    momentId: p?.moment_id ? String(p.moment_id) : null,
+    unlocked,
+    label: p?.label ? String(p.label) : null,
+    teaser: p?.teaser ? String(p.teaser) : null,
+    text: unlocked && p?.text != null ? String(p.text) : null,
+    cards: unlocked ? (p?.cards ?? []).map(mapCard) : [],
+  };
+}
+
+export function mapSummary(x: any): JourneySummary {
+  return {
+    bestMonths: x?.best_months ?? [],
+    cautionMonths: x?.caution_months ?? [],
+    keywords: x?.keywords ?? [],
+    months: (x?.months ?? [])
+      .map((m: any) => ({
+        month: Number(m.month),
+        ganji: String(m.ganji ?? ''),
+        headline: String(m.headline ?? ''),
+        stars: Number(m.stars ?? 3),
+      }))
+      .filter((m: { month: number }) => m.month >= 1 && m.month <= 12),
+  };
+}
+
+/** A server chapter. One without `parts` (a server from before the paid moments) is one free part. */
+function mapChapter(c: any): JourneyContent['chapters'][number] {
+  const narration = String(c?.narration ?? '');
+  const cards = (c?.cards ?? []).map(mapCard);
+  const parts: JourneyPart[] = Array.isArray(c?.parts) && c.parts.length
+    ? c.parts.map(mapPart)
+    : [{ momentId: null, unlocked: true, label: null, teaser: null, text: narration, cards }];
+  const card: StationCard | null = c?.card?.title
+    ? { title: String(c.card.title), line: String(c.card.line ?? '') }
+    : null;
+  return { id: String(c?.id), narration, cards, parts, card };
+}
 
 /**
  * The reading for a journey, in one counsellor's voice. The first call for a player generates it
@@ -77,32 +131,11 @@ export async function fetchJourneyContent(
       journey: b.journey,
       year: b.year,
       counselor: b.counselor,
-      chapters: (b.chapters ?? []).map((c: any) => ({
-        id: String(c.id),
-        narration: String(c.narration ?? ''),
-        cards: (c.cards ?? []).map((k: any) => ({
-          at: Number(k.at ?? 0.5),
-          title: String(k.title ?? ''),
-          months: Array.isArray(k.months) ? k.months.map(Number) : [],
-          description: String(k.description ?? ''),
-          stars: Number(k.stars ?? 3),
-        })),
-      })),
-      summary: {
-        bestMonths: b.summary?.best_months ?? [],
-        cautionMonths: b.summary?.caution_months ?? [],
-        keywords: b.summary?.keywords ?? [],
-        months: (b.summary?.months ?? [])
-          .map((m: any) => ({
-            month: Number(m.month),
-            ganji: String(m.ganji ?? ''),
-            headline: String(m.headline ?? ''),
-            stars: Number(m.stars ?? 3),
-          }))
-          .filter((m: { month: number }) => m.month >= 1 && m.month <= 12),
-      },
+      chapters: (b.chapters ?? []).map(mapChapter),
+      summary: mapSummary(b.summary),
+      ...(b.moment_price != null ? { momentPrice: Number(b.moment_price) } : {}),
     };
-    return { content };
+    return { content, coinBalance: b.coin_balance != null ? Number(b.coin_balance) : null };
   } catch {
     return { error: 'content' };
   }

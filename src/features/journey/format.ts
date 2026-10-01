@@ -18,10 +18,11 @@ export function monthLabel(m: number, lang: Lang): string {
   }
 }
 
-/** A month with its calendar year: the journey's months run 입춘 to 입춘, so month 1 is January of
- *  the year AFTER the journey's. "2028년 1월", "Jan 2028", "2028年1月", "Th1/2028". */
+/** A month with its year. Since server v2 (01-10) the months are the journey year's calendar
+ *  January–December, so the year is always the journey's: "2027년 1월", "Jan 2027", "2027年1月",
+ *  "Th1/2027". (Before it they ran 입춘 to 입춘 and month 1 was the next January.) */
 export function monthWithYear(journeyYear: number, m: number, lang: Lang): string {
-  const y = m === 1 ? journeyYear + 1 : journeyYear;
+  const y = journeyYear;
   switch (lang) {
     case 'ko':
       return `${y}년 ${m}월`;

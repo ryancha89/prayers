@@ -16,6 +16,7 @@ import { backgroundMusic } from './shared/audio/backgroundMusic';
 import { preload as preloadSfx } from './shared/audio/sfx';
 import { create } from 'zustand';
 import { JourneyMiniPlayer } from './features/journey/components/JourneyMiniPlayer';
+import { CoinShopSheet } from './features/coins/components/CoinShopSheet';
 import { useJourneyPlayer } from './features/journey/player/journeyPlayer';
 
 const queryClient = new QueryClient();
@@ -95,7 +96,7 @@ preloadSfx();
 const useCurrentRoute = create<{ name: string | null }>(() => ({ name: null }));
 
 /** Screens the mini player stays off: the journey's own screens, and the rooms that own the sound. */
-const NO_MINI_PLAYER = new Set(['Journey', 'JourneyResult', 'JourneyCounselor', 'JourneyPass', 'Login', 'ProfileSetup']);
+const NO_MINI_PLAYER = new Set(['Journey', 'JourneyResult', 'JourneyEnding', 'JourneyCollection', 'JourneyCounselor', 'JourneyPass', 'Login', 'ProfileSetup']);
 
 const syncAudioToRoute = () => {
   const route = navigationRef.isReady() ? navigationRef.getCurrentRoute() : undefined;
@@ -155,6 +156,8 @@ const App: React.FC = () => {
           }
           onOpen={() => navigationRef.isReady() && navigationRef.navigate('Journey')}
         />
+        {/* One coin shop for the whole app: the header pills and the journey's locks open it. */}
+        <CoinShopSheet />
         {/* Overlay splash: the home screen is already mounted beneath, so the
             final fade lands directly on the main screen (storyboard 4.0s). */}
         {!splashDone && <SplashScreen onDone={onSplashDone} />}

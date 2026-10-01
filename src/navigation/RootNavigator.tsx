@@ -19,6 +19,8 @@ import { JourneyCounselorScreen } from '../features/journey/screens/JourneyCouns
 import { JourneyPassScreen } from '../features/journey/screens/JourneyPassScreen';
 import { JourneyScreen } from '../features/journey/screens/JourneyScreen';
 import { JourneyResultScreen } from '../features/journey/screens/JourneyResultScreen';
+import { JourneyEndingScreen } from '../features/journey/screens/JourneyEndingScreen';
+import { JourneyCollectionScreen } from '../features/journey/screens/JourneyCollectionScreen';
 import { ArchiveSectionScreen } from '../features/archive/screens/ArchiveSectionScreen';
 import { LegalScreen } from '../features/profile/screens/LegalScreen';
 import { useAuthStore } from '../features/auth/store/authStore';
@@ -73,6 +75,8 @@ export const RootNavigator: React.FC = () => {
         full-screen pop gesture took every rightward drag as "back". The header keeps its back button. */}
     <Stack.Screen name="Journey" component={JourneyScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     <Stack.Screen name="JourneyResult" component={JourneyResultScreen} options={{ animation: 'fade' }} />
+    <Stack.Screen name="JourneyEnding" component={JourneyEndingScreen} options={{ animation: 'fade' }} />
+    <Stack.Screen name="JourneyCollection" component={JourneyCollectionScreen} options={{ animation: 'fade' }} />
     <Stack.Screen name="ArchiveSection" component={ArchiveSectionScreen} />
     <Stack.Screen name="MeditationRoom" component={MeditationRoomScreen} />
     <Stack.Screen name="Legal" component={LegalScreen} />

@@ -32,7 +32,9 @@ export type IconName =
   | 'next'
   | 'back15'
   | 'fwd15'
-  | 'lotus';
+  | 'lotus'
+  | 'lock'
+  | 'coin';
 
 type Draw = (color: string) => React.ReactNode;
 
@@ -167,6 +169,20 @@ const ICONS: Record<IconName, Draw> = {
       <Path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" stroke={c} />
       <Polyline points="20 3.5 17.3 6.7 20.5 8.6" stroke={c} />
       <SvgText x="12" y="15.2" fontSize="7.5" fontWeight="700" fill={c} stroke="none" textAnchor="middle">15</SvgText>
+    </>
+  ),
+  // The Journey's paid moment (01-10). Drawn, not 🔒/🪙: emoji came out as "?" boxes on the
+  // simulator's font set (the mini player's 🚂 did), and 🪙 is newer still.
+  lock: c => (
+    <>
+      <Path d="M6 11h12v9H6z" stroke={c} />
+      <Path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3" stroke={c} />
+    </>
+  ),
+  coin: c => (
+    <>
+      <Circle cx="12" cy="12" r="8.5" stroke={c} />
+      <Circle cx="12" cy="12" r="5" stroke={c} />
     </>
   ),
   // A closed book with a bookmark — the 아카이브 tab.

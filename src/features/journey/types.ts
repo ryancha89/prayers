@@ -22,7 +22,9 @@ export type SceneKey =
   | 'springSunset'
   | 'forestLake'
   | 'sunrise'
-  | 'arrival';
+  | 'arrival'
+  /** The final station: the train pulling in at the end of the line (Unity adds its own). */
+  | 'ending';
 
 /** Where a chapter's audio layers come from. Voice is the narration (TTS); bgm and ambient are
  *  bundled files, optional — `null` is silence on that layer. */
@@ -43,6 +45,33 @@ export interface FortuneCard {
   saveable: boolean;
 }
 
+/** One-shot effects the cabin plays over the table (Unity JourneyMomentPlan.Cues). `reveal` is the
+ *  unlock burst Unity plays by itself on locked → premium; RN sends the others. */
+export type MomentCue = 'reveal' | 'sparkle' | 'stars' | 'coins' | 'hearts' | 'leaves';
+
+/**
+ * How the app presents a paid moment (Jeongmin 01-10). The moments themselves — where they are,
+ * whether they are paid for, what they say — come from the server, as a chapter's `parts`; the app
+ * only adds the cabin effect and a fallback offer for a server that sends no teaser.
+ */
+export interface MomentPresentation {
+  /** The effect a beat after the unlock. Default `stars`. */
+  cue?: MomentCue;
+  /** Shown (and voiced) at the lock when the server sent no teaser. */
+  teaser?: TranslationKey;
+}
+
+/**
+ * What a station asks of the player besides listening (the 2027 mockup, 01-10):
+ * - `pickCard`: before the reading, pick one of three face-down cards; it turns over to the
+ *   server's chapter `card`.
+ * - `branch`: after the free part, choose which of the two paid parts to hear first.
+ * - `quarters`: after the free part, a list of the paid parts (the months by quarter) to open in
+ *   any order.
+ * - `ending`: the last station; its part ends on "finish the journey".
+ */
+export type StationInteraction = 'pickCard' | 'branch' | 'quarters' | 'ending';
+
 export interface Chapter {
   /** Matches the server's chapter id. */
   id: string;
@@ -50,6 +79,16 @@ export interface Chapter {
   /** Station name on the rail. */
   title: TranslationKey;
   subtitle?: TranslationKey;
+  /** 1… for a station with a title card on arrival ("1. 사회운 (Social & Career)"); none = no card. */
+  number?: number;
+  /** The title card's heading and one-line description. */
+  heading?: TranslationKey;
+  blurb?: TranslationKey;
+  interaction?: StationInteraction;
+  /** The question over the two buttons of a `branch` station. */
+  branchPrompt?: TranslationKey;
+  /** Not drawn on the rail (the final station is the end of the line, not a stop on it). */
+  hideOnRail?: boolean;
   background: BackgroundMedia;
   /** Filled from the server when the journey is boarded. */
   narrationText?: string;
@@ -75,9 +114,17 @@ export interface Journey {
   counselors: JourneyCounselor[];
   chapters: Chapter[];
   audio: AudioLayers;
+  /** Presentation of the paid moments, by server moment id (`career#0`). */
+  moments?: Record<string, MomentPresentation>;
+  /** For a moment id not in `moments`. */
+  momentDefault?: MomentPresentation;
+  /** Sold as a whole through the boarding pass (JourneyPassScreen). False/absent: free to board,
+   *  paid by the moment in coins. */
+  pass?: boolean;
 }
 
-/** One of the year's twelve months (입춘 기준: 2 … 12, then 1 = January of the next year). */
+/** One of the year's twelve months — calendar January to December of the journey's year (server v2;
+ *  before it, the months ran 입춘 to 입춘). */
 export interface JourneyMonth {
   month: number;
   /** The month pillar, two characters. */
@@ -87,11 +134,51 @@ export interface JourneyMonth {
   stars: number;
 }
 
+export type JourneyCard = Omit<FortuneCard, 'saveable'>;
+
+/** A topic station's free card — what the picked card turns over to ("새로운 도약"). */
+export interface StationCard {
+  title: string;
+  line: string;
+}
+
+/**
+ * One stretch of a chapter's narration, told and voiced on its own. Part 0 is always free; a later
+ * part is a paid moment (`momentId` "career#0"). Locked, it carries only its `teaser` — the server
+ * sends no text and no cards for it, so nothing on the phone can play what was not paid for.
+ */
+export interface JourneyPart {
+  momentId: string | null;
+  unlocked: boolean;
+  /** A paid part's short name, in the reading's language — the branch button, the quarter row
+   *  ("1~3월"), the collection. Null on a free part. */
+  label: string | null;
+  /** The counsellor's offer at the lock, in the reading's language. Null on a free part. */
+  teaser: string | null;
+  /** Null while locked. */
+  text: string | null;
+  /** `at` is 0-1 within THIS part's text. */
+  cards: JourneyCard[];
+}
+
+export interface JourneySummary {
+  /** Empty until every moment is unlocked (the server holds them back). */
+  bestMonths: number[];
+  cautionMonths: number[];
+  keywords: string[];
+  /** Only the months of unlocked quarters. Calendar months of the journey's year. */
+  months: JourneyMonth[];
+}
+
 /** The reading the server returned for one journey + counsellor. */
 export interface JourneyContent {
   journey: string;
   year: number;
   counselor: string;
-  chapters: { id: string; narration: string; cards: Omit<FortuneCard, 'saveable'>[] }[];
-  summary: { bestMonths: number[]; cautionMonths: number[]; keywords: string[]; months: JourneyMonth[] };
+  /** `narration`/`cards` are the server's flattened view for old builds; the player reads `parts`.
+   *  A reading saved before the paid moments has no `parts` (player/journeyPlayer partsOf). */
+  chapters: { id: string; narration: string; cards: JourneyCard[]; parts?: JourneyPart[]; card?: StationCard | null }[];
+  summary: JourneySummary;
+  /** Coins one moment costs, as the server prices it. Absent from a server without moments. */
+  momentPrice?: number;
 }

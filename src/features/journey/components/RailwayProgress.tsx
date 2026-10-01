@@ -6,8 +6,9 @@ import { useT } from '../../../shared/i18n';
 import type { Chapter } from '../types';
 
 /**
- * The line the train is on: a station per chapter, the ones behind lit, the current one glowing,
- * the ones ahead dim. Tapping a station travels there.
+ * The line the train is on: a dot per station, the ones behind lit, the current one glowing, the
+ * ones ahead dim (mockup panel 3: 출발역 사회운 재물운 연애운 건강운 종합운 월운). Tapping a station
+ * travels there, ahead or behind. A station marked `hideOnRail` (the end of the line) is not drawn.
  */
 export const RailwayProgress: React.FC<{
   chapters: Chapter[];
@@ -15,8 +16,11 @@ export const RailwayProgress: React.FC<{
   /** 0-1 through the current chapter — the train's place on the track between two stations. */
   progress: number;
   onStation?: (index: number) => void;
-}> = ({ chapters, current, progress, onStation }) => {
+}> = ({ chapters: all, current: currentIndex, progress, onStation }) => {
   const t = useT();
+  // Positions on the rail count only the drawn stations; taps answer with the journey's index.
+  const chapters = all.map((c, i) => ({ ...c, at: i })).filter(c => !c.hideOnRail);
+  const current = Math.min(chapters.length - 1, chapters.filter(c => c.at < currentIndex).length - (chapters.some(c => c.at === currentIndex) ? 0 : 1));
   const last = chapters.length - 1;
   const fill = last > 0 ? Math.min(1, (current + Math.min(1, progress)) / last) : 0;
   return (
@@ -30,7 +34,7 @@ export const RailwayProgress: React.FC<{
             <Pressable
               key={c.id}
               hitSlop={10}
-              onPress={() => onStation?.(i)}
+              onPress={() => onStation?.(c.at)}
               style={[styles.stop, { left: `${(i / last) * 100}%` }]}
               accessibilityRole="button"
               accessibilityLabel={t(c.title)}>
