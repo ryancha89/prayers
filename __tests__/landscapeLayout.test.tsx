@@ -23,6 +23,12 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   default: { getItem: async () => null, setItem: async () => {}, removeItem: async () => {} },
 }));
 jest.mock('react-native-sound', () => null, { virtual: true });
+// No SafeAreaProvider in a test tree: the insets come from here (zero unless a test sets them).
+const mockSafe = { top: 0, right: 0, bottom: 0, left: 0 };
+jest.mock('react-native-safe-area-context', () => ({
+  ...jest.requireActual('react-native-safe-area-context'),
+  useSafeAreaInsets: () => mockSafe,
+}));
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
 jest.mock('../src/shared/audio/sfx', () => ({
   sfx: { tap: jest.fn(), select: jest.fn(), back: jest.fn(), send: jest.fn(), bellIn: jest.fn(), bellOut: jest.fn() },
@@ -311,6 +317,20 @@ describe('the journey in landscape', () => {
     });
     expect(nodesWithStyle(tree, s => s.flexDirection === 'row' && s.flex === 1)).not.toHaveLength(0);
     expect(nodesWithStyle(tree, s => s.width === 341 && s.borderLeftWidth === 1)).toHaveLength(1);
+  });
+
+  it('runs the panel to the screen edge past the Dynamic Island, its content kept clear of it', () => {
+    // iPhone 17 on its side: the island side and the far side both report 62 pt, the home bar 21.
+    Object.assign(mockSafe, { left: 62, right: 62, bottom: 21 });
+    win = IPHONE_17_SIDE;
+    act(() => {
+      tree = ReactTestRenderer.create(<JourneyScreen />);
+    });
+    // The panel's box reaches the edge (341 for content + 62), and pads its content back in.
+    expect(nodesWithStyle(tree, s => s.width === 341 + 62 && s.paddingRight === 62 && s.paddingBottom === 21)).toHaveLength(1);
+    // The window stays clear of the island on its own side, not by a whole-screen safe area.
+    expect(nodesWithStyle(tree, s => s.marginLeft === 62 + 4)).not.toHaveLength(0);
+    Object.assign(mockSafe, { left: 0, right: 0, bottom: 0 });
   });
 
   it('reports what the panel covers to the cabin, and says it again when the cabin comes up', () => {

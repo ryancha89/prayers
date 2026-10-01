@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../../../shared/components/Text';
@@ -96,6 +96,12 @@ export const JourneyScreen: React.FC = () => {
   // UnityHost (a remount reloads the cabin), and not the overlay the player is in the middle of.
   const screen = useScreen();
   const landscape = screen.landscape;
+  // Landscape: the safe area is applied per piece, not around the whole screen. A safe-area root
+  // pads BOTH long sides by the Dynamic Island's ~60 pt even though the island is on one side only —
+  // the side panel floated with a strip of cabin to its right and the header sat indented (sim 01-10).
+  // The panel's background now runs to the screen edge and only its content keeps clear of the
+  // island/notch and the home indicator; the window keeps clear on its own side.
+  const safe = useSafeAreaInsets();
   const addMemory = useArchiveStore(a => a.add);
   const journey = s.journeyId ? JOURNEYS[s.journeyId] : null;
 
@@ -396,8 +402,9 @@ export const JourneyScreen: React.FC = () => {
       {unity && cabinUp && !curtainGone && (
         <Animated.View pointerEvents="none" style={[styles.curtain, { opacity: curtain }]} />
       )}
-    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={[styles.root, cabinUp && styles.rootOverCabin]}>
-      <View style={styles.header} onLayout={insets.track('header')}>
+    <SafeAreaView edges={landscape ? ['top'] : ['top', 'bottom', 'left', 'right']} style={[styles.root, cabinUp && styles.rootOverCabin]}>
+      <View style={[styles.header, landscape && { paddingLeft: safe.left + spacing.md, paddingRight: safe.right + spacing.md }]}
+        onLayout={insets.track('header')}>
         <Pressable
           hitSlop={12}
           onPress={() => {
@@ -415,7 +422,8 @@ export const JourneyScreen: React.FC = () => {
       {cabinUp ? (
         // The cabin is the window now: this area is clear, only the overlays ride on it.
         // Drag to turn, pinch to zoom, double-tap to toggle the close-up — see useCabinCamera.
-        <View style={[styles.window, landscape && styles.windowSide]} {...cabinCamera.panHandlers} onTouchEnd={cabinCamera.onTouchEnd}>
+        <View style={[styles.window, landscape && styles.windowSide, landscape && { marginLeft: safe.left + spacing.xs, marginBottom: safe.bottom + spacing.xs }]}
+          {...cabinCamera.panHandlers} onTouchEnd={cabinCamera.onTouchEnd}>
           {!curtainGone && (
             <Animated.Image source={PLATFORM_NIGHT} resizeMode="cover"
               style={[styles.loadingArt, { opacity: curtain.interpolate({ inputRange: [0, 1], outputRange: [0, 0.85] }) }]} />
@@ -423,7 +431,7 @@ export const JourneyScreen: React.FC = () => {
           {overlays}
         </View>
       ) : unity ? (
-        <View style={[styles.window, landscape && styles.windowSide]}>
+        <View style={[styles.window, landscape && styles.windowSide, landscape && { marginLeft: safe.left + spacing.xs, marginBottom: safe.bottom + spacing.xs }]}>
           <Image source={PLATFORM_NIGHT} style={styles.loadingArt} resizeMode="cover" />
           {overlays}
         </View>
@@ -441,7 +449,9 @@ export const JourneyScreen: React.FC = () => {
       {/* Landscape: the same panel, down the right-hand side and scrollable — 402pt of height holds
           it on every phone measured, the scroll is for the largest text sizes. */}
       <View
-        style={[cabinUp && styles.panel, landscape && styles.panelSide, landscape && { width: screen.sidePanel }]}
+        style={[cabinUp && styles.panel, landscape && styles.panelSide,
+          // Out to the screen edge; the width the content gets stays `sidePanel`.
+          landscape && { width: screen.sidePanel + safe.right, paddingRight: safe.right, paddingBottom: safe.bottom }]}
         onLayout={insets.track('panel')}>
       <ScrollView
         style={landscape ? styles.panelScrollSide : styles.panelScroll}
