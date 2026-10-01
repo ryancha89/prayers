@@ -46,6 +46,9 @@ export type MeasuredRects = Partial<Record<string, LayoutRectangle>> & { host?: 
  * — recomputes and sends. The bridge deduplicates, so a re-measure that changed nothing costs
  * nothing. `send` absent (no Unity in this build) makes the whole thing inert.
  */
+/** How long the layout must hold still before its insets are sent. */
+export const INSETS_SETTLE_MS = 120;
+
 export function useViewInsets(opts: {
   send?: (insets: ViewInsetsPayload) => void;
   landscape: boolean;
@@ -56,13 +59,23 @@ export function useViewInsets(opts: {
   latest.current = opts;
   const handlers = useRef<Record<string, (e: LayoutChangeEvent) => void>>({});
 
-  const flush = useCallback(() => {
+  // Trailing debounce: a rotation lays the screen out in several passes, and the passes in between
+  // measured nonsense (sim 01-10: bottom 0.95, then 0.88, then 0.40 within a millisecond). Only the
+  // settled value goes to Unity, so the landscape camera never eases toward a half-laid-out panel.
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sendNow = useCallback(() => {
+    timer.current = null;
     const { send, landscape, compute } = latest.current;
     const host = rects.current.host;
     if (!send || !host || host.width <= 0 || host.height <= 0) return;
     const covered = compute(rects.current);
     if (covered) send(viewInsetsOf(host, covered, landscape));
   }, []);
+  const flush = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(sendNow, INSETS_SETTLE_MS);
+  }, [sendNow]);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   /** onLayout for the view called `name`. Stable per name, so it never re-renders anything. */
   const track = useCallback(

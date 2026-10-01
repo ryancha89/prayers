@@ -70,7 +70,7 @@ jest.mock('../src/features/counseling/components/UnityHost', () => {
 });
 
 import { screenOf, COLUMN_MAX } from '../src/shared/device/screen';
-import { viewInsetsOf } from '../src/features/counseling/bridge/viewInsets';
+import { INSETS_SETTLE_MS, viewInsetsOf } from '../src/features/counseling/bridge/viewInsets';
 import { NativeUnityBridge } from '../src/features/counseling/bridge/NativeUnityBridge';
 import { MockUnityBridge } from '../src/features/counseling/bridge/MockUnityBridge';
 import { nativeUnityBridge } from '../src/features/counseling/bridge';
@@ -322,12 +322,19 @@ describe('the journey in landscape', () => {
     const byLayoutOrder = tree.root.findAll(n => typeof n.type === 'string' && typeof n.props.onLayout === 'function');
     // stage (host) → header → body → panel, in render order.
     const [host, header, body, panel] = byLayoutOrder;
+    jest.useFakeTimers();
     act(() => {
       host.props.onLayout(layout(0, 0, 874, 402));
       header.props.onLayout(layout(0, 0, 874, 44));
+      // A rotation lays out in passes: a half-laid-out panel first (sim 01-10), then the real one.
       body.props.onLayout(layout(0, 44, 874, 337));
+      panel.props.onLayout(layout(80, 0, 794, 337));
       panel.props.onLayout(layout(533, 0, 341, 337));
     });
+    expect(sent).not.toHaveBeenCalledWith(expect.objectContaining({ right: 0.91 }));
+    act(() => jest.advanceTimersByTime(INSETS_SETTLE_MS));
+    jest.useRealTimers();
+    expect(sent).toHaveBeenCalledTimes(1);
     expect(sent).toHaveBeenLastCalledWith({ top: 0.11, right: 0.39, bottom: 0, left: 0, landscape: true });
 
     // The cabin answers: it is told again, before anything frames a shot.
