@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { PixelRatio, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { PixelRatio, StyleSheet, View } from 'react-native';
+import { useScreen } from '../../../shared/device/screen';
 import Svg, { G, Path } from 'react-native-svg';
 import type { CounselorEmotion } from '../types';
 import { absoluteFill } from '../../../shared/theme';
@@ -38,21 +39,28 @@ export const PixelCatStage: React.FC<{
   /** The latest one-shot; `seq` changes on every cue so the same gesture twice plays twice. */
   gesture: { name: CatGesture; seq: number } | null;
 }> = ({ speaking, utterance, thinking, listening, emotion, gesture }) => {
-  const { width, height } = useWindowDimensions();
+  const { width, height, landscape, sidePanel } = useScreen();
   const { room } = CAT_ART;
 
   // Art pixel size in points, snapped to whole device pixels. Wide enough to fill the width;
   // anything left over at the sides is wall colour from the container.
+  //
+  // Landscape fits the HEIGHT instead, centred in the part of the screen left of the dialogue panel:
+  // the room is drawn upright (64×100), and filling an 874pt width made it 1,366pt tall with him
+  // sitting 460pt down — below the bottom of a 402pt screen.
   const ratio = PixelRatio.get();
-  const px = Math.ceil((width * ratio) / room.w) / ratio;
+  const px = landscape
+    ? Math.ceil((height * ratio) / room.h) / ratio
+    : Math.ceil((width * ratio) / room.w) / ratio;
   const roomW = room.w * px;
   const roomH = room.h * px;
+  const stageW = landscape ? width - sidePanel : width;
   // A quarter of the spare height above the room, the rest below it: that keeps his face well
   // clear of the dialogue card at the bottom. The room's top rows are the same colour as the
   // container, so the gap above reads as more wall. A room taller than the screen is pinned to
   // the top instead.
   const top = Math.round(Math.max(0, (height - roomH) * 0.25) * ratio) / ratio;
-  const left = Math.round(((width - roomW) / 2) * ratio) / ratio;
+  const left = Math.round(((stageW - roomW) / 2) * ratio) / ratio;
 
   const talking = useTalkTimer(utterance) || speaking;
   const loopName = pickLoop({ speaking: talking, thinking, listening, emotion });

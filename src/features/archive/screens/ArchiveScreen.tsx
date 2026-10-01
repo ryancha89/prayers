@@ -18,6 +18,7 @@ import { useJourneyPlayer } from '../../journey/player/journeyPlayer';
 import { JOURNEYS } from '../../journey/data/journeys';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useLang } from '../../../shared/i18n';
+import { column } from '../../../shared/device/screen';
 
 /**
  * 아카이브 — the tab.
@@ -80,8 +81,8 @@ export const ArchiveScreen: React.FC = () => {
   }, [discoveries.length]);
 
   return (
-    <SafeAreaView edges={['top']} style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{t('archive.title')}</Text>
         <Text style={styles.tagline}>{t('archive.tagline')}</Text>
 

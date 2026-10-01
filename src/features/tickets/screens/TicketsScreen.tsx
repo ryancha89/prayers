@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +27,7 @@ import {
 } from '../api/subscription';
 import { buySubscription, purchaseAvailable } from '../providers/purchase';
 import { PRAYER_TICKET_ART } from '../assets/art';
+import { column, useScreen } from '../../../shared/device/screen';
 
 /**
  * Where tickets come from.
@@ -50,8 +50,13 @@ export const TicketsScreen: React.FC = () => {
   const canBuy = purchaseAvailable();
   // Sized from the window, not from the asset: a static require() carries its pixel size, and a
   // percentage width on it resolved to that (a 960pt ticket sailing off the right edge).
-  const { width: windowWidth } = useWindowDimensions();
-  const heroWidth = windowWidth - spacing.xl * 2;
+  // From the COLUMN, and in landscape no taller than half the window: the full width of a phone held
+  // sideways made a 550pt-tall ticket on a 402pt screen.
+  const screen = useScreen();
+  const heroWidth = Math.min(
+    screen.column - spacing.xl * 2,
+    screen.landscape ? Math.round(screen.height * 0.75) : Number.POSITIVE_INFINITY,
+  );
 
   const refresh = useCallback(async () => {
     const granted = await claimDaily();
@@ -82,8 +87,8 @@ export const TicketsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]}>
         {/* The stack draws no header (RootNavigator), so the way back is this screen's to draw —
             it was reachable only by the edge swipe, which nobody is told about. */}
         <View style={styles.header}>

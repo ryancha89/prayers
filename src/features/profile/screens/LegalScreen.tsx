@@ -7,6 +7,7 @@ import type { RootStackParamList } from '../../../navigation/types';
 import { colors, spacing, typography } from '../../../shared/theme';
 import { useLanguageStore } from '../../../shared/i18n';
 import { docFor } from '../data/legalDocs';
+import { column } from '../../../shared/device/screen';
 
 /**
  * Terms and the privacy policy, in the app rather than behind a link.
@@ -21,8 +22,8 @@ export const LegalScreen: React.FC = () => {
   const doc = docFor(route.params.doc, lang);
 
   return (
-    <SafeAreaView edges={['top']} style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{doc.title}</Text>
         <Text style={styles.updated}>{doc.updated}</Text>
         {doc.sections.map(section => (

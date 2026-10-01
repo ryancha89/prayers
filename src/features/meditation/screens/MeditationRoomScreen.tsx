@@ -13,6 +13,8 @@ import { BREATH, CYCLE_MS, MeditationSession, SESSION_MS, breathSync, type Phase
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { guideVoice } from '../guideVoice';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
+import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
+import { useScreen } from '../../../shared/device/screen';
 
 /**
  * The meditation room: ten minutes, music and text, no guided voice (decided 15-09).
@@ -47,6 +49,23 @@ const RING_MAX = 1;
 /** The ember's own orbit, a hair outside the stroke so it reads as travelling ON the ring. */
 const EMBER = 9;
 
+/** Landscape: what the ring may be at most, so ring + clock + the button fit under the header in a
+ *  402pt-tall window. The breath scales the ring down from this, never past it. */
+const ringFor = (landscape: boolean, height: number) =>
+  landscape ? Math.max(132, Math.min(RING, height - 230)) : RING;
+
+/** What of the room the screen's UI hides, for VIEW_INSETS. Portrait: the header and the button
+ *  strip (the ring floats over the middle — the room is scenery behind a wash here, not a stage to
+ *  frame). Landscape: the header, and the panel the ring, clock and button move into. */
+export function meditationCoveredPx(r: MeasuredRects, landscape: boolean) {
+  const { host, header, body, panel, actions } = r;
+  if (!host) return null;
+  const top = header ? header.y + header.height : 0;
+  if (!body || !panel) return { top };
+  if (landscape) return { top, right: host.width - (body.x + panel.x) };
+  return actions ? { top, bottom: host.height - (body.y + panel.y + actions.y) } : { top };
+}
+
 const PHASE_KEY: Record<Phase, 'med.in' | 'med.hold' | 'med.out'> = {
   in: 'med.in',
   hold: 'med.hold',
@@ -69,6 +88,17 @@ export const MeditationRoomScreen: React.FC = () => {
     guideTimer.current = null;
   };
   const navigation = useNavigation();
+  // Landscape: the ring, the clock and the button move into a panel on the right, so the girl in the
+  // room keeps the left of the screen. Same tree, other styles: rotating mid-breath keeps the session,
+  // its animations and the UnityHost exactly as they were.
+  const screen = useScreen();
+  const landscape = screen.landscape;
+  const ring = ringFor(landscape, screen.height);
+  const insets = useViewInsets({
+    send: isNativeUnity() ? i => nativeUnityBridge.sendViewInsets(i) : undefined,
+    landscape,
+    compute: r => meditationCoveredPx(r, landscape),
+  });
   const session = useRef(new MeditationSession()).current;
   const [state, setState] = useState<SessionState>(() => session.read());
 
@@ -286,7 +316,7 @@ export const MeditationRoomScreen: React.FC = () => {
   );
 
   return (
-    <View style={styles.bg}>
+    <View style={styles.bg} onLayout={insets.track('host')}>
       {/* ⚠️ THE UNITY VIEW IS NEVER HIDDEN. It sits at the back at full opacity for the whole life
           of the screen, and the concept art FADES OUT on top of it once the room answers.
           The obvious shape — mount Unity at opacity 0 and fade it in — was written first and is
@@ -301,19 +331,23 @@ export const MeditationRoomScreen: React.FC = () => {
         resizeMode="cover"
       />
       <Animated.View style={[styles.wash, { opacity: wash }]} />
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <View style={styles.header}>
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
+        <View style={[styles.header, landscape && styles.headerSide]} onLayout={insets.track('header')}>
           {/* The way out. It does NOT fade with the rest of the chrome: everything else on this
               screen may recede while the player breathes, but the door cannot. Quiet, not gone. */}
-          <Pressable style={styles.back} onPress={leave} hitSlop={12}>
+          <Pressable style={[styles.back, landscape && styles.backSide]} onPress={leave} hitSlop={12}>
             <Icon name="back" size={22} color="#FFFFFF" />
           </Pressable>
           <Animated.View style={{ opacity: chrome }} pointerEvents="none">
-            <Text style={styles.title}>{t('med.title')}</Text>
-            <Text style={styles.subtitle}>{t('med.subtitle')}</Text>
+            <Text style={[styles.title, landscape && styles.titleSide]}>{t('med.title')}</Text>
+            <Text style={styles.subtitle} numberOfLines={landscape ? 1 : undefined}>{t('med.subtitle')}</Text>
           </Animated.View>
         </View>
 
+        <View style={[styles.body, landscape && styles.bodySide]} onLayout={insets.track('body')}>
+        <View
+          style={[styles.panel, landscape && styles.panelSide, landscape && { width: screen.sidePanel }]}
+          onLayout={insets.track('panel')}>
         <View style={styles.middle}>
           {done ? (
             <View style={styles.done}>
@@ -324,8 +358,9 @@ export const MeditationRoomScreen: React.FC = () => {
             </View>
           ) : (
             <>
-              <Animated.View style={[styles.ringWrap, { transform: [{ scale: breath }] }]}>
-                <View style={styles.ring}>
+              <Animated.View
+                style={[styles.ringWrap, { width: ring, height: ring, transform: [{ scale: breath }] }]}>
+                <View style={[styles.ring, { borderRadius: ring / 2 }]}>
                   <Text style={styles.phase}>{running ? t(PHASE_KEY[state.phase]) : ''}</Text>
                 </View>
                 {running && (
@@ -336,13 +371,13 @@ export const MeditationRoomScreen: React.FC = () => {
                   </Animated.View>
                 )}
               </Animated.View>
-              <Text style={styles.clock}>{clock(remaining)}</Text>
+              <Text style={[styles.clock, landscape && styles.clockSide]}>{clock(remaining)}</Text>
               {state.status === 'paused' && <Text style={styles.paused}>{t('med.paused')}</Text>}
             </>
           )}
         </View>
 
-        <View style={styles.actions}>
+        <View style={[styles.actions, landscape && styles.actionsSide]} onLayout={insets.track('actions')}>
           {done ? (
             <Action label={t('med.again')} onPress={again} />
           ) : running ? (
@@ -350,6 +385,8 @@ export const MeditationRoomScreen: React.FC = () => {
           ) : (
             <Action label={state.status === 'paused' ? t('med.resume') : t('med.start')} onPress={begin} />
           )}
+        </View>
+        </View>
         </View>
       </SafeAreaView>
     </View>
@@ -386,8 +423,18 @@ const styles = StyleSheet.create({
   // under it sizes correctly with the same style; only the image needed telling.
   art: { ...absoluteFill, width: '100%', height: '100%' },
   wash: { ...absoluteFill, backgroundColor: '#181220' },
-  safe: { flex: 1, justifyContent: 'space-between', paddingHorizontal: spacing.xl },
+  safe: { flex: 1, paddingHorizontal: spacing.xl },
   header: { paddingTop: spacing.md },
+  // Landscape: the way out and the title side by side, one short row.
+  headerSide: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingTop: spacing.sm },
+  backSide: { marginBottom: 0 },
+  titleSide: { ...typography.h2, color: '#FFFFFF' },
+  // Below the header: the ring and the button, stacked down the screen in portrait, in a panel on
+  // the right in landscape.
+  body: { flex: 1 },
+  bodySide: { flexDirection: 'row', justifyContent: 'flex-end' },
+  panel: { flex: 1, justifyContent: 'space-between' },
+  panelSide: { flex: 0, justifyContent: 'center', gap: spacing.md },
   back: {
     width: 40,
     height: 40,
@@ -400,7 +447,7 @@ const styles = StyleSheet.create({
   },
   title: { ...typography.h1, color: '#FFFFFF' },
   subtitle: { ...typography.body, color: 'rgba(255,255,255,0.84)', marginTop: spacing.xs },
-  middle: { alignItems: 'center', justifyContent: 'center' },
+  middle: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   ringWrap: { width: RING, height: RING, alignItems: 'center', justifyContent: 'center' },
   ring: {
     ...absoluteFill,
@@ -431,11 +478,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     fontVariant: ['tabular-nums'],
   },
+  clockSide: { marginTop: spacing.md },
   paused: { ...typography.caption, color: 'rgba(255,255,255,0.9)', marginTop: spacing.md },
   done: { alignItems: 'center' },
   doneTitle: { ...typography.h1, color: '#FFFFFF', textAlign: 'center' },
   doneBody: { ...typography.body, color: 'rgba(255,255,255,0.88)', marginTop: spacing.sm },
   actions: { paddingBottom: spacing.xl },
+  actionsSide: { paddingBottom: spacing.sm },
   action: {
     alignSelf: 'center',
     minWidth: 200,

@@ -17,6 +17,7 @@ import { useSoundStore } from '../../../shared/audio/store';
 import { fetchTicketBalance } from '../../counseling/api/tickets';
 import { sfx } from '../../../shared/audio/sfx';
 import { useAuthStore } from '../../auth/store/authStore';
+import { column } from '../../../shared/device/screen';
 
 /** Simple profile page mirroring the reference structure (spec §33). */
 export const MyPageScreen: React.FC = () => {
@@ -45,8 +46,8 @@ export const MyPageScreen: React.FC = () => {
   }, []);
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]} showsVerticalScrollIndicator={false}>
         <Text style={styles.header}>{t('my.title')}</Text>
 
         <View style={styles.profile}>

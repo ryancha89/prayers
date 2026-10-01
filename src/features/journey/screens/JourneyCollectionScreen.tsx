@@ -14,6 +14,7 @@ import { useSavedJourneys } from '../store/savedJourneysStore';
 import { JOURNEYS } from '../data/journeys';
 import { useJourneyPlayer } from '../player/journeyPlayer';
 import { collectionOf } from '../collection';
+import { column } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -39,7 +40,7 @@ export const JourneyCollectionScreen: React.FC = () => {
   const rows = collectionOf(journey, s.content, heard ?? []);
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.root}>
+    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.root}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => { sfx.back(); navigation.goBack(); }} accessibilityRole="button">
           <Icon name="back" size={22} />
@@ -47,7 +48,7 @@ export const JourneyCollectionScreen: React.FC = () => {
         <View style={styles.flex} />
         <CoinPill />
       </View>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]}>
         <Text style={styles.title}>{t('journey.collection.title', { year: journey.year })}</Text>
         <Text style={styles.sub}>{t('journey.collection.sub')}</Text>
         {rows.map(r => {

@@ -20,7 +20,7 @@ export const JourneyEndingScreen: React.FC = () => {
     <View style={styles.root}>
       <Image source={ENDING_ART} style={styles.art} resizeMode="cover" />
       <View style={styles.shade} />
-      <SafeAreaView edges={['top', 'bottom']} style={styles.content}>
+      <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.content}>
         <Text style={styles.title}>{t('journey.ending.title')}</Text>
         <Pressable
           style={styles.button}

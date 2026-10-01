@@ -15,6 +15,7 @@ import { syncArchive } from '../api/memoriesApi';
 import { CATEGORY_ICON, FIELDS, KIND_ICON, MOOD_ICON, type ArchiveMemory } from '../types';
 import { MemoryEditor } from '../components/MemoryEditor';
 import { chartFromFields, pillarsText } from '../../saju/chart';
+import { column } from '../../../shared/device/screen';
 
 type Rt = RouteProp<RootStackParamList, 'ArchiveSection'>;
 
@@ -112,7 +113,7 @@ export const ArchiveSectionScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.root}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
       <View style={styles.header}>
         <Pressable
           hitSlop={12}
@@ -139,7 +140,7 @@ export const ArchiveSectionScreen: React.FC = () => {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]} showsVerticalScrollIndicator={false}>
         {category === 'profile' && (
           <View style={styles.linked}>
             <Text style={styles.linkedText}>

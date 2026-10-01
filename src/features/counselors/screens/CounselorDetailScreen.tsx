@@ -20,6 +20,7 @@ import {
   type ConsultationReadiness,
 } from '../../counseling/api/prayersServer';
 import { sfx } from '../../../shared/audio/sfx';
+import { column } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'CounselorDetail'>;
@@ -102,7 +103,7 @@ export const CounselorDetailScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, column]}>
         <CounselorHero counselor={counselor} />
 
         <View style={styles.section}>
@@ -135,7 +136,7 @@ export const CounselorDetailScreen: React.FC = () => {
       </ScrollView>
 
       {/* Floating top controls (spec §10) */}
-      <SafeAreaView edges={['top']} style={styles.topBar} pointerEvents="box-none">
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.topBar} pointerEvents="box-none">
         <Pressable
           style={styles.roundBtn}
           hitSlop={8}
@@ -163,7 +164,7 @@ export const CounselorDetailScreen: React.FC = () => {
       </SafeAreaView>
 
       {/* Single dominant CTA (spec §13) */}
-      <SafeAreaView edges={['bottom']} style={styles.ctaBar}>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.ctaBar}>
         {/* A counselor with no 3D model cannot hold a consultation. Saying so on the button is
             better than letting the tap through to a room that would substitute somebody else's
             face, and far better than the version before it — a room that loaded and then ejected

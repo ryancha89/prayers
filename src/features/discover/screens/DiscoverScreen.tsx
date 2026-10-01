@@ -11,6 +11,7 @@ import { localizeCounselors } from '../../counselors/data/mockCounselors';
 import { openCounselor } from '../../counselors/openCounselor';
 import { CounselorSummary } from '../../counselors/types';
 import { sfx } from '../../../shared/audio/sfx';
+import { column } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -41,8 +42,8 @@ export const DiscoverScreen: React.FC = () => {
   const breathing = all.filter(c => c.category === 'meditation');
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]} showsVerticalScrollIndicator={false}>
         <Text style={styles.header}>{t('discover.title')}</Text>
 
         <Rail title={t('cat.meditation')} items={breathing} onPress={open} />

@@ -24,6 +24,9 @@ try {
 }
 
 const { width: W, height: H } = Dimensions.get('window');
+/** The logo and its glow are sized from the SHORT edge: launched with the phone held sideways, the
+ *  width is 874pt and a logo 72% of it would not fit the 402pt of height. */
+const S = Math.min(W, H);
 // Transparent-background variant (luminance→alpha), so no square edge shows.
 const LOGO = require('../assets/lotus-logo-alpha.png');
 // Bundled natively via react-native.config.js `assets` + react-native-asset.
@@ -120,7 +123,7 @@ export const SplashScreen: React.FC<{ onDone: () => void }> = ({ onDone }) => {
       {/* Expanding golden light */}
       <Animated.View
         style={[styles.center, { opacity: glow, transform: [{ scale: glowScale }] }]}>
-        <Svg width={W} height={W} viewBox="0 0 100 100">
+        <Svg width={S} height={S} viewBox="0 0 100 100">
           <Defs>
             <RadialGradient id="g" cx="50%" cy="50%" r="50%">
               <Stop offset="0%" stopColor="#FFE9B8" stopOpacity="0.55" />
@@ -143,7 +146,7 @@ export const SplashScreen: React.FC<{ onDone: () => void }> = ({ onDone }) => {
 
       {/* Glow peak bloom */}
       <Animated.View style={[styles.center, { opacity: peak }]}>
-        <Svg width={W * 0.9} height={W * 0.9} viewBox="0 0 100 100">
+        <Svg width={S * 0.9} height={S * 0.9} viewBox="0 0 100 100">
           <Defs>
             <RadialGradient id="p" cx="50%" cy="55%" r="50%">
               <Stop offset="0%" stopColor="#FFF6DC" stopOpacity="0.35" />
@@ -215,7 +218,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 0 },
   },
-  logo: { width: W * 0.72, height: W * 0.72 },
+  logo: { width: S * 0.72, height: S * 0.72 },
   particle: {
     position: 'absolute',
     top: H * 0.62,

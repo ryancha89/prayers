@@ -8,6 +8,7 @@ import { useLang, useT } from '../../../shared/i18n';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import type { Journey } from '../types';
 import { JourneyTrainArt } from './JourneyTrainArt';
+import { useScreen } from '../../../shared/device/screen';
 
 /**
  * The home's season feature: the night train crossing into 2027. The painting drifts slowly
@@ -22,6 +23,10 @@ export const JourneyHeroCard: React.FC<{ journey: Journey; inProgress: boolean; 
 }) => {
   const t = useT();
   const lang = useLang();
+  // 400pt is the whole height of a phone held sideways: there the card is a banner across the
+  // centred column, short enough that the counsellor list starts on the first screen.
+  const screen = useScreen();
+  const height = screen.landscape ? screen.vh(0.75, 260, 320) : CARD_HEIGHT;
   const companions = journey.counselors
     .map(c => getLocalizedCounselor(c.id, lang))
     .filter((c): c is NonNullable<typeof c> => !!c?.avatarImage);
@@ -30,7 +35,7 @@ export const JourneyHeroCard: React.FC<{ journey: Journey; inProgress: boolean; 
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+      style={({ pressed }) => [styles.card, { height }, pressed && styles.pressed]}>
       <JourneyTrainArt />
 
       {/* Dark lake under the copy; a touch of shade at the very top for the badge. */}
@@ -74,9 +79,10 @@ export const JourneyHeroCard: React.FC<{ journey: Journey; inProgress: boolean; 
   );
 };
 
+const CARD_HEIGHT = 400;
+
 const styles = StyleSheet.create({
   card: {
-    height: 400,
     borderRadius: radius.xl,
     overflow: 'hidden',
     marginBottom: spacing.xl,

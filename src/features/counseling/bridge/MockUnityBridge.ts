@@ -3,6 +3,7 @@ import {
   UnityBridge,
   UnitySessionPayload,
   UnityToRNEvent,
+  ViewInsetsPayload,
 } from '../types';
 
 /**
@@ -21,6 +22,9 @@ export class MockUnityBridge implements UnityBridge {
   private ready = false;
   private lastPayload?: UnitySessionPayload;
   private lastEventType?: string;
+  /** The last VIEW_INSETS a screen reported. Nothing renders behind the mock room, so it is only
+   *  kept — for tests, and so a screen never needs to know which bridge it has. */
+  lastViewInsets?: ViewInsetsPayload;
 
   async openCounselingRoom(payload: UnitySessionPayload): Promise<void> {
     this.ready = false;
@@ -37,6 +41,10 @@ export class MockUnityBridge implements UnityBridge {
     // In the mock, RN → Unity events are consumed by the mock room component,
     // which subscribes via a shared emitter. No-op transport here.
     this.lastEventType = event.type;
+  }
+
+  sendViewInsets(insets: ViewInsetsPayload): void {
+    this.lastViewInsets = { ...insets };
   }
 
   onEvent(handler: (event: UnityToRNEvent) => void): () => void {

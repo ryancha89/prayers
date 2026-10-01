@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
-import { colors, radius, spacing, typography } from '../../../shared/theme';
+import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import { productPrice } from '../../tickets/providers/purchase';
 import { useCoins } from '../store/coinStore';
 import { buyCoins, refreshCoins, type CoinProduct } from '../api/coinsApi';
+import { useScreen } from '../../../shared/device/screen';
+
+/** A Modal is portrait-only on iOS unless it says otherwise: opened over a landscape journey, the
+ *  default would turn the whole app upright under the player for as long as the sheet was up. */
+export const ALL_ORIENTATIONS = ['portrait', 'landscape-left', 'landscape-right'] as const;
 
 /**
  * The coin shop (mockup, 01-10): four rows — coins, price, bonus badge — and a close ×. Mounted once
@@ -23,6 +28,12 @@ export const CoinShopSheet: React.FC = () => {
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [storePrices, setStorePrices] = useState<Record<string, string>>({});
+  // Four rows, a header and a balance are ~400pt — the whole height of a phone held sideways. In
+  // landscape the sheet is a centred column that stops short of the top, and its rows scroll.
+  const screen = useScreen();
+  const side = screen.landscape
+    ? { width: screen.column, alignSelf: 'center' as const, maxHeight: Math.round(screen.height * 0.9) }
+    : null;
 
   useEffect(() => {
     if (!open) return;
@@ -57,9 +68,12 @@ export const CoinShopSheet: React.FC = () => {
   };
 
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
+    <Modal visible={open} transparent animationType="slide" onRequestClose={close}
+      supportedOrientations={[...ALL_ORIENTATIONS]}>
+      <View style={styles.modalRoot}>
+      {/* Behind the sheet, not above it: the dim has to reach the sides of a landscape column too. */}
       <Pressable style={styles.scrim} onPress={close} accessibilityRole="button" />
-      <View style={styles.sheet}>
+      <View style={[styles.sheet, side]}>
         <View style={styles.head}>
           <Text style={styles.title}>{t('coins.title')}</Text>
           <Pressable hitSlop={12} onPress={() => { sfx.back(); close(); }} accessibilityRole="button" accessibilityLabel={t('coins.close')}>
@@ -70,6 +84,7 @@ export const CoinShopSheet: React.FC = () => {
           <Icon name="coin" size={18} color={colors.gold} />
           <Text style={styles.balance}>{t('journey.moment.balance', { balance: (balance ?? 0).toLocaleString() })}</Text>
         </View>
+        <ScrollView style={styles.rows} contentContainerStyle={styles.rowsInner} bounces={false}>
         {products.length === 0 ? (
           <ActivityIndicator color={colors.gold} style={styles.loading} />
         ) : (
@@ -93,14 +108,17 @@ export const CoinShopSheet: React.FC = () => {
             </Pressable>
           ))
         )}
+        </ScrollView>
         {note ? <Text style={styles.note}>{note}</Text> : null}
+      </View>
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalRoot: { flex: 1, justifyContent: 'flex-end' },
+  scrim: { ...absoluteFill, backgroundColor: 'rgba(0,0,0,0.5)' },
   sheet: {
     backgroundColor: '#15112E', paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.xxl,
     borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, gap: spacing.md,
@@ -111,6 +129,8 @@ const styles = StyleSheet.create({
   close: { fontSize: 28, lineHeight: 30, color: colors.textSecondary },
   balanceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   balance: { ...typography.caption, color: colors.textSecondary },
+  rows: { flexGrow: 0, flexShrink: 1 },
+  rowsInner: { gap: spacing.md },
   loading: { marginVertical: spacing.xl },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg,

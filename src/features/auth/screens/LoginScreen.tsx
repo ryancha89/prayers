@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
+import { column } from '../../../shared/device/screen';
 import { useT } from '../../../shared/i18n';
 import { appleSignInAvailable, requestAppleIdentity } from '../providers/appleSignIn';
 import { signInAsDeveloper, signInWithApple } from '../api/session';
@@ -40,6 +41,8 @@ export const LoginScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.root}>
+      {/* Scrolls only when it must: held sideways an SE has 375pt for all of this. */}
+      <ScrollView contentContainerStyle={[styles.content, column]} bounces={false}>
       <View style={styles.block}>
         <Text style={styles.title}>{t('login.title')}</Text>
         <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
@@ -74,12 +77,14 @@ export const LoginScreen: React.FC = () => {
       </View>
 
       <Text style={styles.note}>{t('login.note')}</Text>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg, justifyContent: 'center', padding: spacing.xl },
+  root: { flex: 1, backgroundColor: colors.bg },
+  content: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl },
   block: { marginBottom: spacing.xl },
   title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.sm },
   subtitle: { ...typography.body, color: colors.textSecondary },

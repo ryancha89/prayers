@@ -7,6 +7,13 @@ import { nativeUnityBridge } from '../bridge';
  * Mounts the embedded Unity player and wires it to the NativeUnityBridge
  * singleton. Mount this exactly once (in the counseling room) — unmounting
  * tears the Unity engine down (see UnityView.componentWillUnmount upstream).
+ *
+ * ROTATION NEEDS NOTHING HERE, and nothing here may change because of it. The host is sized by its
+ * style alone; a rotation re-lays it out, the native RNUnityView's layoutSubviews sets Unity's root
+ * view to its new bounds, and Unity's own UnityView re-reports its backbuffer size before the next
+ * frame (UnityReportResizeView). What WOULD break it is a remount — a host keyed on, or rendered
+ * conditionally by, the orientation reloads the whole room — so the screens that host it keep it
+ * at the same place in their tree whichever way up the phone is.
  */
 export const UnityHost: React.FC<{ style?: ViewStyle }> = ({ style }) => {
   const viewRef = useRef<UnityView>(null);

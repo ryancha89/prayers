@@ -13,6 +13,7 @@ import { buyProduct, finishPurchase, productPrice, storeAvailable } from '../../
 import { confirmJourneyPurchase, fetchJourneyAccess, type JourneyAccess } from '../api/journeyApi';
 import { JOURNEYS } from '../data/journeys';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
+import { column } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'JourneyPass'>;
@@ -95,11 +96,11 @@ export const JourneyPassScreen: React.FC = () => {
       <View style={styles.sky}>
         <JourneyTrainArt fadeTo={colors.bg} />
       </View>
-      <SafeAreaView edges={['top', 'bottom']} style={styles.flex}>
+      <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.flex}>
         <Pressable style={styles.back} hitSlop={12} onPress={() => { sfx.back(); navigation.goBack(); }} accessibilityRole="button">
           <Icon name="back" size={22} />
         </Pressable>
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView contentContainerStyle={[styles.scroll, column]}>
           <Text style={styles.eyebrow}>{t(journey.eyebrow)}</Text>
           <Text style={styles.title}>{t('journey.pass.title', { year: journey.year })}</Text>
           <Text style={styles.sub}>{t('journey.pass.sub', { year: journey.year })}</Text>

@@ -14,6 +14,7 @@ import { useCounselingStore } from '../store/counselingStore';
 import { fetchTopics, type TopicCard } from '../api/prayersServer';
 import { groupTopicsFor } from '../topicsForCounselor';
 import { sfx } from '../../../shared/audio/sfx';
+import { column } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -96,7 +97,7 @@ export const CounselingTopicScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.header}>
         <Pressable
           hitSlop={8}
@@ -109,7 +110,7 @@ export const CounselingTopicScreen: React.FC = () => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]}>
         <Text style={styles.title}>{t('topic.title')}</Text>
         <Text style={styles.subtitle}>
           {t('topic.subtitle', { name: counselor?.name ?? '' })}

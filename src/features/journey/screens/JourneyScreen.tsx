@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Image, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -29,6 +29,8 @@ import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import type { JourneyStatePayload } from '../../counseling/types';
 import type { BackgroundMedia } from '../types';
 import { useCabinCamera } from '../components/useCabinCamera';
+import { useScreen } from '../../../shared/device/screen';
+import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
 
 /** What shows while the 3D cabin loads: the station's night sky, the platform's own painting — not
  *  the drawn 2D window, which flashed up for a moment before every 3D journey (29-09). */
@@ -37,6 +39,21 @@ const PLATFORM_NIGHT = require('../assets/platform_night.jpg');
  *  months half (the model often rates those 3★), anything else rides smooth. */
 const roughOf = (card: { stars: number; months: number[] } | null | undefined, caution: number[] = []) =>
   !card ? 0 : card.stars <= 1 ? 1 : card.stars <= 2 || card.months.some(m => caution.includes(m)) ? 0.5 : 0;
+
+/**
+ * What of the cabin the screen's own UI hides, for VIEW_INSETS: the header across the top, and the
+ * panel — under the window in portrait, down the right-hand side in landscape. Exported for the
+ * layout test; the rectangles are onLayout's, so `body` and `panel` are relative to their parents.
+ */
+export function journeyCoveredPx(r: MeasuredRects, landscape: boolean) {
+  const { host, header, body, panel } = r;
+  if (!host) return null;
+  const top = header ? header.y + header.height : 0;
+  if (!body || !panel) return { top };
+  return landscape
+    ? { top, right: host.width - (body.x + panel.x) }
+    : { top, bottom: host.height - (body.y + panel.y) };
+}
 
 /** How long the counsellor's invitation is on screen before they lead the player aboard. */
 const AUTO_BOARD_MS = 3500;
@@ -73,6 +90,12 @@ export const JourneyScreen: React.FC = () => {
   const t = useT();
   const lang = useLang();
   const s = useJourneyPlayer();
+  // Landscape splits the screen instead of stacking it: the cabin keeps the left ~60%, and the
+  // dialogue, transport and rail move into a panel down the right (01-10). The tree is the SAME in
+  // both orientations — only styles change — so a rotation re-lays out and never remounts: not the
+  // UnityHost (a remount reloads the cabin), and not the overlay the player is in the middle of.
+  const screen = useScreen();
+  const landscape = screen.landscape;
   const addMemory = useArchiveStore(a => a.add);
   const journey = s.journeyId ? JOURNEYS[s.journeyId] : null;
 
@@ -117,6 +140,11 @@ export const JourneyScreen: React.FC = () => {
   // behind the whole screen and this screen stays opaque over it until JOURNEY_READY, so a player
   // that never answers leaves the drawn window exactly as it was.
   const unity = isNativeUnity();
+  const insets = useViewInsets({
+    send: unity ? i => nativeUnityBridge.sendViewInsets(i) : undefined,
+    landscape,
+    compute: r => journeyCoveredPx(r, landscape),
+  });
   const [cabinUp, setCabinUp] = useState(false);
   // The loading art fades off the cabin instead of vanishing on the frame Unity is ready — that was a
   // one-frame cut from the starry poster to the platform, on the first spoken line (QA 30-09).
@@ -360,7 +388,7 @@ export const JourneyScreen: React.FC = () => {
   );
 
   return (
-    <View style={styles.stage}>
+    <View style={styles.stage} onLayout={insets.track('host')}>
       {/* Never hidden or faded: an embedded UnityView under a transparent PARENT stops being
           drawn (meditation room, measured on device). The screen above it is what changes. */}
       {unity && <UnityHost style={styles.unity} />}
@@ -368,8 +396,8 @@ export const JourneyScreen: React.FC = () => {
       {unity && cabinUp && !curtainGone && (
         <Animated.View pointerEvents="none" style={[styles.curtain, { opacity: curtain }]} />
       )}
-    <SafeAreaView edges={['top', 'bottom']} style={[styles.root, cabinUp && styles.rootOverCabin]}>
-      <View style={styles.header}>
+    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={[styles.root, cabinUp && styles.rootOverCabin]}>
+      <View style={styles.header} onLayout={insets.track('header')}>
         <Pressable
           hitSlop={12}
           onPress={() => {
@@ -383,10 +411,11 @@ export const JourneyScreen: React.FC = () => {
         <CoinPill />
       </View>
 
+      <View style={[styles.body, landscape && styles.bodySide]} onLayout={insets.track('body')}>
       {cabinUp ? (
         // The cabin is the window now: this area is clear, only the overlays ride on it.
         // Drag to turn, pinch to zoom, double-tap to toggle the close-up — see useCabinCamera.
-        <View style={styles.window} {...cabinCamera.panHandlers} onTouchEnd={cabinCamera.onTouchEnd}>
+        <View style={[styles.window, landscape && styles.windowSide]} {...cabinCamera.panHandlers} onTouchEnd={cabinCamera.onTouchEnd}>
           {!curtainGone && (
             <Animated.Image source={PLATFORM_NIGHT} resizeMode="cover"
               style={[styles.loadingArt, { opacity: curtain.interpolate({ inputRange: [0, 1], outputRange: [0, 0.85] }) }]} />
@@ -394,12 +423,12 @@ export const JourneyScreen: React.FC = () => {
           {overlays}
         </View>
       ) : unity ? (
-        <View style={styles.window}>
+        <View style={[styles.window, landscape && styles.windowSide]}>
           <Image source={PLATFORM_NIGHT} style={styles.loadingArt} resizeMode="cover" />
           {overlays}
         </View>
       ) : (
-        <TrainWindow style={styles.window}>
+        <TrainWindow style={landscape ? { ...styles.window, ...styles.windowSide } : styles.window}>
           <JourneyBackdrop media={chapter.background} speed={speed} />
           {overlays}
         </TrainWindow>
@@ -409,16 +438,25 @@ export const JourneyScreen: React.FC = () => {
           còn lại"): during the boarding storyboard the counsellor's lines sit where the reading's
           lines will, the player controls keep their place (dimmed), and the round play button IS
           "board the train". */}
-      <View style={cabinUp ? styles.panel : undefined}>
+      {/* Landscape: the same panel, down the right-hand side and scrollable — 402pt of height holds
+          it on every phone measured, the scroll is for the largest text sizes. */}
+      <View
+        style={[cabinUp && styles.panel, landscape && styles.panelSide, landscape && { width: screen.sidePanel }]}
+        onLayout={insets.track('panel')}>
+      <ScrollView
+        style={landscape ? styles.panelScrollSide : styles.panelScroll}
+        scrollEnabled={landscape}
+        showsVerticalScrollIndicator={false}
+        bounces={false}>
       {/* The dialogue box (mockup): who is speaking, the line, and "››" while the voice goes on. */}
       <View style={styles.dialogue}>
-        <View style={styles.narrator}>
+        <View style={[styles.narrator, landscape && styles.narratorSide]}>
           {guide?.avatarImage ? <Image source={guide.avatarImage} style={styles.avatar} /> : null}
           <Text style={styles.guideName}>{guide?.name}</Text>
           <Text style={styles.station}>{chapter.subtitle ? t(chapter.subtitle) : ''}</Text>
         </View>
-        <View style={styles.lineBox}>
-          <Text style={styles.line} numberOfLines={3}>
+        <View style={[styles.lineBox, landscape && styles.lineBoxSide]}>
+          <Text style={[styles.line, landscape && styles.lineSide]} numberOfLines={landscape ? 4 : 3}>
             {storyShowing ? t(`journey.beat.${beatLine}` as 'journey.beat.1') : line}
           </Text>
         </View>
@@ -436,7 +474,7 @@ export const JourneyScreen: React.FC = () => {
         </View>
       </View>
 
-      <View style={styles.controls}>
+      <View style={[styles.controls, landscape && styles.controlsSide]}>
         <Pressable hitSlop={10} disabled={storyShowing} style={storyShowing && styles.dimmed}
           onPress={() => { sfx.tap(); s.prev(); }} accessibilityRole="button">
           <Icon name="prev" size={20} color={colors.textSecondary} />
@@ -484,6 +522,8 @@ export const JourneyScreen: React.FC = () => {
         onStation={i => { sfx.tap(); s.goTo(i); }}
       />
       </View>
+      </ScrollView>
+      </View>
       </View>
     </SafeAreaView>
     </View>
@@ -510,7 +550,18 @@ const styles = StyleSheet.create({
   },
   brand: { ...typography.tiny, color: colors.gold, letterSpacing: 3, flex: 1 },
   chapter: { ...typography.tiny, color: colors.textSecondary, letterSpacing: 1 },
+  // The window and the panel: a column in portrait, a row in landscape.
+  body: { flex: 1 },
+  bodySide: { flexDirection: 'row' },
   window: { flex: 1, marginHorizontal: spacing.md, marginTop: spacing.xs },
+  windowSide: { marginRight: spacing.sm, marginBottom: spacing.xs },
+  panelScroll: { flexGrow: 0 },
+  panelScrollSide: { flex: 1 },
+  // Down the right edge: rounded on the side that faces the cabin, full height under the header.
+  panelSide: {
+    borderTopRightRadius: 0, borderTopLeftRadius: radius.lg, borderBottomLeftRadius: radius.lg,
+    borderTopWidth: 0, borderLeftWidth: 1, borderColor: 'rgba(233,196,106,0.25)',
+  },
   loadingArt: { ...absoluteFill, width: '100%', height: '100%', borderRadius: radius.lg, opacity: 0.85 },
   dimmed: { opacity: 0.35 },
   boarding: {
@@ -531,6 +582,10 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md, marginTop: spacing.md, paddingBottom: spacing.sm, borderRadius: radius.lg,
     borderWidth: 1, borderColor: 'rgba(233,196,106,0.3)', backgroundColor: 'rgba(18,14,40,0.55)',
   },
+  narratorSide: { marginTop: spacing.sm },
+  lineBoxSide: { minHeight: 0, marginTop: spacing.xs },
+  lineSide: { fontSize: 16, lineHeight: 24 },
+  controlsSide: { paddingHorizontal: spacing.lg, marginVertical: spacing.sm },
   more: { position: 'absolute', right: spacing.lg, bottom: spacing.xs, ...typography.bodyStrong, color: colors.gold },
   lineBox: { minHeight: 76, justifyContent: 'center', paddingHorizontal: spacing.xl, marginTop: spacing.sm },
   line: { fontSize: 18, lineHeight: 27, fontWeight: '600', color: colors.textPrimary },

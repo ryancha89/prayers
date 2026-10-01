@@ -11,6 +11,27 @@ export const CABIN_START_ZOOM = 0;
 const DRAG_SLOP = 8;
 
 /**
+ * A drag (dx, dy in points) from where it started → the new look, -1..1 each.
+ *
+ * Measured against the window's EDGES, not its current width and height: half the SHORT edge is the
+ * whole yaw range and 0.3 of the LONG edge the whole pitch range — exactly what width and height
+ * were in portrait. Read off the current width/height instead, a phone turned sideways doubled the
+ * yaw distance and more than halved the pitch one, so the same thumb movement suddenly looked twice
+ * as far up as before (landscape, 01-10).
+ */
+export function lookFromDrag(
+  start: { yaw: number; pitch: number },
+  dx: number,
+  dy: number,
+  window: { width: number; height: number },
+): { yaw: number; pitch: number } {
+  const short = Math.min(window.width, window.height);
+  const long = Math.max(window.width, window.height);
+  const clamp = (v: number) => Math.max(-1, Math.min(1, v));
+  return { yaw: clamp(start.yaw - dx / (short * 0.5)), pitch: clamp(start.pitch + dy / (long * 0.3)) };
+}
+
+/**
  * The player's camera on the train cabin. Unity eases every change (TrainJourneyDirector).
  *
  *  · Pinch with two fingers — zoom through three stops: 0 = the wide view with the whole window
@@ -18,7 +39,8 @@ const DRAG_SLOP = 8;
  *    up and scale down the size").
  *  · Drag with one finger — turn the camera (user 28-09: "the user could rotate the camera angle
  *    themselves"). Grab-the-world, like a 360° photo: drag left to look right. Half the screen's
- *    width is the whole yaw range; the angle stays where the player leaves it.
+ *    short edge is the whole yaw range, in either orientation (lookFromDrag); the angle stays
+ *    where the player leaves it, and through a rotation.
  *  · Double-tap — toggles the start and the close-up, and looks straight ahead again.
  *
  * The responder is claimed only on a second finger or once one finger has MOVED, so a single tap
@@ -79,8 +101,8 @@ export function useCabinCamera(enabled: boolean): {
           return;
         }
         if (!drag.current) return;
-        const { width, height } = Dimensions.get('window');
-        sendLook(drag.current.yaw - g.dx / (width * 0.5), drag.current.pitch + g.dy / (height * 0.3));
+        const next = lookFromDrag(drag.current, g.dx, g.dy, Dimensions.get('window'));
+        sendLook(next.yaw, next.pitch);
       },
       onPanResponderRelease: () => { pinch.current = null; drag.current = null; },
       onPanResponderTerminate: () => { pinch.current = null; drag.current = null; },

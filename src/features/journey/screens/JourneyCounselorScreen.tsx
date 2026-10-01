@@ -17,6 +17,7 @@ import { useJourneyPlayer } from '../player/journeyPlayer';
 import { BEAT_LINES, prefetchBeatLines } from '../player/beatVoice';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
 import { CoinPill } from '../../coins/components/CoinPill';
+import { column } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'JourneyCounselor'>;
@@ -52,14 +53,14 @@ export const JourneyCounselorScreen: React.FC = () => {
       <View style={styles.sky}>
         <JourneyTrainArt fadeTo={colors.bg} />
       </View>
-      <SafeAreaView edges={['top']} style={styles.flex}>
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.flex}>
         <View style={styles.header}>
           <Pressable hitSlop={12} onPress={() => { sfx.back(); navigation.goBack(); }} accessibilityRole="button">
             <Icon name="back" size={22} />
           </Pressable>
           <CoinPill />
         </View>
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView contentContainerStyle={[styles.scroll, column]}>
           <Text style={styles.eyebrow}>{t(journey.eyebrow)}</Text>
           <Text style={styles.title}>{t('journey.choose.title', { year: journey.year })}</Text>
           <Text style={styles.sub}>{t('journey.choose.sub')}</Text>

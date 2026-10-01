@@ -8,6 +8,7 @@ import {
   UnityBridge,
   UnitySessionPayload,
   UnityToRNEvent,
+  ViewInsetsPayload,
 } from '../types';
 
 /**
@@ -80,6 +81,10 @@ export class NativeUnityBridge implements UnityBridge {
   /** The player's look-around, -1..1 each (0,0 = straight ahead). */
   private journeyLook = { yaw: 0, pitch: 0 };
   private outbox: RNToUnityEvent[] = [];
+  /** The latest VIEW_INSETS any Unity-hosting screen reported, and the JSON of the last one that
+   *  actually went out (the dedupe key). */
+  private viewInsets?: ViewInsetsPayload;
+  private viewInsetsPosted = '';
 
   /* ---- UnityBridge ---- */
 
@@ -288,6 +293,32 @@ export class NativeUnityBridge implements UnityBridge {
     if (this.view) this.post({ type: 'JOURNEY_VOICE', payload });
   }
 
+  /**
+   * How much of the UnityView the app's UI covers (see ViewInsetsPayload).
+   *
+   * Posted straight through like the zoom — it is not a stage command and must not wait in the
+   * outbox for a UNITY_READY that the meditation room and the cabin never send. DEDUPLICATED: an
+   * onLayout fires for every panel that so much as re-measures, and the same four numbers again
+   * would make the room re-solve its framing for nothing. REPLAYED on every room's READY, because the
+   * first layout of a screen happens while its scene is still loading and that message lands on a
+   * room that is not there yet.
+   */
+  sendViewInsets(insets: ViewInsetsPayload): void {
+    this.viewInsets = { ...insets };
+    const key = JSON.stringify(this.viewInsets);
+    if (!this.view || key === this.viewInsetsPosted) return;
+    this.viewInsetsPosted = key;
+    this.post({ type: 'VIEW_INSETS', payload: this.viewInsets });
+  }
+
+  /** The room just came up: say the insets again even if they have not changed — the room that was
+   *  told last time is not the one listening now. */
+  private replayViewInsets(): void {
+    if (!this.viewInsets) return;
+    this.viewInsetsPosted = JSON.stringify(this.viewInsets);
+    this.post({ type: 'VIEW_INSETS', payload: this.viewInsets });
+  }
+
   /** Leaving the journey. Idempotent, and safe when Unity never booted. */
   closeJourneyRoom(): void {
     this.journeyPending = false;
@@ -342,6 +373,8 @@ export class NativeUnityBridge implements UnityBridge {
 
   registerView(view: UnityViewLike): void {
     this.view = view;
+    // A new view has been told nothing yet, whatever the last one heard.
+    this.viewInsetsPosted = '';
     // Resume path — the host just re-mounted over the surviving Unity
     // instance; open the session now (see openCounselingRoom).
     if (this.everReady && this.payload && !this.initSent) this.sendInit('view registered');
@@ -365,6 +398,8 @@ export class NativeUnityBridge implements UnityBridge {
     if (this.view === view) {
       this.view = null;
       this.ready = false;
+      // The next view is a new player: nothing it has been told yet.
+      this.viewInsetsPosted = '';
     }
   }
 
@@ -444,6 +479,7 @@ export class NativeUnityBridge implements UnityBridge {
       this.meditationPending = false;
       this.clearMeditationRetry();
       if (this.meditationState) this.post({ type: 'MEDITATION_STATE', payload: this.meditationState });
+      this.replayViewInsets();
       this.ready = true;
       this.everReady = true;
       this.clearInitRetry();
@@ -459,6 +495,8 @@ export class NativeUnityBridge implements UnityBridge {
       this.post({ type: 'JOURNEY_ZOOM', payload: { zoom: this.journeyZoom } });
       if (this.journeyLook.yaw !== 0 || this.journeyLook.pitch !== 0)
         this.post({ type: 'JOURNEY_LOOK', payload: this.journeyLook });
+      // Before the room frames its first shot is the whole point: the camera is placed by them.
+      this.replayViewInsets();
       this.ready = true;
       this.everReady = true;
       this.clearInitRetry();
@@ -470,6 +508,7 @@ export class NativeUnityBridge implements UnityBridge {
       // The room is up: nothing may re-open it now.
       this.clearInitRetry();
       if (!this.initSent && this.payload) this.sendInit('unity ready');
+      this.replayViewInsets();
       const queued = this.outbox;
       this.outbox = [];
       queued.forEach(e => this.post(e));

@@ -18,6 +18,7 @@ import { useJourneyPlayer } from '../player/journeyPlayer';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
 import { FortuneTicket } from '../components/FortuneTicket';
 import { monthWithYear, monthsLabel, ticketMonths } from '../format';
+import { column } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -99,7 +100,7 @@ export const JourneyResultScreen: React.FC = () => {
       <View style={styles.sky}>
         <JourneyTrainArt still fadeTo={colors.bg} />
       </View>
-      <SafeAreaView edges={['top', 'bottom']} style={styles.flex}>
+      <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.flex}>
         <Pressable
           style={styles.close}
           hitSlop={12}
@@ -111,7 +112,7 @@ export const JourneyResultScreen: React.FC = () => {
           accessibilityRole="button">
           <Icon name="back" size={22} />
         </Pressable>
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView contentContainerStyle={[styles.scroll, column]}>
           <Text style={styles.eyebrow}>{t('journey.header', { year })}</Text>
           <Text style={styles.dest}>YOUR DESTINATION</Text>
           <Text style={styles.title}>{t('journey.result.title', { year })}</Text>

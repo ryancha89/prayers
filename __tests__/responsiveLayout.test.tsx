@@ -17,6 +17,10 @@ import type { FlowState } from '../src/features/counseling/flow/engine';
 
 const SE = { width: 375, height: 667, scale: 2, fontScale: 1 };
 const PRO_MAX = { width: 440, height: 956, scale: 3, fontScale: 1 };
+// The same phones held sideways (01-10): the overlay is a right-hand panel there, under a ~48pt
+// top bar, with the whole remaining height to itself.
+const IPHONE_17_SIDE = { width: 874, height: 402, scale: 3, fontScale: 1 };
+const SE_SIDE = { width: 667, height: 375, scale: 2, fontScale: 1 };
 
 const state: FlowState = {
   phaseId: 'PLOOP',
@@ -45,7 +49,7 @@ const state: FlowState = {
 const noop = () => {};
 
 /** Every maxHeight the overlay puts on a node, in render order. */
-function maxHeights(window: typeof SE): number[] {
+function maxHeights(window: typeof SE, flowState: FlowState = state): number[] {
   const spy = jest
     .spyOn(Dimensions, 'get')
     .mockImplementation(() => window as never);
@@ -53,7 +57,7 @@ function maxHeights(window: typeof SE): number[] {
   ReactTestRenderer.act(() => {
     tree = ReactTestRenderer.create(
       <ConsultationOverlay
-        state={state}
+        state={flowState}
         onTap={noop}
         onChoose={noop}
         onSubmit={noop}
@@ -64,6 +68,8 @@ function maxHeights(window: typeof SE): number[] {
   });
   const found: number[] = [];
   const walk = (node: any) => {
+    // The tap-to-continue catcher is a sibling of the panel, so a tappable beat renders two roots.
+    if (Array.isArray(node)) return node.forEach(walk);
     if (!node || typeof node !== 'object') return;
     const style = node.props?.style;
     const flat = Array.isArray(style) ? style : [style];
@@ -93,6 +99,32 @@ describe('consultation overlay heights follow the window', () => {
     for (const h of heights) expect(h).toBeLessThanOrEqual(320);
     // A tall phone really does get more than a short one.
     expect(Math.max(...heights)).toBeGreaterThan(Math.max(...maxHeights(SE)));
+  });
+});
+
+describe('consultation overlay heights held sideways', () => {
+  const TOP_BAR = 48;
+  const card: FlowState = { ...state, screen: 'dialogue' as FlowState['screen'], line: '어서 오세요.', canTap: true };
+
+  it.each([
+    ['iPhone 17', IPHONE_17_SIDE],
+    ['SE', SE_SIDE],
+  ])('%s: the free chat and the dialogue card fit the panel under the top bar', (_name, window) => {
+    for (const flowState of [state, card]) {
+      const heights = maxHeights(window, flowState);
+      expect(heights.length).toBeGreaterThan(0);
+      const total = heights.reduce((a, b) => a + b, 0);
+      // The panel has the window's height below the top bar, and needs room left for the input row
+      // and the mode segment (~110pt) that carry no maxHeight of their own.
+      expect(total + 110).toBeLessThanOrEqual(window.height - TOP_BAR);
+      // The input row never drops below its floor.
+      for (const h of heights) expect(h).toBeGreaterThanOrEqual(64);
+    }
+  });
+
+  it('the transcript gets a larger share of a short window than it would stacked', () => {
+    // Stacked, 30% of 402 is clamped up to the 140 floor; in the panel it is 38% with no floor in the way.
+    expect(Math.max(...maxHeights(IPHONE_17_SIDE))).toBeGreaterThan(140);
   });
 });
 

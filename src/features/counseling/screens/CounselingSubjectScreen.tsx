@@ -16,6 +16,7 @@ import { defaultTopicFor } from '../topicsForCounselor';
 import type { CounselingTopic } from '../types';
 import { saveSajuProfile } from '../api/prayersServer';
 import { sfx } from '../../../shared/audio/sfx';
+import { column } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -81,7 +82,7 @@ export const CounselingSubjectScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.header}>
         <Pressable
           hitSlop={8}
@@ -95,7 +96,7 @@ export const CounselingSubjectScreen: React.FC = () => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]}>
         <Text style={styles.title}>{t('subject.title')}</Text>
 
         <View style={styles.group}>

@@ -14,6 +14,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
+  LayoutChangeEvent,
+  LayoutRectangle,
   Platform,
   Pressable,
   ScrollView,
@@ -74,6 +76,12 @@ export interface ConsultationOverlayProps {
    *  shape. Absent `onChatMode` hides the segment (a room with no server has no styles to pick). */
   chatMode?: ChatMode;
   onChatMode?(mode: ChatMode): void;
+  /** Landscape: where the right-hand panel starts, below the room's top bar. */
+  panelTop?: number;
+  /** The box the overlay's UI occupies, in the coordinates of the screen it is laid over — the
+   *  stack at the bottom in portrait, the right-hand panel in landscape — or null while it shows
+   *  nothing. The room reports this to Unity as VIEW_INSETS. */
+  onPanelLayout?(rect: LayoutRectangle | null): void;
 }
 
 export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
@@ -92,6 +100,8 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   chatMode = 'detail',
   onChatMode,
   counselorName,
+  panelTop = 0,
+  onPanelLayout,
 }) => {
   const lang = useLang();
   // The one-line explanation of the style just picked, the way SAVIS toasts it. Shown under the
@@ -131,16 +141,25 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
 
   // `none` is the doc's "minimal UI; prioritize environmental immersion" — the
   // entrance beat and the closing pull-back are meant to be watched, not read.
-  if (state.screen === 'none' && !state.line) return null;
+  const hidden = state.screen === 'none' && !state.line;
+  useEffect(() => {
+    if (hidden) onPanelLayout?.(null);
+  }, [hidden, onPanelLayout]);
+  if (hidden) return null;
+
+  // LANDSCAPE (01-10): the same stack, moved from the bottom of the screen into a panel down the
+  // right-hand side, so the counselor keeps the left ~60% of the room. One tree for both
+  // orientations — only styles change — so turning the phone mid-sentence keeps the typed question,
+  // the open keyboard's input and the transcript's scroll. Heights are shares of the window height
+  // either way; in landscape the panel has the whole height, so the transcript gets a larger share.
+  const landscape = screen.landscape;
+  const report = (e: LayoutChangeEvent) => onPanelLayout?.(e.nativeEvent.layout);
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.root}
-      pointerEvents="box-none"
-    >
+    <>
       {/* Tap-to-continue catches the whole screen, not just the card: a dialogue
-          beat is advanced by tapping anywhere, the way it was in the engine. */}
+          beat is advanced by tapping anywhere, the way it was in the engine. Outside the panel so
+          that in landscape "anywhere" still includes the room on the left. */}
       {state.canTap && (
         <Pressable
           style={StyleSheet.absoluteFill}
@@ -148,10 +167,23 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
           accessibilityRole="button"
         />
       )}
-
-      <View style={styles.stack} pointerEvents="box-none">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={landscape ? [styles.side, { top: panelTop, width: screen.sidePanel }] : styles.root}
+      pointerEvents="box-none"
+      onLayout={landscape ? report : undefined}
+    >
+      <SafeAreaView
+        edges={landscape ? ['right'] : []}
+        style={[styles.stack, landscape && styles.stackSide]}
+        pointerEvents="box-none"
+        onLayout={landscape ? undefined : report}
+      >
         {state.screen === 'loop' && (
-          <Transcript state={state} maxHeight={screen.vh(0.3, 140, 320)} />
+          <Transcript
+            state={state}
+            maxHeight={landscape ? screen.vh(0.38, 120, 320) : screen.vh(0.3, 140, 320)}
+          />
         )}
 
         {state.screen === 'report' && state.report && <Report state={state} />}
@@ -167,7 +199,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
             <ScrollView
               style={[
                 styles.lineScroll,
-                { maxHeight: screen.vh(0.24, 110, 220) },
+                { maxHeight: landscape ? screen.vh(0.4, 96, 220) : screen.vh(0.24, 110, 220) },
               ]}
               showsVerticalScrollIndicator={false}
             >
@@ -378,8 +410,9 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
             )}
           </SafeAreaView>
         )}
-      </View>
+      </SafeAreaView>
     </KeyboardAvoidingView>
+    </>
   );
 };
 
@@ -498,7 +531,12 @@ const ThinkingDots: React.FC = () => {
 
 const styles = StyleSheet.create({
   root: { ...absoluteFill, justifyContent: 'flex-end' },
+  // Landscape: the right-hand panel, from under the top bar to the bottom edge. `top` and `width`
+  // come from the room and useScreen.
+  side: { position: 'absolute', right: 0, bottom: 0, justifyContent: 'flex-end' },
   stack: { paddingHorizontal: spacing.lg, gap: spacing.sm },
+  // An open keyboard takes most of a landscape panel: the transcript is what gives way.
+  stackSide: { flexShrink: 1, paddingLeft: spacing.sm, paddingBottom: spacing.sm },
 
   card: {
     backgroundColor: colors.scrim,
@@ -551,7 +589,7 @@ const styles = StyleSheet.create({
   },
   suggestionText: { ...typography.body, color: colors.textPrimary },
 
-  transcript: {},
+  transcript: { flexShrink: 1 },
   transcriptBody: { gap: spacing.sm, paddingBottom: spacing.sm },
   bubble: { borderRadius: radius.md, padding: spacing.md, maxWidth: '86%' },
   bubbleCounselor: { alignSelf: 'flex-start', backgroundColor: colors.scrim },

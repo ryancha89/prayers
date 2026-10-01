@@ -15,6 +15,7 @@ import { useFavoritesStore } from '../../counselors/store/favoritesStore';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { CounselorCard } from '../../counselors/components/CounselorCard';
 import { openCounselor } from '../../counselors/openCounselor';
+import { column } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -53,7 +54,7 @@ export const LibraryScreen: React.FC = () => {
   const empty = isPeople ? t('library.noPeople') : t('library.noFavorites');
 
   return (
-    <SafeAreaView edges={['top']} style={styles.root}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
       <View style={styles.header}>
         <Pressable
           onPress={() => {
@@ -88,7 +89,7 @@ export const LibraryScreen: React.FC = () => {
         <FlatList
           data={people}
           keyExtractor={s => s.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, column]}
           renderItem={({ item }) => (
             <SubjectCard
               subject={item}
@@ -106,7 +107,7 @@ export const LibraryScreen: React.FC = () => {
         <FlatList
           data={favorites}
           keyExtractor={c => c.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, column]}
           renderItem={({ item }) => (
             <CounselorCard counselor={item} onPress={() => openCounselor(navigation, item)} />
           )}

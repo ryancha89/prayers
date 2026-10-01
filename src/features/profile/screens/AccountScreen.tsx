@@ -6,6 +6,7 @@ import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT } from '../../../shared/i18n';
 import { useAuthStore, signedOut } from '../../auth/store/authStore';
 import { deleteAccount, forgetLocalData } from '../../auth/api/deleteAccount';
+import { column } from '../../../shared/device/screen';
 
 /**
  * The account screen, and the one thing on it that is not optional.
@@ -49,8 +50,8 @@ export const AccountScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]}>
         <Text style={styles.title}>{t('my.account')}</Text>
 
         <View style={styles.card}>

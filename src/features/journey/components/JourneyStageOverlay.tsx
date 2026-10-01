@@ -9,6 +9,7 @@ import { partsOf, teaserOf, useJourneyPlayer } from '../player/journeyPlayer';
 import { REVEAL_ART, REVEAL_ART_DEFAULT } from '../art';
 import { monthsLabel } from '../format';
 import { useCoins } from '../../coins/store/coinStore';
+import { useScreen } from '../../../shared/device/screen';
 import type { Journey } from '../types';
 
 const INK = '#1A1330';
@@ -18,12 +19,20 @@ const INK = '#1A1330';
  * title card, the three face-down cards, the branch choice, the quarter list, the locked moment,
  * the reveal card, and the buttons that leave a station. One component, driven by the player's
  * `stage` and `moment` — the cabin behind it keeps running.
+ *
+ * ⚠️ EVERY CARD FITS THE WINDOW IT IS IN, and that is a tap rule before it is a looks rule: RN does
+ * not deliver a touch to a child outside its parent's bounds, so a card taller than the window had a
+ * Continue button you could see and not press (sim QA 01-10). In landscape the window is ~340pt
+ * tall, so the cards are capped at the window (`maxHeight: '100%'`), their words scroll, and the
+ * button sits OUTSIDE the scroll where it can never be pushed off.
  */
 export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey }) => {
   const t = useT();
   const lang = useLang();
   const s = useJourneyPlayer();
   const coins = useCoins(c => c.balance);
+  const landscape = useScreen().landscape;
+  const center = [styles.center, landscape && styles.centerSide];
   const chapter = journey.chapters[s.chapterIndex];
   if (!chapter || s.status === 'transition') return null;
   const parts = partsOf(s.content, chapter.id);
@@ -33,13 +42,13 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   // ── The station's title card: "1. 사회운 (Social & Career)" ─────────────────────────────
   if (s.stage === 'title') {
     return (
-      <View style={styles.center}>
-        <View style={styles.card}>
+      <View style={center}>
+        <Card landscape={landscape}
+          footer={<Primary label={t('journey.station.view', { station })} onPress={() => { sfx.select(); s.beginStation(); }} />}>
           <Text style={styles.number}>{chapter.number}.</Text>
           <Text style={styles.heading}>{chapter.heading ? t(chapter.heading) : station}</Text>
           {chapter.blurb ? <Text style={styles.blurb}>{t(chapter.blurb)}</Text> : null}
-          <Primary label={t('journey.station.view', { station })} onPress={() => { sfx.select(); s.beginStation(); }} />
-        </View>
+        </Card>
       </View>
     );
   }
@@ -48,13 +57,13 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   if (s.stage === 'pick') {
     const card = s.content?.chapters.find(c => c.id === chapter.id)?.card;
     return (
-      <View style={styles.center}>
+      <View style={center}>
         {s.pickedCard == null ? (
           <>
             <Text style={styles.prompt}>{t('journey.pick.prompt')}</Text>
             <View style={styles.cardRow}>
               {[0, 1, 2].map(i => (
-                <Pressable key={i} style={styles.cardBack} onPress={() => { sfx.select(); s.pickCard(i); }}
+                <Pressable key={i} style={[styles.cardBack, landscape && styles.cardBackSide]} onPress={() => { sfx.select(); s.pickCard(i); }}
                   accessibilityRole="button" accessibilityLabel={`${i + 1}`}>
                   <Text style={styles.cardBackMark}>✦</Text>
                 </Pressable>
@@ -62,11 +71,11 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
             </View>
           </>
         ) : (
-          <View style={styles.card}>
+          <Card landscape={landscape}
+            footer={<Primary label={t('journey.continue')} onPress={() => { sfx.tap(); s.beginReading(); }} />}>
             <Text style={styles.heading}>{card?.title ?? station}</Text>
             {card?.line ? <Text style={styles.blurb}>{card.line}</Text> : null}
-            <Primary label={t('journey.continue')} onPress={() => { sfx.tap(); s.beginReading(); }} />
-          </View>
+          </Card>
         )}
       </View>
     );
@@ -76,8 +85,8 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   if (s.stage === 'branch') {
     const paid = parts.map((p, i) => ({ p, i })).filter(x => x.p.momentId);
     return (
-      <View style={styles.center}>
-        <View style={styles.card}>
+      <View style={center}>
+        <Card landscape={landscape}>
           <Text style={styles.blurb}>{chapter.branchPrompt ? t(chapter.branchPrompt) : ''}</Text>
           {paid.map(({ p, i }) => (
             <Pressable key={p.momentId} style={styles.choice} onPress={() => { sfx.select(); s.chooseBranch(i); }} accessibilityRole="button">
@@ -85,7 +94,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
               <Text style={styles.choiceText}>{p.label ?? p.momentId}</Text>
             </Pressable>
           ))}
-        </View>
+        </Card>
       </View>
     );
   }
@@ -93,8 +102,9 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   // ── The monthly station: four quarters, each opened on its own ────────────────────────
   if (s.stage === 'quarters') {
     return (
-      <View style={styles.center}>
-        <View style={styles.card}>
+      <View style={center}>
+        {/* Its own list scrolls, so the card does not: the list is what gives way to the window. */}
+        <View style={[styles.card, landscape && styles.cardSide]}>
           <Text style={styles.heading}>{t('journey.quarters.title', { year: journey.year })}</Text>
           <ScrollView style={styles.quarterList} contentContainerStyle={styles.quarterListInner}>
             {parts.map((p, i) => (!p.momentId ? null : (
@@ -128,12 +138,15 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   // ── A locked moment: the offer, unlock, or later ──────────────────────────────────────
   if (s.moment === 'locked' && s.stage === '') {
     return (
-      <View style={[styles.center, styles.dim]}>
-        <View style={styles.lockBadge}>
-          <Icon name="lock" size={30} color={colors.gold} />
+      <View style={[center, styles.dim]}>
+        <View style={[styles.lockBadge, landscape && styles.lockBadgeSide]}>
+          <Icon name="lock" size={landscape ? 22 : 30} color={colors.gold} />
         </View>
-        <Text style={styles.teaser}>{teaserOf(s)}</Text>
-        <Pressable style={[styles.primary, s.unlocking && styles.busy]} disabled={s.unlocking}
+        {/* The offer is what gives way to a short window; the buttons under it never do. */}
+        <ScrollView style={styles.shrink} contentContainerStyle={styles.teaserBody} bounces={false}>
+          <Text style={styles.teaser}>{teaserOf(s)}</Text>
+        </ScrollView>
+        <Pressable style={[styles.primary, styles.fixed, s.unlocking && styles.busy]} disabled={s.unlocking}
           onPress={() => { sfx.select(); s.unlock(); }} accessibilityRole="button"
           accessibilityLabel={`${price ?? ''} ${t('journey.moment.unlock')}`}>
           {s.unlocking ? <ActivityIndicator color={INK} /> : (
@@ -143,7 +156,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
             </>
           )}
         </Pressable>
-        <Pressable style={styles.secondary} disabled={s.unlocking} onPress={() => { sfx.tap(); s.later(); }} accessibilityRole="button">
+        <Pressable style={[styles.secondary, styles.fixed]} disabled={s.unlocking} onPress={() => { sfx.tap(); s.later(); }} accessibilityRole="button">
           <Text style={styles.secondaryText}>{t('journey.moment.later')}</Text>
         </Pressable>
         <UnlockNote error={s.unlockError} coins={coins} price={price} />
@@ -154,16 +167,22 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   // ── The card a just-unlocked part opens with ──────────────────────────────────────────
   if (s.stage === 'reveal' && s.reveal) {
     return (
-      <View style={styles.center}>
+      <View style={center}>
         <RevealIn>
-        <View style={styles.reveal}>
-          <Image source={REVEAL_ART[chapter.id] ?? REVEAL_ART_DEFAULT} style={styles.revealArt} resizeMode="cover" />
-          <View style={styles.revealBody}>
-            <Text style={styles.eyebrow}>{t('journey.card.eyebrow', { year: journey.year })}</Text>
-            <Text style={styles.heading}>{s.reveal.title}</Text>
-            {s.reveal.months.length > 0 && <Text style={styles.months}>{monthsLabel(s.reveal.months, lang)}</Text>}
-            {s.reveal.description ? <Text style={styles.blurb} numberOfLines={4}>{s.reveal.description}</Text> : null}
-            <Text style={styles.stars}>{'★'.repeat(s.reveal.stars)}{'☆'.repeat(Math.max(0, 5 - s.reveal.stars))}</Text>
+        {/* Landscape lays the card on its side — the art down the left, the words beside it — since
+            the art on top would leave the words ~150pt of a ~340pt window. */}
+        <View style={[styles.reveal, landscape && styles.revealSide]}>
+          <Image source={REVEAL_ART[chapter.id] ?? REVEAL_ART_DEFAULT}
+            style={[styles.revealArt, landscape && styles.revealArtSide]} resizeMode="cover" />
+          <View style={[styles.revealBody, landscape && styles.revealBodySide]}>
+            <ScrollView style={landscape ? styles.shrink : styles.revealScroll}
+              contentContainerStyle={styles.revealScrollInner} bounces={false}>
+              <Text style={styles.eyebrow}>{t('journey.card.eyebrow', { year: journey.year })}</Text>
+              <Text style={styles.heading}>{s.reveal.title}</Text>
+              {s.reveal.months.length > 0 && <Text style={styles.months}>{monthsLabel(s.reveal.months, lang)}</Text>}
+              {s.reveal.description ? <Text style={styles.blurb} numberOfLines={4}>{s.reveal.description}</Text> : null}
+              <Text style={styles.stars}>{'★'.repeat(s.reveal.stars)}{'☆'.repeat(Math.max(0, 5 - s.reveal.stars))}</Text>
+            </ScrollView>
             <Primary label={t('journey.continue')} onPress={() => { sfx.tap(); s.continueReveal(); }} />
           </View>
         </View>
@@ -209,21 +228,39 @@ const UnlockNote: React.FC<{ error: string | null; coins: number | null; price: 
   return coins != null ? <Text style={styles.note}>{t('journey.moment.balance', { balance: coins.toLocaleString() })}</Text> : null;
 };
 
+/** A card over the window: its words scroll when the window is too short for them, its `footer` (the
+ *  one button that moves the journey on) stays outside the scroll and so always inside the card. */
+const Card: React.FC<{ landscape: boolean; footer?: React.ReactNode; children: React.ReactNode }> = ({ landscape, footer, children }) => (
+  <View style={[styles.card, landscape && styles.cardSide]}>
+    <ScrollView style={styles.shrink} contentContainerStyle={[styles.cardBody, landscape && styles.cardBodySide]} bounces={false}>
+      {children}
+    </ScrollView>
+    {footer}
+  </View>
+);
+
 const Primary: React.FC<{ label: string; onPress(): void }> = ({ label, onPress }) => (
-  <Pressable style={styles.primary} onPress={onPress} accessibilityRole="button">
+  <Pressable style={[styles.primary, styles.fixed]} onPress={onPress} accessibilityRole="button">
     <Text style={styles.primaryText}>{label}</Text>
   </Pressable>
 );
 
 const styles = StyleSheet.create({
   center: { ...absoluteFill, alignItems: 'center', justifyContent: 'center', padding: spacing.lg, gap: spacing.md },
+  centerSide: { padding: spacing.sm, gap: spacing.sm },
+  // Gives way to the window; `fixed` never does.
+  shrink: { flexGrow: 0, flexShrink: 1, alignSelf: 'stretch' },
+  fixed: { flexShrink: 0 },
   bottom: { ...absoluteFill, alignItems: 'center', justifyContent: 'flex-end', padding: spacing.lg },
   dim: { backgroundColor: 'rgba(5,4,20,0.62)' },
   flex: { flex: 1 },
   card: {
-    width: '88%', padding: spacing.xl, gap: spacing.md, alignItems: 'center', borderRadius: radius.xl,
-    backgroundColor: 'rgba(18,14,40,0.9)', borderWidth: 1, borderColor: 'rgba(233,196,106,0.45)',
+    width: '88%', maxWidth: 460, maxHeight: '100%', padding: spacing.xl, gap: spacing.md, alignItems: 'center',
+    borderRadius: radius.xl, backgroundColor: 'rgba(18,14,40,0.9)', borderWidth: 1, borderColor: 'rgba(233,196,106,0.45)',
   },
+  cardSide: { padding: spacing.lg, gap: spacing.sm },
+  cardBody: { alignItems: 'center', gap: spacing.md },
+  cardBodySide: { gap: spacing.sm },
   number: { ...typography.h2, color: colors.gold },
   heading: { ...typography.h2, color: colors.textPrimary, textAlign: 'center' },
   blurb: { ...typography.body, color: colors.textSecondary, textAlign: 'center', lineHeight: 22 },
@@ -233,6 +270,7 @@ const styles = StyleSheet.create({
     width: 86, height: 128, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#2A1F5A', borderWidth: 2, borderColor: colors.gold,
   },
+  cardBackSide: { width: 72, height: 108 },
   cardBackMark: { fontSize: 30, color: colors.gold },
   choice: {
     alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
@@ -240,7 +278,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.gold, backgroundColor: 'rgba(233,196,106,0.08)',
   },
   choiceText: { ...typography.bodyStrong, color: colors.textPrimary, textAlign: 'center', flexShrink: 1 },
-  quarterList: { alignSelf: 'stretch', maxHeight: 260 },
+  quarterList: { alignSelf: 'stretch', maxHeight: 260, flexGrow: 0, flexShrink: 1 },
   quarterListInner: { gap: spacing.sm },
   quarter: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.xs, padding: spacing.md,
@@ -252,6 +290,8 @@ const styles = StyleSheet.create({
     width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: 'rgba(233,196,106,0.6)', backgroundColor: 'rgba(18,14,40,0.8)',
   },
+  lockBadgeSide: { width: 44, height: 44, borderRadius: 22 },
+  teaserBody: { alignItems: 'center' },
   teaser: { ...typography.h3, color: colors.textPrimary, textAlign: 'center', paddingHorizontal: spacing.md, lineHeight: 26 },
   primary: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minHeight: 50,
@@ -265,7 +305,7 @@ const styles = StyleSheet.create({
   error: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
   note: { ...typography.tiny, color: colors.textMuted, textAlign: 'center' },
   reveal: {
-    width: '84%', maxHeight: '100%', borderRadius: radius.xl, overflow: 'hidden',
+    width: '84%', maxWidth: 560, maxHeight: '100%', borderRadius: radius.xl, overflow: 'hidden',
     backgroundColor: 'rgba(18,14,40,0.95)', borderWidth: 1, borderColor: 'rgba(233,196,106,0.6)',
   },
   // The card must fit the window between the header and the panel: past it, its Continue button
@@ -273,6 +313,11 @@ const styles = StyleSheet.create({
   revealIn: { width: '100%', maxHeight: '100%', alignItems: 'center' },
   revealArt: { width: '100%', height: 150, minHeight: 56, flexShrink: 1 },
   revealBody: { padding: spacing.lg, gap: spacing.sm, alignItems: 'center', flexShrink: 0 },
+  revealScroll: { flexGrow: 0, alignSelf: 'stretch' },
+  revealScrollInner: { alignItems: 'center', gap: spacing.sm },
+  revealSide: { flexDirection: 'row' },
+  revealArtSide: { width: '38%', height: 'auto', minHeight: 0, alignSelf: 'stretch' },
+  revealBodySide: { flex: 1, flexShrink: 1, padding: spacing.md },
   eyebrow: { ...typography.tiny, color: colors.gold, letterSpacing: 2 },
   months: { ...typography.h3, color: colors.gold },
   stars: { fontSize: 16, color: colors.gold, letterSpacing: 3 },

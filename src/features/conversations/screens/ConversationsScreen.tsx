@@ -11,6 +11,7 @@ import { RootStackParamList } from '../../../navigation/types';
 import { useConversationsStore } from '../store/conversationsStore';
 import { ConversationRow } from '../components/ConversationRow';
 import { syncConversationsFromServer } from '../syncConversations';
+import { column } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -57,8 +58,8 @@ export const ConversationsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
-      <Text style={styles.header}>{t('conv.title')}</Text>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+      <Text style={[styles.header, column]}>{t('conv.title')}</Text>
       {conversations.length === 0 ? (
         <View style={styles.empty}>
           {syncing ? <ActivityIndicator color={colors.violetSoft} /> : <Icon name="chat" size={44} />}
@@ -69,7 +70,7 @@ export const ConversationsScreen: React.FC = () => {
         <FlatList
           data={conversations}
           keyExtractor={c => c.sessionId}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, column]}
           refreshControl={
             <RefreshControl
               refreshing={syncing}

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, LayoutChangeEvent, LayoutRectangle, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -28,6 +28,8 @@ import { voiceFor } from '../flow/voice';
 import { PixelCatStage } from '../pixel/PixelCatStage';
 import { isPixelCounselor } from '../pixel/pixelCounselors';
 import type { CatCue, CatGesture } from '../pixel/cues';
+import { useScreen } from '../../../shared/device/screen';
+import { useViewInsets, type MeasuredRects } from '../bridge/viewInsets';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'CounselingRoom'>;
@@ -47,6 +49,20 @@ const LoadingTips: React.FC = () => {
 /** How long the room may spend between SESSION_INIT and UNITY_READY before the screen gives up.
  *  See the deadline effect below for why it is this generous. */
 const UNITY_HANDSHAKE_TIMEOUT_MS = 30_000;
+
+/** What of the room the app's UI hides, for VIEW_INSETS: the top bar, and the overlay's panel —
+ *  its stack along the bottom in portrait, the right-hand panel in landscape. All three boxes are
+ *  measured in the room container's coordinates. */
+export function roomCoveredPx(r: MeasuredRects, landscape: boolean) {
+  const { host, topBar, panel } = r;
+  if (!host) return null;
+  const top = topBar ? topBar.y + topBar.height : 0;
+  if (!panel) return { top };
+  return landscape ? { top, right: host.width - panel.x } : { top, bottom: host.height - panel.y };
+}
+
+/** Until the top bar has measured itself: its 40pt buttons plus the status bar of a portrait phone. */
+const TOP_BAR_GUESS = 56;
 
 let msgSeq = 0;
 const msgId = () => `m_${Date.now().toString(36)}_${msgSeq++}`;
@@ -110,6 +126,27 @@ export const CounselingRoomScreen: React.FC = () => {
 
   // A pixel counselor is drawn here, not staged in Unity — see pixel/pixelCounselors.ts.
   const pixel = isPixelCounselor(counselor?.characterId);
+
+  // Landscape moves the overlay into a right-hand panel under the top bar; the Unity room is told
+  // what is covered so its camera frames the counselor into the part left visible. Only the native
+  // room is told — the pixel cat and the drawn stage are this screen's own.
+  const screen = useScreen();
+  const [topBarBottom, setTopBarBottom] = useState(TOP_BAR_GUESS);
+  const insets = useViewInsets({
+    send: !pixel && isNativeUnity() ? i => getUnityBridge().sendViewInsets(i) : undefined,
+    landscape: screen.landscape,
+    compute: r => roomCoveredPx(r, screen.landscape),
+  });
+  const trackTopBar = insets.track('topBar');
+  const onTopBarLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const { y, height } = e.nativeEvent.layout;
+      setTopBarBottom(Math.round(y + height));
+      trackTopBar(e);
+    },
+    [trackTopBar],
+  );
+  const onPanelLayout = useCallback((rect: LayoutRectangle | null) => insets.put('panel', rect), [insets]);
   const [catThinking, setCatThinking] = useState(false);
   const [catGesture, setCatGesture] = useState<{ name: CatGesture; seq: number } | null>(null);
   const onCue = useCallback((cue: CatCue) => {
@@ -280,7 +317,7 @@ export const CounselingRoomScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={insets.track('host')}>
       {pixel ? (
         <PixelCatStage
           speaking={consultation.state.speaking}
@@ -337,10 +374,12 @@ export const CounselingRoomScreen: React.FC = () => {
         micAvailable={consultation.micAvailable}
         chatMode={pixel ? 'auto' : chatMode}
         onChatMode={pixel ? undefined : setChatMode}
+        panelTop={topBarBottom}
+        onPanelLayout={onPanelLayout}
       />
 
       {/* Top controls — kept minimal, never covering the character (spec §27) */}
-      <SafeAreaView edges={['top']} style={styles.topBar} pointerEvents="box-none">
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.topBar} pointerEvents="box-none" onLayout={onTopBarLayout}>
         <Pressable style={styles.roundBtn} hitSlop={8} onPress={onExit}>
           <Icon name="back" size={26} />
         </Pressable>

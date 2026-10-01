@@ -11,6 +11,7 @@ import { SELF, useSubjectsStore } from '../store/subjectsStore';
 import { maskBirthDate, maskBirthTime } from '../birthMask';
 import type { RootStackParamList } from '../../../navigation/types';
 import type { CounselingSubject } from '../../counseling/types';
+import { column } from '../../../shared/device/screen';
 
 /**
  * The birth-data form, for a new person OR for one that already exists — including `self`, the
@@ -65,7 +66,7 @@ export const AddSubjectScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.header}>
         {/* No way back out of the first run: this screen IS the app until it is answered, and a
             back arrow with nothing behind it is a dead control. */}
@@ -86,7 +87,7 @@ export const AddSubjectScreen: React.FC = () => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]}>
         {onboarding ? <Text style={styles.intro}>{t('addSubject.selfIntro')}</Text> : null}
         <Field
           label={t('addSubject.name')}

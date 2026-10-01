@@ -314,12 +314,35 @@ export type RNToUnityEvent =
   /** The Talk button. Opens whoever the room currently has in reach — the room decides who, so
    *  there is only ever one answer to "who is nearest". */
   | { type: 'WALK_TALK' }
+  /** How much of the UnityView the app's own UI covers, so the room can frame its camera into the
+   *  part the player can actually see. Sent by every screen that hosts Unity on each layout change
+   *  (rotation, a panel growing), deduplicated, and replayed on the room's READY message. */
+  | { type: 'VIEW_INSETS'; payload: ViewInsetsPayload }
   /** DEV ONLY. Play one cue on whoever is in the chair and report what the rig made of it.
    *
    *  It goes through the room's ordinary PlayAnimation, not a shortcut into the Animator, so what
    *  the tester sees is what a phase would produce — vote, held-pose preference, bool clearing and
    *  all. The answer comes back as CUE_RESULT. */
   | { type: 'CUE_TEST'; payload: { cue: string } };
+
+/**
+ * The share of the UnityView, 0..1 of ITS OWN size on each side, that RN UI covers.
+ *
+ * Portrait journey: `bottom` ≈ 0.40 (the dialogue/controls panel) and `top` ≈ the header. Landscape:
+ * the panel moves to the right, so `right` ≈ 0.39 and `bottom` is 0. A side nothing covers is 0 —
+ * never absent, because JsonUtility reads a missing field as 0 anyway and an explicit 0 says it was
+ * meant. Mirrored by name on the Unity side (RNViewInsets); a rename here is a silently empty
+ * payload over there.
+ */
+export interface ViewInsetsPayload {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+  /** The window is wider than it is tall. Lets the room pick its landscape framings outright
+   *  instead of inferring them from the insets. */
+  landscape: boolean;
+}
 
 export interface JourneyInitPayload {
   journeyId: string;
@@ -440,4 +463,7 @@ export interface UnityBridge {
   sendEvent(event: RNToUnityEvent): void;
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
   closeCounselingRoom(): Promise<void>;
+  /** Report how much of the UnityView the app's UI covers (VIEW_INSETS). Deduplicated, and
+   *  remembered for the room's READY message. */
+  sendViewInsets(insets: ViewInsetsPayload): void;
 }

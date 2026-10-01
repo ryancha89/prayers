@@ -98,7 +98,7 @@ export const HomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
       <CounselorGrid
         counselors={counselors}
         onPressCounselor={c => openCounselor(navigation, c)}

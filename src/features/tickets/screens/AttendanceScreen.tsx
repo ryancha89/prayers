@@ -17,6 +17,7 @@ import {
   type AttendanceMonth,
   type AttendanceStatus,
 } from '../api/attendance';
+import { column } from '../../../shared/device/screen';
 
 type Rt = RouteProp<RootStackParamList, 'Attendance'>;
 
@@ -106,8 +107,8 @@ export const AttendanceScreen: React.FC = () => {
     `${cursor.year}-${String(cursor.month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
   return (
-    <SafeAreaView edges={['top']} style={styles.root}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
+      <ScrollView contentContainerStyle={[styles.scroll, column]}>
         <View style={styles.header}>
           <Pressable
             onPress={() => {

@@ -31,8 +31,10 @@ export const CounselorHero: React.FC<{ counselor: CounselorSummary }> = ({
   // 460 was measured on a 844pt phone, where it is 55% of the screen. Kept as a share of the
   // window so it stays a hero on a small phone instead of eating the whole first screen, and the
   // scrim keeps its proportion of it rather than covering a different amount of the art.
+  // Held sideways the same floor would be 320 of 402pt; there the hero is three quarters of the
+  // window, and the name and the hook still show on the first screen.
   const screen = useScreen();
-  const height = screen.vh(0.55, 320, 460);
+  const height = screen.landscape ? screen.vh(0.75, 240, 320) : screen.vh(0.55, 320, 460);
   return (
     <View style={[styles.hero, { height, backgroundColor: counselor.accent }]}>
       {counselor.cardImage ? (

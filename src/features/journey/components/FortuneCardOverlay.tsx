@@ -70,6 +70,9 @@ const styles = StyleSheet.create({
   card: {
     alignSelf: 'center',
     width: '82%',
+    // A landscape window is ~520pt wide: 82% of it is a banner, not a card.
+    maxWidth: 420,
+    maxHeight: '100%',
     padding: spacing.xl,
     borderRadius: radius.xl,
     backgroundColor: 'rgba(18,14,40,0.88)',

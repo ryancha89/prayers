@@ -15,6 +15,7 @@ import { isPixelCounselor } from '../pixel/pixelCounselors';
 import { getUserAuth } from '../../auth/store/authStore';
 import { CounselingTopic, UnityToRNEvent } from '../types';
 import { fetchTicketBalance } from '../api/tickets';
+import { useScreen } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'UnityEntry'>;
@@ -41,6 +42,10 @@ export const UnityEntryScreen: React.FC = () => {
   // live synthesis.
   const topic = storedTopic ?? (defaultTopicFor(counselor?.characterId) as CounselingTopic);
   const handled = useRef(false);
+  // Held sideways the portrait, spinner and two lines are most of a 375pt-tall SE: a smaller face
+  // keeps the copy clear of the edges. No UnityView here — the room screen hosts it — so nothing to
+  // tell Unity either.
+  const landscape = useScreen().landscape;
 
   // null = still asking, false = go ahead, true = stop here and say why.
   //
@@ -138,11 +143,11 @@ export const UnityEntryScreen: React.FC = () => {
       {counselor?.avatarImage ?? counselor?.cardImage ? (
         <Image
           source={(counselor?.avatarImage ?? counselor?.cardImage)!}
-          style={styles.portrait}
+          style={[styles.portrait, landscape && styles.portraitSide]}
           resizeMode="cover"
         />
       ) : (
-        <View style={[styles.orb, { backgroundColor: counselor?.accent ?? colors.violet }]} />
+        <View style={[styles.orb, landscape && styles.orbSide, { backgroundColor: counselor?.accent ?? colors.violet }]} />
       )}
       <ActivityIndicator color={colors.violetSoft} style={styles.spinner} />
       <Text style={styles.title}>{t('unity.preparing')}</Text>
@@ -157,6 +162,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   orb: { width: 120, height: 120, borderRadius: 60, opacity: 0.6, marginBottom: spacing.xxl },
   portrait: { width: 160, height: 160, borderRadius: 80, marginBottom: spacing.xxl },
+  portraitSide: { width: 112, height: 112, borderRadius: 56, marginBottom: spacing.lg },
+  orbSide: { width: 96, height: 96, borderRadius: 48, marginBottom: spacing.lg },
   spinner: { marginBottom: spacing.lg },
   title: { ...typography.h3, color: colors.textPrimary },
   subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center', paddingHorizontal: spacing.xxl },
