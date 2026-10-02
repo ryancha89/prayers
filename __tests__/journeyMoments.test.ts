@@ -289,7 +289,10 @@ describe('unlocking', () => {
     await rideToCareerLock();
     await player().unlock();
     await jest.advanceTimersByTimeAsync(CUE_AFTER_UNLOCK_MS + 100);
-    expect(player().cueSeq).toBe(first + 1);
+    // Only grows: the second ride's explanation effects (career's cityLights) and its unlock cue both
+    // count on from where the first ride left off.
+    expect(player().cueSeq).toBeGreaterThan(first);
+    expect(player().cue).toBe('coins');
   });
 });
 

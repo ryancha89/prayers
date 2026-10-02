@@ -10,7 +10,7 @@ import { useSavedJourneys, withPart } from '../store/savedJourneysStore';
 import { useCoins } from '../../coins/store/coinStore';
 import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { JOURNEYS } from '../data/journeys';
-import type { Chapter, FortuneCard, Journey, JourneyCard, JourneyContent, JourneyPart, MomentCue, MomentPresentation } from '../types';
+import type { CabinAmbient, Chapter, FortuneCard, Journey, JourneyCard, JourneyContent, JourneyPart, MomentCue, MomentPresentation } from '../types';
 import type { JourneyStatePayload } from '../../counseling/types';
 
 /**
@@ -313,6 +313,7 @@ function tick() {
     if (st.status !== 'playing') return;
     useJourneyPlayer.setState({ position: t });
     raiseCard(t);
+    explain(t);
     if (voiceIsSilent && t >= st.duration) partEnded();
   };
   if (voiceIsSilent) onPosition(silentOffset + (Date.now() - silentStart) / 1000);
@@ -335,7 +336,71 @@ function raiseCard(t: number) {
       activeCard: { ...c, saveable: true, key, chapterId, holdMs },
       shownCards: [...st.shownCards, key],
     }));
+    const cue = cardCueOf(chapterId, c.months);
+    if (cue) fireCue(cue);
   });
+}
+
+// ── The explanation effects (storyboard 02-10) ──────────────────────────────────────────────
+// While a station is explained the cabin illustrates it: a soft ambient for the whole station
+// (cabinAmbientOf) and one-shots at points in each part: the months station fires each month's
+// season as its card rises; every other station fires on the schedule below, as fractions of each
+// part (a topic's reveal card is shown before its part plays, so it is no clock to hang them on).
+const EXPLAIN_SCHEDULE: Record<string, { at: number; cue: MomentCue }[]> = {
+  intro: [{ at: 0.4, cue: 'sparkle' }],
+  career: [{ at: 0.35, cue: 'cityLights' }],
+  wealth: [{ at: 0.35, cue: 'orb' }],
+  love: [{ at: 0.35, cue: 'petals' }],
+  health: [{ at: 0.35, cue: 'leaves' }],
+  overall: [{ at: 0.3, cue: 'hologram' }, { at: 0.75, cue: 'shootingStar' }],
+  outro: [{ at: 0.5, cue: 'stars' }],
+};
+
+/** The season burst a month card fires (calendar months; December is winter night). */
+export function seasonCueOf(month: number): MomentCue {
+  if (month === 12 || month <= 2) return 'snow';
+  if (month <= 5) return 'petals';
+  if (month <= 8) return 'fireflies';
+  return 'maple';
+}
+
+/** The effect a card rising in `chapterId` fires: only month cards have one (their season). */
+export function cardCueOf(chapterId: string, months: number[]): MomentCue | null {
+  return chapterId === 'monthly' && months.length ? seasonCueOf(months[0]) : null;
+}
+
+/** The scheduled one-shots of a card-less part that are due at position `t` (seconds). */
+export function explainCuesDue(chapterId: string, t: number, duration: number, fired: number): { cues: MomentCue[]; fired: number } {
+  const plan = EXPLAIN_SCHEDULE[chapterId] ?? [];
+  const cues: MomentCue[] = [];
+  let n = fired;
+  while (n < plan.length && duration > 0 && t >= plan[n].at * duration) cues.push(plan[n++].cue);
+  return { cues, fired: n };
+}
+
+/** The station's ambient for the cabin. */
+export function cabinAmbientOf(chapterId: string | undefined): CabinAmbient {
+  switch (chapterId) {
+    case 'intro': case 'career': case 'wealth': case 'love': case 'health': case 'overall': case 'monthly':
+      return chapterId;
+    default:
+      return '';
+  }
+}
+
+/** Per part: how many scheduled one-shots have fired (reset when a part starts). */
+let explainPart = '';
+let explainFired = 0;
+
+function explain(t: number) {
+  const s = useJourneyPlayer.getState();
+  const chapterId = chapterAt(s.chapterIndex)?.id;
+  if (!chapterId || s.duration <= 0) return;
+  const key = `${generation}:${s.chapterIndex}.${s.partIndex}`;
+  if (key !== explainPart) { explainPart = key; explainFired = 0; }
+  const due = explainCuesDue(chapterId, t, s.duration, explainFired);
+  explainFired = due.fired;
+  for (const c of due.cues) fireCue(c);
 }
 
 function fireCue(cue: MomentCue) {

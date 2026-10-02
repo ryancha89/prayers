@@ -13,7 +13,7 @@ import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useArchiveStore } from '../../archive/store/archiveStore';
 import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { JOURNEYS } from '../data/journeys';
-import { TRANSITION_MS, cabinMomentOf, currentPart, teaserOf, useJourneyPlayer, type ActiveCard } from '../player/journeyPlayer';
+import { TRANSITION_MS, cabinAmbientOf, cabinMomentOf, currentPart, teaserOf, useJourneyPlayer, type ActiveCard } from '../player/journeyPlayer';
 import { BEAT_LINES, dropPendingBeatLines, openStoryboard, prefetchBeatLines, sayBeatLine, stopBeatVoice } from '../player/beatVoice';
 import { TrainWindow } from '../components/TrainWindow';
 import { JourneyBackdrop } from '../components/JourneyBackdrop';
@@ -289,6 +289,7 @@ export const JourneyScreen: React.FC = () => {
         speaking: s.status === 'playing' || beatSpeaking || s.teaserSpeaking,
         rough: roughOf(s.activeCard, s.content?.summary.cautionMonths),
         ...cabinMomentOf(s),
+        ambient: cabinAmbientOf(journey.chapters[s.chapterIndex]?.id),
       }
     : null;
   const cabinKey = cabinState ? JSON.stringify(cabinState) : '';

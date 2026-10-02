@@ -377,6 +377,10 @@ export interface JourneyStatePayload {
   cueSeq?: number;
   /** Camera stop, applied when it changes: wide · built · close; '' leaves the camera alone. */
   shot?: '' | 'wide' | 'built' | 'close';
+  /** The station's soft continuous effect while its reading plays (intro · career · wealth · love ·
+   *  health · overall · monthly — monthly follows `month`'s season); '' none. Unity turns it off in
+   *  transitions and at the end. */
+  ambient?: string;
 }
 
 export interface JourneyVoicePayload {

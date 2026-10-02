@@ -47,7 +47,12 @@ export interface FortuneCard {
 
 /** One-shot effects the cabin plays over the table (Unity JourneyMomentPlan.Cues). `reveal` is the
  *  unlock burst Unity plays by itself on locked → premium; RN sends the others. */
-export type MomentCue = 'reveal' | 'sparkle' | 'stars' | 'coins' | 'hearts' | 'leaves';
+export type MomentCue = 'reveal' | 'sparkle' | 'stars' | 'coins' | 'hearts' | 'leaves'
+  // The explanation effects (storyboard 02-10): played while the counsellor explains a station.
+  | 'hologram' | 'orb' | 'shootingStar' | 'cityLights' | 'petals' | 'snow' | 'maple' | 'fireflies';
+
+/** The cabin's soft continuous effect for a station (JOURNEY_STATE `ambient`). */
+export type CabinAmbient = '' | 'intro' | 'career' | 'wealth' | 'love' | 'health' | 'overall' | 'monthly';
 
 /**
  * How the app presents a paid moment (Jeongmin 01-10). The moments themselves — where they are,
