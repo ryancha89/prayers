@@ -30,19 +30,18 @@ describe('explanation effects', () => {
     expect(cardCueOf('wealth', [5])).toBeNull();
   });
 
-  it('fires a station’s one-shots once each, at their point in the part', () => {
-    // Overall: the hologram at 30 %, the shooting star at 75 % of a 20 s part.
-    expect(explainCuesDue('overall', 5, 20, 0)).toEqual({ cues: [], fired: 0 });
-    expect(explainCuesDue('overall', 6, 20, 0)).toEqual({ cues: ['hologram'], fired: 1 });
-    expect(explainCuesDue('overall', 7, 20, 1)).toEqual({ cues: [], fired: 1 });
-    expect(explainCuesDue('overall', 16, 20, 1)).toEqual({ cues: ['shootingStar'], fired: 2 });
-    // A seek past both fires both, once.
-    expect(explainCuesDue('overall', 19, 20, 0)).toEqual({ cues: ['hologram', 'shootingStar'], fired: 2 });
-    expect(explainCuesDue('overall', 20, 20, 2)).toEqual({ cues: [], fired: 2 });
-    expect(explainCuesDue('wealth', 8, 20, 0).cues).toEqual(['orb']);
+  it('fires one effect per part, only in a station’s first parts', () => {
+    // Overall: the hologram at 30 % of its first part, the shooting star at half of its second.
+    expect(explainCuesDue('overall', 5, 20, 0, 0)).toEqual({ cues: [], fired: 0 });
+    expect(explainCuesDue('overall', 6, 20, 0, 0)).toEqual({ cues: ['hologram'], fired: 1 });
+    expect(explainCuesDue('overall', 19, 20, 1, 0)).toEqual({ cues: [], fired: 1 });
+    expect(explainCuesDue('overall', 10, 20, 0, 1).cues).toEqual(['shootingStar']);
+    // Topics: once, in the free part; the paid parts are quiet (sim 02-10: "VFX bị nhiều quá").
+    expect(explainCuesDue('wealth', 8, 20, 0, 0).cues).toEqual(['orb']);
+    expect(explainCuesDue('wealth', 19, 20, 0, 1).cues).toEqual([]);
+    expect(explainCuesDue('wealth', 19, 20, 0, 2).cues).toEqual([]);
     expect(explainCuesDue('love', 8, 20, 0).cues).toEqual(['petals']);
     expect(explainCuesDue('career', 8, 20, 0).cues).toEqual(['cityLights']);
-    // The months station fires on its cards, not on a schedule; no duration, nothing due.
     expect(explainCuesDue('monthly', 19, 20, 0).cues).toEqual([]);
     expect(explainCuesDue('wealth', 10, 0, 0).cues).toEqual([]);
   });

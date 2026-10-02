@@ -27,6 +27,8 @@ const SILENT: Record<string, string> = {
   'features/auth/screens/LoginScreen.tsx': 'not wired yet',
   'features/journey/components/JourneyHeroCard.tsx': 'the caller answers the press (HomeScreen plays select)',
   'features/journey/components/RailwayProgress.tsx': 'the caller answers the press (JourneyScreen plays tap)',
+  'features/journey/components/CardPick.tsx':
+    'the caller answers the press (JourneyStageOverlay plays select); the pick plays its own deal/flip/reveal sounds',
   'features/profile/screens/AccountScreen.tsx': 'not wired yet',
   'features/subjects/components/SubjectCard.tsx': 'not wired yet',
   'features/subjects/screens/AddSubjectScreen.tsx': 'not wired yet',

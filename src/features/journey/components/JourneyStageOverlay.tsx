@@ -6,7 +6,8 @@ import { absoluteFill, colors, radius, spacing, typography } from '../../../shar
 import { useLang, useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import { partsOf, teaserOf, useJourneyPlayer } from '../player/journeyPlayer';
-import { CARD_BACKS, REVEAL_ART, REVEAL_ART_DEFAULT } from '../art';
+import { REVEAL_ART, REVEAL_ART_DEFAULT } from '../art';
+import { CardPick } from './CardPick';
 import { monthsLabel } from '../format';
 import { useCoins } from '../../coins/store/coinStore';
 import { useScreen } from '../../../shared/device/screen';
@@ -58,25 +59,15 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
     const card = s.content?.chapters.find(c => c.id === chapter.id)?.card;
     return (
       <View style={center}>
-        {s.pickedCard == null ? (
-          <>
-            <Text style={styles.prompt}>{t('journey.pick.prompt')}</Text>
-            <View style={styles.cardRow}>
-              {[0, 1, 2].map(i => (
-                <Pressable key={i} style={[styles.cardBack, landscape && styles.cardBackSide]} onPress={() => { sfx.select(); s.pickCard(i); }}
-                  accessibilityRole="button" accessibilityLabel={`${i + 1}`}>
-                  <Image source={CARD_BACKS[i]} style={styles.cardBackArt} resizeMode="cover" />
-                </Pressable>
-              ))}
-            </View>
-          </>
-        ) : (
-          <Card landscape={landscape}
-            footer={<Primary label={t('journey.continue')} onPress={() => { sfx.tap(); s.beginReading(); }} />}>
-            <Text style={styles.heading}>{card?.title ?? station}</Text>
-            {card?.line ? <Text style={styles.blurb}>{card.line}</Text> : null}
-          </Card>
-        )}
+        {s.pickedCard == null ? <Text style={styles.prompt}>{t('journey.pick.prompt')}</Text> : null}
+        <CardPick
+          picked={s.pickedCard}
+          onPick={i => { sfx.select(); s.pickCard(i); }}
+          title={card?.title ?? station}
+          line={card?.line}
+          small={landscape}
+          footer={<Primary label={t('journey.continue')} onPress={() => { sfx.tap(); s.beginReading(); }} />}
+        />
       </View>
     );
   }

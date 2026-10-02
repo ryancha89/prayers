@@ -6,6 +6,9 @@ import { bundledSoundBase, bundledSoundPath } from '../../../shared/audio/bundle
 import { fetchJourneyContent, journeyBirthOf, narrationUrl, type JourneyContentError, type NarrationClip } from '../api/journeyApi';
 import { beatVoiceSettled, prefetchBeatLines, sayBeatLine, stopBeatVoice } from './beatVoice';
 import { unlockMoment, type UnlockFailure } from './unlockMoment';
+import { ARRIVAL_CHIME_AT_MS, CUE_SFX_LEAD_MS, cancelJourneySfx, playJourneySfx, preloadJourneySfx, releaseJourneySfx, scheduleJourneySfx, setDuckTarget, sfxForCue, type JourneySfx } from './journeySfx';
+import { setStationAmbience, stationAmbienceOf, stopStationAmbience } from './stationAmbience';
+import { useSoundStore } from '../../../shared/audio/store';
 import { useSavedJourneys, withPart } from '../store/savedJourneysStore';
 import { useCoins } from '../../coins/store/coinStore';
 import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
@@ -78,6 +81,12 @@ export type UnlockError = UnlockFailure['reason'];
 /** The topic effect follows the unlock by this much, so it lands after the cabin's own unlock burst
  *  (Unity plays `reveal` on locked → premium) instead of on top of it. */
 export const CUE_AFTER_UNLOCK_MS = 1200;
+
+/** Re-exported: the cue → sound lead is part of this player's contract with the cabin. */
+export { CUE_SFX_LEAD_MS };
+
+/** The journey BGM's volume; the effect sounds duck it from here (journeySfx). */
+export const JOURNEY_BGM_VOLUME = 0.25;
 
 interface JourneyState {
   journeyId: string | null;
@@ -279,14 +288,18 @@ function startLayer(which: 'bgm' | 'ambient', file: string | null, volume: numbe
     s.play?.();
   });
   layers[which] = s;
+  // The effects duck the music, never the ambient: the carriage keeps rolling under a hologram.
+  if (which === 'bgm') setDuckTarget(s, volume);
 }
 
 function startLayers(journey: Journey) {
-  startLayer('bgm', journey.audio.bgm, 0.25);
+  startLayer('bgm', journey.audio.bgm, JOURNEY_BGM_VOLUME);
   startLayer('ambient', journey.audio.ambient, 0.35);
+  preloadJourneySfx();
 }
 
 function stopLayers() {
+  setDuckTarget(null);
   for (const k of ['bgm', 'ambient'] as const) {
     try {
       layers[k]?.stop?.();
@@ -346,13 +359,15 @@ function raiseCard(t: number) {
 // (cabinAmbientOf) and one-shots at points in each part: the months station fires each month's
 // season as its card rises; every other station fires on the schedule below, as fractions of each
 // part (a topic's reveal card is shown before its part plays, so it is no clock to hang them on).
-const EXPLAIN_SCHEDULE: Record<string, { at: number; cue: MomentCue }[]> = {
+// One effect per part, and only in a station's first parts — every part firing made a station
+// burst three times (sim 02-10: "VFX bị nhiều quá"). Index = the part being told.
+const EXPLAIN_SCHEDULE: Record<string, ({ at: number; cue: MomentCue } | null)[]> = {
   intro: [{ at: 0.4, cue: 'sparkle' }],
   career: [{ at: 0.35, cue: 'cityLights' }],
   wealth: [{ at: 0.35, cue: 'orb' }],
   love: [{ at: 0.35, cue: 'petals' }],
   health: [{ at: 0.35, cue: 'leaves' }],
-  overall: [{ at: 0.3, cue: 'hologram' }, { at: 0.75, cue: 'shootingStar' }],
+  overall: [{ at: 0.3, cue: 'hologram' }, { at: 0.5, cue: 'shootingStar' }],
   outro: [{ at: 0.5, cue: 'stars' }],
 };
 
@@ -369,13 +384,12 @@ export function cardCueOf(chapterId: string, months: number[]): MomentCue | null
   return chapterId === 'monthly' && months.length ? seasonCueOf(months[0]) : null;
 }
 
-/** The scheduled one-shots of a card-less part that are due at position `t` (seconds). */
-export function explainCuesDue(chapterId: string, t: number, duration: number, fired: number): { cues: MomentCue[]; fired: number } {
-  const plan = EXPLAIN_SCHEDULE[chapterId] ?? [];
-  const cues: MomentCue[] = [];
-  let n = fired;
-  while (n < plan.length && duration > 0 && t >= plan[n].at * duration) cues.push(plan[n++].cue);
-  return { cues, fired: n };
+/** The one-shot of part `partIndex` of a station, due at position `t` (seconds); fired at most once
+ *  (`fired` 0 → 1). */
+export function explainCuesDue(chapterId: string, t: number, duration: number, fired: number, partIndex = 0): { cues: MomentCue[]; fired: number } {
+  const step = EXPLAIN_SCHEDULE[chapterId]?.[partIndex];
+  if (!step || fired >= 1 || duration <= 0 || t < step.at * duration) return { cues: [], fired };
+  return { cues: [step.cue], fired: 1 };
 }
 
 /** The station's ambient for the cabin. */
@@ -398,13 +412,23 @@ function explain(t: number) {
   if (!chapterId || s.duration <= 0) return;
   const key = `${generation}:${s.chapterIndex}.${s.partIndex}`;
   if (key !== explainPart) { explainPart = key; explainFired = 0; }
-  const due = explainCuesDue(chapterId, t, s.duration, explainFired);
+  const due = explainCuesDue(chapterId, t, s.duration, explainFired, s.partIndex);
   explainFired = due.fired;
   for (const c of due.cues) fireCue(c);
 }
 
-function fireCue(cue: MomentCue) {
+/** `silent`: the cabin's effect only — for beats whose sound the screen plays itself (CardPick). */
+function fireCue(cue: MomentCue, opts: { silent?: boolean } = {}) {
   useJourneyPlayer.setState(st => ({ cue, cueSeq: st.cueSeq + 1 }));
+  const name = opts.silent ? null : sfxForCue(cue);
+  if (name) sfxAtBloom(name);
+}
+
+/** The cabin blooms a cue CUE_SFX_LEAD_MS after it gets it (the counsellor's gesture leads); the
+ *  sound waits as long, and is dropped if the ride has moved to another part or station by then. */
+function sfxAtBloom(name: JourneySfx) {
+  const g = generation;
+  scheduleJourneySfx(name, CUE_SFX_LEAD_MS, () => g === generation);
 }
 
 function clearCueTimer() {
@@ -575,6 +599,7 @@ function goToPart(ci: number, pi: number) {
   stopPoll();
   releaseVoice();
   clearCueTimer();
+  cancelJourneySfx();
   useJourneyPlayer.setState({ activeCard: null, position: 0, stage: '' });
   startPart(ci, pi, generation);
 }
@@ -596,7 +621,28 @@ function finishJourney() {
   stopPoll();
   releaseVoice();
   stopLayers();
+  // The end of the line chimes once per ride: here only if the last transition did not already.
+  if (!arrivalChimed) {
+    arrivalChimed = true;
+    playJourneySfx('arrival');
+  }
   useJourneyPlayer.setState({ status: 'done', stage: '', position: s.duration, moment: '', momentId: null });
+}
+
+/** Set when this ride's end-of-the-line chime has played (reset on boarding and on a replay). */
+let arrivalChimed = false;
+
+/** The sound of a transition: the tunnel, TRANSITION_MS long, from its first frame (Unity runs its
+ *  tunnel and StationTransition its fade on the same clock). Into the last station the brakes come
+ *  in under the tunnel's release and the chime lands as the train pulls in — once per ride. */
+function travelSounds(final: boolean, gen: number) {
+  playJourneySfx('tunnel');
+  if (!final) return;
+  scheduleJourneySfx('arrival', TRANSITION_MS - ARRIVAL_CHIME_AT_MS, () => {
+    if (gen !== generation || arrivalChimed) return false;
+    arrivalChimed = true;
+    return true;
+  });
 }
 
 /** The train runs to station `index`: the transition plays while its audio is loaded, then the
@@ -611,6 +657,8 @@ function travelTo(index: number) {
   stopBeatVoice();
   if (transitionTimer) clearTimeout(transitionTimer);
   clearCueTimer();
+  cancelJourneySfx();
+  travelSounds(index === journey.chapters.length - 1, gen);
   useJourneyPlayer.setState({
     status: 'transition', transitionTo: index, activeCard: null, position: 0, stage: '', queue: [],
     pickedCard: null, reveal: null, moment: '', momentId: null, unlocking: false, unlockError: null, teaserSpeaking: false,
@@ -658,6 +706,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     get().stop();
     generation += 1;
     const gen = generation;
+    arrivalChimed = false;
     set({ journeyId, counselorId, tone, lang, status: 'boarding', chapterIndex: 0, partIndex: 0, error: null });
     // The reading is the account holder's. Their birth data rides along so the server can build the
     // chart even for an account that has never saved a profile (a consultation is the only other
@@ -687,6 +736,8 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
 
   depart() {
     if (get().status !== 'platform') return;
+    // The wheels start and a whistle sounds ahead: the platform is left behind.
+    playJourneySfx('departure');
     arrive(0);
   },
 
@@ -792,6 +843,8 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     if (s.stage !== 'title') return;
     if (chapterAt(s.chapterIndex)?.interaction === 'pickCard') {
       set({ stage: 'pick', pickedCard: null });
+      // The deal: a soft glitter in the cabin as the three cards rise (CardPick).
+      fireCue('sparkle', { silent: true });
       return;
     }
     generation += 1;
@@ -802,6 +855,8 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     const s = get();
     if (s.stage !== 'pick' || s.pickedCard != null) return;
     set({ pickedCard: Math.max(0, Math.min(2, index)) });
+    // The turn of the chosen card: stars in the cabin as it flips (CardPick's burst lands with it).
+    fireCue('stars', { silent: true });
   },
 
   beginReading() {
@@ -896,6 +951,9 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     set({ moment: 'premium', teaserSpeaking: false, voice: null });
     generation += 1;
     const g = generation;
+    // The unlock burst is a cue like any other to the cabin, so its sound keeps the same lead. The
+    // topic cue below brings its own (a coin chime for the career and wealth moments).
+    sfxAtBloom('unlock');
     const cue = momentPresentation(journeyId, id).cue ?? 'stars';
     clearCueTimer();
     cueTimer = setTimeout(() => {
@@ -921,6 +979,8 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     if (transitionTimer) clearTimeout(transitionTimer);
     clearCueTimer();
     releaseVoice();
+    releaseJourneySfx();
+    stopStationAmbience();
     stopLayers();
     urls.clear();
     set({
@@ -977,11 +1037,44 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
   replay(index = 0) {
     const s = get();
     if (!s.journeyId || !s.content) return;
+    arrivalChimed = false;
     set({ shownCards: [], activeCard: null });
     startLayers(journeyOf(s.journeyId)!);
     travelTo(index);
   },
 }));
+
+// ── Station ambience ─────────────────────────────────────────────────────────────────────────
+// Derived from the state rather than called from each place that moves the train: every way into a
+// station (arrive, goTo, prev, replay, a quarter) changes status/chapterIndex, so one rule covers
+// them all.
+
+/** The months station's month: its card up, else the last one shown in this part, else the part's
+ *  quarter's first month (parts 1-4 are Q1-Q4), else January. */
+let monthlyMonth: { part: string; month: number } | null = null;
+
+export function wantedAmbience(s: Pick<JourneyState, 'status' | 'journeyId' | 'chapterIndex' | 'partIndex' | 'activeCard' | 'transitionTo'>) {
+  if (s.status === 'platform') return stationAmbienceOf('intro');
+  if ((s.status !== 'playing' && s.status !== 'paused') || s.transitionTo != null) return null;
+  const chapterId = journeyOf(s.journeyId)?.chapters[s.chapterIndex]?.id;
+  let month: number | null = null;
+  if (chapterId === 'monthly') {
+    const part = `${s.journeyId}:${s.chapterIndex}.${s.partIndex}`;
+    const card = s.activeCard?.months?.[0];
+    if (card) monthlyMonth = { part, month: card };
+    month = monthlyMonth?.part === part ? monthlyMonth.month
+      : s.partIndex > 0 ? (s.partIndex - 1) * 3 + 1 : null;
+  } else {
+    monthlyMonth = null;
+  }
+  return stationAmbienceOf(chapterId, month);
+}
+
+const syncAmbience = () => setStationAmbience(wantedAmbience(useJourneyPlayer.getState()));
+useJourneyPlayer.subscribe(syncAmbience);
+useSoundStore.subscribe((now, prev) => {
+  if (now.musicEnabled !== prev.musicEnabled) syncAmbience();
+});
 
 /** The paid-moment part of the cabin's JOURNEY_STATE. A locked moment brings the camera in close
  *  on the counsellor's offer; the premium segment sits back to the table's built view; otherwise

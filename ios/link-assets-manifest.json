@@ -2,6 +2,126 @@
   "migIndex": 1,
   "data": [
     {
+      "path": "src/shared/assets/sounds/jamb_arrival.m4a",
+      "sha1": "9dbe46118bf242204e0c1ca4ad0157e3a148b279"
+    },
+    {
+      "path": "src/shared/assets/sounds/jamb_autumn.m4a",
+      "sha1": "bfc73c9437fa2286a61e1006aa27f9548bb26c7e"
+    },
+    {
+      "path": "src/shared/assets/sounds/jamb_city.m4a",
+      "sha1": "50ab76fced1de51e8d317d022988dcc0b63b244b"
+    },
+    {
+      "path": "src/shared/assets/sounds/jamb_cosmic.m4a",
+      "sha1": "0319df3e33a0d3d0ce91f89fe61b8b5b3d8b6c25"
+    },
+    {
+      "path": "src/shared/assets/sounds/jamb_evening_city.m4a",
+      "sha1": "ab9408e12be2c63ff4371f36f5e0c5231f8c2885"
+    },
+    {
+      "path": "src/shared/assets/sounds/jamb_forest.m4a",
+      "sha1": "ad18669df91c97b28d47910bacb2ef1efc913f1a"
+    },
+    {
+      "path": "src/shared/assets/sounds/jamb_meadow.m4a",
+      "sha1": "a4add60a5eef7922573e7eb704d7f92267516919"
+    },
+    {
+      "path": "src/shared/assets/sounds/jamb_platform.m4a",
+      "sha1": "f0e719a8a15786c57269bcc3baf46825e07e94f0"
+    },
+    {
+      "path": "src/shared/assets/sounds/jamb_spring.m4a",
+      "sha1": "d9277064a807518fa012867974346b59bf592bab"
+    },
+    {
+      "path": "src/shared/assets/sounds/jamb_summer.m4a",
+      "sha1": "435889d4548f3f89de063601e9d29cf46968f92d"
+    },
+    {
+      "path": "src/shared/assets/sounds/jamb_winter.m4a",
+      "sha1": "457d5e48a2423785dbdfcfa305a502c2bc915188"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_card_deal.m4a",
+      "sha1": "93d5af280c0895bf2ba68e2aca3b3ea1159ce313"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_card_flip.m4a",
+      "sha1": "09d09c28773ccb111107cd5b745230ac72080f78"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_card_reveal.m4a",
+      "sha1": "f758b51bac454d780bf4a7e801c98a66ee58b90e"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_city_lights.m4a",
+      "sha1": "68c2494b2ed33dc39d8d86a9df1b14302b9bd4e1"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_coins.m4a",
+      "sha1": "f6f78a2e9b2a28158a0a4c7ce988e7c154e2806f"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_fireflies.m4a",
+      "sha1": "0176a6df35e43f0d257fb77bc0edf136af940907"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_hologram.m4a",
+      "sha1": "9538d9551e25f6c9a548f011a6a7a3cbf5d726d5"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_leaves.m4a",
+      "sha1": "4abdef9e5022899b7bad91f29c7fd5c2444aef08"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_maple.m4a",
+      "sha1": "812662b2ce744da760171667b21b47a690d13e13"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_orb.m4a",
+      "sha1": "7b825689ce1893cbfc5ce7dbf2d5d0bade2b0864"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_petals.m4a",
+      "sha1": "165519aaea251fde32e3ad604f266662243c8e78"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_shooting_star.m4a",
+      "sha1": "236213c6b91d4b05ecb6d018228f5df3dda56483"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_snow.m4a",
+      "sha1": "329fc8efaf40e27191187570a68e802d02405197"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_sparkle.m4a",
+      "sha1": "6e67fec8db86fe8a7ee80b7068816d0f945a8666"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_stars.m4a",
+      "sha1": "8c4b16e84c7293e4aac6d387f8db22d820172164"
+    },
+    {
+      "path": "src/shared/assets/sounds/jsfx_unlock.m4a",
+      "sha1": "29266998952512e7cdef34b1f73db3b36ade54c5"
+    },
+    {
+      "path": "src/shared/assets/sounds/jtrav_arrival.m4a",
+      "sha1": "fdee88db45cb84bdb4dda598516e67794f8fe605"
+    },
+    {
+      "path": "src/shared/assets/sounds/jtrav_departure.m4a",
+      "sha1": "22c7b245f741992674a4ea975548db1daeb5630a"
+    },
+    {
+      "path": "src/shared/assets/sounds/jtrav_tunnel.m4a",
+      "sha1": "656e891772f09164bcb078faf91e783dba11a495"
+    },
+    {
       "path": "src/shared/assets/sounds/med_bell_in.m4a",
       "sha1": "ae235624a1f067f337805179bdef7d860ddf84e5"
     },
@@ -39,7 +159,7 @@
     },
     {
       "path": "src/shared/assets/sounds/train_ambience.m4a",
-      "sha1": "326a578ac5a865f4f201ed525f21e8ba971f3924"
+      "sha1": "dd0039df20148f058ecd8e6346445aca516bc8a5"
     },
     {
       "path": "src/shared/assets/sounds/ui_back.m4a",
