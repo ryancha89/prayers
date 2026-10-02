@@ -83,7 +83,8 @@ import { nativeUnityBridge } from '../src/features/counseling/bridge';
 import { JourneyScreen, journeyCoveredPx } from '../src/features/journey/screens/JourneyScreen';
 import { JourneyStageOverlay } from '../src/features/journey/components/JourneyStageOverlay';
 import { lookFromDrag } from '../src/features/journey/components/useCabinCamera';
-import { ConsultationOverlay } from '../src/features/counseling/components/ConsultationOverlay';
+import { ConsultationOverlay, landscapeBand } from '../src/features/counseling/components/ConsultationOverlay';
+import { ui } from '../src/features/counseling/flow/strings';
 import { roomCoveredPx } from '../src/features/counseling/screens/CounselingRoomScreen';
 import { MeditationRoomScreen, meditationCoveredPx } from '../src/features/meditation/screens/MeditationRoomScreen';
 import { useJourneyPlayer } from '../src/features/journey/player/journeyPlayer';
@@ -194,8 +195,9 @@ describe('VIEW_INSETS values per orientation', () => {
 
   it('the room and the meditation report the same way, and a missing panel covers nothing', () => {
     const host = { x: 0, y: 0, width: 874, height: 402 };
-    expect(roomCoveredPx({ host, topBar: { x: 0, y: 0, width: 874, height: 48 }, panel: { x: 533, y: 48, width: 341, height: 354 } }, true))
-      .toEqual({ top: 48, right: 341 });
+    // The room's landscape UI is a band along the bottom (02-10), so it covers the bottom, not the right.
+    expect(roomCoveredPx({ host, topBar: { x: 0, y: 0, width: 874, height: 48 }, panel: { x: 190, y: 250, width: 495, height: 152 } }, true))
+      .toEqual({ top: 48, bottom: 152 });
     expect(roomCoveredPx({ host, topBar: { x: 0, y: 0, width: 874, height: 48 } }, true)).toEqual({ top: 48 });
     expect(meditationCoveredPx({
       host,
@@ -455,25 +457,127 @@ const loop: FlowState = {
 };
 
 describe('the consultation overlay in landscape', () => {
-  it('becomes a right-hand panel under the top bar, and its panels fit the height', async () => {
+  const overlay = (state: FlowState, onPanelLayout?: (r: unknown) => void) => (
+    <ConsultationOverlay state={state} onTap={() => {}} onChoose={() => {}} onSubmit={() => {}} onRetry={() => {}}
+      onLeave={() => {}} onChatMode={() => {}} panelTop={48} onPanelLayout={onPanelLayout} />
+  );
+  const panelOf = (tree: ReactTestRenderer.ReactTestRenderer) =>
+    tree.root.findAll(n => n.props.testID === 'consultation-panel' && typeof n.type === 'string');
+  const flatOf = (n: ReactTestRenderer.ReactTestInstance) =>
+    [n.props.style].flat(Infinity).filter(Boolean).reduce((a: object, b: object) => ({ ...a, ...b }), {}) as Record<string, number | string>;
+  afterEach(() => Object.assign(mockSafe, { top: 0, left: 0, right: 0, bottom: 0 }));
+
+  it('is a band at the bottom-centre, ~2/3 of the safe width, never a right-hand column', async () => {
+    // iPhone 17 on its side: 62 pt either side whichever way it is turned, the home bar 21.
+    Object.assign(mockSafe, { left: 62, right: 62, bottom: 21 });
     win = IPHONE_17_SIDE;
     const reported: unknown[] = [];
     let tree!: ReactTestRenderer.ReactTestRenderer;
     act(() => {
+      tree = ReactTestRenderer.create(overlay(loop, r => reported.push(r)));
+    });
+    const band = landscapeBand(874, { left: 62, right: 62 });
+    expect(band).toBe(495);
+    const panel = panelOf(tree);
+    expect(panel).toHaveLength(1);
+    // The band: its own width, centred by its parent, lifted off the home indicator.
+    expect(flatOf(panel[0])).toMatchObject({ width: band, paddingBottom: 21 + 8 });
+    // Its parent spans the screen between the safe-area edges, under the top bar, and centres it —
+    // so the band is clear of the island on whichever side it is.
+    expect(nodesWithStyle(tree, s => s.alignItems === 'center' && s.paddingLeft === 62 && s.paddingRight === 62 && s.paddingTop === 48))
+      .toHaveLength(1);
+    expect(band).toBeLessThanOrEqual(874 - 62 - 62);
+    // Nothing is a side column any more.
+    expect(nodesWithStyle(tree, s => s.position === 'absolute' && s.right === 0 && typeof s.width === 'number')).toHaveLength(0);
+    // What the band covers is reported straight from its own box (screen coordinates), and the room
+    // turns that into a BOTTOM inset so Unity frames the counsellor above it.
+    act(() => panel[0].props.onLayout(layout(190, 230, 495, 172)));
+    expect(reported).toEqual([{ x: 190, y: 230, width: 495, height: 172 }]);
+    const host = { x: 0, y: 0, width: 874, height: 402 };
+    expect(roomCoveredPx({ host, topBar: { x: 0, y: 0, width: 874, height: 48 }, panel: reported[0] as never }, true))
+      .toEqual({ top: 48, bottom: 172 });
+    act(() => tree.unmount());
+  });
+
+  it('heights stay a band: the counsellor keeps the window above it', () => {
+    win = IPHONE_17_SIDE;
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    act(() => {
+      tree = ReactTestRenderer.create(overlay(loop));
+    });
+    const heights = nodesWithStyle(tree, s => typeof s.maxHeight === 'number').map(n => flatOf(n).maxHeight as number);
+    // The transcript is a couple of lines, not a column…
+    expect(Math.max(...heights)).toBeLessThanOrEqual(IPHONE_17_SIDE.height * 0.2);
+    // …and transcript + input, plus ~100 for the chips/leave row, gaps and the home-bar lift, leave
+    // the counsellor at least 40% of the window above the band (the free chat is the tallest state).
+    expect(heights.reduce((a, b) => a + b, 0) + 100).toBeLessThanOrEqual(IPHONE_17_SIDE.height * 0.6);
+    act(() => tree.unmount());
+  });
+
+  it('the length chips wrap inside the band, and "leave" shares their row', () => {
+    win = IPHONE_17_SIDE;
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    act(() => {
+      tree = ReactTestRenderer.create(overlay(loop));
+    });
+    const chips = tree.root.findAll(n => n.props.testID === 'chat-mode-row' && typeof n.type === 'string');
+    expect(chips).toHaveLength(1);
+    expect(flatOf(chips[0])).toMatchObject({ flexWrap: 'wrap', flexShrink: 1, alignSelf: 'stretch' });
+    // The row that holds the chips also holds the leave link: one line of height, not two.
+    const bars = nodesWithStyle(tree, s => s.flexDirection === 'row' && s.justifyContent === 'space-between')
+      .filter(n => n.findAll(c => c.props.testID === 'chat-mode-row').length > 0);
+    expect(bars).toHaveLength(1);
+    const leave = ui('loop.leave', useLanguageStore.getState().lang);
+    expect(bars[0].findAll(n => typeof n.type === 'string' && [n.props.children].flat().includes(leave)).length).toBeGreaterThan(0);
+    act(() => tree.unmount());
+  });
+
+  it('the dialogue box carries the name as a tab on top', () => {
+    win = IPHONE_17_SIDE;
+    const card: FlowState = { ...loop, screen: 'dialogue', line: 'Hello.', canTap: true, speaker: '상담사' };
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    act(() => {
       tree = ReactTestRenderer.create(
-        <ConsultationOverlay state={loop} onTap={() => {}} onChoose={() => {}} onSubmit={() => {}} onRetry={() => {}}
-          onLeave={() => {}} panelTop={48} onPanelLayout={r => reported.push(r)} />,
+        <ConsultationOverlay state={card} counselorName="Theo" onTap={() => {}} onChoose={() => {}} onSubmit={() => {}}
+          onRetry={() => {}} onLeave={() => {}} panelTop={48} />,
       );
     });
-    const panel = nodesWithStyle(tree, s => s.position === 'absolute' && s.right === 0 && s.width === 341);
-    expect(panel).toHaveLength(1);
-    expect([panel[0].props.style].flat(Infinity)).toEqual(expect.arrayContaining([expect.objectContaining({ top: 48 })]));
-    const heights = nodesWithStyle(tree, s => typeof s.maxHeight === 'number').map(n =>
-      [n.props.style].flat(Infinity).reduce((a: number, s: { maxHeight?: number } | null) => s?.maxHeight ?? a, 0));
-    expect(heights.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(IPHONE_17_SIDE.height - 48);
-    // KeyboardAvoidingView measures itself first and hands the event on after an await.
-    await act(async () => panel[0].props.onLayout(layout(533, 48, 341, 354)));
-    expect(reported).toEqual([{ x: 533, y: 48, width: 341, height: 354 }]);
+    const tab = nodesWithStyle(tree, s => s.alignSelf === 'center' && s.marginBottom === -8);
+    expect(tab).toHaveLength(1);
+    expect(tab[0].findAll(n => n.props.children === 'Theo').length).toBeGreaterThan(0);
+    act(() => tree.unmount());
+  });
+
+  it('an island on one side only (an Android cutout) still keeps the band inside the safe area', () => {
+    Object.assign(mockSafe, { left: 48, right: 0, bottom: 0 });
+    win = IPHONE_17_SIDE;
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    act(() => {
+      tree = ReactTestRenderer.create(overlay(loop));
+    });
+    expect(nodesWithStyle(tree, s => s.alignItems === 'center' && s.paddingLeft === 48 && s.paddingRight === 0)).toHaveLength(1);
+    expect(flatOf(panelOf(tree)[0]).width).toBe(landscapeBand(874, { left: 48, right: 0 }));
+    expect(landscapeBand(874, { left: 48, right: 0 })).toBeLessThanOrEqual(874 - 48);
+    act(() => tree.unmount());
+  });
+
+  it('a narrow phone on its side never gets a band wider than its safe area', () => {
+    expect(landscapeBand(667, { left: 0, right: 0 })).toBe(440);
+    expect(landscapeBand(400, { left: 30, right: 30 })).toBe(340);
+  });
+
+  it('portrait is unchanged: full-width stack, no band width, no landscape padding', () => {
+    win = IPHONE_17;
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    act(() => {
+      tree = ReactTestRenderer.create(overlay(loop));
+    });
+    const panel = flatOf(panelOf(tree)[0]);
+    expect(panel.width).toBeUndefined();
+    expect(panel.paddingHorizontal).toBe(16);
+    const chips = tree.root.findAll(n => n.props.testID === 'chat-mode-row' && typeof n.type === 'string');
+    expect(flatOf(chips[0]).flexWrap).toBeUndefined();
+    expect(nodesWithStyle(tree, s => s.alignItems === 'center' && s.paddingTop === 48)).toHaveLength(0);
     act(() => tree.unmount());
   });
 });

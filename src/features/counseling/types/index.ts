@@ -304,6 +304,31 @@ export type RNToUnityEvent =
   /** The chapter narration's loudness (server `tts/url` envelope), sent as the chapter starts. The
    *  voice plays here in RN; this is how the counsellor's mouth in the cabin follows it. */
   | { type: 'JOURNEY_VOICE'; payload: JourneyVoicePayload }
+  /** Open the 3D world hub (spec 004). Repeated until WORLD_READY, like JOURNEY_INIT. */
+  | { type: 'WORLD_INIT'; payload: WorldInitPayload }
+  /** The run toggle in the world. Unity keeps it until told otherwise. */
+  | { type: 'WORLD_RUN'; payload: { on: boolean } }
+  /** The player's sound switches, for the world's own audio (music = BGM/ambience, sfx = footsteps,
+   *  doors, chimes). Sent on every change and replayed on WORLD_READY. */
+  | { type: 'WORLD_AUDIO'; payload: { music: boolean; sfx: boolean } }
+  /** Auto-walk along the NavMesh to that zone's door; Unity answers WORLD_ARRIVED on arrival. */
+  | { type: 'WORLD_GOTO'; payload: { zone: WorldZone } }
+  /** Pinch (zoom 0..1) and two-finger turn (yaw -1..1). Many a second; the last one wins. */
+  | { type: 'WORLD_CAMERA'; payload: { zoom: number; yaw: number; pitch?: number } }
+  /** A one-finger tap on the world, 0..1 of the view from its top-left. RN's look-around layer covers
+   *  the Unity view (a touch on the UnityView itself never reaches RN's responders), so Unity's own
+   *  sign tap cannot see it; this hands the tap on. */
+  | { type: 'WORLD_TAP'; payload: { x: number; y: number } }
+  /** Leaving the world. Unity treats it as JOURNEY_END (and sends a last WORLD_POSITION). */
+  | { type: 'WORLD_END' }
+  /** Open My Room (the world's 개인실 door). Repeated until MYROOM_READY, like WORLD_INIT. */
+  | { type: 'MYROOM_INIT'; payload: MyRoomInitPayload }
+  /** The follow camera, as WORLD_CAMERA (02-10, the room is walked): zoom 0..1 (0 = close behind
+   *  the player), yaw -1..1 (= ±180° round them, wrapped), pitch -1..1 (+ = higher). Absolute, many a
+   *  second; the last one wins. The stick is WALK_INPUT, which Unity routes to the room while it is up. */
+  | { type: 'MYROOM_CAMERA'; payload: MyRoomCamera }
+  /** Leaving My Room. */
+  | { type: 'MYROOM_END' }
   /** A held direction key. x = right, y = forward, each in [-1, 1].
    *
    *  ONE MESSAGE PER PRESS: Unity keeps the last direction until told otherwise, so the press
@@ -395,6 +420,35 @@ export interface JourneyVoicePayload {
   startAt: number;
 }
 
+/** The world's doors (spec 004). Mirrored by name on the Unity side; a rename is a dead door. */
+export type WorldZone = 'counseling' | 'meditation' | 'journey' | 'shop' | 'myroom';
+
+/** A spot in the world: ground-plane position and facing, in Unity's world units and degrees. */
+export interface WorldSpot {
+  x: number;
+  z: number;
+  yaw: number;
+}
+
+export interface WorldInitPayload {
+  lang: string;
+  /** The saved spot (from WORLD_POSITION); null = the arrival plaza. */
+  spawn: WorldSpot | null;
+  /** Coming back out of a room: stand the player at that door. Wins over `spawn`. */
+  zone?: WorldZone;
+}
+
+export interface MyRoomInitPayload {
+  lang: string;
+}
+
+/** My Room's follow camera, as MYROOM_CAMERA carries it (MYROOM_HOME is where a visit starts). */
+export interface MyRoomCamera {
+  zoom: number;
+  yaw: number;
+  pitch: number;
+}
+
 export interface MeditationStatePayload {
   state: 'idle' | 'breathing' | 'paused' | 'done';
   inMs: number;
@@ -450,6 +504,19 @@ export type UnityToRNEvent =
   /** A step of the boarding storyboard (1-10, Jeongmin 29-09): the screen shows that step's line
    *  (`journey.beat.<n>`; step 4, the walk, has none and keeps the previous one). */
   | { type: 'JOURNEY_BEAT'; payload: { beat: number } }
+  /** The world hub is on screen (spec 004): drop the loading art, replay camera and insets. */
+  | { type: 'WORLD_READY' }
+  /** The player entered (near) or left a door's EntranceTrigger. RN shows or hides Enter. */
+  | { type: 'WORLD_NEAR'; payload: { zone: WorldZone; near: boolean } }
+  /** Auto-walk reached the door, or the player walked through it: open that zone's overlay. */
+  | { type: 'WORLD_ARRIVED'; payload: { zone: WorldZone } }
+  /** Where the player is: every ~2 s while moving, and on WORLD_END. RN persists it. */
+  | { type: 'WORLD_POSITION'; payload: WorldSpot }
+  /** My Room is on screen, its camera on the overview: drop the picture, replay insets and camera. */
+  | { type: 'MYROOM_READY' }
+  /** The player walked into (near) or out of the volume just inside My Room's door. RN shows or
+   *  hides Leave. Sent on a change only, like WORLD_NEAR. */
+  | { type: 'MYROOM_NEAR'; payload: { near: boolean } }
   /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
@@ -460,6 +527,36 @@ export type UnityToRNEvent =
   | { type: 'CUE_RESULT'; payload: { reason: string } }
   | { type: 'SESSION_ERROR'; payload: { reason: string } }
   | { type: 'EXIT_SESSION' };
+
+/**
+ * The world's half of the bridge (spec 004). Its own interface rather than more methods on
+ * UnityBridge: the consultation's mock has no reason to know about a world, and the world screen
+ * needs both bridges — the native one with the player in the build, the mock without — to accept
+ * exactly the same calls.
+ */
+export interface WorldBridge {
+  openWorld(init: WorldInitPayload): void;
+  closeWorld(): void;
+  sendWorldRun(on: boolean): void;
+  sendWorldAudio(music: boolean, sfx: boolean): void;
+  sendWorldGoto(zone: WorldZone): void;
+  /** A tap on the world at (x, y), 0..1 of the view from its top-left — Unity tests it against the signs. */
+  sendWorldTap(x: number, y: number): void;
+  /** zoom 0..1, yaw −1..1 (±180°, wrapped by the caller), pitch −1..1 (+ = camera higher). */
+  sendWorldCamera(zoom: number, yaw: number, pitch?: number): void;
+  onEvent(handler: (event: UnityToRNEvent) => void): () => void;
+}
+
+/**
+ * My Room's half of the bridge — its own interface for the reason WorldBridge gives: the screen talks
+ * to the native bridge with the player in the build and to the mock without, through the same calls.
+ */
+export interface MyRoomBridge {
+  openMyRoom(init: MyRoomInitPayload): void;
+  closeMyRoom(): void;
+  sendMyRoomCamera(camera: MyRoomCamera): void;
+  onEvent(handler: (event: UnityToRNEvent) => void): () => void;
+}
 
 /* ---- Bridge abstraction (spec §39). Keep Unity behind this interface. ---- */
 export interface UnityBridge {

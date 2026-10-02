@@ -6,6 +6,11 @@
  * cover the seam the whole change hangs on — a phase state going in, the text
  * the player reads coming out.
  */
+// No SafeAreaProvider in a test tree: the overlay's landscape panel reads the insets from here.
+jest.mock('react-native-safe-area-context', () => ({
+  ...jest.requireActual('react-native-safe-area-context'),
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import { ConsultationOverlay } from '../src/features/counseling/components/ConsultationOverlay';

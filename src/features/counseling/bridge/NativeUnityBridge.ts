@@ -4,11 +4,17 @@ import {
   JourneyInitPayload,
   JourneyStatePayload,
   JourneyVoicePayload,
+  MyRoomBridge,
+  MyRoomCamera,
+  MyRoomInitPayload,
   RNToUnityEvent,
   UnityBridge,
   UnitySessionPayload,
   UnityToRNEvent,
   ViewInsetsPayload,
+  WorldBridge,
+  WorldInitPayload,
+  WorldZone,
 } from '../types';
 
 /**
@@ -49,7 +55,12 @@ const INIT_MAX_TRIES = 3;
 const MEDITATION_RETRY_MS = 1500;
 const MEDITATION_MAX_TRIES = 4;
 
-export class NativeUnityBridge implements UnityBridge {
+/** Absolute-state messages sent while a finger moves: coalesced (see NativeUnityBridge.postStream). */
+const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'JOURNEY_LOOK', 'JOURNEY_ZOOM']);
+/** ~30 a second per type: smooth under Unity's own easing, a quarter of what a thumb produced. */
+const STREAM_MS = 33;
+
+export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge {
   private handlers = new Set<(e: UnityToRNEvent) => void>();
   private view: UnityViewLike | null = null;
   private ready = false;
@@ -80,6 +91,24 @@ export class NativeUnityBridge implements UnityBridge {
   private journeyZoom = 0;
   /** The player's look-around, -1..1 each (0,0 = straight ahead). */
   private journeyLook = { yaw: 0, pitch: 0 };
+  /** The world hub (spec 004): the same open-until-answered rule as the cabin. */
+  private worldInit?: WorldInitPayload;
+  private worldPending = false;
+  private worldRetry: ReturnType<typeof setTimeout> | null = null;
+  private worldTries = 0;
+  /** The player's last camera and run toggle, replayed on WORLD_READY — a pinch made while the hub
+   *  was loading landed on nothing. `null` camera = never touched: Unity keeps its own framing. */
+  private worldCamera: { zoom: number; yaw: number; pitch: number } | null = null;
+  private worldRun = false;
+  /** The sound switches as last sent; null = never sent (Unity plays at its defaults). */
+  private worldAudio: { music: boolean; sfx: boolean } | null = null;
+  /** My Room (the world's 개인실 door): the same open-until-answered rule as the world. */
+  private myRoomInit?: MyRoomInitPayload;
+  private myRoomPending = false;
+  private myRoomRetry: ReturnType<typeof setTimeout> | null = null;
+  private myRoomTries = 0;
+  /** The player's last orbit, replayed on MYROOM_READY. null = never touched: Unity's overview. */
+  private myRoomCamera: MyRoomCamera | null = null;
   private outbox: RNToUnityEvent[] = [];
   /** The latest VIEW_INSETS any Unity-hosting screen reported, and the JSON of the last one that
    *  actually went out (the dedupe key). */
@@ -156,7 +185,7 @@ export class NativeUnityBridge implements UnityBridge {
       this.outbox.push(event);
       return;
     }
-    this.post(event);
+    this.postLive(event);
   }
 
   onEvent(handler: (event: UnityToRNEvent) => void): () => void {
@@ -270,7 +299,7 @@ export class NativeUnityBridge implements UnityBridge {
    *  a late one is worthless), and remembered for JOURNEY_READY. */
   sendJourneyZoom(zoom: number): void {
     this.journeyZoom = Math.max(0, Math.min(1, zoom));
-    if (this.view) this.post({ type: 'JOURNEY_ZOOM', payload: { zoom: this.journeyZoom } });
+    if (this.view) this.postLive({ type: 'JOURNEY_ZOOM', payload: { zoom: this.journeyZoom } });
   }
 
   /** "Board the train" on the platform. Only offered once the cabin is up, so no replay is needed. */
@@ -283,7 +312,7 @@ export class NativeUnityBridge implements UnityBridge {
   sendJourneyLook(yaw: number, pitch: number): void {
     const clamp = (v: number) => Math.max(-1, Math.min(1, v));
     this.journeyLook = { yaw: clamp(yaw), pitch: clamp(pitch) };
-    if (this.view) this.post({ type: 'JOURNEY_LOOK', payload: this.journeyLook });
+    if (this.view) this.postLive({ type: 'JOURNEY_LOOK', payload: this.journeyLook });
   }
 
   /** The chapter voice's loudness envelope. Remembered and re-sent on JOURNEY_READY with the
@@ -317,6 +346,150 @@ export class NativeUnityBridge implements UnityBridge {
     if (!this.viewInsets) return;
     this.viewInsetsPosted = JSON.stringify(this.viewInsets);
     this.post({ type: 'VIEW_INSETS', payload: this.viewInsets });
+  }
+
+  /**
+   * Open the world hub (spec 004). Posts directly and repeats until WORLD_READY, for exactly the
+   * reasons openMeditationRoom gives — the hub never sends UNITY_READY either. The camera and the
+   * run toggle of a previous visit are forgotten: a new visit starts on Unity's framing, walking.
+   */
+  openWorld(init: WorldInitPayload): void {
+    this.worldInit = init;
+    this.worldPending = true;
+    this.worldTries = 0;
+    this.worldCamera = null;
+    this.worldRun = false;
+    devlog(`[unity-bridge] WORLD_INIT ${init.zone ?? (init.spawn ? 'spawn' : 'plaza')}`);
+    this.post({ type: 'WORLD_INIT', payload: init });
+    this.armWorldRetry();
+  }
+
+  private armWorldRetry(): void {
+    this.clearWorldRetry();
+    this.worldRetry = setTimeout(() => {
+      this.worldRetry = null;
+      if (!this.worldPending || !this.view || !this.worldInit) return;
+      if (this.worldTries >= MEDITATION_MAX_TRIES) {
+        devlog(`[unity-bridge] no WORLD_READY after ${this.worldTries} retries — staying on the drawn hub`);
+        return;
+      }
+      this.worldTries += 1;
+      devlog(`[unity-bridge] WORLD_INIT (retry ${this.worldTries})`);
+      this.post({ type: 'WORLD_INIT', payload: this.worldInit });
+      this.armWorldRetry();
+    }, MEDITATION_RETRY_MS);
+  }
+
+  private clearWorldRetry(): void {
+    if (this.worldRetry !== null) {
+      clearTimeout(this.worldRetry);
+      this.worldRetry = null;
+    }
+  }
+
+  /** Run on/off. Posted straight through and remembered for WORLD_READY. */
+  sendWorldRun(on: boolean): void {
+    this.worldRun = on;
+    if (this.view) this.post({ type: 'WORLD_RUN', payload: { on } });
+  }
+
+  /** The player's music / sound-effect switches for the world's own audio. Posted straight through
+   *  and remembered for WORLD_READY (and kept across a reopen — they are settings, not session state). */
+  sendWorldAudio(music: boolean, sfx: boolean): void {
+    this.worldAudio = { music, sfx };
+    if (this.view) this.post({ type: 'WORLD_AUDIO', payload: this.worldAudio });
+  }
+
+  /** Auto-walk to a door. Not remembered: a destination picked before the hub is up is the screen's
+   *  to re-ask, not something to replay into a player who may have walked off since. */
+  sendWorldTap(x: number, y: number): void {
+    const c = (v: number) => Math.max(0, Math.min(1, v));
+    if (this.view) this.post({ type: 'WORLD_TAP', payload: { x: c(x), y: c(y) } });
+  }
+
+  sendWorldGoto(zone: WorldZone): void {
+    if (this.view) this.post({ type: 'WORLD_GOTO', payload: { zone } });
+  }
+
+  /** Pinch / look-around drag. Posted straight through like JOURNEY_ZOOM (a late one is worthless)
+   *  and remembered for WORLD_READY. */
+  sendWorldCamera(zoom: number, yaw: number, pitch = 0): void {
+    const c = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+    this.worldCamera = { zoom: c(zoom, 0, 1), yaw: c(yaw, -1, 1), pitch: c(pitch, -1, 1) };
+    if (this.view) this.postLive({ type: 'WORLD_CAMERA', payload: this.worldCamera });
+  }
+
+  /** Leaving the world. Idempotent, and safe when Unity never booted. */
+  closeWorld(): void {
+    const wasOpen = this.worldPending || this.worldInit != null;
+    this.worldPending = false;
+    this.worldInit = undefined;
+    this.worldCamera = null;
+    this.worldRun = false;
+    this.clearWorldRetry();
+    try {
+      if (this.view && wasOpen) this.post({ type: 'WORLD_END' });
+    } catch {}
+    this.ready = false;
+  }
+
+  /**
+   * Open My Room. Posts directly and repeats until MYROOM_READY, for exactly the reasons
+   * openMeditationRoom gives — the room never sends UNITY_READY either. A new visit starts on the
+   * overview: the last visit's orbit is forgotten.
+   */
+  openMyRoom(init: MyRoomInitPayload): void {
+    this.myRoomInit = init;
+    this.myRoomPending = true;
+    this.myRoomTries = 0;
+    this.myRoomCamera = null;
+    devlog(`[unity-bridge] MYROOM_INIT ${init.lang}`);
+    this.post({ type: 'MYROOM_INIT', payload: init });
+    this.armMyRoomRetry();
+  }
+
+  private armMyRoomRetry(): void {
+    this.clearMyRoomRetry();
+    this.myRoomRetry = setTimeout(() => {
+      this.myRoomRetry = null;
+      if (!this.myRoomPending || !this.view || !this.myRoomInit) return;
+      if (this.myRoomTries >= MEDITATION_MAX_TRIES) {
+        devlog(`[unity-bridge] no MYROOM_READY after ${this.myRoomTries} retries — staying on the picture`);
+        return;
+      }
+      this.myRoomTries += 1;
+      devlog(`[unity-bridge] MYROOM_INIT (retry ${this.myRoomTries})`);
+      this.post({ type: 'MYROOM_INIT', payload: this.myRoomInit });
+      this.armMyRoomRetry();
+    }, MEDITATION_RETRY_MS);
+  }
+
+  private clearMyRoomRetry(): void {
+    if (this.myRoomRetry !== null) {
+      clearTimeout(this.myRoomRetry);
+      this.myRoomRetry = null;
+    }
+  }
+
+  /** Orbit / pinch. Posted straight through like WORLD_CAMERA (a late one is worthless), clamped,
+   *  and remembered for MYROOM_READY. */
+  sendMyRoomCamera(camera: MyRoomCamera): void {
+    const clamp = (v: number, lo: number, hi: number) => (Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : 0);
+    this.myRoomCamera = { zoom: clamp(camera.zoom, 0, 1), yaw: clamp(camera.yaw, -1, 1), pitch: clamp(camera.pitch, -1, 1) };
+    if (this.view) this.postLive({ type: 'MYROOM_CAMERA', payload: this.myRoomCamera });
+  }
+
+  /** Leaving My Room. Idempotent, and safe when Unity never booted. */
+  closeMyRoom(): void {
+    const wasOpen = this.myRoomPending || this.myRoomInit != null;
+    this.myRoomPending = false;
+    this.myRoomInit = undefined;
+    this.myRoomCamera = null;
+    this.clearMyRoomRetry();
+    try {
+      if (this.view && wasOpen) this.post({ type: 'MYROOM_END' });
+    } catch {}
+    this.ready = false;
   }
 
   /** Leaving the journey. Idempotent, and safe when Unity never booted. */
@@ -391,6 +564,16 @@ export class NativeUnityBridge implements UnityBridge {
       devlog('[unity-bridge] JOURNEY_INIT (view registered)');
       this.post({ type: 'JOURNEY_INIT', payload: this.journeyInit });
       this.armJourneyRetry();
+    }
+    if (this.worldPending && this.worldInit) {
+      devlog('[unity-bridge] WORLD_INIT (view registered)');
+      this.post({ type: 'WORLD_INIT', payload: this.worldInit });
+      this.armWorldRetry();
+    }
+    if (this.myRoomPending && this.myRoomInit) {
+      devlog('[unity-bridge] MYROOM_INIT (view registered)');
+      this.post({ type: 'MYROOM_INIT', payload: this.myRoomInit });
+      this.armMyRoomRetry();
     }
   }
 
@@ -470,6 +653,14 @@ export class NativeUnityBridge implements UnityBridge {
         devlog('[unity-bridge] JOURNEY_INIT (bridge ready)');
         this.post({ type: 'JOURNEY_INIT', payload: this.journeyInit });
       }
+      if (this.worldPending && this.worldInit) {
+        devlog('[unity-bridge] WORLD_INIT (bridge ready)');
+        this.post({ type: 'WORLD_INIT', payload: this.worldInit });
+      }
+      if (this.myRoomPending && this.myRoomInit) {
+        devlog('[unity-bridge] MYROOM_INIT (bridge ready)');
+        this.post({ type: 'MYROOM_INIT', payload: this.myRoomInit });
+      }
     }
 
     // The meditation room's equivalent of UNITY_READY for TRANSPORT purposes only: it proves the
@@ -502,6 +693,37 @@ export class NativeUnityBridge implements UnityBridge {
       this.clearInitRetry();
     }
 
+    if (event.type === 'WORLD_READY') {
+      this.worldPending = false;
+      this.clearWorldRetry();
+      // Insets first: the hub places its camera by them, and the player's own camera on top of that.
+      this.replayViewInsets();
+      if (this.worldCamera) this.post({ type: 'WORLD_CAMERA', payload: this.worldCamera });
+      if (this.worldRun) this.post({ type: 'WORLD_RUN', payload: { on: true } });
+      if (this.worldAudio) this.post({ type: 'WORLD_AUDIO', payload: this.worldAudio });
+      // WALK_INPUT goes through sendEvent, which queues until `ready`. A direction queued while the
+      // hub loaded is a thumb that has long since let go — replaying it would walk the player off on
+      // their own. Drop those; everything else waits as it always has.
+      this.outbox = this.outbox.filter(e => e.type !== 'WALK_INPUT');
+      this.ready = true;
+      this.everReady = true;
+      this.clearInitRetry();
+    }
+
+    if (event.type === 'MYROOM_READY') {
+      this.myRoomPending = false;
+      this.clearMyRoomRetry();
+      // Insets first: the room fits its landscape frame by them, and the player's orbit on top.
+      this.replayViewInsets();
+      if (this.myRoomCamera) this.post({ type: 'MYROOM_CAMERA', payload: this.myRoomCamera });
+      // The room is walked now: a stick queued while it loaded is a thumb long gone (as on the world),
+      // and left in the outbox it would walk whatever scene says UNITY_READY next.
+      this.outbox = this.outbox.filter(e => e.type !== 'WALK_INPUT');
+      this.ready = true;
+      this.everReady = true;
+      this.clearInitRetry();
+    }
+
     if (event.type === 'UNITY_READY') {
       this.ready = true;
       this.everReady = true;
@@ -517,7 +739,53 @@ export class NativeUnityBridge implements UnityBridge {
     this.handlers.forEach(h => h(event));
   }
 
+  /** The latest of each high-rate message (stick, camera drags) waiting for the next flush. */
+  private streams = new Map<string, RNToUnityEvent>();
+  private streamTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * ⚠️ HIGH-RATE MESSAGES ARE COALESCED to one per type every STREAM_MS. Every postMessage is a
+   * Fabric view command, queued on the JS thread for the next rendering update; a thumb on the stick
+   * plus one on the camera sent ~120 of them a second, and the simulator crashed twice (02-10) inside
+   * Scheduler::uiManagerDidDispatchCommand, seconds after the World came up. Unity eases toward the
+   * last value of each of these anyway (they are absolute states, last one wins), so dropping the
+   * in-between ones loses nothing. Any other message flushes them first, keeping the order.
+   */
+  private postStream(event: RNToUnityEvent): void {
+    // Leading edge: the first of a burst goes at once (a tap, a single stop), the rest of the burst
+    // waits for the window and only its latest value per type is sent.
+    if (!this.streamTimer) {
+      this.send(event);
+      this.streamTimer = setTimeout(() => this.flushStreams(), STREAM_MS);
+      return;
+    }
+    this.streams.delete(event.type);
+    this.streams.set(event.type, event);
+  }
+
+  private flushStreams(): void {
+    if (this.streamTimer) { clearTimeout(this.streamTimer); this.streamTimer = null; }
+    const due = [...this.streams.values()];
+    this.streams.clear();
+    // A stream is worthless late: with no view it is dropped, never queued for UNITY_READY.
+    if (!this.view || !due.length) return;
+    for (const e of due) this.send(e);
+    // Keep the window open while the finger keeps moving.
+    this.streamTimer = setTimeout(() => this.flushStreams(), STREAM_MS);
+  }
+
+  /** A message from a moving finger: high-rate types are coalesced, everything else posts. Replays
+   *  (on READY) use post() and go at once. */
+  private postLive(event: RNToUnityEvent): void {
+    if (STREAM_TYPES.has(event.type) && this.view) return this.postStream(event);
+    this.post(event);
+  }
+
   private post(event: RNToUnityEvent): void {
+    // A replay of a value supersedes the pending stream of that type (it is the same latest state).
+    this.streams.delete(event.type);
+    if (this.streams.size) this.flushStreams();
+    else if (this.streamTimer) { clearTimeout(this.streamTimer); this.streamTimer = null; }
     if (!this.view) {
       // Not a drop: it goes out when UNITY_READY flushes the outbox. Worth
       // seeing, because a command queued here and never flushed looks exactly
@@ -526,6 +794,11 @@ export class NativeUnityBridge implements UnityBridge {
       this.outbox.push(event);
       return;
     }
+    this.send(event);
+  }
+
+  private send(event: RNToUnityEvent): void {
+    if (!this.view) return;
     // An envelope is ~1,500 numbers a chapter; the trace needs to know it went, not what it held.
     devlog('[unity->] ' + (event.type === 'JOURNEY_VOICE'
       ? `JOURNEY_VOICE ${event.payload.key} ${event.payload.levels.length} levels @${event.payload.fps}`

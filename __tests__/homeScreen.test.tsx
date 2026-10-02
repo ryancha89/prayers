@@ -81,3 +81,11 @@ it('shows the real ticket balance and never invents minutes or a zero balance on
     p.props.accessibilityLabel?.startsWith('이어서 이야기하기'),
   )).toHaveLength(0);
 });
+
+it('the 3D pill beside the ticket pill opens the world (spec 004)', async () => {
+  await render();
+  const pill = tree.root.findAll(p => p.props.accessibilityLabel === '3D 월드 열기' && typeof p.props.onPress === 'function')[0];
+  expect(pill).toBeDefined();
+  act(() => pill.props.onPress());
+  expect(mockNavigate).toHaveBeenCalledWith('World');
+});

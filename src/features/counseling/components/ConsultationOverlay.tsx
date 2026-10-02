@@ -23,7 +23,7 @@ import {
   View,
 } from 'react-native';
 import { Text, TextInput } from '../../../shared/components/Text';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   absoluteFill,
   colors,
@@ -42,6 +42,19 @@ import type { PhaseChoice } from '../flow/types';
 import type { ChatMode } from '../types';
 
 const QUICK_CHAT_ICON = require('../../../shared/assets/icons/quick_chat.png');
+
+/** The landscape dialogue band: this share of the width between the safe-area edges… */
+export const BAND_SHARE = 0.66;
+/** …never narrower than a chat input stays usable at (or the whole safe width, if that is less)… */
+const BAND_MIN = 360;
+/** …and never a line so long it reads as a banner. */
+const BAND_MAX = 640;
+
+/** The width of the landscape band for a window this wide with these insets. Pure, for tests. */
+export function landscapeBand(width: number, safe: { left: number; right: number }): number {
+  const free = Math.max(0, width - safe.left - safe.right);
+  return Math.round(Math.min(free, Math.max(BAND_MIN, Math.min(BAND_MAX, free * BAND_SHARE))));
+}
 
 export interface ConsultationOverlayProps {
   state: FlowState;
@@ -76,11 +89,11 @@ export interface ConsultationOverlayProps {
    *  shape. Absent `onChatMode` hides the segment (a room with no server has no styles to pick). */
   chatMode?: ChatMode;
   onChatMode?(mode: ChatMode): void;
-  /** Landscape: where the right-hand panel starts, below the room's top bar. */
+  /** Landscape: the room's top bar ends here, and the band never grows above it. */
   panelTop?: number;
   /** The box the overlay's UI occupies, in the coordinates of the screen it is laid over — the
-   *  stack at the bottom in portrait, the right-hand panel in landscape — or null while it shows
-   *  nothing. The room reports this to Unity as VIEW_INSETS. */
+   *  stack along the bottom, full width in portrait and the centred band in landscape — or null
+   *  while it shows nothing. The room reports this to Unity as VIEW_INSETS. */
   onPanelLayout?(rect: LayoutRectangle | null): void;
 }
 
@@ -124,6 +137,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   // Heights here are shares of the window, not constants: see useScreen. On a 667pt phone the
   // three panels below used to add up to more screen than there was, under an open keyboard.
   const screen = useScreen();
+  const safe = useSafeAreaInsets();
   /** A prompt SHE is asking through, in her register. Falls back to the shared copy. */
   const say = (key: Parameters<typeof ui>[0]) =>
     voiced(voice, key, lang) ?? ui(key, lang);
@@ -147,19 +161,67 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   }, [hidden, onPanelLayout]);
   if (hidden) return null;
 
-  // LANDSCAPE (01-10): the same stack, moved from the bottom of the screen into a panel down the
-  // right-hand side, so the counselor keeps the left ~60% of the room. One tree for both
-  // orientations — only styles change — so turning the phone mid-sentence keeps the typed question,
-  // the open keyboard's input and the transcript's scroll. Heights are shares of the window height
-  // either way; in landscape the panel has the whole height, so the transcript gets a larger share.
+  // LANDSCAPE. One tree for both orientations — only styles change — so turning the phone
+  // mid-sentence keeps the typed question, the open keyboard's input and the transcript's scroll.
+  //
+  // 01-10 put the stack in a panel down the right-hand side. 02-10 moved it to a band at the
+  // BOTTOM-CENTRE, the way ZZZ lays out its dialogue (the user's reference): the right-hand column
+  // sat against the Dynamic Island in landscape-left ("vẫn ở bên phải?"), its length chips ran out
+  // of it, and a speech box in a corner reads as a sidebar rather than as someone talking. The band
+  // is about two thirds of the safe width (landscapeBand), centred between the safe-area edges —
+  // so it is clear of the island whichever way the phone is turned — and lifted off the home
+  // indicator. Heights are shares of the window kept small on purpose: the room is told the band
+  // covers the bottom (VIEW_INSETS, roomCoveredPx) and frames the counsellor in what is above it.
   const landscape = screen.landscape;
   const report = (e: LayoutChangeEvent) => onPanelLayout?.(e.nativeEvent.layout);
+
+  // Landscape height is the scarce thing — every line the band takes is a line less of the
+  // counsellor above it — so "leave" moves up into the chips' row there instead of a row of its own.
+  const leaveInBar = landscape && !!onChatMode && state.screen === 'loop';
+  const leaveLink = (
+    <Pressable style={styles.leave} onPress={onLeave} hitSlop={8}>
+      <Text style={styles.leaveText}>{ui('loop.leave', lang)}</Text>
+    </Pressable>
+  );
+  const modeRow = (
+    <View style={[styles.modeRow, landscape && styles.modeRowSide]} accessibilityRole="radiogroup" testID="chat-mode-row">
+      {(['short', 'tiki', 'detail'] as ChatMode[]).map(m => {
+        const on = chatMode === m;
+        return (
+          <Pressable
+            key={m}
+            style={[styles.modeSeg, on && styles.modeSegOn]}
+            onPress={() => pickMode(m)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: on }}
+          >
+            <View style={styles.modeLabel}>
+              {/* An image, not the ⚡ emoji it replaced: the app font has no glyph
+                  for it, so on device it drew as a boxed "?" (25-09). Tinted to the
+                  label so it follows the selected state with it. */}
+              {m === 'short' && (
+                <Image
+                  source={QUICK_CHAT_ICON}
+                  style={[styles.modeIcon, { tintColor: on ? colors.textPrimary : colors.textSecondary }]}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+              )}
+              <Text style={[styles.modeText, on && styles.modeTextOn]}>
+                {ui(m === 'short' ? 'mode.short' : m === 'tiki' ? 'mode.tiki' : 'mode.detail', lang)}
+              </Text>
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
 
   return (
     <>
       {/* Tap-to-continue catches the whole screen, not just the card: a dialogue
           beat is advanced by tapping anywhere, the way it was in the engine. Outside the panel so
-          that in landscape "anywhere" still includes the room on the left. */}
+          that in landscape "anywhere" still includes the room above the band. */}
       {state.canTap && (
         <Pressable
           style={StyleSheet.absoluteFill}
@@ -169,20 +231,27 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
       )}
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={landscape ? [styles.side, { top: panelTop, width: screen.sidePanel }] : styles.root}
+      style={
+        landscape
+          ? [styles.root, styles.rootBand, { paddingTop: panelTop, paddingLeft: safe.left, paddingRight: safe.right }]
+          : styles.root
+      }
       pointerEvents="box-none"
-      onLayout={landscape ? report : undefined}
     >
       <SafeAreaView
-        edges={landscape ? ['right'] : []}
-        style={[styles.stack, landscape && styles.stackSide]}
+        edges={[]}
+        style={[
+          styles.stack,
+          landscape && [styles.stackBand, { width: landscapeBand(screen.width, safe), paddingBottom: safe.bottom + spacing.sm }],
+        ]}
         pointerEvents="box-none"
-        onLayout={landscape ? undefined : report}
+        onLayout={report}
+        testID="consultation-panel"
       >
         {state.screen === 'loop' && (
           <Transcript
             state={state}
-            maxHeight={landscape ? screen.vh(0.38, 120, 320) : screen.vh(0.3, 140, 320)}
+            maxHeight={landscape ? screen.vh(0.18, 64, 100) : screen.vh(0.3, 140, 320)}
           />
         )}
 
@@ -191,15 +260,21 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
         {/* The card takes the tap too (26-09: "탭하여 계속하면 다음으로 안넘어감"). It sits ABOVE
             the full-screen catcher, so a tap on the card — right where "tap to continue" is
             written — never reached it; only taps on the empty scene did. */}
+        {/* Landscape: the name is a tab on top of the box, ZZZ's speech-box shape. */}
+        {landscape && !!state.line && state.screen !== 'loop' && !!state.speaker && (
+          <View style={styles.nameTab} pointerEvents="none">
+            <Text style={styles.speaker}>{counselorName || state.speaker}</Text>
+          </View>
+        )}
         {!!state.line && state.screen !== 'loop' && (
           <Pressable style={styles.card} onPress={state.canTap ? onTap : undefined} disabled={!state.canTap}>
-            {!!state.speaker && (
+            {!landscape && !!state.speaker && (
               <Text style={styles.speaker}>{counselorName || state.speaker}</Text>
             )}
             <ScrollView
               style={[
                 styles.lineScroll,
-                { maxHeight: landscape ? screen.vh(0.4, 96, 220) : screen.vh(0.24, 110, 220) },
+                { maxHeight: landscape ? screen.vh(0.2, 64, 110) : screen.vh(0.24, 110, 220) },
               ]}
               showsVerticalScrollIndicator={false}
             >
@@ -215,7 +290,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
         {state.screen === 'notice' && state.notice && (
           <View style={styles.card}>
             <Text style={styles.line}>{state.notice.body}</Text>
-            <View style={styles.noticeRow}>
+            <View style={[styles.noticeRow, landscape && styles.rowWrap]}>
               <Pressable
                 style={[styles.pill, styles.pillPrimary]}
                 onPress={onRetry}
@@ -258,7 +333,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
         )}
 
         {(state.screen === 'questionBox' || state.screen === 'loop') && (
-          <SafeAreaView edges={['bottom']}>
+          <SafeAreaView edges={landscape ? [] : ['bottom']}>
             {/* ⚡ 티키타카 | 깊은 풀이 — the same segment SAVIS puts above its input, carried to the
                 server as the same `chat_mode`. The whole point is that a player who knows one app
                 knows the other. */}
@@ -266,37 +341,14 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                 answered — a quick reply, or the staged reading — so it has to be pickable before it. */}
             {(state.screen === 'loop' || state.screen === 'questionBox') && !!onChatMode && (
               <View>
-                <View style={styles.modeRow} accessibilityRole="radiogroup">
-                  {(['short', 'tiki', 'detail'] as ChatMode[]).map(m => {
-                    const on = chatMode === m;
-                    return (
-                      <Pressable
-                        key={m}
-                        style={[styles.modeSeg, on && styles.modeSegOn]}
-                        onPress={() => pickMode(m)}
-                        accessibilityRole="radio"
-                        accessibilityState={{ selected: on }}
-                      >
-                        <View style={styles.modeLabel}>
-                          {/* An image, not the ⚡ emoji it replaced: the app font has no glyph
-                              for it, so on device it drew as a boxed "?" (25-09). Tinted to the
-                              label so it follows the selected state with it. */}
-                          {m === 'short' && (
-                            <Image
-                              source={QUICK_CHAT_ICON}
-                              style={[styles.modeIcon, { tintColor: on ? colors.textPrimary : colors.textSecondary }]}
-                              accessibilityElementsHidden
-                              importantForAccessibility="no"
-                            />
-                          )}
-                          <Text style={[styles.modeText, on && styles.modeTextOn]}>
-                            {ui(m === 'short' ? 'mode.short' : m === 'tiki' ? 'mode.tiki' : 'mode.detail', lang)}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                {leaveInBar ? (
+                  <View style={styles.modeBar}>
+                    {modeRow}
+                    {leaveLink}
+                  </View>
+                ) : (
+                  modeRow
+                )}
                 {!!modeHint && (
                   <Text style={styles.modeHint}>
                     {ui(modeHint === 'short' ? 'mode.short.hint' : modeHint === 'tiki' ? 'mode.tiki.hint' : 'mode.detail.hint', lang)}
@@ -403,11 +455,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
             )}
             {/* Leaving is not a conversational move, so it does not sit in the
                 pill row next to the follow-up question. */}
-            {state.screen === 'loop' && (
-              <Pressable style={styles.leave} onPress={onLeave} hitSlop={8}>
-                <Text style={styles.leaveText}>{ui('loop.leave', lang)}</Text>
-              </Pressable>
-            )}
+            {state.screen === 'loop' && !leaveInBar && leaveLink}
           </SafeAreaView>
         )}
       </SafeAreaView>
@@ -531,12 +579,26 @@ const ThinkingDots: React.FC = () => {
 
 const styles = StyleSheet.create({
   root: { ...absoluteFill, justifyContent: 'flex-end' },
-  // Landscape: the right-hand panel, from under the top bar to the bottom edge. `top` and `width`
-  // come from the room and useScreen.
-  side: { position: 'absolute', right: 0, bottom: 0, justifyContent: 'flex-end' },
+  // Landscape: the band is centred; the safe-area and top-bar padding come from the call site.
+  rootBand: { alignItems: 'center' },
   stack: { paddingHorizontal: spacing.lg, gap: spacing.sm },
-  // An open keyboard takes most of a landscape panel: the transcript is what gives way.
-  stackSide: { flexShrink: 1, paddingLeft: spacing.sm, paddingBottom: spacing.sm },
+  // The band's width is the box's (landscapeBand), so no side padding of its own. An open keyboard
+  // takes most of a landscape window: the transcript is what gives way.
+  stackBand: { paddingHorizontal: 0, flexShrink: 1 },
+  // Landscape rows break onto a second line rather than run past the band: the length chips in a
+  // longer language, or a narrow phone. Portrait keeps its single line.
+  rowWrap: { flexWrap: 'wrap' },
+  // ZZZ's name tab: a small dark tab centred on the top edge of the speech box, joined to it (the
+  // negative margin cancels the stack's gap).
+  nameTab: {
+    alignSelf: 'center',
+    backgroundColor: colors.scrim,
+    borderTopLeftRadius: radius.md,
+    borderTopRightRadius: radius.md,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xs,
+    marginBottom: -spacing.sm,
+  },
 
   card: {
     backgroundColor: colors.scrim,
@@ -691,6 +753,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     marginBottom: spacing.xs,
   },
+  modeRowSide: { alignSelf: 'stretch', flexShrink: 1, flexWrap: 'wrap', rowGap: spacing.xs },
+  // Landscape loop: the chips and "leave" share one row.
+  modeBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   modeSeg: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,

@@ -3,7 +3,7 @@ import { ActivityIndicator, LayoutChangeEvent, LayoutRectangle, Pressable, Style
 import { Text } from '../../../shared/components/Text';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { absoluteFill, colors, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
@@ -50,15 +50,18 @@ const LoadingTips: React.FC = () => {
  *  See the deadline effect below for why it is this generous. */
 const UNITY_HANDSHAKE_TIMEOUT_MS = 30_000;
 
-/** What of the room the app's UI hides, for VIEW_INSETS: the top bar, and the overlay's panel —
- *  its stack along the bottom in portrait, the right-hand panel in landscape. All three boxes are
- *  measured in the room container's coordinates. */
-export function roomCoveredPx(r: MeasuredRects, landscape: boolean) {
+/** What of the room the app's UI hides, for VIEW_INSETS: the top bar, and the overlay's panel
+ *  along the bottom — full width in portrait, the centred dialogue band in landscape (02-10; it
+ *  was a right-hand column before, reported as `right`). The band leaves the sides of the room
+ *  open, but a camera can only frame into a rectangle, so the bottom is what it is told. All three
+ *  boxes are measured in the room container's coordinates; the orientation no longer changes the
+ *  answer and is kept for the shared useViewInsets signature. */
+export function roomCoveredPx(r: MeasuredRects, _landscape: boolean) {
   const { host, topBar, panel } = r;
   if (!host) return null;
   const top = topBar ? topBar.y + topBar.height : 0;
   if (!panel) return { top };
-  return landscape ? { top, right: host.width - panel.x } : { top, bottom: host.height - panel.y };
+  return { top, bottom: host.height - panel.y };
 }
 
 /** Until the top bar has measured itself: its 40pt buttons plus the status bar of a portrait phone. */
@@ -116,7 +119,13 @@ export const CounselingRoomScreen: React.FC = () => {
     if (exited.current) return;
     exited.current = true;
     await getUnityBridge().closeCounselingRoom();
-    // Land on the Conversations tab so the session is visible (spec §50-23).
+    // Entered from the 3D world (spec 004): back to the world, at the counselling door
+    // (WorldScreen re-opens with its returnZone). Otherwise land on the Conversations tab so the
+    // session is visible (spec §50-23).
+    if (navigation.getState().routes.some(r => r.name === 'World')) {
+      navigation.navigate('World');
+      return;
+    }
     navigation.navigate('Tabs', { screen: 'Conversations' });
   }, [navigation]);
 
@@ -127,10 +136,11 @@ export const CounselingRoomScreen: React.FC = () => {
   // A pixel counselor is drawn here, not staged in Unity — see pixel/pixelCounselors.ts.
   const pixel = isPixelCounselor(counselor?.characterId);
 
-  // Landscape moves the overlay into a right-hand panel under the top bar; the Unity room is told
-  // what is covered so its camera frames the counselor into the part left visible. Only the native
+  // Landscape moves the overlay into a centred band along the bottom, under the top bar; the Unity
+  // room is told what is covered so its camera frames the counselor into the part left visible. Only the native
   // room is told — the pixel cat and the drawn stage are this screen's own.
   const screen = useScreen();
+  const safe = useSafeAreaInsets();
   const [topBarBottom, setTopBarBottom] = useState(TOP_BAR_GUESS);
   const insets = useViewInsets({
     send: !pixel && isNativeUnity() ? i => getUnityBridge().sendViewInsets(i) : undefined,
@@ -379,14 +389,29 @@ export const CounselingRoomScreen: React.FC = () => {
       />
 
       {/* Top controls — kept minimal, never covering the character (spec §27) */}
-      <SafeAreaView edges={['top', 'left', 'right']} style={styles.topBar} pointerEvents="box-none" onLayout={onTopBarLayout}>
+      {/* Inset by hand, not a SafeAreaView, so a test can pin it: clear of the island on whichever
+          side it is (landscape-left puts it on the right, landscape-right on the left). A landscape
+          phone has no top inset, so the buttons get a margin of their own rather than touching the
+          screen's edge; portrait is exactly the status-bar inset it always was. */}
+      <View
+        style={[
+          styles.topBar,
+          {
+            paddingTop: safe.top + (screen.landscape ? spacing.sm : 0),
+            paddingLeft: safe.left + spacing.lg,
+            paddingRight: safe.right + spacing.lg,
+          },
+        ]}
+        pointerEvents="box-none"
+        onLayout={onTopBarLayout}
+        testID="room-top-bar">
         <Pressable style={styles.roundBtn} hitSlop={8} onPress={onExit}>
           <Icon name="back" size={26} />
         </Pressable>
         <Pressable style={styles.roundBtn} hitSlop={8}>
           <Icon name="speaker" size={18} />
         </Pressable>
-      </SafeAreaView>
+      </View>
 
       {/* Dev only, and mounted LAST on purpose: it has to sit above ConsultationOverlay, whose
           bubble and input bar cover exactly the part of the screen a bottom sheet wants. Mounted
@@ -425,7 +450,6 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
   },
   roundBtn: {
     width: 40,

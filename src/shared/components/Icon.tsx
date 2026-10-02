@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleProp, ViewStyle } from 'react-native';
-import Svg, { Circle, Line, Path, Polygon, Polyline, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Polygon, Polyline, Rect, Text as SvgText } from 'react-native-svg';
 
 /**
  * Feather-style stroke icons on a 24×24 grid so every glyph shares one visual
@@ -34,7 +34,20 @@ export type IconName =
   | 'fwd15'
   | 'lotus'
   | 'lock'
-  | 'coin';
+  | 'coin'
+  | 'castle'
+  | 'map'
+  | 'quest'
+  | 'menu'
+  | 'run'
+  | 'train'
+  | 'bag'
+  | 'close'
+  | 'moon'
+  | 'bolt'
+  | 'shirt'
+  | 'image'
+  | 'wind';
 
 type Draw = (color: string) => React.ReactNode;
 
@@ -183,6 +196,89 @@ const ICONS: Record<IconName, Draw> = {
     <>
       <Circle cx="12" cy="12" r="8.5" stroke={c} />
       <Circle cx="12" cy="12" r="5" stroke={c} />
+    </>
+  ),
+  // The 3D world (spec 004): the Home header's "3D" pill and the 월드 tab. Two towers and a keep with
+  // a spire — the mockup's castle — in the same stroke as the rest rather than a filled emoji 🏰,
+  // which ignores tint and came out as a "?" box on the simulator's font set.
+  castle: c => (
+    <>
+      <Path d="M3 21V9.5l2-2 2 2V21" stroke={c} />
+      <Path d="M17 21V9.5l2-2 2 2V21" stroke={c} />
+      <Path d="M7 21v-8.5h10V21" stroke={c} />
+      <Path d="M9.5 12.5V7.5L12 3l2.5 4.5v5" stroke={c} />
+      <Path d="M10.5 21v-2.8a1.5 1.5 0 0 1 3 0V21" stroke={c} />
+      <Line x1="2" y1="21" x2="22" y2="21" stroke={c} />
+    </>
+  ),
+  map: c => (
+    <>
+      <Polygon points="2 6 2 21 8 18 16 21 22 18 22 3 16 6 8 3 2 6" stroke={c} />
+      <Line x1="8" y1="3" x2="8" y2="18" stroke={c} />
+      <Line x1="16" y1="6" x2="16" y2="21" stroke={c} />
+    </>
+  ),
+  // A gem in a gem — the mockup's Quest button.
+  quest: c => (
+    <>
+      <Polygon points="12 2.5 20 12 12 21.5 4 12" stroke={c} />
+      <Polygon points="12 8 15 12 12 16 9 12" stroke={c} />
+    </>
+  ),
+  menu: c => (
+    <>
+      <Line x1="4" y1="6" x2="20" y2="6" stroke={c} />
+      <Line x1="4" y1="12" x2="20" y2="12" stroke={c} />
+      <Line x1="4" y1="18" x2="20" y2="18" stroke={c} />
+    </>
+  ),
+  run: c => (
+    <>
+      <Circle cx="15" cy="4.5" r="1.8" stroke={c} />
+      <Path d="M13 8.5l-2.5 6 3.5 3V22" stroke={c} />
+      <Path d="M10.5 14.5 8 18H4" stroke={c} />
+      <Path d="M6.5 11l3.5-2.5h3l2.5 3.5H19" stroke={c} />
+    </>
+  ),
+  train: c => (
+    <>
+      <Path d="M6 3h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke={c} />
+      <Line x1="4" y1="10" x2="20" y2="10" stroke={c} />
+      <Circle cx="8.5" cy="13.5" r="1" stroke={c} />
+      <Circle cx="15.5" cy="13.5" r="1" stroke={c} />
+      <Path d="M8 21l1.5-4M16 21l-1.5-4" stroke={c} />
+    </>
+  ),
+  bag: c => (
+    <>
+      <Path d="M5 8h14l-1 13H6Z" stroke={c} />
+      <Path d="M9 8V6.5a3 3 0 0 1 6 0V8" stroke={c} />
+    </>
+  ),
+  close: c => (
+    <>
+      <Line x1="6" y1="6" x2="18" y2="18" stroke={c} />
+      <Line x1="18" y1="6" x2="6" y2="18" stroke={c} />
+    </>
+  ),
+  moon: c => <Path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" stroke={c} />,
+  bolt: c => <Polygon points="13 2 4 14 11 14 10 22 20 9 13 9 13 2" stroke={c} />,
+  shirt: c => (
+    <Path d="M9 3 4 5.5 2.5 10l3 1V21h13V11l3-1L20 5.5 15 3c-.5 1.5-1.6 2.3-3 2.3S9.5 4.5 9 3Z" stroke={c} />
+  ),
+  image: c => (
+    <>
+      <Rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke={c} />
+      <Circle cx="9" cy="9" r="1.5" stroke={c} />
+      <Polyline points="20.5 15 15 10 4 20.5" stroke={c} />
+    </>
+  ),
+  // Breath: three gusts, for 호흡 명상.
+  wind: c => (
+    <>
+      <Path d="M3 8h10a3 3 0 1 0-3-3" stroke={c} />
+      <Path d="M3 12h15a3 3 0 1 1-3 3" stroke={c} />
+      <Line x1="3" y1="16" x2="9" y2="16" stroke={c} />
     </>
   ),
   // A closed book with a bookmark — the 아카이브 tab.

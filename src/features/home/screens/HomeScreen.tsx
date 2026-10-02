@@ -107,6 +107,7 @@ export const HomeScreen: React.FC = () => {
             <HomeHeader
               balanceLabel={tickets == null ? t('tickets.title') : t('home.balance', { count: tickets })}
               onPressBalance={() => navigation.navigate('Tickets')}
+              onPress3D={() => navigation.navigate('World')}
             />
             {attendance && (
               <Pressable

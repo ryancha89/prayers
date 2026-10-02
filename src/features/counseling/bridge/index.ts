@@ -1,7 +1,7 @@
 import { NativeModules, UIManager } from 'react-native';
 import { devlog } from '../../../shared/devlog';
 import { apiBase } from '../../../shared/config/api';
-import { UnityBridge } from '../types';
+import { MyRoomBridge, UnityBridge, WorldBridge } from '../types';
 import { MockUnityBridge } from './MockUnityBridge';
 import { NativeUnityBridge } from './NativeUnityBridge';
 
@@ -103,7 +103,7 @@ if (isNativeUnity()) {
     .catch(() => {});
 }
 
-let mockBridge: UnityBridge | null = null;
+let mockBridge: MockUnityBridge | null = null;
 
 /**
  * The bridge to talk to, decided WHEN ASKED rather than at import.
@@ -118,6 +118,24 @@ export function getUnityBridge(): UnityBridge {
   return mockBridge;
 }
 
+/**
+ * The world hub's bridge (spec 004), decided when asked like getUnityBridge. The mock is the SAME
+ * instance getUnityBridge hands out, so the walk keys (which talk to getUnityBridge) and the world
+ * screen never end up on two different mocks.
+ */
+export function getWorldBridge(): WorldBridge {
+  if (isNativeUnity()) return nativeUnityBridge;
+  mockBridge ??= new MockUnityBridge();
+  return mockBridge;
+}
+
+/** My Room's bridge, decided when asked — the same instance rule as getWorldBridge. */
+export function getMyRoomBridge(): MyRoomBridge {
+  if (isNativeUnity()) return nativeUnityBridge;
+  mockBridge ??= new MockUnityBridge();
+  return mockBridge;
+}
+
 export { MockUnityBridge } from './MockUnityBridge';
 export { NativeUnityBridge } from './NativeUnityBridge';
-export type { UnityBridge } from '../types';
+export type { MyRoomBridge, UnityBridge, WorldBridge } from '../types';

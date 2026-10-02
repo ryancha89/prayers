@@ -1,9 +1,15 @@
 import {
+  MyRoomBridge,
+  MyRoomCamera,
+  MyRoomInitPayload,
   RNToUnityEvent,
   UnityBridge,
   UnitySessionPayload,
   UnityToRNEvent,
   ViewInsetsPayload,
+  WorldBridge,
+  WorldInitPayload,
+  WorldZone,
 } from '../types';
 
 /**
@@ -17,7 +23,7 @@ import {
  * Keep this the ONLY place that knows Unity is not yet real. UI code depends
  * solely on the `UnityBridge` interface (rule §52-7).
  */
-export class MockUnityBridge implements UnityBridge {
+export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge {
   private handlers = new Set<(e: UnityToRNEvent) => void>();
   private ready = false;
   private lastPayload?: UnitySessionPayload;
@@ -25,6 +31,12 @@ export class MockUnityBridge implements UnityBridge {
   /** The last VIEW_INSETS a screen reported. Nothing renders behind the mock room, so it is only
    *  kept — for tests, and so a screen never needs to know which bridge it has. */
   lastViewInsets?: ViewInsetsPayload;
+
+  /** The world as the mock has it (spec 004): nothing is drawn behind it, so it only remembers. */
+  lastWorldInit?: WorldInitPayload;
+  worldOpen = false;
+  worldRun = false;
+  worldCamera: { zoom: number; yaw: number; pitch: number } | null = null;
 
   async openCounselingRoom(payload: UnitySessionPayload): Promise<void> {
     this.ready = false;
@@ -45,6 +57,62 @@ export class MockUnityBridge implements UnityBridge {
 
   sendViewInsets(insets: ViewInsetsPayload): void {
     this.lastViewInsets = { ...insets };
+  }
+
+  /* ---- WorldBridge. Accepts every call; there is no hub to load, so WORLD_READY never comes and
+     the world screen stays on its drawn hub — which is the whole no-Unity experience. ---- */
+
+  openWorld(init: WorldInitPayload): void {
+    this.lastWorldInit = init;
+    this.worldOpen = true;
+  }
+
+  closeWorld(): void {
+    this.worldOpen = false;
+    this.worldRun = false;
+    this.worldCamera = null;
+  }
+
+  sendWorldRun(on: boolean): void {
+    this.worldRun = on;
+  }
+
+  lastWorldAudio: { music: boolean; sfx: boolean } | null = null;
+  sendWorldAudio(music: boolean, sfx: boolean): void {
+    this.lastWorldAudio = { music, sfx };
+  }
+
+  /** No NavMesh to walk: the mock "arrives" at once, so Map → door → overlay runs end to end. */
+  /** No signs to hit without Unity; the mock's hub art has its own buttons. */
+  sendWorldTap(): void {}
+
+  sendWorldGoto(zone: WorldZone): void {
+    this.emitToRN({ type: 'WORLD_ARRIVED', payload: { zone } });
+  }
+
+  sendWorldCamera(zoom: number, yaw: number, pitch = 0): void {
+    this.worldCamera = { zoom, yaw, pitch };
+  }
+
+  /* ---- MyRoomBridge. Accepts every call; no room loads, so MYROOM_READY never comes and the screen
+     stays on its picture of the room — the whole no-Unity experience. ---- */
+
+  lastMyRoomInit?: MyRoomInitPayload;
+  myRoomOpen = false;
+  myRoomCamera: MyRoomCamera | null = null;
+
+  openMyRoom(init: MyRoomInitPayload): void {
+    this.lastMyRoomInit = init;
+    this.myRoomOpen = true;
+  }
+
+  closeMyRoom(): void {
+    this.myRoomOpen = false;
+    this.myRoomCamera = null;
+  }
+
+  sendMyRoomCamera(camera: MyRoomCamera): void {
+    this.myRoomCamera = { ...camera };
   }
 
   onEvent(handler: (event: UnityToRNEvent) => void): () => void {

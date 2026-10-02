@@ -8,6 +8,11 @@
  * cannot come back: a share of the window, floored so a panel stays usable and capped so the
  * original design is still the maximum.
  */
+// No SafeAreaProvider in a test tree: the overlay's landscape panel reads the insets from here.
+jest.mock('react-native-safe-area-context', () => ({
+  ...jest.requireActual('react-native-safe-area-context'),
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
 import React from 'react';
 import { Dimensions } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
@@ -17,8 +22,8 @@ import type { FlowState } from '../src/features/counseling/flow/engine';
 
 const SE = { width: 375, height: 667, scale: 2, fontScale: 1 };
 const PRO_MAX = { width: 440, height: 956, scale: 3, fontScale: 1 };
-// The same phones held sideways (01-10): the overlay is a right-hand panel there, under a ~48pt
-// top bar, with the whole remaining height to itself.
+// The same phones held sideways (01-10): the overlay is a band along the bottom there (02-10; a
+// right-hand panel before), under a ~48pt top bar.
 const IPHONE_17_SIDE = { width: 874, height: 402, scale: 3, fontScale: 1 };
 const SE_SIDE = { width: 667, height: 375, scale: 2, fontScale: 1 };
 
@@ -122,9 +127,11 @@ describe('consultation overlay heights held sideways', () => {
     }
   });
 
-  it('the transcript gets a larger share of a short window than it would stacked', () => {
-    // Stacked, 30% of 402 is clamped up to the 140 floor; in the panel it is 38% with no floor in the way.
-    expect(Math.max(...maxHeights(IPHONE_17_SIDE))).toBeGreaterThan(140);
+  it('the transcript stays a couple of lines, so the counsellor keeps the window above the band', () => {
+    // 02-10: landscape is a band along the bottom, not a column down the right — what it takes in
+    // height it takes from the counsellor. Stacked, 30% of 402 would be clamped up to the 140 floor.
+    expect(Math.max(...maxHeights(IPHONE_17_SIDE))).toBeLessThan(140);
+    expect(Math.max(...maxHeights(SE_SIDE))).toBeLessThan(140);
   });
 });
 

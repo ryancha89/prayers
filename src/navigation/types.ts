@@ -2,6 +2,9 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export type TabParamList = {
   Home: undefined;
+  /** 월드 (spec 004). A door, not a page: pressing the tab opens the root `World` screen over the
+   *  tabs (full screen, no tab bar), so the tab itself never stays focused. */
+  WorldTab: undefined;
   Conversations: undefined;
   /** 아카이브 — the player's long-term memory, and the counsellors' (features/archive). */
   Archive: undefined;
@@ -60,6 +63,18 @@ export type RootStackParamList = {
    * App.tsx silences the app's bed on it (`SELF_SCORED_SCREENS`).
    */
   MeditationRoom: undefined;
+  /**
+   * The 3D world hub (spec 004): walk the sanctuary, go in through its doors. Reached from the Home
+   * header's 3D pill and the 월드 tab. The NAME is load-bearing — App.tsx lists it as a Unity screen
+   * (`UNITY_SCREENS`), which keeps the app's bed and the mini player off it and stops the route rule
+   * from posting SESSION_END into the world.
+   */
+  World: undefined;
+  /**
+   * My Room (개인실), behind the world's fifth door: the player's bedroom, to look around in. The NAME
+   * is load-bearing — App.tsx lists it as a Unity screen (`UNITY_SCREENS`), like World.
+   */
+  MyRoom: undefined;
   /** Terms and the privacy policy. Apple wants both reachable, and 5.1.1(v) wants the deletion
    *  above reachable too. */
   Legal: { doc: 'terms' | 'privacy' };

@@ -23,6 +23,8 @@ import { JourneyEndingScreen } from '../features/journey/screens/JourneyEndingSc
 import { JourneyCollectionScreen } from '../features/journey/screens/JourneyCollectionScreen';
 import { ArchiveSectionScreen } from '../features/archive/screens/ArchiveSectionScreen';
 import { LegalScreen } from '../features/profile/screens/LegalScreen';
+import { WorldScreen } from '../features/world/screens/WorldScreen';
+import { MyRoomScreen } from '../features/myroom/screens/MyRoomScreen';
 import { useAuthStore } from '../features/auth/store/authStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -78,7 +80,15 @@ export const RootNavigator: React.FC = () => {
     <Stack.Screen name="JourneyEnding" component={JourneyEndingScreen} options={{ animation: 'fade' }} />
     <Stack.Screen name="JourneyCollection" component={JourneyCollectionScreen} options={{ animation: 'fade' }} />
     <Stack.Screen name="ArchiveSection" component={ArchiveSectionScreen} />
-    <Stack.Screen name="MeditationRoom" component={MeditationRoomScreen} />
+    {/* Fade, like My Room: from the World the UnityView must mount into a settled screen. Pushed with
+        the default slide (02-10) the room never answered MEDITATION_INIT while My Room, fading, did. */}
+    <Stack.Screen name="MeditationRoom" component={MeditationRoomScreen} options={{ animation: 'fade' }} />
+    {/* No swipe-back: the walk keys sit at the left edge, and a thumb on ◀ read as iOS's pop
+        gesture (the cabin's lesson). The top bar's 2D button is the way out. */}
+    <Stack.Screen name="World" component={WorldScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+    {/* No swipe-back: the stick sits at the left edge and a one-finger drag looks round the room
+        (useMyRoomCamera) — the cabin's lesson. The top bar's back button returns to the world. */}
+    <Stack.Screen name="MyRoom" component={MyRoomScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     <Stack.Screen name="Legal" component={LegalScreen} />
     <Stack.Screen name="CounselorDetail" component={CounselorDetailScreen} />
     <Stack.Screen name="CounselingSubject" component={CounselingSubjectScreen} />

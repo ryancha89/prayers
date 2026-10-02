@@ -42,7 +42,9 @@ const navigationRef = createNavigationContainerRef<RootStackParamList>();
 // room would be silenced the instant the player walked into it. The app's own bed still stops:
 // `inUnity` and `selfScored` lead to the same `backgroundMusic.stop()`, and the meditation loop
 // is started by the screen on Begin, exactly as before.
-export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom']);
+// World (spec 004) since 02-10: the hub is a Unity scene like the rooms — same speaker rule, no mini
+// player over it, and above all no SESSION_END posted into it on arrival.
+export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom', 'World', 'MyRoom']);
 /** Screens that host the Unity player but NOT as a room that owns the sound: the train journey
  *  (spec 003) draws its cabin in Unity while its own narration keeps playing. They must not tear
  *  Unity down (stopAllAudio → SESSION_END), and must not pause the journey either — which is why

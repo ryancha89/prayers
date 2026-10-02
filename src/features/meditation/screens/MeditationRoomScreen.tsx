@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Image, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
 import { useNavigation } from '@react-navigation/native';
@@ -76,6 +76,8 @@ const clock = (ms: number) => {
   const total = Math.max(0, Math.ceil(ms / 1000));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 };
+
+const ROOM_ART = require('../assets/room.jpg');
 
 export const MeditationRoomScreen: React.FC = () => {
   const t = useT();
@@ -325,11 +327,21 @@ export const MeditationRoomScreen: React.FC = () => {
           (frame 1) still arrived, then the scene-load coroutine never advanced and
           MEDITATION_READY never came. The same screen with the art on top loads the room fine. */}
       {isNativeUnity() && <UnityHost style={styles.unity} />}
-      <Animated.Image
-        source={require('../assets/room.jpg')}
-        style={[styles.art, { opacity: artOut }]}
-        resizeMode="cover"
-      />
+      {landscape ? (
+        // Landscape (02-10, "medition chưa làm landscape?"): the art is a tall portrait, and covering
+        // a wide screen with it cut her off at the chin with the panel over her hand. A blurred copy
+        // fills the screen; the whole picture stands, uncropped, in the space left of the panel.
+        <Animated.View style={[styles.art, { opacity: artOut }]} pointerEvents="none">
+          <Image source={ROOM_ART} style={styles.art} resizeMode="cover" blurRadius={18} />
+          {/* ⚠️ A bounded box with the image at 100 % inside it: an Image given only edges lays out
+              at the bitmap's size, pinned top-left (the 23-09 trap again, 02-10). */}
+          <View style={[styles.artSide, { right: screen.sidePanel + spacing.xl }]}>
+            <Image source={ROOM_ART} style={styles.artFill} resizeMode="contain" />
+          </View>
+        </Animated.View>
+      ) : (
+        <Animated.Image source={ROOM_ART} style={[styles.art, { opacity: artOut }]} resizeMode="cover" />
+      )}
       <Animated.View style={[styles.wash, { opacity: wash }]} />
       <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
         <View style={[styles.header, landscape && styles.headerSide]} onLayout={insets.track('header')}>
@@ -422,6 +434,8 @@ const styles = StyleSheet.create({
   // and a curtain (reported from the simulator 23-09, "sao đang ở góc này?"). The Unity view
   // under it sizes correctly with the same style; only the image needed telling.
   art: { ...absoluteFill, width: '100%', height: '100%' },
+  artSide: { position: 'absolute', top: 0, bottom: 0, left: 0 },
+  artFill: { width: '100%', height: '100%' },
   wash: { ...absoluteFill, backgroundColor: '#181220' },
   safe: { flex: 1, paddingHorizontal: spacing.xl },
   header: { paddingTop: spacing.md },
