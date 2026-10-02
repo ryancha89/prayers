@@ -10,6 +10,7 @@ import { journeyActive, useJourneyPlayer } from '../player/journeyPlayer';
 import { sfx } from '../../../shared/audio/sfx';
 import { JOURNEYS } from '../data/journeys';
 import { JOURNEY_HERO_ART } from './JourneyTrainArt';
+import { useBottomDock } from '../../../shared/layout/bottomDock';
 
 /**
  * The journey, kept alive while the player looks at something else: 🚂 title, the station and the
@@ -27,15 +28,20 @@ export const JourneyMiniPlayer: React.FC<{ aboveTabs: boolean; hidden: boolean; 
   const lang = useLang();
   const insets = useSafeAreaInsets();
   const s = useJourneyPlayer();
+  const dock = useBottomDock(d => d.height);
   if (hidden || !journeyActive(s) || !s.journeyId) return null;
   const journey = JOURNEYS[s.journeyId];
   const chapter = journey?.chapters[s.transitionTo ?? s.chapterIndex];
   const guide = s.counselorId ? getLocalizedCounselor(s.counselorId, lang) : undefined;
   const progress = s.duration > 0 ? Math.min(1, s.position / s.duration) : 0;
-  const bottom = insets.bottom + (aboveTabs ? 49 + spacing.sm : spacing.sm);
+  // Above the tab bar on the tabs; above a screen's own bottom bar (its height includes the safe
+  // area) where it has one; else just above the home indicator.
+  const bottom = aboveTabs ? insets.bottom + 49 + spacing.sm : dock > 0 ? dock + spacing.sm : insets.bottom + spacing.sm;
+  // Landscape: keep clear of the Dynamic Island / notch on either long side.
+  const sides = { left: spacing.md + insets.left, right: spacing.md + insets.right };
 
   return (
-    <Pressable style={[styles.bar, { bottom }]} onPress={() => { sfx.tap(); onOpen(); }} accessibilityRole="button">
+    <Pressable style={[styles.bar, { bottom, ...sides }]} onPress={() => { sfx.tap(); onOpen(); }} accessibilityRole="button">
       <View style={styles.row}>
         {/* The key art, not 🚂: the emoji drew as a "?" box on the simulator's font set. */}
         <Image source={JOURNEY_HERO_ART} style={styles.thumb} />

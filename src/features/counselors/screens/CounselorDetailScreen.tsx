@@ -21,6 +21,7 @@ import {
 } from '../../counseling/api/prayersServer';
 import { sfx } from '../../../shared/audio/sfx';
 import { column } from '../../../shared/device/screen';
+import { useBottomDock } from '../../../shared/layout/bottomDock';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'CounselorDetail'>;
@@ -35,6 +36,18 @@ export const CounselorDetailScreen: React.FC = () => {
   const t = useT();
   const lang = useLang();
   const counselor = getLocalizedCounselor(params.counselorId, lang);
+  // The CTA bar is docked to the bottom edge: tell the journey mini player to ride above it while
+  // this screen is focused, and give the space back when it is not (another screen may stack on top).
+  const setDock = useBottomDock(d => d.set);
+  const ctaHeight = React.useRef(0);
+  const [focused, setFocused] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setFocused(true);
+      if (ctaHeight.current > 0) setDock(ctaHeight.current);
+      return () => { setFocused(false); setDock(0); };
+    }, [setDock]),
+  );
 
   /**
    * Whether a consultation can actually happen, asked BEFORE the room opens.
@@ -164,7 +177,11 @@ export const CounselorDetailScreen: React.FC = () => {
       </SafeAreaView>
 
       {/* Single dominant CTA (spec §13) */}
-      <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.ctaBar}>
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.ctaBar}
+        onLayout={e => {
+          ctaHeight.current = e.nativeEvent.layout.height;
+          if (focused) setDock(ctaHeight.current);
+        }}>
         {/* A counselor with no 3D model cannot hold a consultation. Saying so on the button is
             better than letting the tap through to a room that would substitute somebody else's
             face, and far better than the version before it — a room that loaded and then ejected
