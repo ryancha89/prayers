@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { LayoutRectangle, Pressable, StyleSheet, View } from 'react-native';
+import { LayoutChangeEvent, LayoutRectangle, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -24,7 +24,7 @@ import { journeyActive, useJourneyPlayer } from '../../journey/player/journeyPla
 import { useWorldStore } from '../store/worldStore';
 import { isWorldZone } from '../data/zones';
 import { WorldHubArt } from '../components/WorldHubArt';
-import { MapSheet, MenuSheet, QuestSheet, ZoneOverlay, type ZoneActions } from '../components/WorldSheets';
+import { MapSheet, MenuSheet, QuestSheet, WorldSheetTop, ZoneOverlay, type ZoneActions } from '../components/WorldSheets';
 import { useWorldCamera } from '../components/useWorldCamera';
 import { useSoundStore } from '../../../shared/audio/store';
 
@@ -55,7 +55,12 @@ export function worldCoveredPx(r: MeasuredRects, landscape: boolean) {
   if (!host) return null;
   const covered = { top: top ? top.y + top.height : 0 };
   if (!sheet) return covered;
-  return landscape ? { ...covered, right: host.width - sheet.x } : { ...covered, bottom: host.height - sheet.y };
+  if (!landscape) return { ...covered, bottom: host.height - sheet.y };
+  // The side it actually stands on, not the side it is meant to: a sheet on the left reported as
+  // `right: host.width - 0` told Unity the whole view was covered (sim QA 05-10).
+  return sheet.x + sheet.width / 2 < host.width / 2
+    ? { ...covered, left: sheet.x + sheet.width }
+    : { ...covered, right: host.width - sheet.x };
 }
 
 /**
@@ -108,6 +113,14 @@ export const WorldScreen: React.FC = () => {
     compute: r => worldCoveredPx(r, landscape),
   });
   const putSheet = useCallback((rect: LayoutRectangle | null) => insets.put('sheet', rect), [insets]);
+  // Where the top bar ends: a landscape sheet starts under it (WorldSheetTop).
+  const [barBottom, setBarBottom] = useState(0);
+  const trackTop = insets.track('top');
+  const onTopLayout = useCallback((e: LayoutChangeEvent) => {
+    trackTop(e);
+    const { y, height } = e.nativeEvent.layout;
+    setBarBottom(Math.round(y + height));
+  }, [trackTop]);
 
   // What Unity says, for the whole life of the screen — not of the host: a WORLD_POSITION can land
   // while the host is on its way down, and that is exactly the one worth keeping.
@@ -269,6 +282,7 @@ export const WorldScreen: React.FC = () => {
   const loadingWorld = unity && !worldUp;
 
   return (
+    <WorldSheetTop.Provider value={barBottom}>
     <View style={styles.stage} onLayout={insets.track('host')}>
       {/* Never hidden or faded, and never inside a transparent parent: an embedded UnityView in one
           stops drawing (meditation room, measured on device). */}
@@ -285,7 +299,7 @@ export const WorldScreen: React.FC = () => {
 
       <View
         style={[styles.top, { paddingTop: safe.top + spacing.sm, paddingLeft: safe.left + spacing.lg, paddingRight: safe.right + spacing.lg }]}
-        onLayout={insets.track('top')}>
+        onLayout={onTopLayout}>
         <Pressable
           hitSlop={8}
           onPress={to2D}
@@ -347,6 +361,7 @@ export const WorldScreen: React.FC = () => {
       {sheet === 'quest' && <QuestSheet onClose={() => setSheet(null)} onRect={putSheet} />}
       {sheet === 'menu' && <MenuSheet onTo2D={to2D} onClose={() => setSheet(null)} onRect={putSheet} />}
     </View>
+    </WorldSheetTop.Provider>
   );
 };
 

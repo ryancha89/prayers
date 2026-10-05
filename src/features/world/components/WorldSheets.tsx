@@ -15,6 +15,10 @@ import type { WorldZone } from '../../counseling/types';
 import { MEDITATION_CHIPS, SHOP_TABS, WORLD_ZONES, koWith, zoneInfo } from '../data/zones';
 import { MYROOM_PICTURE } from '../../myroom/picture';
 
+/** Where the World's top bar ends (points from the screen top). A landscape sheet starts below it:
+ *  from the top it ran its title into "2D / Prayers World". */
+export const WorldSheetTop = React.createContext(0);
+
 /**
  * The 2D layer over the 3D world (spec 004, mockup ④): one sheet shape for the doors' entrance
  * overlays and for the Map / Quest / Menu buttons.
@@ -37,6 +41,7 @@ export const WorldSheet: React.FC<{
   const screen = useScreen();
   const safe = useSafeAreaInsets();
   const landscape = screen.landscape;
+  const barBottom = React.useContext(WorldSheetTop);
   React.useEffect(() => () => onRect?.(null), [onRect]);
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none" testID={testID}>
@@ -46,8 +51,8 @@ export const WorldSheet: React.FC<{
         style={[
           styles.sheet,
           landscape
-            ? [styles.sheetSide, { width: screen.sidePanel + safe.right, paddingRight: safe.right + spacing.lg, paddingTop: safe.top + spacing.md, paddingBottom: safe.bottom + spacing.md }]
-            : { maxHeight: screen.vh(0.66, 320, 600), paddingBottom: safe.bottom + spacing.lg },
+            ? [styles.sheetSide, { top: barBottom, width: screen.sidePanel + safe.right, paddingRight: safe.right + spacing.lg, paddingTop: spacing.md, paddingBottom: safe.bottom + spacing.md }]
+            : [styles.sheetBottom, { maxHeight: screen.vh(0.66, 320, 600), paddingBottom: safe.bottom + spacing.lg }],
         ]}>
         <View style={styles.head}>
           <View style={styles.headText}>
@@ -303,15 +308,19 @@ export const MenuSheet: React.FC<{
 
 const styles = StyleSheet.create({
   backdrop: { ...absoluteFill, backgroundColor: 'rgba(5,4,20,0.25)' },
+  // No left/right here: Fabric's style merge drops an `undefined`, so `left: undefined` in the side
+  // style could not take back a `left: 0` set here — the landscape sheet stood on the LEFT, under the
+  // Dynamic Island, and VIEW_INSETS called the whole width covered (sim QA 05-10).
   sheet: {
-    position: 'absolute', left: 0, right: 0, bottom: 0,
+    position: 'absolute', bottom: 0,
     paddingTop: spacing.lg, paddingHorizontal: spacing.xl,
     backgroundColor: 'rgba(14,11,34,0.94)',
     borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
     borderTopWidth: 1, borderColor: 'rgba(233,196,106,0.3)',
   },
+  sheetBottom: { left: 0, right: 0 },
   sheetSide: {
-    top: 0, left: undefined,
+    right: 0,
     paddingLeft: spacing.lg,
     borderTopRightRadius: 0, borderTopLeftRadius: radius.xl, borderBottomLeftRadius: radius.xl,
     borderTopWidth: 0, borderLeftWidth: 1,

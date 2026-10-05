@@ -1,6 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import { NavigationContext } from '@react-navigation/native';
 import type { LayoutChangeEvent, LayoutRectangle } from 'react-native';
 import type { ViewInsetsPayload } from '../types';
+
+/** The screen's navigation, or nothing: tests that mock @react-navigation/native without it still
+ *  render the screens, as "always on top". */
+const ScreenNavigation: typeof NavigationContext = NavigationContext ?? createContext(undefined);
 
 /** Covered points on each side of the UnityView. */
 export interface CoveredPx {
@@ -63,8 +68,15 @@ export function useViewInsets(opts: {
   // measured nonsense (sim 01-10: bottom 0.95, then 0.88, then 0.40 within a millisecond). Only the
   // settled value goes to Unity, so the landscape camera never eases toward a half-laid-out panel.
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ONLY THE SCREEN ON TOP TALKS. VIEW_INSETS is one value for the one Unity view, and a screen left
+  // under another in the stack still lays out on a rotation: the World under the Journey sent its own
+  // top bar a few ms after the Journey's panel, and the cabin framed for `bottom: 0` until the next
+  // layout (sim QA 05-10, 4 of 4 rotations). Outside a navigator (tests) every caller is "on top".
+  const navigation = useContext(ScreenNavigation);
+  const focused = useRef(navigation ? navigation.isFocused() : true);
   const sendNow = useCallback(() => {
     timer.current = null;
+    if (!focused.current) return;
     const { send, landscape, compute } = latest.current;
     const host = rects.current.host;
     if (!send || !host || host.width <= 0 || host.height <= 0) return;
@@ -76,6 +88,16 @@ export function useViewInsets(opts: {
     timer.current = setTimeout(sendNow, INSETS_SETTLE_MS);
   }, [sendNow]);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  // Back on top (the Journey popped off the World): say this screen's insets again — the last ones
+  // Unity heard were the other screen's.
+  useEffect(() => {
+    if (!navigation) return;
+    const onFocus = navigation.addListener('focus', () => { focused.current = true; flush(); });
+    const onBlur = navigation.addListener('blur', () => { focused.current = false; });
+    focused.current = navigation.isFocused();
+    return () => { onFocus(); onBlur(); };
+  }, [navigation, flush]);
 
   /** onLayout for the view called `name`. Stable per name, so it never re-renders anything. */
   const track = useCallback(
