@@ -36,6 +36,7 @@
 		82AB8F14F1524438B2FE0F37 /* jsfx_sparkle.m4a in Resources */ = {isa = PBXBuildFile; fileRef = D2C7827F7DC44FEF9BCFC849 /* jsfx_sparkle.m4a */; };
 		8848AC60F3D24F079BCED329 /* jamb_autumn.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 657D951BD73A4498A13CDFEE /* jamb_autumn.m4a */; };
 		908BF3160A3F428AB1E9A368 /* meditation_guide_en.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 74987CB612FC46B1ABF798EB /* meditation_guide_en.m4a */; };
+		96EBC7894F1FFCAD061CD216 /* FabricCommandGuard.mm in Sources */ = {isa = PBXBuildFile; fileRef = 57E8BC846E233D7B1E0A031F /* FabricCommandGuard.mm */; };
 		98F40C66FCF649A79C44F3FA /* jtrav_departure.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 3936F922653D4133851D2DD1 /* jtrav_departure.m4a */; };
 		9C1B67DFA10D4B8F8D62A597 /* jsfx_petals.m4a in Resources */ = {isa = PBXBuildFile; fileRef = D631C15B2A844BC78CF94711 /* jsfx_petals.m4a */; };
 		9D000D34F43346759D6163C3 /* jsfx_card_reveal.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 413320F01B9542ADB749C237 /* jsfx_card_reveal.m4a */; };
@@ -83,6 +84,7 @@
 		4C1F50B8F1B047D8BAF49C0C /* jamb_arrival.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jamb_arrival.m4a; path = ../src/shared/assets/sounds/jamb_arrival.m4a; sourceTree = "<group>"; };
 		4E8C2CCDC77F402096EA0B44 /* jsfx_city_lights.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jsfx_city_lights.m4a; path = ../src/shared/assets/sounds/jsfx_city_lights.m4a; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-prayers.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-prayers.release.xcconfig"; path = "Target Support Files/Pods-prayers/Pods-prayers.release.xcconfig"; sourceTree = "<group>"; };
+		57E8BC846E233D7B1E0A031F /* FabricCommandGuard.mm */ = {isa = PBXFileReference; includeInIndex = 1; name = FabricCommandGuard.mm; path = prayers/FabricCommandGuard.mm; sourceTree = "<group>"; };
 		59C1016B8A4149FF86055BF7 /* med_bell_out.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = med_bell_out.m4a; path = ../src/shared/assets/sounds/med_bell_out.m4a; sourceTree = "<group>"; };
 		5B33FBAC3CAF4B6489A2992F /* jsfx_coins.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jsfx_coins.m4a; path = ../src/shared/assets/sounds/jsfx_coins.m4a; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-prayers.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-prayers.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -138,6 +140,7 @@
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				B49997535B81B46293E2F292 /* UnityLifecycle.m */,
+				57E8BC846E233D7B1E0A031F /* FabricCommandGuard.mm */,
 			);
 			name = prayers;
 			sourceTree = "<group>";
@@ -436,6 +439,7 @@
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
 				D14E31D163966341A8A078D4 /* UnityLifecycle.m in Sources */,
+				96EBC7894F1FFCAD061CD216 /* FabricCommandGuard.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

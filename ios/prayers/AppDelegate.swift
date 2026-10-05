@@ -16,6 +16,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   ) -> Bool {
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
+    // After the factory (it installs the OSS flags), before startReactNative. See FabricCommandGuard.mm.
+    PrayersEnableSchedulerDelegateInvalidation()
     delegate.dependencyProvider = RCTAppDependencyProvider()
 
     reactNativeDelegate = delegate
@@ -46,3 +48,7 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
 #endif
   }
 }
+
+/// FabricCommandGuard.mm — declared by symbol name: the app target has no bridging header.
+@_silgen_name("PrayersEnableSchedulerDelegateInvalidation")
+func PrayersEnableSchedulerDelegateInvalidation()
