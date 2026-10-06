@@ -42,7 +42,15 @@ export const HOST_REMOUNT_FALLBACK_MS = 700;
  * same beat had the engine paused under it — on the simulator (02-10) My Room sent five MYROOM_INITs
  * into a frozen player, and the scene only loaded 45 s later when the world's host came back.
  */
-export const worldTiming = { hostReleaseMs: 450 };
+export const worldTiming = {
+  hostReleaseMs: 450,
+  /**
+   * How long a door is waited on (Enter, or Unity's own WORLD_ARRIVED) before its card opens anyway.
+   * Unity's walk through a door — approach, the swing, the step in, the fade — measured 1.7–5.8 s in
+   * the play smoke (06-10); a player that never answers must not leave the screen empty for long.
+   */
+  enterFallbackMs: 9000,
+};
 
 /**
  * What of the world the screen's UI hides, for VIEW_INSETS: the top bar always, and an open sheet —
@@ -78,6 +86,13 @@ export function worldCoveredPx(r: MeasuredRects, landscape: boolean) {
  * door the player left by (WORLD_INIT.zone). A rotation changes styles only — the host stays at the
  * same place in the tree whichever way up the phone is, because a remount reloads the world.
  *
+ * DOORS OPEN (06-10, spec 004 "Enter opens the door"). Enter sends WORLD_ENTER and the screen shows
+ * nothing over the world — no stick, no Enter, no buttons — while Unity walks the player to the door,
+ * opens it and walks him through; WORLD_ENTERED then opens what WORLD_ARRIVED used to (the zone's
+ * card; My Room goes straight in). Unity runs the same walk by itself when the player walks into a
+ * doorway or an auto-walk arrives, so WORLD_ARRIVED is now only "a door is opening": wait for ENTERED.
+ * Either wait ends in the card if ENTERED never comes (worldTiming.enterFallbackMs).
+ *
  * WITHOUT THE PLAYER (jest, a build with no Unity framework) the drawn hub stands in for the world:
  * its door labels open the same overlays, and Map "arrives" at once (MockUnityBridge), so every 2D
  * path out of the world can be walked.
@@ -100,6 +115,13 @@ export const WorldScreen: React.FC = () => {
   const [overlay, setOverlay] = useState<WorldZone | null>(null);
   const [sheet, setSheet] = useState<'map' | 'quest' | 'menu' | null>(null);
   const [run, setRun] = useState(false);
+  // The door Unity is walking the player through (WORLD_ENTER sent, or ARRIVED seen), until ENTERED.
+  const [entering, setEntering] = useState<WorldZone | null>(null);
+  const enterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearEnterTimer = useCallback(() => {
+    if (enterTimer.current) clearTimeout(enterTimer.current);
+    enterTimer.current = null;
+  }, []);
   const journeyRunning = useJourneyPlayer(s => journeyActive(s) && s.journeyId === NEWYEAR_2027.id);
   // The Menu's music / sound switches also reach the world's own audio (Unity): sent on every change,
   // and the bridge replays the last value when the hub comes up.
@@ -122,6 +144,10 @@ export const WorldScreen: React.FC = () => {
     setBarBottom(Math.round(y + height));
   }, [trackTop]);
 
+  // The door handlers the event subscription below calls — reassigned every render (they need the
+  // render's leaveTo), read through a ref so the subscription itself never has to be renewed.
+  const door = useRef({ wait: (_zone: WorldZone) => {}, entered: (_zone: WorldZone) => {} });
+
   // What Unity says, for the whole life of the screen — not of the host: a WORLD_POSITION can land
   // while the host is on its way down, and that is exactly the one worth keeping.
   useEffect(() => {
@@ -138,9 +164,13 @@ export const WorldScreen: React.FC = () => {
             else setNear(cur => (cur === e.payload.zone ? null : cur));
             break;
           case 'WORLD_ARRIVED':
+            // The door is opening (Unity walks him in on its own): wait for ENTERED.
             if (!isWorldZone(e.payload?.zone)) break;
-            setSheet(null);
-            setOverlay(e.payload.zone);
+            door.current.wait(e.payload.zone);
+            break;
+          case 'WORLD_ENTERED':
+            if (!isWorldZone(e.payload?.zone)) break;
+            door.current.entered(e.payload.zone);
             break;
           case 'WORLD_POSITION':
             useWorldStore.getState().setPosition(e.payload);
@@ -177,10 +207,13 @@ export const WorldScreen: React.FC = () => {
       setWorldUp(false);
       setNear(null);
       setRun(false);
+      clearEnterTimer();
+      setEntering(null);
     };
     // `lang` is read at open time only: a language change mid-walk is not worth reloading the world.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hostOn, bridge]);
+  useEffect(() => clearEnterTimer, [clearEnterTimer]);
 
   // Back from a room: mount the host again once the room's screen (and its UnityView) has gone.
   // Keyed on whether the host is down, not on "not the first focus": whether the initial focus event
@@ -259,6 +292,35 @@ export const WorldScreen: React.FC = () => {
     myroom: () => leaveTo('myroom', () => navigation.navigate('MyRoom')),
   };
 
+  /** Through the door: My Room is entered for real; every other door opens its card over the world. */
+  const throughDoor = (zone: WorldZone) => {
+    clearEnterTimer();
+    setEntering(null);
+    setSheet(null);
+    if (zone === 'myroom') actions.myroom();
+    else setOverlay(zone);
+  };
+  door.current = {
+    wait: zone => {
+      if (entering === zone && enterTimer.current) return;
+      setSheet(null);
+      setOverlay(null);
+      setEntering(zone);
+      clearEnterTimer();
+      // Unity never answered: what the door did before it opened — its card (My Room's included).
+      enterTimer.current = setTimeout(() => {
+        enterTimer.current = null;
+        setEntering(null);
+        setOverlay(zone);
+      }, worldTiming.enterFallbackMs);
+    },
+    entered: throughDoor,
+  };
+  const enter = (zone: WorldZone) => {
+    bridge.sendWorldEnter(zone);
+    door.current.wait(zone);
+  };
+
   const goTo = (zone: WorldZone) => {
     setSheet(null);
     // With a world to walk, Unity walks there and answers WORLD_ARRIVED. A world still loading has
@@ -274,9 +336,10 @@ export const WorldScreen: React.FC = () => {
     bridge.sendWorldRun(on);
   };
 
-  const lookOn = hostOn && worldUp && !overlay && !sheet;
+  const lookOn = hostOn && worldUp && !overlay && !sheet && !entering;
   const camera = useWorldCamera(lookOn);
-  const busy = overlay != null || sheet != null;
+  // While a door is being walked through, nothing is drawn over the world.
+  const busy = overlay != null || sheet != null || entering != null;
   // While the 3D world loads there is nothing to walk: no stick, no run (02-10 screenshot: they
   // floated over the old drawing). Map stays — a door picked while loading opens at once.
   const loadingWorld = unity && !worldUp;
@@ -344,8 +407,8 @@ export const WorldScreen: React.FC = () => {
       )}
 
       {/* Enter pops in when a door is near (re-pops for the next door); the room's Talk is the same
-          pill. */}
-      {near && !busy && <PromptButton label={t('world.enter')} popKey={near} onPress={() => setOverlay(near)} />}
+          pill. It asks Unity to open the door and walk in (WORLD_ENTER). */}
+      {near && !busy && <PromptButton label={t('world.enter')} popKey={near} onPress={() => enter(near)} />}
 
       {overlay && (
         <ZoneOverlay

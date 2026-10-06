@@ -92,7 +92,7 @@ jest.mock('../src/features/counseling/components/UnityHost', () => {
 import { NativeUnityBridge } from '../src/features/counseling/bridge/NativeUnityBridge';
 import { nativeUnityBridge } from '../src/features/counseling/bridge';
 import { INSETS_SETTLE_MS } from '../src/features/counseling/bridge/viewInsets';
-import { MyRoomScreen, myRoomCoveredPx } from '../src/features/myroom/screens/MyRoomScreen';
+import { MYROOM_STALL_MS, MyRoomScreen, myRoomActLabel, myRoomCoveredPx } from '../src/features/myroom/screens/MyRoomScreen';
 import { MYROOM_PICTURE } from '../src/features/myroom/picture';
 import { MYROOM_HOME, MYROOM_START_ZOOM } from '../src/features/myroom/components/useMyRoomCamera';
 import { WorldScreen, worldTiming } from '../src/features/world/screens/WorldScreen';
@@ -257,7 +257,12 @@ afterEach(() => {
 describe('the world’s 개인실 door', () => {
   it('shows the room’s card; 들어가기 takes the world’s host down, THEN opens My Room, remembering the door', async () => {
     await act(async () => { tree = ReactTestRenderer.create(<WorldScreen />); });
+    // The card is what a door Unity never opened shows (06-10: through the door goes straight in).
+    const was = worldTiming.enterFallbackMs;
+    worldTiming.enterFallbackMs = 10;
     fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'myroom' } });
+    await act(async () => { await new Promise(r => setTimeout(r, 30)); });
+    worldTiming.enterFallbackMs = was;
     const overlay = tree!.root.findAll(n => n.props.testID === 'world-overlay-myroom')[0];
     expect(overlay).toBeDefined();
     expect(overlay.findAll(n => n.props.children === '개인실 · My Room').length).toBeGreaterThan(0);
@@ -276,8 +281,10 @@ describe('the world’s 개인실 door', () => {
 
   it('back from My Room: the world waits for the room to go, then opens at the 개인실 door', async () => {
     await act(async () => { tree = ReactTestRenderer.create(<WorldScreen />); });
+    // Through the door (06-10): Unity walked him in, ENTERED goes straight into the room.
     fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'myroom' } });
-    press('들어가기 →');
+    fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'myroom' } });
+    expect(mockNav.calls.map(c => c.args)).toEqual([['MyRoom']]);
     fire('blur');
     mockPosted.length = 0;
     fire('focus');
@@ -307,6 +314,25 @@ describe('the My Room screen', () => {
     expect(posts('MYROOM_INIT')[0].payload).toEqual({ lang: 'vi' });
     expect(pictureShown()).toBe(true);
     fromUnity({ type: 'MYROOM_READY' });
+    expect(pictureShown()).toBe(false);
+  });
+
+  it('a room that never answers says so after MYROOM_STALL_MS and offers a retry that asks again', async () => {
+    jest.useFakeTimers();
+    await render();
+    const texts = () => tree!.root.findAll(n => typeof n.props.children === 'string').map(n => n.props.children as string);
+    expect(texts()).toContain('방을 불러오는 중…');
+    expect(has('myroom-retry')).toBe(false);
+    act(() => { jest.advanceTimersByTime(MYROOM_STALL_MS); });
+    expect(texts()).toContain('방을 불러오지 못했어요');
+    const before = posts('MYROOM_INIT').length;
+    act(() => { tree!.root.findAll(n => n.props.testID === 'myroom-retry')[0].props.onPress(); });
+    expect(posts('MYROOM_INIT').length).toBe(before + 1);
+    expect(has('myroom-retry')).toBe(false);
+    expect(texts()).toContain('방을 불러오는 중…');
+    fromUnity({ type: 'MYROOM_READY' });
+    act(() => { jest.advanceTimersByTime(MYROOM_STALL_MS); });
+    expect(has('myroom-retry')).toBe(false);
     expect(pictureShown()).toBe(false);
   });
 
@@ -550,5 +576,107 @@ describe('VIEW_INSETS over the room', () => {
     expect(myRoomCoveredPx({ host: { x: 0, y: 0, width: 402, height: 874 }, top: { x: 0, y: 0, width: 402, height: 96 } })).toEqual({ top: 96 });
     expect(myRoomCoveredPx({ host: { x: 0, y: 0, width: 874, height: 402 } })).toEqual({ top: 0 });
     expect(myRoomCoveredPx({})).toBeNull();
+  });
+});
+
+/* ---- the furniture (spec 005 US1: MYROOM_NEAR_ITEM → one action button → MYROOM_ACT) ------------ */
+
+describe('the furniture', () => {
+  const render = async () => {
+    await act(async () => { tree = ReactTestRenderer.create(<MyRoomScreen />); });
+    fromUnity({ type: 'MYROOM_READY' });
+    return tree!;
+  };
+  const near = (uid: string, action: string, active = false) =>
+    fromUnity({ type: 'MYROOM_NEAR_ITEM', payload: { uid, item: uid.split('#')[0], action, near: true, active } });
+  const state = (uid: string, action: string, active: boolean) =>
+    fromUnity({ type: 'MYROOM_ACT_STATE', payload: { uid, action, active } });
+  const actBtn = () => tree!.root.findAll(n => n.props.testID === 'myroom-act' && typeof n.props.onPress === 'function')[0];
+
+  it('the bridge posts MYROOM_ACT with the piece and its action, and MYROOM_ACT_END bare', () => {
+    const { bridge, of } = bridgeWithView();
+    bridge.sendMyRoomAct('Sofa', 'sit');
+    bridge.endMyRoomAct();
+    expect(of('MYROOM_ACT')).toEqual([{ type: 'MYROOM_ACT', payload: { uid: 'Sofa', action: 'sit' } }]);
+    expect(of('MYROOM_ACT_END')).toEqual([{ type: 'MYROOM_ACT_END' }]);
+  });
+
+  it('no piece in reach, no button; walking up to the sofa shows Sit where the world puts Enter', async () => {
+    await render();
+    expect(actBtn()).toBeUndefined();
+    near('Sofa', 'sit');
+    expect(byLabel('앉기')).toBeDefined();
+    fromUnity({ type: 'MYROOM_NEAR_ITEM', payload: { uid: '', item: '', action: '', near: false, active: false } });
+    expect(actBtn()).toBeUndefined();
+  });
+
+  it('Sit sends MYROOM_ACT; seated, the button reads Stand and sends MYROOM_ACT_END; standing, Sit again', async () => {
+    await render();
+    near('Sofa', 'sit');
+    mockPosted.length = 0;
+    press('앉기');
+    expect(posts('MYROOM_ACT')).toEqual([{ type: 'MYROOM_ACT', payload: { uid: 'Sofa', action: 'sit' } }]);
+    state('Sofa', 'sit', true);
+    press('일어서기');
+    expect(posts('MYROOM_ACT_END')).toHaveLength(1);
+    state('Sofa', 'sit', false);
+    expect(byLabel('앉기')).toBeDefined();
+  });
+
+  it('Rest / Get up on the bed, Look / Back at the bookshelf', async () => {
+    await render();
+    near('Bed', 'rest');
+    expect(byLabel('쉬기')).toBeDefined();
+    state('Bed', 'rest', true);
+    expect(byLabel('일어나기')).toBeDefined();
+    state('Bed', 'rest', false);
+    near('Bookshelf', 'look');
+    expect(byLabel('둘러보기')).toBeDefined();
+    state('Bookshelf', 'look', true);
+    expect(byLabel('돌아가기')).toBeDefined();
+  });
+
+  it('a lamp is labelled by its state: Lamp off when on, Lamp on after it went out; every tap is MYROOM_ACT lamp', async () => {
+    await render();
+    near('GlobeLamp', 'lamp', true);
+    mockPosted.length = 0;
+    press('조명 끄기');
+    state('GlobeLamp', 'lamp', false);
+    press('조명 켜기');
+    expect(posts('MYROOM_ACT')).toEqual([
+      { type: 'MYROOM_ACT', payload: { uid: 'GlobeLamp', action: 'lamp' } },
+      { type: 'MYROOM_ACT', payload: { uid: 'GlobeLamp', action: 'lamp' } },
+    ]);
+    expect(posts('MYROOM_ACT_END')).toHaveLength(0);
+  });
+
+  it('Leave wins at the door, and the button hides with the stick while the coin shop is open', async () => {
+    await render();
+    near('Sofa', 'sit');
+    fromUnity({ type: 'MYROOM_NEAR', payload: { near: true } });
+    expect(actBtn()).toBeUndefined();
+    expect(byLabel('나가기')).toBeDefined();
+    fromUnity({ type: 'MYROOM_NEAR', payload: { near: false } });
+    expect(actBtn()).toBeDefined();
+    act(() => useCoins.setState({ shopOpen: true }));
+    expect(actBtn()).toBeUndefined();
+  });
+
+  it('speaks the player’s language', async () => {
+    useLanguageStore.setState({ lang: 'en' });
+    await render();
+    near('Armchair', 'sit');
+    expect(byLabel('Sit')).toBeDefined();
+    state('Armchair', 'sit', true);
+    expect(byLabel('Stand')).toBeDefined();
+  });
+
+  it('every label is in all six tables, and myRoomActLabel names only keys that exist', () => {
+    const { translations } = jest.requireActual('../src/shared/i18n/translations');
+    const keys = ['sit', 'stand', 'rest', 'getUp', 'lampOn', 'lampOff', 'look', 'back'].map(k => `myroom.act.${k}`);
+    for (const lang of ['ko', 'en', 'ja', 'zh-CN', 'zh-TW', 'vi'])
+      for (const k of keys) expect([lang, k, typeof translations[lang][k]]).toEqual([lang, k, 'string']);
+    for (const a of ['sit', 'rest', 'lamp', 'look'] as const)
+      for (const on of [true, false]) expect(keys).toContain(myRoomActLabel(a, on, on));
   });
 });

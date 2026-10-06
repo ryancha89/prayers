@@ -313,6 +313,9 @@ export type RNToUnityEvent =
   | { type: 'WORLD_AUDIO'; payload: { music: boolean; sfx: boolean } }
   /** Auto-walk along the NavMesh to that zone's door; Unity answers WORLD_ARRIVED on arrival. */
   | { type: 'WORLD_GOTO'; payload: { zone: WorldZone } }
+  /** Enter (spec 004, 06-10): Unity walks the player to that door, opens it, walks him through and
+   *  fades out, then answers WORLD_ENTERED. Ignored while a door is already being entered. */
+  | { type: 'WORLD_ENTER'; payload: { zone: WorldZone } }
   /** Pinch (zoom 0..1) and two-finger turn (yaw -1..1). Many a second; the last one wins. */
   | { type: 'WORLD_CAMERA'; payload: { zoom: number; yaw: number; pitch?: number } }
   /** A one-finger tap on the world, 0..1 of the view from its top-left. RN's look-around layer covers
@@ -327,6 +330,10 @@ export type RNToUnityEvent =
    *  the player), yaw -1..1 (= ±180° round them, wrapped), pitch -1..1 (+ = higher). Absolute, many a
    *  second; the last one wins. The stick is WALK_INPUT, which Unity routes to the room while it is up. */
   | { type: 'MYROOM_CAMERA'; payload: MyRoomCamera }
+  /** Use the piece MYROOM_NEAR_ITEM named (spec 005 US1): sit / rest / lamp / look. A lamp toggles. */
+  | { type: 'MYROOM_ACT'; payload: { uid: string; action: MyRoomAction } }
+  /** Stop using it: stand up, get up, look away. Unity ignores it when nothing is going. */
+  | { type: 'MYROOM_ACT_END' }
   /** Leaving My Room. */
   | { type: 'MYROOM_END' }
   /** A held direction key. x = right, y = forward, each in [-1, 1].
@@ -406,6 +413,13 @@ export interface JourneyStatePayload {
    *  health · overall · monthly — monthly follows `month`'s season); '' none. Unity turns it off in
    *  transitions and at the end. */
   ambient?: string;
+  /** What the player is doing (journeyPlayer `stage`): '' reading · title · pick · branch · quarters ·
+   *  reveal · stationEnd · ending. The counsellor's own beat per stage (character-setup sheet 06-10:
+   *  title = thinking, a choice = inquiring, reveal = card flip, an end = smiling). */
+  stage?: string;
+  /** The month card's feeling: '' · happy (a best month, 4-5★) · serious (a caution month, 2★) ·
+   *  sad (1★). The counsellor's expression when it changes. */
+  mood?: '' | 'happy' | 'serious' | 'sad';
 }
 
 export interface JourneyVoicePayload {
@@ -440,6 +454,19 @@ export interface WorldInitPayload {
 
 export interface MyRoomInitPayload {
   lang: string;
+}
+
+/** What a usable piece of My Room's furniture offers (spec 005 US1). */
+export type MyRoomAction = 'sit' | 'rest' | 'lamp' | 'look';
+
+/** MYROOM_NEAR_ITEM: the nearest usable piece in reach, or `near:false` for none (the door wins). `active`
+ *  is the piece's own state as the player walks up — a lamp that is on. `action` is '' when not near. */
+export interface MyRoomNearItem {
+  uid: string;
+  item: string;
+  action: MyRoomAction | '';
+  near: boolean;
+  active: boolean;
 }
 
 /** My Room's follow camera, as MYROOM_CAMERA carries it (MYROOM_HOME is where a visit starts). */
@@ -508,8 +535,13 @@ export type UnityToRNEvent =
   | { type: 'WORLD_READY' }
   /** The player entered (near) or left a door's EntranceTrigger. RN shows or hides Enter. */
   | { type: 'WORLD_NEAR'; payload: { zone: WorldZone; near: boolean } }
-  /** Auto-walk reached the door, or the player walked through it: open that zone's overlay. */
+  /** Auto-walk reached the door, or the player walked into it. Since 06-10 Unity then opens the
+   *  door and walks him in by itself and says WORLD_ENTERED; this screen waits for that (a client
+   *  older than the doors opened the overlay here, and still may). */
   | { type: 'WORLD_ARRIVED'; payload: { zone: WorldZone } }
+  /** The door opened, the player walked through it and the view is black: open what the door leads
+   *  to (the zone's overlay; My Room directly). Answers WORLD_ENTER and follows WORLD_ARRIVED. */
+  | { type: 'WORLD_ENTERED'; payload: { zone: WorldZone } }
   /** Where the player is: every ~2 s while moving, and on WORLD_END. RN persists it. */
   | { type: 'WORLD_POSITION'; payload: WorldSpot }
   /** My Room is on screen, its camera on the overview: drop the picture, replay insets and camera. */
@@ -517,6 +549,10 @@ export type UnityToRNEvent =
   /** The player walked into (near) or out of the volume just inside My Room's door. RN shows or
    *  hides Leave. Sent on a change only, like WORLD_NEAR. */
   | { type: 'MYROOM_NEAR'; payload: { near: boolean } }
+  /** The nearest usable piece changed (sent on a change only). RN shows one action button for it. */
+  | { type: 'MYROOM_NEAR_ITEM'; payload: MyRoomNearItem }
+  /** An act started or ended — seated / resting / looking — or a lamp is now on (`active`) or off. */
+  | { type: 'MYROOM_ACT_STATE'; payload: { uid: string; action: MyRoomAction; active: boolean } }
   /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
@@ -540,6 +576,8 @@ export interface WorldBridge {
   sendWorldRun(on: boolean): void;
   sendWorldAudio(music: boolean, sfx: boolean): void;
   sendWorldGoto(zone: WorldZone): void;
+  /** WORLD_ENTER: open that door and walk in; answered by WORLD_ENTERED. */
+  sendWorldEnter(zone: WorldZone): void;
   /** A tap on the world at (x, y), 0..1 of the view from its top-left — Unity tests it against the signs. */
   sendWorldTap(x: number, y: number): void;
   /** zoom 0..1, yaw −1..1 (±180°, wrapped by the caller), pitch −1..1 (+ = camera higher). */
@@ -555,6 +593,10 @@ export interface MyRoomBridge {
   openMyRoom(init: MyRoomInitPayload): void;
   closeMyRoom(): void;
   sendMyRoomCamera(camera: MyRoomCamera): void;
+  /** MYROOM_ACT: use the piece `uid` (from MYROOM_NEAR_ITEM). */
+  sendMyRoomAct(uid: string, action: MyRoomAction): void;
+  /** MYROOM_ACT_END: stand up / get up / look away. */
+  endMyRoomAct(): void;
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
 }
 

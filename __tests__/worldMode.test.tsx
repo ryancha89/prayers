@@ -6,7 +6,8 @@
  *    a walk direction queued while loading never replayed, WORLD_END once,
  *  · the saved spot: WORLD_POSITION persisted, a nonsense spot refused, the door spent on READY,
  *  · the entry points: the Home header's 3D pill and the 월드 tab (2nd), both to the `World` route,
- *  · the screen: WORLD_INIT built from the store, Enter on WORLD_NEAR, the right overlay per zone and
+ *  · the screen: WORLD_INIT built from the store, Enter on WORLD_NEAR — WORLD_ENTER, nothing drawn
+ *    until WORLD_ENTERED (or the fallback), My Room entered straight through its door — the right overlay per zone and
  *    every CTA's destination — with the world's UnityView unmounted BEFORE a room is navigated to,
  *    and mounted again (at that door) after coming back,
  *  · landscape: the sheet becomes the side panel, VIEW_INSETS follow, and a rotation never remounts
@@ -118,6 +119,12 @@ const { mockPosted } = jest.requireMock('../src/features/counseling/bridge') as 
 };
 const posts = (type: string) => mockPosted.filter(p => p.type === type);
 const fromUnity = (event: object) => act(() => nativeUnityBridge.receiveFromUnity(JSON.stringify(event)));
+/** A door Unity opened and walked the player through (06-10): ARRIVED as he reaches it, ENTERED once
+ *  he is through and the view is black. What WORLD_ARRIVED alone did before the doors moved. */
+const throughDoor = (zone: string) => {
+  fromUnity({ type: 'WORLD_ARRIVED', payload: { zone } });
+  fromUnity({ type: 'WORLD_ENTERED', payload: { zone } });
+};
 
 /* ---- the bridge ---------------------------------------------------------------------------- */
 
@@ -210,6 +217,16 @@ describe('the world bridge', () => {
     bridge.sendWorldCamera(3, -9);
     expect(of('WORLD_GOTO')[0].payload).toEqual({ zone: 'shop' });
     expect(of('WORLD_CAMERA')[0].payload).toEqual({ zoom: 1, yaw: -1, pitch: 0 });
+  });
+
+  it('WORLD_ENTER goes straight out and is never replayed on READY (06-10)', () => {
+    const { bridge, of } = bridgeWithView();
+    bridge.openWorld(init);
+    bridge.sendWorldEnter('myroom');
+    expect(of('WORLD_ENTER').map(p => p.payload)).toEqual([{ zone: 'myroom' }]);
+    bridge.receiveFromUnity(JSON.stringify({ type: 'WORLD_READY' }));
+    expect(of('WORLD_ENTER')).toHaveLength(1);
+    bridge.closeWorld();
   });
 
   it('closing sends WORLD_END once, stops the retries, and a second close says nothing', () => {
@@ -380,13 +397,99 @@ describe('the World screen', () => {
     await act(async () => { useSoundStore.getState().setMusicEnabled(true); });
   });
 
-  it('a door in reach shows Enter, and Enter opens that door', async () => {
+  const anyOverlay = () => tree!.root.findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('world-overlay')).length;
+  const stickShown = () => tree!.root.findAll(n => n.props.testID === 'world-joystick').length > 0;
+
+  it('a door in reach shows Enter; Enter asks Unity to open it and shows nothing until it is through', async () => {
     await render();
     fromUnity({ type: 'WORLD_READY' });
     expect(byLabel('들어가기')).toBeUndefined();
     fromUnity({ type: 'WORLD_NEAR', payload: { zone: 'meditation', near: true } });
+    expect(stickShown()).toBe(true);
     press('들어가기');
+    expect(posts('WORLD_ENTER').map(p => p.payload)).toEqual([{ zone: 'meditation' }]);
+    // The door is opening: no card yet, and nothing over the world — no Enter, no stick, no buttons.
+    expect(overlayOpen('meditation')).toBe(false);
+    expect(byLabel('들어가기')).toBeUndefined();
+    expect(stickShown()).toBe(false);
+    expect(byLabel('Map')).toBeUndefined();
+    expect(byLabel('달리기')).toBeUndefined();
+    expect(tree!.root.findAll(n => n.props.testID === 'world-look')).toHaveLength(0);
+    fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'meditation' } });
     expect(overlayOpen('meditation')).toBe(true);
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('walking into a doorway (WORLD_ARRIVED): Unity opens the door itself, the screen waits for ENTERED', async () => {
+    await render();
+    fromUnity({ type: 'WORLD_READY' });
+    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'shop' } });
+    expect(posts('WORLD_ENTER')).toHaveLength(0);
+    expect(anyOverlay()).toBe(0);
+    expect(stickShown()).toBe(false);
+    fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'shop' } });
+    expect(overlayOpen('shop')).toBe(true);
+  });
+
+  it('개인실 through its door goes straight into My Room, the host down first', async () => {
+    await render();
+    fromUnity({ type: 'WORLD_READY' });
+    fromUnity({ type: 'WORLD_NEAR', payload: { zone: 'myroom', near: true } });
+    press('들어가기');
+    expect(posts('WORLD_ENTER').map(p => p.payload)).toEqual([{ zone: 'myroom' }]);
+    fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'myroom' } });
+    expect(overlayOpen('myroom')).toBe(false);
+    expect(mockNav.calls.map(c => c.args)).toEqual([['MyRoom']]);
+    expect(mockNav.calls[0].hostUnmounts).toBe(1);
+    expect(posts('WORLD_END')).toHaveLength(1);
+    expect(useWorldStore.getState().returnZone).toBe('myroom');
+  });
+
+  it('Unity never answers: after the fallback the door opens its card, as before the doors moved', async () => {
+    const was = worldTiming.enterFallbackMs;
+    worldTiming.enterFallbackMs = 40;
+    try {
+      await render();
+      fromUnity({ type: 'WORLD_READY' });
+      fromUnity({ type: 'WORLD_NEAR', payload: { zone: 'myroom', near: true } });
+      press('들어가기');
+      expect(anyOverlay()).toBe(0);
+      await act(async () => { await new Promise(r => setTimeout(r, 70)); });
+      // My Room's card too: it is what Enter opened before, and its 들어가기 still goes in.
+      expect(overlayOpen('myroom')).toBe(true);
+      expect(mockNavigate).not.toHaveBeenCalled();
+      // A late ENTERED for a door already shown is harmless.
+      press('닫기');
+      fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'journey' } });
+      await act(async () => { await new Promise(r => setTimeout(r, 70)); });
+      expect(overlayOpen('journey')).toBe(true);
+    } finally {
+      worldTiming.enterFallbackMs = was;
+    }
+  });
+
+  it('an ENTERED in time cancels the fallback; one for an unknown zone is ignored; leaving cancels the wait', async () => {
+    const was = worldTiming.enterFallbackMs;
+    worldTiming.enterFallbackMs = 40;
+    try {
+      await render();
+      fromUnity({ type: 'WORLD_READY' });
+      fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'counseling' } });
+      fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'garden' } });
+      expect(anyOverlay()).toBe(0);
+      fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'counseling' } });
+      expect(overlayOpen('counseling')).toBe(true);
+      press('닫기');
+      await act(async () => { await new Promise(r => setTimeout(r, 70)); });
+      expect(anyOverlay()).toBe(0);                     // no second card from a stale timer
+      // Out of the world mid-walk (the host goes down): no card pops over whatever comes next.
+      fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'shop' } });
+      fire('blur');
+      await act(async () => { await new Promise(r => setTimeout(r, 70)); });
+      expect(anyOverlay()).toBe(0);
+    } finally {
+      worldTiming.enterFallbackMs = was;
+    }
   });
 
   it('leaving the door hides Enter, and an unknown zone is ignored', async () => {
@@ -400,7 +503,7 @@ describe('the World screen', () => {
 
   it('상담의 방: four counsellors with rooms first; 상담하기 takes the host down, then opens the counsellor', async () => {
     await render();
-    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'counseling' } });
+    throughDoor('counseling');
     expect(overlayOpen('counseling')).toBe(true);
     const roster = counselingRoster('ko');
     press(roster[1].name);
@@ -415,7 +518,7 @@ describe('the World screen', () => {
 
   it('back from the room: the host waits for the room to go, then the world opens at that door', async () => {
     await render();
-    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'meditation' } });
+    throughDoor('meditation');
     press('명상 시작하기 →');
     expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
     fire('blur');
@@ -436,7 +539,7 @@ describe('the World screen', () => {
     worldTiming.hostReleaseMs = 450;
     try {
       await render();
-      fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'meditation' } });
+      throughDoor('meditation');
       press('명상 시작하기 →');
       expect(mockHost.unmounts).toBe(1);
       expect(mockNavigate).not.toHaveBeenCalled();
@@ -452,7 +555,7 @@ describe('the World screen', () => {
     jest.useFakeTimers();
     try {
       await render();
-      fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'meditation' } });
+      throughDoor('meditation');
       press('명상 시작하기 →');
       fire('focus');
       act(() => { jest.advanceTimersByTime(HOST_REMOUNT_FALLBACK_MS + 10); });
@@ -464,7 +567,7 @@ describe('the World screen', () => {
 
   it('명상의 방: the four session chips all open the one meditation room', async () => {
     await render();
-    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'meditation' } });
+    throughDoor('meditation');
     for (const chip of ['호흡 명상', '수면 명상', '마음 안정', '에너지 충전']) expect(byLabel(chip)).toBeDefined();
     press('수면 명상');
     expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
@@ -472,7 +575,7 @@ describe('the World screen', () => {
 
   it('운세 여행의 방: boards the 2027 journey, or resumes the one under way', async () => {
     await render();
-    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'journey' } });
+    throughDoor('journey');
     expect(tree!.root.findAll(n => n.props.children === '이제, 2027년으로 출발할까요?').length).toBeGreaterThan(0);
     press('기차에 탑승하기 →');
     expect(mockNavigate).toHaveBeenCalledWith('JourneyCounselor', { journeyId: NEWYEAR_2027.id });
@@ -482,14 +585,14 @@ describe('the World screen', () => {
     mockNavigate.mockClear();
     useJourneyPlayer.setState({ journeyId: NEWYEAR_2027.id, status: 'paused' } as never);
     await render();
-    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'journey' } });
+    throughDoor('journey');
     press('여행 이어가기 →');
     expect(mockNavigate).toHaveBeenCalledWith('Journey');
   });
 
   it('상점: the four aisles are coming soon, and 코인 충전 opens the coin shop over the world', async () => {
     await render();
-    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'shop' } });
+    throughDoor('shop');
     for (const tab of ['의상', '캐릭터', '배경', '아이템']) {
       expect(tree!.root.findAll(n => n.props.accessibilityLabel === tab).length).toBeGreaterThan(0);
     }
@@ -499,9 +602,13 @@ describe('the World screen', () => {
     expect(mockHost.unmounts).toBe(0);
   });
 
-  it('개인실: the room’s card, and 들어가기 opens My Room with the host down first (02-10; myRoom.test.tsx has the rest)', async () => {
+  it('개인실: the room’s card (what a door Unity never opened shows), and 들어가기 opens My Room with the host down first (02-10; myRoom.test.tsx has the rest)', async () => {
+    const was = worldTiming.enterFallbackMs;
+    worldTiming.enterFallbackMs = 10;
     await render();
     fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'myroom' } });
+    await act(async () => { await new Promise(r => setTimeout(r, 30)); });
+    worldTiming.enterFallbackMs = was;
     expect(overlayOpen('myroom')).toBe(true);
     expect(tree!.root.findAll(n => n.props.children === '개인실 · My Room').length).toBeGreaterThan(0);
     press('들어가기 →');
@@ -511,7 +618,7 @@ describe('the World screen', () => {
 
   it('상담사 둘러보기 and the 2D button go back to the Home tab', async () => {
     await render();
-    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'counseling' } });
+    throughDoor('counseling');
     press('상담사 둘러보기');
     expect(mockNavigate).toHaveBeenLastCalledWith('Tabs', { screen: 'Home' });
     press('홈으로');
@@ -526,7 +633,7 @@ describe('the World screen', () => {
     press('운세 여행의 방');
     expect(posts('WORLD_GOTO').map(p => p.payload)).toEqual([{ zone: 'journey' }]);
     // Unity walks there and says so.
-    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'journey' } });
+    throughDoor('journey');
     expect(overlayOpen('journey')).toBe(true);
     press('닫기');
 
@@ -556,7 +663,7 @@ describe('the World screen', () => {
     expect(posts('WORLD_RUN').map(p => p.payload)).toEqual([{ on: true }, { on: false }]);
     // The analogue stick (02-10) is on screen; its maths is pinned in 'the world stick' below.
     expect(tree!.root.findAll(n => n.props.testID === 'world-joystick').length).toBeGreaterThan(0);
-    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'shop' } });
+    throughDoor('shop');
     // An overlay hides the stick; a stick at rest has nothing to stop, so nothing stray is sent.
     expect(tree!.root.findAll(n => n.props.testID === 'world-joystick').length).toBe(0);
   });
@@ -569,7 +676,7 @@ describe('the World screen', () => {
 
   it('landscape: the sheet is the right-hand panel, and a rotation never remounts the host', async () => {
     await render();
-    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'counseling' } });
+    throughDoor('counseling');
     rotate(IPHONE_17_SIDE);
     const sheet = tree!.root.findAll(n => typeof n.props.onLayout === 'function' && StyleSheet.flatten(n.props.style)?.borderLeftWidth === 1)[0];
     expect(sheet).toBeDefined();

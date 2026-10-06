@@ -1,4 +1,5 @@
 import {
+  MyRoomAction,
   MyRoomBridge,
   MyRoomCamera,
   MyRoomInitPayload,
@@ -88,6 +89,12 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge {
 
   sendWorldGoto(zone: WorldZone): void {
     this.emitToRN({ type: 'WORLD_ARRIVED', payload: { zone } });
+    this.emitToRN({ type: 'WORLD_ENTERED', payload: { zone } });
+  }
+
+  /** No door to open: the mock is through it at once. */
+  sendWorldEnter(zone: WorldZone): void {
+    this.emitToRN({ type: 'WORLD_ENTERED', payload: { zone } });
   }
 
   sendWorldCamera(zoom: number, yaw: number, pitch = 0): void {
@@ -113,6 +120,17 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge {
 
   sendMyRoomCamera(camera: MyRoomCamera): void {
     this.myRoomCamera = { ...camera };
+  }
+
+  /** No room, nothing near: the action button never shows without the player. Recorded for tests. */
+  myRoomActs: { uid: string; action: MyRoomAction | null }[] = [];
+
+  sendMyRoomAct(uid: string, action: MyRoomAction): void {
+    this.myRoomActs.push({ uid, action });
+  }
+
+  endMyRoomAct(): void {
+    this.myRoomActs.push({ uid: '', action: null });
   }
 
   onEvent(handler: (event: UnityToRNEvent) => void): () => void {

@@ -17,6 +17,7 @@ import { TRANSITION_MS, cabinAmbientOf, cabinMomentOf, currentPart, teaserOf, us
 import { BEAT_LINES, dropPendingBeatLines, openStoryboard, prefetchBeatLines, sayBeatLine, stopBeatVoice } from '../player/beatVoice';
 import { TrainWindow } from '../components/TrainWindow';
 import { JourneyBackdrop } from '../components/JourneyBackdrop';
+import { moodOf, roughOf } from '../player/cabinMood';
 import { RailwayProgress } from '../components/RailwayProgress';
 import { JourneyStageOverlay } from '../components/JourneyStageOverlay';
 import { CoinPill } from '../../coins/components/CoinPill';
@@ -37,8 +38,10 @@ import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewI
 const PLATFORM_NIGHT = require('../assets/platform_night.jpg');
 /** A hard month on screen shakes the carriage: 1★ hardest, 2★ or one of the reading's own caution
  *  months half (the model often rates those 3★), anything else rides smooth. */
-const roughOf = (card: { stars: number; months: number[] } | null | undefined, caution: number[] = []) =>
-  !card ? 0 : card.stars <= 1 ? 1 : card.stars <= 2 || card.months.some(m => caution.includes(m)) ? 0.5 : 0;
+
+/** Mount the cabin's host this long after the screen opens if no transitionEnd arrives (a resume
+ *  without an animation). Past the stack's fade (~350 ms). */
+export const JOURNEY_HOST_FALLBACK_MS = 500;
 
 /**
  * What of the cabin the screen's own UI hides, for VIEW_INSETS: the header across the top, and the
@@ -152,6 +155,19 @@ export const JourneyScreen: React.FC = () => {
     compute: r => journeyCoveredPx(r, landscape),
   });
   const [cabinUp, setCabinUp] = useState(false);
+  // The cabin's UnityView goes in once the screen's fade has finished. Mounted with the screen, the
+  // native Metal view ignores the fade's opacity and showed BLACK over the whole picker for two frames
+  // before Unity drew (sim QA 06-10, at JOURNEY_INIT). The bridge re-sends JOURNEY_INIT when the view
+  // registers, so nothing is lost by waiting; the loading art covers the window meanwhile.
+  const [hostOn, setHostOn] = useState(false);
+  useEffect(() => {
+    if (!unity) return undefined;
+    const timer = setTimeout(() => setHostOn(true), JOURNEY_HOST_FALLBACK_MS);
+    const off = navigation.addListener('transitionEnd', (e: { data?: { closing?: boolean } }) => {
+      if (!e?.data?.closing) setHostOn(true);
+    });
+    return () => { clearTimeout(timer); off(); };
+  }, [unity, navigation]);
   // The loading art fades off the cabin instead of vanishing on the frame Unity is ready — that was a
   // one-frame cut from the starry poster to the platform, on the first spoken line (QA 30-09).
   const curtain = useRef(new Animated.Value(1)).current;
@@ -290,6 +306,8 @@ export const JourneyScreen: React.FC = () => {
         rough: roughOf(s.activeCard, s.content?.summary.cautionMonths),
         ...cabinMomentOf(s),
         ambient: cabinAmbientOf(journey.chapters[s.chapterIndex]?.id),
+        stage: s.stage,
+        mood: moodOf(s.activeCard, s.content?.summary.bestMonths, s.content?.summary.cautionMonths),
       }
     : null;
   const cabinKey = cabinState ? JSON.stringify(cabinState) : '';
@@ -398,7 +416,7 @@ export const JourneyScreen: React.FC = () => {
     <View style={styles.stage} onLayout={insets.track('host')}>
       {/* Never hidden or faded: an embedded UnityView under a transparent PARENT stops being
           drawn (meditation room, measured on device). The screen above it is what changes. */}
-      {unity && <UnityHost style={styles.unity} />}
+      {unity && hostOn && <UnityHost style={styles.unity} />}
       {/* Beside the UnityView, never its parent (a transparent parent stops it drawing). */}
       {unity && cabinUp && !curtainGone && (
         <Animated.View pointerEvents="none" style={[styles.curtain, { opacity: curtain }]} />
@@ -420,20 +438,18 @@ export const JourneyScreen: React.FC = () => {
       </View>
 
       <View style={[styles.body, landscape && styles.bodySide]} onLayout={insets.track('body')}>
-      {cabinUp ? (
-        // The cabin is the window now: this area is clear, only the overlays ride on it.
+      {unity ? (
+        // ONE element from "Boarding…" to the cabin: the loading art stays mounted and fades with the
+        // curtain. Two branches (a plain Image, then a fresh Animated.Image once the cabin was up)
+        // remounted it, and the new image showed one black frame before it decoded (sim QA 06-10).
+        // Once the cabin is up the area is clear, only the overlays ride on it.
         // Drag to turn, pinch to zoom, double-tap to toggle the close-up — see useCabinCamera.
         <View style={[styles.window, landscape && styles.windowSide, landscape && { marginLeft: safe.left + spacing.xs, marginBottom: safe.bottom + spacing.xs }]}
-          {...cabinCamera.panHandlers} onTouchEnd={cabinCamera.onTouchEnd}>
+          {...(cabinUp ? cabinCamera.panHandlers : null)} onTouchEnd={cabinUp ? cabinCamera.onTouchEnd : undefined}>
           {!curtainGone && (
             <Animated.Image source={PLATFORM_NIGHT} resizeMode="cover"
               style={[styles.loadingArt, { opacity: curtain.interpolate({ inputRange: [0, 1], outputRange: [0, 0.85] }) }]} />
           )}
-          {overlays}
-        </View>
-      ) : unity ? (
-        <View style={[styles.window, landscape && styles.windowSide, landscape && { marginLeft: safe.left + spacing.xs, marginBottom: safe.bottom + spacing.xs }]}>
-          <Image source={PLATFORM_NIGHT} style={styles.loadingArt} resizeMode="cover" />
           {overlays}
         </View>
       ) : (

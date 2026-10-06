@@ -4,6 +4,7 @@ import {
   JourneyInitPayload,
   JourneyStatePayload,
   JourneyVoicePayload,
+  MyRoomAction,
   MyRoomBridge,
   MyRoomCamera,
   MyRoomInitPayload,
@@ -411,6 +412,12 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     if (this.view) this.post({ type: 'WORLD_GOTO', payload: { zone } });
   }
 
+  /** Enter a door (06-10). Not remembered, for GOTO's reason: the screen waits for WORLD_ENTERED and
+   *  opens the door's card itself if it never comes. */
+  sendWorldEnter(zone: WorldZone): void {
+    if (this.view) this.post({ type: 'WORLD_ENTER', payload: { zone } });
+  }
+
   /** Pinch / look-around drag. Posted straight through like JOURNEY_ZOOM (a late one is worthless)
    *  and remembered for WORLD_READY. */
   sendWorldCamera(zoom: number, yaw: number, pitch = 0): void {
@@ -477,6 +484,18 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     const clamp = (v: number, lo: number, hi: number) => (Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : 0);
     this.myRoomCamera = { zoom: clamp(camera.zoom, 0, 1), yaw: clamp(camera.yaw, -1, 1), pitch: clamp(camera.pitch, -1, 1) };
     if (this.view) this.postLive({ type: 'MYROOM_CAMERA', payload: this.myRoomCamera });
+  }
+
+  /** A tap on the furniture's action button (spec 005 US1). A tap, not a stream: posted at once, and
+   *  queued like any command if the view is not there (the room answers MYROOM_ACT_STATE). */
+  sendMyRoomAct(uid: string, action: MyRoomAction): void {
+    devlog(`[unity-bridge] MYROOM_ACT ${uid} ${action}`);
+    this.post({ type: 'MYROOM_ACT', payload: { uid, action } });
+  }
+
+  endMyRoomAct(): void {
+    devlog('[unity-bridge] MYROOM_ACT_END');
+    this.post({ type: 'MYROOM_ACT_END' });
   }
 
   /** Leaving My Room. Idempotent, and safe when Unity never booted. */

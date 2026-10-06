@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
@@ -12,8 +12,30 @@ import { monthsLabel } from '../format';
 import { useCoins } from '../../coins/store/coinStore';
 import { useScreen } from '../../../shared/device/screen';
 import type { Journey } from '../types';
+import { isNativeUnity } from '../../counseling/bridge';
 
 const INK = '#1A1330';
+
+/** The stages whose counsellor beat (JOURNEY_STATE `stage`, character-setup sheet 06-10) plays BEFORE the
+ *  card covers the cabin: thinking at a station's title, the open-hand "which one?" at a choice. Shown at
+ *  once, the opaque card hid the whole gesture (sim QA 06-10). */
+const BEAT_FIRST = new Set(['title', 'pick', 'branch', 'quarters']);
+/** How long the counsellor has before the card rises: the beat's fade-in and its pose (~1.5 s). */
+export const STAGE_BEAT_LEAD_MS = 1500;
+
+/** The stage the overlay may draw: a BEAT_FIRST stage arrives here STAGE_BEAT_LEAD_MS late when the 3D
+ *  cabin is behind it (Unity already has the stage and is gesturing); everything else at once. */
+export function useShownStage(stage: string): string {
+  const lead = isNativeUnity() && BEAT_FIRST.has(stage);
+  const [shown, setShown] = useState(lead ? '' : stage);
+  useEffect(() => {
+    if (!lead) { setShown(stage); return undefined; }
+    setShown('');
+    const timer = setTimeout(() => setShown(stage), STAGE_BEAT_LEAD_MS);
+    return () => clearTimeout(timer);
+  }, [stage, lead]);
+  return lead ? shown : stage;
+}
 
 /**
  * Everything the 2027 mockup (01-10) puts over the train while it waits on the player: the station's
@@ -31,6 +53,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   const t = useT();
   const lang = useLang();
   const s = useJourneyPlayer();
+  const stage = useShownStage(s.stage);
   const coins = useCoins(c => c.balance);
   const landscape = useScreen().landscape;
   const center = [styles.center, landscape && styles.centerSide];
@@ -41,7 +64,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   const station = chapter.subtitle ? t(chapter.subtitle) : '';
 
   // ── The station's title card: "1. 사회운 (Social & Career)" ─────────────────────────────
-  if (s.stage === 'title') {
+  if (stage === 'title') {
     return (
       <View style={center}>
         <Card landscape={landscape}
@@ -55,7 +78,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   }
 
   // ── Pick one of three face-down cards; the one picked turns over to the station's card ──
-  if (s.stage === 'pick') {
+  if (stage === 'pick') {
     const card = s.content?.chapters.find(c => c.id === chapter.id)?.card;
     return (
       <View style={center}>
@@ -73,7 +96,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   }
 
   // ── Which of the station's two paid parts first ────────────────────────────────────────
-  if (s.stage === 'branch') {
+  if (stage === 'branch') {
     const paid = parts.map((p, i) => ({ p, i })).filter(x => x.p.momentId);
     return (
       <View style={center}>
@@ -91,7 +114,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   }
 
   // ── The monthly station: four quarters, each opened on its own ────────────────────────
-  if (s.stage === 'quarters') {
+  if (stage === 'quarters') {
     return (
       <View style={center}>
         {/* Its own list scrolls, so the card does not: the list is what gives way to the window. */}
@@ -156,7 +179,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   }
 
   // ── The card a just-unlocked part opens with ──────────────────────────────────────────
-  if (s.stage === 'reveal' && s.reveal) {
+  if (stage === 'reveal' && s.reveal) {
     return (
       <View style={center}>
         <RevealIn>
@@ -183,10 +206,10 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   }
 
   // ── Leaving a station, and leaving the train ──────────────────────────────────────────
-  if (s.stage === 'stationEnd' || s.stage === 'ending') {
+  if (stage === 'stationEnd' || stage === 'ending') {
     return (
       <View style={styles.bottom}>
-        {s.stage === 'stationEnd'
+        {stage === 'stationEnd'
           ? <Primary label={t('journey.stationEnd.next')} onPress={() => { sfx.tap(); s.nextStation(); }} />
           : <Primary label={t('journey.ending.finish')} onPress={() => { sfx.select(); s.finish(); }} />}
       </View>

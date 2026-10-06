@@ -80,8 +80,8 @@ import { INSETS_SETTLE_MS, viewInsetsOf } from '../src/features/counseling/bridg
 import { NativeUnityBridge } from '../src/features/counseling/bridge/NativeUnityBridge';
 import { MockUnityBridge } from '../src/features/counseling/bridge/MockUnityBridge';
 import { nativeUnityBridge } from '../src/features/counseling/bridge';
-import { JourneyScreen, journeyCoveredPx } from '../src/features/journey/screens/JourneyScreen';
-import { JourneyStageOverlay } from '../src/features/journey/components/JourneyStageOverlay';
+import { JOURNEY_HOST_FALLBACK_MS, JourneyScreen, journeyCoveredPx } from '../src/features/journey/screens/JourneyScreen';
+import { JourneyStageOverlay, STAGE_BEAT_LEAD_MS } from '../src/features/journey/components/JourneyStageOverlay';
 import { lookFromDrag } from '../src/features/journey/components/useCabinCamera';
 import { ConsultationOverlay, landscapeBand } from '../src/features/counseling/components/ConsultationOverlay';
 import { ui } from '../src/features/counseling/flow/strings';
@@ -370,9 +370,14 @@ describe('the journey in landscape', () => {
   });
 
   it('a rotation mid-journey keeps the lock on screen and the player where it was, and never remounts the cabin', () => {
+    jest.useFakeTimers();
     act(() => {
       tree = ReactTestRenderer.create(<JourneyScreen />);
     });
+    // The cabin's UnityView waits for the screen's fade (a Metal view ignores opacity: black frames).
+    expect(mockHost).toEqual({ mounts: 0, unmounts: 0 });
+    act(() => { jest.advanceTimersByTime(JOURNEY_HOST_FALLBACK_MS); });
+    expect(mockHost).toEqual({ mounts: 1, unmounts: 0 });
     const before = useJourneyPlayer.getState();
     expect(tree.root.findAllByProps({ children: 'Offer career#0' }).length).toBeGreaterThan(0);
 
@@ -402,6 +407,7 @@ describe('the journey overlays fit a short window', () => {
   afterEach(() => {
     act(() => tree?.unmount());
     useJourneyPlayer.getState().stop();
+    jest.useRealTimers();
   });
   const render = () => act(() => {
     tree = ReactTestRenderer.create(<JourneyStageOverlay journey={NEWYEAR_2027} />);
@@ -432,13 +438,18 @@ describe('the journey overlays fit a short window', () => {
   });
 
   it('the title card and the quarter list are capped at the window; their buttons stay outside the scroll', () => {
+    jest.useFakeTimers();
     useJourneyPlayer.setState({ moment: '', stage: 'title' });
     render();
+    // Over the 3D cabin the counsellor's beat comes first: no card for STAGE_BEAT_LEAD_MS.
+    expect(nodesWithStyle(tree, s => s.maxHeight === '100%' && s.borderRadius !== undefined)).toHaveLength(0);
+    act(() => { jest.advanceTimersByTime(STAGE_BEAT_LEAD_MS); });
     expect(nodesWithStyle(tree, s => s.maxHeight === '100%' && s.borderRadius !== undefined).length).toBeGreaterThan(0);
     act(() => tree.unmount());
     const monthly = NEWYEAR_2027.chapters.findIndex(c => c.id === 'monthly');
     useJourneyPlayer.setState({ chapterIndex: monthly, stage: 'quarters' });
     render();
+    act(() => { jest.advanceTimersByTime(STAGE_BEAT_LEAD_MS); });
     // The list is the only thing that scrolls, and it is what gives way.
     const lists = tree.root.findAllByType(ScrollView);
     expect(lists).toHaveLength(1);

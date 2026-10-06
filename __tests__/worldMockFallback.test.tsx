@@ -76,6 +76,14 @@ it('is the drawn hub: no UnityView, its doors open the overlays, and Map arrives
   act(() => sheet.findAll(n => n.props.accessibilityLabel === '상점' && typeof n.props.onPress === 'function')[0].props.onPress());
   expect(open('shop')).toBe(true);
 
+  // Enter on the mock: no door to open, it is through at once (WORLD_ENTERED).
+  const seen: string[] = [];
+  const off = mock.onEvent(e => seen.push(e.type));
+  mock.sendWorldEnter('journey');
+  mock.sendWorldGoto('shop');
+  off();
+  expect(seen).toEqual(['WORLD_ENTERED', 'WORLD_ARRIVED', 'WORLD_ENTERED']);
+
   // Every world call is accepted.
   expect(() => {
     mock.sendWorldRun(true);

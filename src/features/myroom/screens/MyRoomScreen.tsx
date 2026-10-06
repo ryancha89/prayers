@@ -16,10 +16,27 @@ import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewI
 import { CoinPill } from '../../coins/components/CoinPill';
 import { useMyRoomCamera } from '../components/useMyRoomCamera';
 import { WorldJoystick } from '../../world/components/WorldJoystick';
+import { PromptButton } from '../../world/components/PromptButton';
+import type { MyRoomAction, MyRoomNearItem } from '../../counseling/types';
+import type { TranslationKey } from '../../../shared/i18n';
 import { useCoins } from '../../coins/store/coinStore';
 import { MYROOM_PICTURE } from '../picture';
 
+/** How long the picture may say "Loading" before it offers a retry: past the bridge's last INIT retry. */
+export const MYROOM_STALL_MS = 9000;
+
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+/** The action button's label for a piece (spec 005 US1): what a tap will do. `acting` = this piece's act
+ *  is going (seated / resting / looking); `lampOn` = the lamp's last known state. Exported for the tests. */
+export function myRoomActLabel(action: MyRoomAction, acting: boolean, lampOn: boolean): TranslationKey {
+  switch (action) {
+    case 'sit': return acting ? 'myroom.act.stand' : 'myroom.act.sit';
+    case 'rest': return acting ? 'myroom.act.getUp' : 'myroom.act.rest';
+    case 'lamp': return lampOn ? 'myroom.act.lampOff' : 'myroom.act.lampOn';
+    default: return acting ? 'myroom.act.back' : 'myroom.act.look';
+  }
+}
 
 /**
  * What of the room the screen's UI hides, for VIEW_INSETS: the top bar, in either orientation. The
@@ -65,6 +82,26 @@ export const MyRoomScreen: React.FC = () => {
   const bridge = getMyRoomBridge();
   const [roomUp, setRoomUp] = useState(false);
   const [nearDoor, setNearDoor] = useState(false);
+  // The furniture (spec 005 US1): Unity says which piece is in reach and what is going on; the screen
+  // only labels one button and forwards the tap. The reach test lives in Unity, never copied here.
+  const [nearItem, setNearItem] = useState<MyRoomNearItem | null>(null);
+  const [acting, setActing] = useState<{ uid: string; action: MyRoomAction } | null>(null);
+  const [lampOn, setLampOn] = useState<Record<string, boolean>>({});
+  // No MYROOM_READY after the bridge's retries: say so and offer another try, instead of
+  // "Loading your room…" forever (the bridge gives up after MEDITATION_MAX_TRIES, ~7.5 s).
+  const [stalled, setStalled] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!unity || roomUp) { setStalled(false); return undefined; }
+    const timer = setTimeout(() => setStalled(true), MYROOM_STALL_MS);
+    return () => clearTimeout(timer);
+  }, [unity, roomUp, attempt]);
+  const retry = () => {
+    sfx.tap();
+    setStalled(false);
+    setAttempt(a => a + 1);
+    bridge.openMyRoom({ lang });
+  };
 
   const insets = useViewInsets({
     send: unity ? i => nativeUnityBridge.sendViewInsets(i) : undefined,
@@ -78,6 +115,19 @@ export const MyRoomScreen: React.FC = () => {
     const off = bridge.onEvent(e => {
       if (e.type === 'MYROOM_READY') setRoomUp(true);
       else if (e.type === 'MYROOM_NEAR') setNearDoor(e.payload?.near === true);
+      else if (e.type === 'MYROOM_NEAR_ITEM') {
+        const p = e.payload;
+        if (p?.near && p.action) {
+          setNearItem(p);
+          if (p.action === 'lamp') setLampOn(m => ({ ...m, [p.uid]: p.active }));
+        } else setNearItem(null);
+      } else if (e.type === 'MYROOM_ACT_STATE') {
+        const p = e.payload;
+        if (!p) return;
+        if (p.action === 'lamp') setLampOn(m => ({ ...m, [p.uid]: p.active }));
+        else if (p.active) setActing({ uid: p.uid, action: p.action });
+        else setActing(cur => (cur && cur.uid === p.uid ? null : cur));
+      }
     });
     bridge.openMyRoom({ lang });
     return () => {
@@ -108,6 +158,18 @@ export const MyRoomScreen: React.FC = () => {
     Animated.spring(leaveIn, { toValue: 1, friction: 6, tension: 90, useNativeDriver: true }).start();
   }, [leaveOn, leaveIn]);
 
+  // One button for the piece in reach — the World's Enter, in the same place. Leave wins at the door.
+  const itemOn = !!nearItem && nearItem.action !== '' && controlsOn && !leaveOn;
+  const itemActing = !!nearItem && !!acting && acting.uid === nearItem.uid;
+  const itemLabel = nearItem && nearItem.action !== ''
+    ? t(myRoomActLabel(nearItem.action, itemActing, lampOn[nearItem.uid] !== false))
+    : '';
+  const useItem = () => {
+    if (!nearItem || nearItem.action === '') return;
+    if (itemActing) bridge.endMyRoomAct();
+    else bridge.sendMyRoomAct(nearItem.uid, nearItem.action);
+  };
+
   const to2D = () => {
     sfx.back();
     navigation.navigate('Tabs', { screen: 'Home' });
@@ -127,7 +189,12 @@ export const MyRoomScreen: React.FC = () => {
           />
           {unity && (
             <View style={styles.loading}>
-              <Text style={styles.loadingText}>{t('myroom.loading')}</Text>
+              <Text style={styles.loadingText}>{t(stalled ? 'myroom.stalled' : 'myroom.loading')}</Text>
+              {stalled && (
+                <Pressable style={styles.retry} onPress={retry} accessibilityRole="button" testID="myroom-retry">
+                  <Text style={styles.retryText}>{t('myroom.retry')}</Text>
+                </Pressable>
+              )}
             </View>
           )}
         </View>
@@ -173,6 +240,12 @@ export const MyRoomScreen: React.FC = () => {
         <WorldJoystick visible={controlsOn} />
       </View>
 
+      {/* By a usable piece: its one action (Sit/Stand, Rest/Get up, Lamp, Look/Back). Hidden with the
+          stick, and at the door, where Leave is the button. */}
+      {itemOn && (
+        <PromptButton label={itemLabel} onPress={useItem} popKey={nearItem!.uid} testID="myroom-act" />
+      )}
+
       {/* At the door: the way out, where the world puts Enter. Hidden with the stick (shop open). */}
       {leaveOn && (
         <Animated.View
@@ -200,6 +273,11 @@ const styles = StyleSheet.create({
   // bitmap's own size (MeditationRoomScreen's lesson).
   picture: { ...absoluteFill, width: '100%', height: '100%' },
   loading: { position: 'absolute', left: 0, right: 0, bottom: '30%', alignItems: 'center' },
+  retry: {
+    marginTop: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.xs, borderRadius: radius.pill,
+    backgroundColor: 'rgba(18,14,40,0.8)', borderWidth: 1, borderColor: 'rgba(167,139,250,0.6)',
+  },
+  retryText: { ...typography.caption, color: colors.textPrimary },
   loadingText: {
     ...typography.caption, color: colors.textPrimary,
     paddingHorizontal: spacing.lg, paddingVertical: spacing.xs, borderRadius: radius.pill,
