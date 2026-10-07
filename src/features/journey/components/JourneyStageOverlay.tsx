@@ -221,10 +221,14 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
 /** The reveal card waits for the cabin's unlock burst (Unity plays it on locked → premium) and then
  *  fades in — shown at once it covered the burst completely (sim QA 01-10). */
 const REVEAL_DELAY_MS = 1200;
+/** Over the 3D cabin it waits for the counsellor's card flip too (stage `reveal` = the sheet's Card
+ *  Flip, a 2 s take whose flip lands at 1.2–1.6 s): at 1200 ms the card rose over the flip (07-10). */
+export const REVEAL_DELAY_CABIN_MS = 2200;
 const RevealIn: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const fade = React.useRef(new Animated.Value(0)).current;
   React.useEffect(() => {
-    const a = Animated.sequence([Animated.delay(REVEAL_DELAY_MS), Animated.timing(fade, { toValue: 1, duration: 450, useNativeDriver: true })]);
+    const delay = isNativeUnity() ? REVEAL_DELAY_CABIN_MS : REVEAL_DELAY_MS;
+    const a = Animated.sequence([Animated.delay(delay), Animated.timing(fade, { toValue: 1, duration: 450, useNativeDriver: true })]);
     a.start();
     return () => a.stop();
   }, [fade]);

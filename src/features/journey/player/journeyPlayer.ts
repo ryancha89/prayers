@@ -15,6 +15,7 @@ import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsSto
 import { JOURNEYS } from '../data/journeys';
 import type { CabinAmbient, Chapter, FortuneCard, Journey, JourneyCard, JourneyContent, JourneyPart, MomentCue, MomentPresentation } from '../types';
 import type { JourneyStatePayload } from '../../counseling/types';
+import { noteMoment } from '../../myroom/inbox/inboxStore';
 
 /**
  * The Journey player — one for the whole app, so a journey keeps going when the player leaves the
@@ -942,6 +943,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
       set({ content: withPart(now.content, chapter.id, result.part, result.summary) });
     }
     useSavedJourneys.getState().addUnlock(journeyId, counselorId, chapter.id, result.part, result.summary);
+    noteMoment(journeyId, id, result.part.label);
     if (result.coinBalance != null) useCoins.getState().setBalance(result.coinBalance);
     set({ unlocking: false });
     urls.delete(clipKey(ci, pi));

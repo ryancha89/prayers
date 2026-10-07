@@ -5,6 +5,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
+import { RING_COMPACT, RingButton } from '../../../shared/components/hud/Hud';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
@@ -57,6 +58,10 @@ export function journeyCoveredPx(r: MeasuredRects, landscape: boolean) {
     ? { top, right: host.width - (body.x + panel.x) }
     : { top, bottom: host.height - (body.y + panel.y) };
 }
+
+/** How long a month card with a feeling waits, over the cabin, for the counsellor's reaction — the
+ *  same lead a stage's beat gets before its card (STAGE_BEAT_LEAD_MS). */
+export const MOOD_BEAT_LEAD_MS = 1500;
 
 /** How long the counsellor's invitation is on screen before they lead the player aboard. */
 const AUTO_BOARD_MS = 3500;
@@ -360,9 +365,10 @@ export const JourneyScreen: React.FC = () => {
   if (!journey || !chapter) {
     return (
       <SafeAreaView style={styles.root}>
-        <Pressable style={styles.header} onPress={() => navigation.goBack()}>
-          <Icon name="back" size={22} />
-        </Pressable>
+        <View style={styles.header}>
+          <RingButton testID="journey-back" icon="back" size={RING_COMPACT} label={t('hud.back')}
+            onPress={() => { sfx.back(); navigation.goBack(); }} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -404,8 +410,12 @@ export const JourneyScreen: React.FC = () => {
         </View>
       )}
       {s.activeCard && (
-        <View style={styles.cardLayer} pointerEvents="box-none">
-          <FortuneCardOverlay card={s.activeCard} year={journey.year} onDone={s.dismissCard} onSave={saveCard} />
+        // Over the cabin a month card sits low in the window, over the table, and one with a feeling
+        // waits for the counsellor's reaction (cabinState.mood → Happy/Concerned/Sad): centred and at
+        // once, it covered the face the reaction is on (07-10).
+        <View style={[styles.cardLayer, unity && styles.cardLayerCabin]} pointerEvents="box-none">
+          <FortuneCardOverlay card={s.activeCard} year={journey.year} onDone={s.dismissCard} onSave={saveCard}
+            delayMs={unity && cabinState?.mood ? MOOD_BEAT_LEAD_MS : 0} />
         </View>
       )}
       <JourneyStageOverlay journey={journey} />
@@ -424,15 +434,18 @@ export const JourneyScreen: React.FC = () => {
     <SafeAreaView edges={landscape ? ['top'] : ['top', 'bottom', 'left', 'right']} style={[styles.root, cabinUp && styles.rootOverCabin]}>
       <View style={[styles.header, landscape && { paddingLeft: safe.left + spacing.md, paddingRight: safe.right + spacing.md }]}
         onLayout={insets.track('header')}>
-        <Pressable
-          hitSlop={12}
+        {/* The HUD's compact ring, as every in-world top bar has it (My Room's row: md from the
+            safe edge, sm under the status bar). */}
+        <RingButton
+          testID="journey-back"
+          icon="back"
+          size={RING_COMPACT}
+          label={t('hud.back')}
           onPress={() => {
             sfx.back();
             navigation.goBack(); // the journey keeps going; the mini player carries it
           }}
-          accessibilityRole="button">
-          <Icon name="back" size={22} />
-        </Pressable>
+        />
         <Text style={styles.brand}>{t('journey.header', { year: journey.year })}</Text>
         <CoinPill />
       </View>
@@ -573,7 +586,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingHorizontal: spacing.xl, paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
   },
   brand: { ...typography.tiny, color: colors.gold, letterSpacing: 3, flex: 1 },
   chapter: { ...typography.tiny, color: colors.textSecondary, letterSpacing: 1 },
@@ -601,6 +614,7 @@ const styles = StyleSheet.create({
   retry: { marginTop: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.gold },
   retryText: { ...typography.bodyStrong, color: '#1A1330' },
   cardLayer: { ...absoluteFill, justifyContent: 'center' },
+  cardLayerCabin: { justifyContent: 'flex-end', paddingBottom: spacing.md },
   narrator: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, marginTop: spacing.lg },
   avatar: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(233,196,106,0.5)' },
   guideName: { ...typography.caption, color: colors.textPrimary, fontWeight: '700' },
