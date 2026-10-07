@@ -158,3 +158,41 @@ describe('archive validation', () => {
     expect(validate(spec('time'), '')).toBeNull(); // empty is "unknown", not wrong
   });
 });
+
+describe('spec 006: the desk kinds on the archive model', () => {
+  beforeEach(reset);
+
+  it('has wish and plan in the goals group, each with a date, and the new mood scale', () => {
+    expect(CATEGORIES).toEqual(expect.arrayContaining(['diary', 'goal', 'wish', 'plan']));
+    expect(FIELDS.wish.map(f => f.key)).toEqual(['date']);
+    expect(FIELDS.plan.map(f => f.key)).toEqual(['date']);
+    expect(FIELDS.goal.map(f => f.key)).toContain('date');
+    expect(FIELDS.diary.find(f => f.key === 'mood')?.options).toEqual(['great', 'good', 'okay', 'down', 'tired']);
+  });
+
+  it('stamps moodScale "2" on a diary added through the 아카이브 tab path, not on other kinds', () => {
+    const d = useArchiveStore.getState().add({ category: 'diary', content: '오늘', details: { mood: 'good', date: '2026-10-07' } });
+    expect(d.details).toEqual({ mood: 'good', date: '2026-10-07', moodScale: '2' });
+    const w = useArchiveStore.getState().add({ category: 'wish', content: '여행', details: { date: '2026-10-07' } });
+    expect(w.details.moodScale).toBeUndefined();
+  });
+
+  it('an edit keeps the counsellor and the marker', () => {
+    const d = useArchiveStore.getState().add({
+      category: 'diary', content: 'a', details: { mood: 'great', date: '2026-10-07', counselor: 'dosa' },
+    });
+    // The 아카이브 tab's editor hands back every detail it was given, plus what it changed.
+    useArchiveStore.getState().update(d.id, { content: 'b', details: { ...d.details, mood: 'tired' } });
+    expect(useArchiveStore.getState().memories[0].details).toMatchObject({ counselor: 'dosa', mood: 'tired', moodScale: '2' });
+  });
+
+  it('leaves an old-scale row unmarked when its mood is not changed, and marks it when it is', () => {
+    const base = { importance: 2 as const, confidence: 1, source: 'diary' as const, aiEnabled: true, createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z' };
+    useArchiveStore.getState().merge([{ ...base, id: 'old', category: 'diary', content: 'x', details: { mood: 'good', date: '2026-09-01' } }]);
+    useArchiveStore.getState().update('old', { content: 'y', details: { mood: 'good', date: '2026-09-01' } });
+    expect(useArchiveStore.getState().memories[0].details.moodScale).toBeUndefined();
+    useArchiveStore.getState().update('old', { details: { mood: 'down', date: '2026-09-01' } });
+    expect(useArchiveStore.getState().memories[0].details.moodScale).toBe('2');
+  });
+});
+

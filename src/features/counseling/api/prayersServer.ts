@@ -395,6 +395,9 @@ export interface SendMessageInput {
   /** SAVIS's answer style, by the name the server reads: `tiki` (짧은 랠리) or `detail` (깊은 풀이).
    *  Omitted when unset so the server's own default applies, exactly as before it existed. */
   chatMode?: ChatMode;
+  /** Spec 006: pin this 아카이브 row into the turn's memories (`focus_memory_id`, top level). The
+   *  server ignores an id that is unknown or another account's. */
+  focusMemoryId?: string;
   signal?: AbortSignal;
 }
 
@@ -424,6 +427,7 @@ export async function sendConsultationMessage(
       lang: input.lang,
       info: { ...(input.topic ? { topic: input.topic } : {}) },
     },
+    ...(input.focusMemoryId ? { focus_memory_id: input.focusMemoryId } : {}),
   };
 
   let res: Response;

@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLang } from '../../../shared/i18n';
 import { ConsultationEngine, FlowState, StagePort } from '../flow/engine';
 import { CounselorVoice } from '../flow/voice';
+import { useCounselingStore } from '../store/counselingStore';
 import { createMockStagePort, createStagePort, engineKey, type MockReply } from '../bridge/stagePort';
 import { getUnityBridge, isNativeUnity } from '../bridge';
 import { useChatModeStore } from '../store/chatModeStore';
@@ -97,7 +98,9 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
   cbs.current = opts;
 
   const stage: StagePort = useMemo(() => {
-    if (usesUnity) return createStagePort(getUnityBridge(), () => cbs.current.onFinished?.());
+    if (usesUnity) {
+      return createStagePort(getUnityBridge(), () => cbs.current.onFinished?.(), () => useCounselingStore.getState().takeFocus());
+    }
     const mock = createMockStagePort({
       onOracle: result => engineRef.current?.onOracleResult(result),
       onSpeakDone: key => engineRef.current?.onSpeakDone(key),

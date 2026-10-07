@@ -47,7 +47,15 @@ export type IconName =
   | 'bolt'
   | 'shirt'
   | 'image'
-  | 'wind';
+  | 'wind'
+  | 'armchair'
+  | 'bed'
+  | 'lamp'
+  | 'book'
+  | 'pen'
+  | 'mail'
+  | 'gift'
+  | 'share';
 
 type Draw = (color: string) => React.ReactNode;
 
@@ -262,6 +270,64 @@ const ICONS: Record<IconName, Draw> = {
     </>
   ),
   moon: c => <Path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" stroke={c} />,
+  // My Room's furniture actions (07-10 mockup): sit, rest, the lamps, the bookshelf.
+  armchair: c => (
+    <>
+      <Path d="M6 11V7a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v4" stroke={c} />
+      <Path d="M4 11a2 2 0 0 1 2 2v1h12v-1a2 2 0 1 1 4 0v4H2v-4a2 2 0 0 1 2-2Z" stroke={c} />
+      <Line x1="5" y1="17" x2="5" y2="20" stroke={c} />
+      <Line x1="19" y1="17" x2="19" y2="20" stroke={c} />
+    </>
+  ),
+  bed: c => (
+    <>
+      <Path d="M3 6v13M3 14h18v5M21 14v-2a3 3 0 0 0-3-3h-7v5" stroke={c} />
+      <Circle cx="7" cy="11" r="1.8" stroke={c} />
+    </>
+  ),
+  lamp: c => (
+    <>
+      <Path d="M8 3h8l3 8H5l3-8Z" stroke={c} />
+      <Line x1="12" y1="11" x2="12" y2="19" stroke={c} />
+      <Line x1="8" y1="21" x2="16" y2="21" stroke={c} />
+    </>
+  ),
+  book: c => (
+    <>
+      <Path d="M12 6.5C10.5 5 8 4.5 4 4.5v13c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-13c-4 0-6.5.5-8 2Z" stroke={c} />
+      <Line x1="12" y1="6.5" x2="12" y2="19.5" stroke={c} />
+    </>
+  ),
+  // The diary book's Write (spec 006).
+  pen: c => (
+    <>
+      <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z" stroke={c} />
+      <Line x1="14" y1="6" x2="17" y2="9" stroke={c} />
+    </>
+  ),
+  // My Room's top-right row and share button (07-10 mockup): bare line icons over the room.
+  mail: c => (
+    <>
+      <Rect x="3" y="5.5" width="18" height="13" rx="1.8" stroke={c} />
+      <Polyline points="3.5 6.5 12 13 20.5 6.5" stroke={c} />
+    </>
+  ),
+  gift: c => (
+    <>
+      <Rect x="3.5" y="8.5" width="17" height="4" rx="1" stroke={c} />
+      <Path d="M5 12.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7.5" stroke={c} />
+      <Line x1="12" y1="8.5" x2="12" y2="21" stroke={c} />
+      <Path d="M12 8.5C10.5 5 7 4.5 7 6.5S10 8.5 12 8.5Zm0 0c1.5-3.5 5-4 5-2S14 8.5 12 8.5Z" stroke={c} />
+    </>
+  ),
+  // An arrow up out of a tray: the share sheet's own glyph on iOS.
+  share: c => (
+    <>
+      <Path d="M8 9.5H6.5A1.5 1.5 0 0 0 5 11v8.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V11a1.5 1.5 0 0 0-1.5-1.5H16" stroke={c} />
+      <Line x1="12" y1="3" x2="12" y2="14.5" stroke={c} />
+      <Polyline points="8.5 6.5 12 3 15.5 6.5" stroke={c} />
+    </>
+  ),
   bolt: c => <Polygon points="13 2 4 14 11 14 10 22 20 9 13 9 13 2" stroke={c} />,
   shirt: c => (
     <Path d="M9 3 4 5.5 2.5 10l3 1V21h13V11l3-1L20 5.5 15 3c-.5 1.5-1.6 2.3-3 2.3S9.5 4.5 9 3Z" stroke={c} />

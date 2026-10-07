@@ -18,6 +18,8 @@ export type ArchiveCategory =
   | 'story'
   | 'diary'
   | 'goal'
+  | 'wish'
+  | 'plan'
   | 'possession'
   | 'manual';
 
@@ -30,6 +32,8 @@ export const CATEGORIES: ArchiveCategory[] = [
   'story',
   'diary',
   'goal',
+  'wish',
+  'plan',
   'possession',
   'like',
   'dislike',
@@ -163,7 +167,10 @@ export const FIELDS: Record<ArchiveCategory, FieldSpec[]> = {
       key: 'mood',
       kind: 'choice',
       label: 'archive.f.mood',
-      options: ['good', 'ok', 'neutral', 'down', 'angry'],
+      // The 07-10 scale (spec 006 Q1). Rows written on the old one (good · ok · neutral · down · angry)
+      // are moved onto it by the SERVER, told apart by `moodScale: "2"` — which the store stamps on
+      // every diary row it writes. Never remapped here (Principle II).
+      options: ['great', 'good', 'okay', 'down', 'tired'],
       optionLabelPrefix: 'archive.mood',
       required: true,
     },
@@ -191,7 +198,11 @@ export const FIELDS: Record<ArchiveCategory, FieldSpec[]> = {
       optionLabelPrefix: 'archive.gs',
       required: true,
     },
+    { key: 'date', kind: 'date', label: 'archive.f.date' },
   ],
+  // Spec 006: the desk's two other kinds, in the goals group with `goal`. A date and the text.
+  wish: [{ key: 'date', kind: 'date', label: 'archive.f.date', required: true }],
+  plan: [{ key: 'date', kind: 'date', label: 'archive.f.date', required: true }],
   manual: [
     {
       key: 'section',
@@ -213,6 +224,8 @@ export const CATEGORY_ICON: Record<ArchiveCategory, string> = {
   story: '🗺️',
   diary: '📔',
   goal: '🏁',
+  wish: '🌠',
+  plan: '🗓️',
   possession: '🎁',
   like: '❤️',
   dislike: '💔',
@@ -220,12 +233,17 @@ export const CATEGORY_ICON: Record<ArchiveCategory, string> = {
 };
 
 export const MOOD_ICON: Record<string, string> = {
-  good: '😄',
-  ok: '🙂',
-  neutral: '😐',
+  great: '😄',
+  good: '🙂',
+  okay: '😐',
   down: '😔',
-  angry: '😡',
+  tired: '😪',
 };
+
+/** The four kinds the My Room desk writes (spec 006): diary rows and the goals group. */
+export const DIARY_KINDS = ['diary', 'goal', 'wish', 'plan'] as const;
+export type DiaryKind = (typeof DIARY_KINDS)[number];
+export const isDiaryKind = (c: string): c is DiaryKind => (DIARY_KINDS as readonly string[]).includes(c);
 
 export const KIND_ICON: Record<string, string> = {
   car: '🚗',

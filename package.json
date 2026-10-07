@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@azesmway/react-native-unity": "^1.1.1",
+    "@dr.pogodin/react-native-fs": "^2.40.3",
     "@react-native-async-storage/async-storage": "^3.1.1",
     "@react-native/new-app-screen": "0.86.0",
     "@react-navigation/bottom-tabs": "^7.18.16",
@@ -22,6 +23,7 @@
     "react": "19.2.3",
     "react-native": "0.86.0",
     "react-native-iap": "^16.7.1",
+    "react-native-image-picker": "^8.2.1",
     "react-native-nitro-modules": "^0.37.1",
     "react-native-safe-area-context": "^5.9.1",
     "react-native-screens": "^4.27.0",

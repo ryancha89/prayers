@@ -13,7 +13,17 @@ describe('daily check-in api', () => {
     mockFetch.mockResolvedValue(reply({ success: true, checked_today: false, daily_tickets: 2, free_balance: 3, free_cap: 10, tickets: 5 }));
     const s = await fetchAttendance();
     expect(mockFetch.mock.calls[0][0]).toContain(`local_date=${localDate()}`);
-    expect(s).toEqual({ checkedToday: false, dailyTickets: 2, freeBalance: 3, freeCap: 10, tickets: 5 });
+    // An older server sends no days_total: 0, never undefined.
+    expect(s).toEqual({ checkedToday: false, dailyTickets: 2, freeBalance: 3, freeCap: 10, tickets: 5, daysTotal: 0 });
+  });
+
+  it('reads days_total, every day ever checked in (My Room level), on the status and the check-in', async () => {
+    mockFetch.mockResolvedValue(reply({ success: true, checked_today: true, daily_tickets: 2, free_balance: 3, free_cap: 10, tickets: 5, days_total: 12 }));
+    expect((await fetchAttendance())?.daysTotal).toBe(12);
+    mockFetch.mockResolvedValue(reply({ success: true, granted: 2, free_balance: 5, free_cap: 10, tickets: 7, days_total: 13 }));
+    expect((await checkIn())?.daysTotal).toBe(13);
+    mockFetch.mockResolvedValue(reply({ success: true, granted: 2, free_balance: 5, free_cap: 10, tickets: 7 }));
+    expect((await checkIn())?.daysTotal).toBeNull();
   });
 
   it('reports what was granted, and a full wallet as capped', async () => {

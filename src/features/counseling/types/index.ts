@@ -183,6 +183,10 @@ export interface OracleAskPayload {
    *  boundary between what they heard and what they did not; sending the full answer would have
    *  her reply "as I was saying" about a sentence that never left the room. */
   interrupted?: string;
+  /** Spec 006: the diary entry this session was opened from, on the session's first ask only. The
+   *  embedded player must forward it as `focus_memory_id` on its v2 `send_message`; a player that
+   *  predates it ignores the field (the turn then relies on ordinary retrieval). */
+  focusMemoryId?: string;
 }
 
 /**
@@ -334,6 +338,14 @@ export type RNToUnityEvent =
   | { type: 'MYROOM_ACT'; payload: { uid: string; action: MyRoomAction } }
   /** Stop using it: stand up, get up, look away. Unity ignores it when nothing is going. */
   | { type: 'MYROOM_ACT_END' }
+  /** The room's run toggle (07-10 HUD). The room's own message, never WORLD_RUN — that one is the
+   *  world's and would still be set on the way back out. Unity keeps it until told otherwise; RN
+   *  replays `on: true` on MYROOM_READY and every visit starts walking. A build that predates it
+   *  ignores it (the walker only walks). */
+  | { type: 'MYROOM_RUN'; payload: { on: boolean } }
+  /** The desk book's page changed (spec 006): after a save, an edit, a delete, or a pull that changed
+   *  the newest entry. null = no entry left. */
+  | { type: 'MYROOM_BOOK'; payload: { book: MyRoomBook | null } }
   /** Leaving My Room. */
   | { type: 'MYROOM_END' }
   /** A held direction key. x = right, y = forward, each in [-1, 1].
@@ -454,10 +466,26 @@ export interface WorldInitPayload {
 
 export interface MyRoomInitPayload {
   lang: string;
+  /** The desk book's page (spec 006), so the room opens on it — no flash of an old page. null = no
+   *  entry yet (Unity draws the blank page). Absent from a build that predates the diary. */
+  book?: MyRoomBook | null;
 }
 
-/** What a usable piece of My Room's furniture offers (spec 005 US1). */
-export type MyRoomAction = 'sit' | 'rest' | 'lamp' | 'look';
+/**
+ * What the diary book on the desk shows (spec 006): the newest entry, already formatted by RN —
+ * Unity has no worded UI, so it never formats a date or picks a language. `kind` only picks the
+ * ribbon's colour; `text` is at most 400 code points and Unity fits it to the page.
+ */
+export interface MyRoomBook {
+  id: string;
+  kind: 'diary' | 'goal' | 'wish' | 'plan';
+  date: string;
+  text: string;
+}
+
+/** What a usable piece of My Room's furniture offers (spec 005 US1). `write` is the diary book's
+ *  (spec 006): the camera eases onto the book and RN opens Write on MYROOM_ACT_STATE active. */
+export type MyRoomAction = 'sit' | 'rest' | 'lamp' | 'look' | 'write';
 
 /** MYROOM_NEAR_ITEM: the nearest usable piece in reach, or `near:false` for none (the door wins). `active`
  *  is the piece's own state as the player walks up — a lamp that is on. `action` is '' when not near. */
@@ -467,6 +495,14 @@ export interface MyRoomNearItem {
   action: MyRoomAction | '';
   near: boolean;
   active: boolean;
+}
+
+/** MYROOM_ITEM_ANCHOR's payload. */
+export interface MyRoomItemAnchor {
+  uid: string;
+  x: number;
+  y: number;
+  onScreen: boolean;
 }
 
 /** My Room's follow camera, as MYROOM_CAMERA carries it (MYROOM_HOME is where a visit starts). */
@@ -551,8 +587,14 @@ export type UnityToRNEvent =
   | { type: 'MYROOM_NEAR'; payload: { near: boolean } }
   /** The nearest usable piece changed (sent on a change only). RN shows one action button for it. */
   | { type: 'MYROOM_NEAR_ITEM'; payload: MyRoomNearItem }
+  /** Where the offered piece is on screen (0..1, origin top-left), while it is offered and only when it
+   *  moved; the button hangs from it. `onScreen` false: behind the camera or past an edge. */
+  | { type: 'MYROOM_ITEM_ANCHOR'; payload: MyRoomItemAnchor }
   /** An act started or ended — seated / resting / looking — or a lamp is now on (`active`) or off. */
   | { type: 'MYROOM_ACT_STATE'; payload: { uid: string; action: MyRoomAction; active: boolean } }
+  /** The book's glyph self-check (spec 006 R13), after each page it set: `missing` lists the code
+   *  points its fonts could not draw — on a device a missing glyph draws nothing and logs nothing. */
+  | { type: 'MYROOM_BOOK_STATE'; payload: { id: string; shown: boolean; missing: number[] } }
   /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
@@ -597,6 +639,10 @@ export interface MyRoomBridge {
   sendMyRoomAct(uid: string, action: MyRoomAction): void;
   /** MYROOM_ACT_END: stand up / get up / look away. */
   endMyRoomAct(): void;
+  /** MYROOM_RUN: the run toggle, remembered for MYROOM_READY. */
+  sendMyRoomRun(on: boolean): void;
+  /** MYROOM_BOOK: the desk book's page (spec 006). Remembered for the next MYROOM_INIT too. */
+  sendMyRoomBook(book: MyRoomBook | null): void;
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
 }
 

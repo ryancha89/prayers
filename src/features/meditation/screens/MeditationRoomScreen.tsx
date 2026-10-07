@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Image, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
-import { Icon } from '../../../shared/components/Icon';
+import { HAIRLINE, IVORY, PLATE, RING_COMPACT, RingButton } from '../../../shared/components/hud/Hud';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLang, useT } from '../../../shared/i18n';
@@ -347,9 +347,9 @@ export const MeditationRoomScreen: React.FC = () => {
         <View style={[styles.header, landscape && styles.headerSide]} onLayout={insets.track('header')}>
           {/* The way out. It does NOT fade with the rest of the chrome: everything else on this
               screen may recede while the player breathes, but the door cannot. Quiet, not gone. */}
-          <Pressable style={[styles.back, landscape && styles.backSide]} onPress={leave} hitSlop={12}>
-            <Icon name="back" size={22} color="#FFFFFF" />
-          </Pressable>
+          <View style={[styles.back, landscape && styles.backSide]}>
+            <RingButton testID="med-back" icon="back" size={RING_COMPACT} label={t('hud.back')} onPress={leave} />
+          </View>
           <Animated.View style={{ opacity: chrome }} pointerEvents="none">
             <Text style={[styles.title, landscape && styles.titleSide]}>{t('med.title')}</Text>
             <Text style={styles.subtitle} numberOfLines={landscape ? 1 : undefined}>{t('med.subtitle')}</Text>
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   artFill: { width: '100%', height: '100%' },
   wash: { ...absoluteFill, backgroundColor: '#181220' },
   safe: { flex: 1, paddingHorizontal: spacing.xl },
-  header: { paddingTop: spacing.md },
+  header: { paddingTop: spacing.sm },
   // Landscape: the way out and the title side by side, one short row.
   headerSide: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingTop: spacing.sm },
   backSide: { marginBottom: 0 },
@@ -449,16 +449,9 @@ const styles = StyleSheet.create({
   bodySide: { flexDirection: 'row', justifyContent: 'flex-end' },
   panel: { flex: 1, justifyContent: 'space-between' },
   panelSide: { flex: 0, justifyContent: 'center', gap: spacing.md },
-  back: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(24,18,32,0.34)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-    opacity: 0.85,
-  },
+  // The HUD's compact ring, where My Room's top row puts its first control: md from the safe edge
+  // (the screen's own gutter is xl, so it steps out of it), sm under the status bar.
+  back: { alignSelf: 'flex-start', marginLeft: spacing.md - spacing.xl, marginBottom: spacing.md },
   title: { ...typography.h1, color: '#FFFFFF' },
   subtitle: { ...typography.body, color: 'rgba(255,255,255,0.84)', marginTop: spacing.xs },
   middle: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -499,21 +492,28 @@ const styles = StyleSheet.create({
   doneBody: { ...typography.body, color: 'rgba(255,255,255,0.88)', marginTop: spacing.sm },
   actions: { paddingBottom: spacing.xl },
   actionsSide: { paddingBottom: spacing.sm },
+  // The in-world gold call to action (the diary's and the world sheets'), and while breathing the
+  // HUD's navy plate with its gold hairline: still reachable, no longer asking to be looked at.
   action: {
     alignSelf: 'center',
     minWidth: 200,
     borderRadius: radius.pill,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: colors.gold,
     alignItems: 'center',
+    shadowColor: colors.gold,
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
   },
   actionQuiet: {
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: PLATE,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
+    borderColor: HAIRLINE,
+    shadowOpacity: 0,
   },
   actionPressed: { transform: [{ scale: 0.97 }] },
-  actionText: { ...typography.h3, color: '#1A1524' },
-  actionTextQuiet: { color: '#FFFFFF' },
+  actionText: { ...typography.h3, color: '#1A1330' },
+  actionTextQuiet: { color: IVORY },
 });

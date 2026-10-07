@@ -10,8 +10,15 @@ interface CounselingState {
   counselor?: CounselorSummary;
   subject?: CounselingSubject;
   topic?: CounselingTopic;
+  /**
+   * A diary entry the next consultation opens on (spec 006 R9): sent as `focus_memory_id` with the
+   * session's FIRST server turn, so the counsellor sees that entry even when retrieval would not
+   * pick it. Taken once (`takeFocus`) — later turns go back to ordinary retrieval.
+   */
+  focusMemoryId?: string;
 
-  begin: (counselor: CounselorSummary) => void;
+  begin: (counselor: CounselorSummary, opts?: { focusMemoryId?: string }) => void;
+  takeFocus: () => string | undefined;
   setSubject: (subject: CounselingSubject) => void;
   setTopic: (topic: CounselingTopic) => void;
   reset: () => void;
@@ -26,10 +33,17 @@ export const useCounselingStore = create<CounselingState>((set, get) => ({
   subject: undefined,
   topic: undefined,
 
-  begin: counselor => set({ counselor, subject: undefined, topic: undefined }),
+  // Every start sets the focus — to nothing, unless this start came from a diary entry — so an entry
+  // never leaks into a consultation begun some other way.
+  begin: (counselor, opts) => set({ counselor, subject: undefined, topic: undefined, focusMemoryId: opts?.focusMemoryId }),
+  takeFocus: () => {
+    const id = get().focusMemoryId;
+    if (id) set({ focusMemoryId: undefined });
+    return id;
+  },
   setSubject: subject => set({ subject }),
   setTopic: topic => set({ topic }),
-  reset: () => set({ counselor: undefined, subject: undefined, topic: undefined }),
+  reset: () => set({ counselor: undefined, subject: undefined, topic: undefined, focusMemoryId: undefined }),
 
   sessionId: () => {
     const { counselor, subject } = get();

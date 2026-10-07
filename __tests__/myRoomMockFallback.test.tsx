@@ -53,11 +53,13 @@ it('is the picture of the room: no UnityView, no loading caption, and the mock t
 
   const mock = getMyRoomBridge() as MockUnityBridge;
   expect(mock).toBeInstanceOf(MockUnityBridge);
-  expect(mock.lastMyRoomInit).toEqual({ lang: 'ja' });
+  expect(mock.lastMyRoomInit).toEqual({ lang: 'ja', book: null });
   expect(mock.myRoomOpen).toBe(true);
   mock.sendMyRoomCamera({ zoom: 0.4, yaw: 0.1, pitch: -0.2 });
   expect(mock.myRoomCamera).toEqual({ zoom: 0.4, yaw: 0.1, pitch: -0.2 });
 
+  // The way back lives in the menu sheet since the 07-10 HUD.
+  act(() => tree.root.findAll(n => n.props.testID === 'myroom-menu' && typeof n.props.onPress === 'function')[0].props.onPress());
   const back = tree.root.findAll(n => n.props.accessibilityLabel === 'ワールドに戻る' && typeof n.props.onPress === 'function')[0];
   act(() => back.props.onPress());
   expect(mockGoBack).toHaveBeenCalled();

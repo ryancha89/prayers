@@ -4,7 +4,7 @@ import { Text, TextInput } from '../../../shared/components/Text';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
-import { FIELDS, MOOD_ICON, type ArchiveCategory, type FieldSpec } from '../types';
+import { FIELDS, MOOD_ICON, isDiaryKind, type ArchiveCategory, type FieldSpec } from '../types';
 import { dayKey } from '../questions';
 import { validate } from '../validation';
 
@@ -31,7 +31,7 @@ export const MemoryEditor: React.FC<{
   const specs = FIELDS[category];
   const [content, setContent] = useState(initial?.content ?? '');
   const [details, setDetails] = useState<Record<string, string>>(() => ({
-    ...(category === 'diary' ? { date: dayKey() } : {}),
+    ...(category === 'diary' || category === 'wish' || category === 'plan' ? { date: dayKey() } : {}),
     ...(category === 'story' ? { year: String(new Date().getFullYear()) } : {}),
     ...(initial?.details ?? {}),
   }));
@@ -43,8 +43,11 @@ export const MemoryEditor: React.FC<{
     specs.every(f => !f.required || (details[f.key] ?? '').trim().length > 0) &&
     specs.every(f => errors[f.key] === null);
 
+  // The desk's four kinds (spec 006) hold up to 1,000 characters — a page, not a headline — so an
+  // entry written at the desk is not cut short when it is edited here.
+  const long = isDiaryKind(category) || category === 'manual';
   const headlineLabel: TranslationKey =
-    category === 'diary' || category === 'manual' || category === 'like' || category === 'dislike'
+    long || category === 'like' || category === 'dislike'
       ? 'archive.f.text'
       : category === 'profile'
         ? 'archive.f.value'
@@ -109,12 +112,12 @@ export const MemoryEditor: React.FC<{
       <View style={styles.field}>
         <Text style={styles.label}>{t(headlineLabel)}</Text>
         <TextInput
-          style={[styles.input, (category === 'diary' || category === 'manual') && styles.multiline]}
+          style={[styles.input, long && styles.multiline]}
           value={content}
           onChangeText={setContent}
           placeholderTextColor={colors.textMuted}
-          multiline={category === 'diary' || category === 'manual'}
-          maxLength={category === 'diary' || category === 'manual' ? 1000 : 120}
+          multiline={long}
+          maxLength={long ? 1000 : 120}
           autoFocus
         />
       </View>

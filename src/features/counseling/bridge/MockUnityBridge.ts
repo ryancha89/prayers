@@ -1,5 +1,6 @@
 import {
   MyRoomAction,
+  MyRoomBook,
   MyRoomBridge,
   MyRoomCamera,
   MyRoomInitPayload,
@@ -131,6 +132,20 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge {
 
   endMyRoomAct(): void {
     this.myRoomActs.push({ uid: '', action: null });
+  }
+
+  /** The run toggles sent, for tests. */
+  myRoomRuns: boolean[] = [];
+
+  sendMyRoomRun(on: boolean): void {
+    this.myRoomRuns.push(on);
+  }
+
+  /** The pages sent, for tests. `undefined` = never sent. */
+  myRoomBooks: (MyRoomBook | null)[] = [];
+
+  sendMyRoomBook(book: MyRoomBook | null): void {
+    this.myRoomBooks.push(book);
   }
 
   onEvent(handler: (event: UnityToRNEvent) => void): () => void {

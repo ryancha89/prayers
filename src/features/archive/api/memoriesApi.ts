@@ -4,6 +4,7 @@ import { devlog } from '../../../shared/devlog';
 import { useArchiveStore } from '../store/archiveStore';
 import type { ArchiveMemory } from '../types';
 import { CATEGORIES } from '../types';
+import { readPhotos, readReflection, useDiaryStore } from '../../myroom/diary/diaryStore';
 
 /**
  * The 아카이브's trip to the server — push what changed, pull what the account has.
@@ -48,8 +49,10 @@ export async function pullArchive(): Promise<boolean> {
     if (!res.ok) return false;
     const payload: any = await res.json();
     if (payload?.success !== true || !Array.isArray(payload.memories)) return false;
-    const rows: ArchiveMemory[] = payload.memories
-      .filter((r: any) => r && typeof r.id === 'string' && (CATEGORIES as string[]).includes(r.category))
+    const known = payload.memories.filter(
+      (r: any) => r && typeof r.id === 'string' && (CATEGORIES as string[]).includes(r.category),
+    );
+    const rows: ArchiveMemory[] = known
       .map((r: any) => ({
         id: r.id,
         category: r.category,
@@ -64,6 +67,11 @@ export async function pullArchive(): Promise<boolean> {
         lastUsedAt: r.lastUsedAt ?? undefined,
       }));
     useArchiveStore.getState().merge(rows);
+    // The server-owned halves of a diary entry (spec 006): its reflection and photos ride on the
+    // same rows, read-only, and are kept apart from the row so a push can never overwrite them.
+    useDiaryStore.getState().mergeServer(
+      known.map((r: any) => ({ id: r.id, reflection: readReflection(r.reflection), photos: readPhotos(r.photos) })),
+    );
     return true;
   } catch {
     return false;

@@ -77,7 +77,27 @@ const COMPLETION_TARGET: Record<ArchiveCategory, number> = {
   like: 3,
   dislike: 2,
   goal: 3,
+  wish: 2,
+  plan: 2,
   manual: 3,
+};
+
+/**
+ * Every diary row this store writes says which mood scale it is on (spec 006 Q1). `good` exists on
+ * both scales with different meanings, and a row without the marker is read by the server as the
+ * old scale and moved up a step — so the marker goes on here, where the Write sheet AND the 아카이브
+ * tab's editor both pass, not in one screen.
+ */
+const stamped = (
+  category: ArchiveCategory,
+  details: Record<string, string>,
+  before?: Record<string, string>,
+): Record<string, string> => {
+  if (category !== 'diary') return details;
+  // An edit that leaves an unmarked (old-scale) row's mood as it was keeps it unmarked: stamping it
+  // would tell the server an old `good` (its `great`) is a new `good`.
+  if (before && before.moodScale !== '2' && before.mood === details.mood) return details;
+  return { ...details, moodScale: '2' };
 };
 
 export const useArchiveStore = create<ArchiveState>()(
@@ -96,7 +116,7 @@ export const useArchiveStore = create<ArchiveState>()(
           id: memoryId(),
           category: input.category,
           content: input.content.trim(),
-          details: input.details ?? {},
+          details: stamped(input.category, input.details ?? {}),
           importance: input.importance ?? 2,
           confidence: input.confidence ?? 1,
           source: input.source ?? 'manual',
@@ -110,7 +130,11 @@ export const useArchiveStore = create<ArchiveState>()(
 
       update: (id, patch) =>
         set(s => ({
-          memories: s.memories.map(m => (m.id === id ? { ...m, ...patch, updatedAt: now() } : m)),
+          memories: s.memories.map(m =>
+            m.id === id
+              ? { ...m, ...patch, ...(patch.details ? { details: stamped(m.category, patch.details, m.details) } : {}), updatedAt: now() }
+              : m,
+          ),
           dirty: [...new Set([...s.dirty, id])],
         })),
 

@@ -42,6 +42,8 @@ export interface CounselorAIService {
     tone?: string;
     /** SAVIS's answer style for this turn — `tiki` or `detail`. Unset leaves the server's default. */
     chatMode?: ChatMode;
+    /** Spec 006: a diary entry to pin on this turn (`focus_memory_id`) — the session's first only. */
+    focusMemoryId?: string;
   }): Promise<CounselorResponse>;
 }
 
@@ -432,6 +434,7 @@ export class ServerCounselorAI implements CounselorAIService {
         // it would start the reading on a topic the server has to discard anyway.
         topic: input.topic && input.topic !== 'other' ? input.topic : undefined,
         chatMode: input.chatMode,
+        focusMemoryId: input.focusMemoryId,
         // Ask for the break-up. The server charges nothing for it and clients that ignore it get a
         // byte-identical response, so the only cost of asking is the one turn that needed it.
         scenes: true,

@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, LayoutChangeEvent, LayoutRectangle, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, LayoutChangeEvent, LayoutRectangle, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { absoluteFill, colors, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
-import { Icon } from '../../../shared/components/Icon';
+import { RING_COMPACT, RingButton } from '../../../shared/components/hud/Hud';
 import { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
@@ -64,8 +64,8 @@ export function roomCoveredPx(r: MeasuredRects, _landscape: boolean) {
   return { top, bottom: host.height - panel.y };
 }
 
-/** Until the top bar has measured itself: its 40pt buttons plus the status bar of a portrait phone. */
-const TOP_BAR_GUESS = 56;
+/** Until the top bar has measured itself: its 40pt rings and margin plus the status bar of a portrait phone. */
+const TOP_BAR_GUESS = 64;
 
 let msgSeq = 0;
 const msgId = () => `m_${Date.now().toString(36)}_${msgSeq++}`;
@@ -209,6 +209,8 @@ export const CounselingRoomScreen: React.FC = () => {
               sessionId: params.sessionId,
               tone: toneForCharacter(counselor?.characterId),
               chatMode: mode,
+              // The diary entry this room was opened from rides on the first server turn only.
+              focusMemoryId: useCounselingStore.getState().takeFocus(),
             });
       // The scenes go with the words. Dropping them here is what kept the server's break-up from
       // ever reaching a bubble — the greeting has none, and that is correct: it is the room's own
@@ -264,6 +266,8 @@ export const CounselingRoomScreen: React.FC = () => {
   useEffect(() => {
     return () => {
       getUnityBridge().closeCounselingRoom();
+      // A diary focus nobody asked a question with must not ride into the next session.
+      useCounselingStore.getState().takeFocus();
     };
   }, []);
 
@@ -358,7 +362,7 @@ export const CounselingRoomScreen: React.FC = () => {
 
       {!consultation.ready && (
         <View style={styles.loadingVeil}>
-          <ActivityIndicator color={colors.violetSoft} />
+          <ActivityIndicator color={colors.gold} />
           <Text style={styles.loadingText}>{t('unity.preparing')}</Text>
           <LoadingTips />
         </View>
@@ -390,27 +394,27 @@ export const CounselingRoomScreen: React.FC = () => {
 
       {/* Top controls — kept minimal, never covering the character (spec §27) */}
       {/* Inset by hand, not a SafeAreaView, so a test can pin it: clear of the island on whichever
-          side it is (landscape-left puts it on the right, landscape-right on the left). A landscape
-          phone has no top inset, so the buttons get a margin of their own rather than touching the
-          screen's edge; portrait is exactly the status-bar inset it always was. */}
+          side it is (landscape-left puts it on the right, landscape-right on the left). Placed and
+          drawn as My Room's top row (07-10, "UI đồng nhất"): the status-bar inset plus a margin in
+          either orientation, the HUD's compact gold rings. */}
       <View
         style={[
           styles.topBar,
           {
-            paddingTop: safe.top + (screen.landscape ? spacing.sm : 0),
-            paddingLeft: safe.left + spacing.lg,
-            paddingRight: safe.right + spacing.lg,
+            paddingTop: safe.top + spacing.sm,
+            paddingLeft: safe.left + spacing.md,
+            paddingRight: safe.right + spacing.md,
           },
         ]}
         pointerEvents="box-none"
         onLayout={onTopBarLayout}
         testID="room-top-bar">
-        <Pressable style={styles.roundBtn} hitSlop={8} onPress={onExit}>
-          <Icon name="back" size={26} />
-        </Pressable>
-        <Pressable style={styles.roundBtn} hitSlop={8}>
-          <Icon name="speaker" size={18} />
-        </Pressable>
+        {/* Silent on purpose, as the room has always been: its mix is Unity's (uiSounds.test). */}
+        <RingButton testID="room-back" icon="back" size={RING_COMPACT} label={t('hud.back')} onPress={onExit} />
+        {/* Drawn but not live: the room's mix (her voice, the track, the ritual) is Unity's, and no
+            bridge message silences it yet — the app's music switch does not reach it. Shown
+            disabled rather than as a button that silently does nothing, as it did before. */}
+        <RingButton testID="room-sound" icon="speaker" size={RING_COMPACT} label={t('hud.sound')} disabled />
       </View>
 
       {/* Dev only, and mounted LAST on purpose: it has to sit above ConsultationOverlay, whose
@@ -450,14 +454,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  roundBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.overlay,
   },
   loadingVeil: {
     ...absoluteFill,

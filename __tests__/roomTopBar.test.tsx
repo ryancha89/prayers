@@ -2,7 +2,8 @@
  * The consultation room's back and speaker buttons sit inside the safe area in both landscape
  * orientations (02-10). The island is on the RIGHT in landscape-left and on the LEFT in
  * landscape-right; iOS reports the same inset on both sides either way, so the bar pads both.
- * Portrait keeps exactly the status-bar inset it always had.
+ * Since 07-10 the bar is placed and drawn as My Room's top row: sm under the status-bar inset, md
+ * from the safe edges, and the HUD's compact gold rings (back live, sound shown disabled).
  */
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -21,8 +22,9 @@ jest.mock('@react-navigation/native', () => ({
   useRoute: () => ({ params: { counselorId: 'yuna', subjectId: 'self', sessionId: 's1' } }),
 }));
 jest.mock('../src/features/counseling/api/prayersServer', () => ({ fetchRecall: async () => null }));
+const mockClose = jest.fn(async () => {});
 jest.mock('../src/features/counseling/bridge', () => ({
-  getUnityBridge: () => ({ onEvent: () => () => {}, sendEvent: () => {}, closeCounselingRoom: async () => {}, sendViewInsets: () => {} }),
+  getUnityBridge: () => ({ onEvent: () => () => {}, sendEvent: () => {}, closeCounselingRoom: mockClose, sendViewInsets: () => {} }),
   isNativeUnity: () => false,
 }));
 jest.mock('../src/features/counseling/hooks/useConsultationEngine', () => ({
@@ -44,6 +46,7 @@ import { Dimensions } from 'react-native';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 import { CounselingRoomScreen } from '../src/features/counseling/screens/CounselingRoomScreen';
 import { spacing } from '../src/shared/theme';
+import { MIN_HIT, RING_COMPACT, RingButton } from '../src/shared/components/hud/Hud';
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -67,15 +70,37 @@ function topBar(win: { width: number; height: number }, safe: typeof mockSafe) {
 it('landscape: both buttons are inset past the island on either side, and off the top edge', () => {
   expect(topBar({ width: 874, height: 402 }, { top: 0, left: 62, right: 62, bottom: 21 })).toMatchObject({
     paddingTop: spacing.sm,
-    paddingLeft: 62 + spacing.lg,
-    paddingRight: 62 + spacing.lg,
+    paddingLeft: 62 + spacing.md,
+    paddingRight: 62 + spacing.md,
   });
 });
 
-it('portrait: the status-bar inset and the old 16pt sides, nothing more', () => {
+it('portrait: My Room\'s row — the status-bar inset plus sm, md at the sides', () => {
   expect(topBar({ width: 402, height: 874 }, { top: 62, left: 0, right: 0, bottom: 34 })).toMatchObject({
-    paddingTop: 62,
-    paddingLeft: spacing.lg,
-    paddingRight: spacing.lg,
+    paddingTop: 62 + spacing.sm,
+    paddingLeft: spacing.md,
+    paddingRight: spacing.md,
   });
+});
+
+it('the buttons are the HUD\'s rings: back leaves without a tap sound (the room owns its mix), sound is drawn but disabled', async () => {
+  const { sfx } = jest.requireMock('../src/shared/audio/sfx');
+  let tree!: ReactTestRenderer.ReactTestRenderer;
+  act(() => {
+    tree = ReactTestRenderer.create(<CounselingRoomScreen />);
+  });
+  const rings = tree.root.findAllByType(RingButton);
+  expect(rings.map(r => r.props.testID)).toEqual(['room-back', 'room-sound']);
+  for (const r of rings) expect(r.props.size).toBe(RING_COMPACT);
+  expect(rings[0].props.label).toBeTruthy();
+  expect(rings[1].props.disabled).toBe(true);
+  // The press target is padded out to 44pt around the 40pt ring.
+  const back = tree.root.find(n => n.props.testID === 'room-back' && n.props.hitSlop != null);
+  expect(RING_COMPACT + 2 * back.props.hitSlop).toBeGreaterThanOrEqual(MIN_HIT);
+  await act(async () => {
+    rings[0].props.onPress();
+  });
+  expect(sfx.back).not.toHaveBeenCalled();
+  expect(mockClose).toHaveBeenCalled();
+  act(() => tree.unmount());
 });

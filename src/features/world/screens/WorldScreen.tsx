@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { LayoutChangeEvent, LayoutRectangle, Pressable, StyleSheet, View } from 'react-native';
+import { LayoutChangeEvent, LayoutRectangle, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Text } from '../../../shared/components/Text';
-import { Icon, IconName } from '../../../shared/components/Icon';
-import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
+import { absoluteFill, spacing } from '../../../shared/theme';
+import { HUD_ICON, HudIcon, ProfileBadge, RingButton, badgeMaxWidth } from '../../../shared/components/hud/Hud';
 import { useLang, useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import { useScreen } from '../../../shared/device/screen';
@@ -27,6 +26,8 @@ import { WorldHubArt } from '../components/WorldHubArt';
 import { MapSheet, MenuSheet, QuestSheet, WorldSheetTop, ZoneOverlay, type ZoneActions } from '../components/WorldSheets';
 import { useWorldCamera } from '../components/useWorldCamera';
 import { useSoundStore } from '../../../shared/audio/store';
+import { ProfileSheet, useMyRoomLevel, usePlayerName } from '../../myroom/components/ProfileSheet';
+import { fetchAttendance } from '../../tickets/api/attendance';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -113,7 +114,7 @@ export const WorldScreen: React.FC = () => {
   const [worldUp, setWorldUp] = useState(false);
   const [near, setNear] = useState<WorldZone | null>(null);
   const [overlay, setOverlay] = useState<WorldZone | null>(null);
-  const [sheet, setSheet] = useState<'map' | 'quest' | 'menu' | null>(null);
+  const [sheet, setSheet] = useState<'map' | 'quest' | 'menu' | 'profile' | null>(null);
   const [run, setRun] = useState(false);
   // The door Unity is walking the player through (WORLD_ENTER sent, or ARRIVED seen), until ENTERED.
   const [entering, setEntering] = useState<WorldZone | null>(null);
@@ -128,6 +129,17 @@ export const WorldScreen: React.FC = () => {
   const musicOn = useSoundStore(s => s.musicEnabled);
   const sfxOn = useSoundStore(s => s.sfxEnabled);
   useEffect(() => { bridge.sendWorldAudio(musicOn, sfxOn); }, [bridge, musicOn, sfxOn]);
+
+  // The badge: the same name, level and title as My Room's (myroom/level.ts). The level counts every
+  // check-in ever, which only the server knows; until it answers the level counts the rest.
+  const playerName = usePlayerName();
+  const [checkIns, setCheckIns] = useState<number | null>(null);
+  useEffect(() => {
+    const ac = new AbortController();
+    fetchAttendance(ac.signal).then(a => { if (a && !ac.signal.aborted) setCheckIns(a.daysTotal); });
+    return () => ac.abort();
+  }, []);
+  const level = useMyRoomLevel(checkIns);
 
   const insets = useViewInsets({
     send: unity ? i => nativeUnityBridge.sendViewInsets(i) : undefined,
@@ -329,6 +341,8 @@ export const WorldScreen: React.FC = () => {
     else bridge.sendWorldGoto(zone);
   };
 
+  const openSheet = (which: 'map' | 'quest' | 'menu') => () => { sfx.tap(); setSheet(which); };
+
   const toggleRun = () => {
     sfx.tap();
     const on = !run;
@@ -360,23 +374,25 @@ export const WorldScreen: React.FC = () => {
           the UnityView itself never reaches RN (useWorldCamera says why); taps are handed on. */}
       {unity && lookOn && <View style={StyleSheet.absoluteFill} testID="world-look" {...camera} />}
 
+      {/* Top row, as My Room's: who you are on the left (tap → the profile sheet), the coins and the
+          way back to 2D on the right. */}
       <View
-        style={[styles.top, { paddingTop: safe.top + spacing.sm, paddingLeft: safe.left + spacing.lg, paddingRight: safe.right + spacing.lg }]}
+        testID="world-top"
+        pointerEvents="box-none"
+        style={[styles.top, { paddingTop: safe.top + spacing.sm, paddingLeft: safe.left + spacing.md, paddingRight: safe.right + spacing.md }]}
         onLayout={onTopLayout}>
-        <Pressable
-          hitSlop={8}
-          onPress={to2D}
-          accessibilityRole="button"
-          accessibilityLabel={t('world.toHome')}
-          style={({ pressed }) => [styles.to2d, pressed && styles.pressed]}>
-          <Icon name="home" size={16} color={colors.textPrimary} />
-          <Text style={styles.to2dText}>2D</Text>
-        </Pressable>
-        <View style={styles.titleBox}>
-          <Text style={styles.title} numberOfLines={1}>{t('world.title')}</Text>
-          {!landscape && <Text style={styles.subtitle} numberOfLines={1}>{t('world.subtitle')}</Text>}
+        <ProfileBadge
+          testID="world-profile"
+          name={playerName}
+          level={level.info.level}
+          title={t(level.info.title)}
+          maxWidth={badgeMaxWidth(screen.width, safe.left + safe.right + 2 * spacing.md + TOP_RIGHT + spacing.md)}
+          onPress={() => { sfx.tap(); setSheet('profile'); }}
+        />
+        <View style={styles.topRight}>
+          <CoinPill />
+          <HudIcon testID="world-home" icon="home" label={t('world.toHome')} onPress={to2D} />
         </View>
-        <CoinPill />
       </View>
 
       {/* The analogue stick, bottom-left (mockup ②–③): WALK_INPUT, the message the world mover reads. */}
@@ -390,18 +406,15 @@ export const WorldScreen: React.FC = () => {
         <View
           pointerEvents="box-none"
           style={[styles.buttons, { right: safe.right + spacing.lg, bottom: safe.bottom + spacing.lg }]}>
-          {!loadingWorld && <Pressable
-            onPress={toggleRun}
-            accessibilityRole="button"
-            accessibilityLabel={t('world.run')}
-            accessibilityState={{ selected: run }}
-            style={({ pressed }) => [styles.run, run && styles.runOn, pressed && styles.pressed]}>
-            <Icon name="run" size={26} color={run ? '#1A1330' : colors.textPrimary} />
-          </Pressable>}
+          {!loadingWorld && (
+            <View style={styles.run}>
+              <RingButton testID="world-run" icon="run" size={RUN} label={t('world.run')} active={run} onPress={toggleRun} />
+            </View>
+          )}
           <View style={styles.round3}>
-            <RoundButton icon="map" label={t('world.map')} onPress={() => setSheet('map')} />
-            <RoundButton icon="quest" label={t('world.quest')} onPress={() => setSheet('quest')} />
-            <RoundButton icon="menu" label={t('world.menu')} onPress={() => setSheet('menu')} />
+            <RingButton testID="world-map" icon="map" size={ROUND} caption label={t('world.map')} onPress={openSheet('map')} />
+            <RingButton testID="world-quest" icon="quest" size={ROUND} caption label={t('world.quest')} onPress={openSheet('quest')} />
+            <RingButton testID="world-menu" icon="menu" size={ROUND} caption label={t('world.menu')} onPress={openSheet('menu')} />
           </View>
         </View>
       )}
@@ -423,52 +436,31 @@ export const WorldScreen: React.FC = () => {
       {sheet === 'map' && <MapSheet journeyYear={NEWYEAR_2027.year} onGo={goTo} onClose={() => setSheet(null)} onRect={putSheet} />}
       {sheet === 'quest' && <QuestSheet onClose={() => setSheet(null)} onRect={putSheet} />}
       {sheet === 'menu' && <MenuSheet onTo2D={to2D} onClose={() => setSheet(null)} onRect={putSheet} />}
+      {sheet === 'profile' && (
+        <ProfileSheet name={playerName} activity={level.activity} xp={level.xp} info={level.info} onClose={() => setSheet(null)} onRect={putSheet} />
+      )}
     </View>
     </WorldSheetTop.Provider>
   );
 };
 
-const RoundButton: React.FC<{ icon: IconName; label: string; onPress: () => void }> = ({ icon, label, onPress }) => (
-  <Pressable
-    onPress={() => { sfx.tap(); onPress(); }}
-    accessibilityRole="button"
-    accessibilityLabel={label}
-    style={({ pressed }) => [styles.round, pressed && styles.pressed]}>
-    <Icon name={icon} size={18} color={colors.textPrimary} />
-    <Text style={styles.roundText} numberOfLines={1}>{label}</Text>
-  </Pressable>
-);
-
-const ROUND = 50;
+/** My Room's sizes: the run ring, and the round buttons of a row. */
+const RUN = 54;
+const ROUND = 46;
+/** What the top row keeps on its right: the coin pill (about 96 pt at four digits), a gap, Home. */
+const TOP_RIGHT = 96 + spacing.sm + HUD_ICON;
 
 const styles = StyleSheet.create({
   stage: { flex: 1, backgroundColor: '#0B0A26' },
   unity: { ...absoluteFill },
   top: {
     position: 'absolute', left: 0, right: 0, top: 0,
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingBottom: spacing.sm,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, paddingBottom: spacing.sm,
   },
-  to2d: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
-    paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.pill,
-    backgroundColor: 'rgba(18,14,40,0.8)', borderWidth: 1, borderColor: 'rgba(167,139,250,0.6)',
-  },
-  to2dText: { ...typography.caption, color: colors.textPrimary, fontWeight: '700' },
-  titleBox: { flex: 1 },
-  title: { ...typography.h3, color: colors.textPrimary },
-  subtitle: { ...typography.tiny, color: 'rgba(255,255,255,0.75)', fontWeight: '500' },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   stick: { position: 'absolute' },
   buttons: { position: 'absolute', alignItems: 'flex-end', gap: spacing.md },
-  run: {
-    width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(18,14,40,0.7)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
-  },
-  runOn: { backgroundColor: colors.gold, borderColor: colors.gold },
-  round3: { flexDirection: 'row', gap: spacing.sm },
-  round: {
-    width: ROUND, height: ROUND, borderRadius: ROUND / 2, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(18,14,40,0.7)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
-  },
-  roundText: { fontSize: 9, fontWeight: '600', color: colors.textPrimary, marginTop: 1 },
-  pressed: { opacity: 0.75 },
+  // Run sits over Menu, centred on it as My Room centres it over share.
+  run: { marginRight: (ROUND - RUN) / 2 },
+  round3: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
 });

@@ -44,6 +44,7 @@ import { WalkControls } from '../src/features/counseling/components/WalkControls
 import { PROMPT_LIFT } from '../src/features/world/components/PromptButton';
 import { useLanguageStore } from '../src/shared/i18n';
 import { spacing } from '../src/shared/theme';
+import { GoldKnob } from '../src/shared/components/Ornaments';
 
 /** The stick's PanResponder config, captured as it is created, so a gesture can be fed to it
  *  without synthesising the responder system's touch history. */
@@ -88,6 +89,12 @@ describe('the walk-in stick', () => {
     const tree = mount();
     expect(byTestID(tree, 'world-joystick')).toHaveLength(1);
     expect(tree.root.findAll(n => n.props.accessibilityLabel === 'up')).toHaveLength(0);
+    act(() => tree.unmount());
+  });
+
+  it('wears the HUD\'s gold ring and knob, as the world and My Room do (07-10, the plain puck was the odd one out)', () => {
+    const tree = mount();
+    expect(tree.root.findAllByType(GoldKnob)).toHaveLength(1);
     act(() => tree.unmount());
   });
 

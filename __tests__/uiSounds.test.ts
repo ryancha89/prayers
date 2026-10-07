@@ -20,13 +20,13 @@ import path from 'path';
 const SRC = path.join(__dirname, '..', 'src');
 
 const SILENT: Record<string, string> = {
-  'features/counseling/screens/CounselingRoomScreen.tsx':
-    'the room owns its own mix (Unity BGM + voice); RN must not tap over it',
   'features/counseling/screens/UnityEntryScreen.tsx':
     'the handover screen — the next thing the player hears is the room fading up',
   'features/auth/screens/LoginScreen.tsx': 'not wired yet',
   'features/journey/components/JourneyHeroCard.tsx': 'the caller answers the press (HomeScreen plays select)',
   'features/journey/components/RailwayProgress.tsx': 'the caller answers the press (JourneyScreen plays tap)',
+  'shared/components/hud/Hud.tsx':
+    'the caller answers the press (MyRoomScreen, WorldScreen, Journey and Meditation play tap / select / back; the consultation room stays silent — Unity owns its mix)',
   'features/journey/components/CardPick.tsx':
     'the caller answers the press (JourneyStageOverlay plays select); the pick plays its own deal/flip/reveal sounds',
   'features/profile/screens/AccountScreen.tsx': 'not wired yet',

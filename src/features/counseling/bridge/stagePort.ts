@@ -24,7 +24,12 @@ export function engineKey(unityKey: string): string {
   return i < 0 ? unityKey : unityKey.slice(0, i);
 }
 
-export function createStagePort(bridge: UnityBridge, onExit: () => void): StagePort {
+export function createStagePort(
+  bridge: UnityBridge,
+  onExit: () => void,
+  /** The diary entry to pin on the first ask (spec 006), taken once. */
+  takeFocus: () => string | undefined = () => undefined,
+): StagePort {
   const nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const k = (cacheKey: string) => `${cacheKey}${KEY_SEP}${nonce}`;
   return {
@@ -50,7 +55,8 @@ export function createStagePort(bridge: UnityBridge, onExit: () => void): StageP
       bridge.sendEvent({ type: 'STAGE_STOP_SPEAK' });
     },
     askOracle(payload: OracleAskPayload) {
-      bridge.sendEvent({ type: 'ORACLE_ASK', payload });
+      const focusMemoryId = takeFocus();
+      bridge.sendEvent({ type: 'ORACLE_ASK', payload: focusMemoryId ? { ...payload, focusMemoryId } : payload });
     },
     startMic(lang: string) {
       bridge.sendEvent({ type: 'MIC_START', payload: { lang } });

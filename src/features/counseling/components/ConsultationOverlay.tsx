@@ -34,6 +34,7 @@ import {
 import { sfx } from '../../../shared/audio/sfx';
 import { useLang } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
+import { HAIRLINE, IVORY, PLATE, RING_COMPACT, RingButton } from '../../../shared/components/hud/Hud';
 import { useScreen } from '../../../shared/device/screen';
 import { ui } from '../flow/strings';
 import { CounselorVoice, voiced } from '../flow/voice';
@@ -202,7 +203,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
               {m === 'short' && (
                 <Image
                   source={QUICK_CHAT_ICON}
-                  style={[styles.modeIcon, { tintColor: on ? colors.textPrimary : colors.textSecondary }]}
+                  style={[styles.modeIcon, { tintColor: on ? ON_GOLD : colors.textSecondary }]}
                   accessibilityElementsHidden
                   importantForAccessibility="no"
                 />
@@ -397,13 +398,12 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                     </View>
                   )}
                 </View>
-                <Pressable
-                  style={styles.sendBtn}
+                <RingButton
+                  icon="stop"
+                  size={RING_COMPACT}
+                  label={ui('mic.listening', lang)}
                   onPress={mic.state === 'listening' ? onMicStop : onMicCancel}
-                  accessibilityLabel={ui('mic.listening', lang)}
-                >
-                  <Icon name="stop" size={18} />
-                </Pressable>
+                />
               </View>
             ) : (
               <View style={styles.inputRow}>
@@ -426,30 +426,24 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                 />
                 {/* Mic OR send, never both: the button is the mic until there is something typed,
                     and speaking is the only gesture that needs to be reachable one-handed. */}
+                {/* The HUD's ring (07-10, one system over the 3D): the same navy disk and gold
+                    hairline as the top bar's back, padded to a 44pt target. */}
                 {micAvailable && !input.trim() ? (
-                  <Pressable
-                    style={[
-                      styles.sendBtn,
-                      !state.inputEnabled && styles.sendDisabled,
-                    ]}
+                  <RingButton
+                    icon="mic"
+                    size={RING_COMPACT}
+                    label={ui('mic.listening', lang)}
                     onPress={onMicStart}
                     disabled={!state.inputEnabled}
-                    accessibilityLabel={ui('mic.listening', lang)}
-                  >
-                    <Icon name="mic" size={22} />
-                  </Pressable>
+                  />
                 ) : (
-                  <Pressable
-                    style={[
-                      styles.sendBtn,
-                      (!input.trim() || !state.inputEnabled) &&
-                        styles.sendDisabled,
-                    ]}
+                  <RingButton
+                    icon="send"
+                    size={RING_COMPACT}
+                    label={ui('loop.send', lang)}
                     onPress={send}
                     disabled={!input.trim() || !state.inputEnabled}
-                  >
-                    <Icon name="send" size={22} />
-                  </Pressable>
+                  />
                 )}
               </View>
             )}
@@ -577,6 +571,11 @@ const ThinkingDots: React.FC = () => {
   return <Text style={styles.dots}>{'.'.repeat(n)}</Text>;
 };
 
+/** The quieter hairline for rows of options, where a full-strength rim on each would be a fence. */
+const SOFT_HAIRLINE = 'rgba(233,196,106,0.35)';
+/** A word or glyph on a gold fill. */
+const ON_GOLD = '#1A1330';
+
 const styles = StyleSheet.create({
   root: { ...absoluteFill, justifyContent: 'flex-end' },
   // Landscape: the band is centred; the safe-area and top-bar padding come from the call site.
@@ -611,22 +610,28 @@ const styles = StyleSheet.create({
   lineScroll: {},
   line: { ...typography.body, color: colors.textPrimary, lineHeight: 23 },
   hint: { ...typography.tiny, color: colors.textMuted, alignSelf: 'flex-end' },
-  dots: { ...typography.body, color: colors.violetSoft },
+  dots: { ...typography.body, color: colors.gold },
 
   noticeRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  // The in-world pair (the diary's and the world sheets'): a gold call to action, and the HUD's
+  // navy plate with a gold hairline for the other way.
   pill: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
-    backgroundColor: colors.card,
+    backgroundColor: PLATE,
+    borderWidth: 1,
+    borderColor: HAIRLINE,
   },
-  pillPrimary: { backgroundColor: colors.violet },
-  pillText: { ...typography.caption, color: colors.textSecondary },
-  pillTextPrimary: { ...typography.caption, color: colors.textPrimary },
+  pillPrimary: { backgroundColor: colors.gold, borderColor: colors.gold },
+  pillText: { ...typography.caption, color: IVORY },
+  pillTextPrimary: { ...typography.caption, color: ON_GOLD, fontWeight: '700' },
 
   choices: { gap: spacing.sm },
   choice: {
-    backgroundColor: colors.card,
+    backgroundColor: PLATE,
+    borderWidth: 1,
+    borderColor: SOFT_HAIRLINE,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
@@ -634,13 +639,13 @@ const styles = StyleSheet.create({
   choiceText: { ...typography.bodyStrong, color: colors.textPrimary },
 
   // Sits over the live Unity scene (gold sigils, glyphs), so a 16%-alpha violet pill with violet
-  // caption text was unreadable — near-opaque dark ground, violet rim, white body text instead.
+  // caption text was unreadable — near-opaque dark ground, the HUD's gold rim, white body text.
   suggestion: {
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(18, 18, 26, 0.94)',
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: colors.violetSoft,
+    borderColor: HAIRLINE,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     shadowColor: '#000',
@@ -703,15 +708,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.pill,
-    backgroundColor: colors.violet,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendDisabled: { backgroundColor: colors.card },
 
   micError: {
     ...typography.tiny,
@@ -732,7 +728,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     overflow: 'hidden',
   },
-  levelFill: { height: 4, backgroundColor: colors.violetSoft },
+  levelFill: { height: 4, backgroundColor: colors.gold },
 
   hush: {
     alignSelf: 'flex-end',
@@ -761,13 +757,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: colors.violetSoft,
+    borderColor: SOFT_HAIRLINE,
     backgroundColor: 'rgba(18, 18, 26, 0.94)',
   },
-  modeSegOn: { backgroundColor: colors.violet, borderColor: colors.violet },
+  // On reads as the HUD's run ring does: filled gold, dark word.
+  modeSegOn: { backgroundColor: colors.gold, borderColor: colors.gold },
   modeLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   modeIcon: { width: 16, height: 16 },
   modeText: { ...typography.caption, color: colors.textSecondary },
-  modeTextOn: { color: colors.textPrimary },
+  modeTextOn: { color: ON_GOLD, fontWeight: '700' },
   modeHint: { ...typography.tiny, color: colors.textMuted, marginBottom: spacing.xs },
 });

@@ -265,7 +265,7 @@ export const QuestSheet: React.FC<{ onClose: () => void; onRect?: (rect: LayoutR
   return (
     <WorldSheet title={t('world.quest.title')} onClose={onClose} onRect={onRect} testID="world-sheet-quest">
       <View style={styles.soonCard}>
-        <Icon name="quest" size={28} color={colors.violetSoft} />
+        <Icon name="quest" size={28} color={colors.gold} />
         <Text style={styles.soonTitle}>{t('world.soon')}</Text>
         <Text style={styles.soonBody}>{t('world.quest.line')}</Text>
       </View>
@@ -291,7 +291,7 @@ export const MenuSheet: React.FC<{
         accessibilityLabel={label}
         value={value}
         onValueChange={set}
-        trackColor={{ false: 'rgba(255,255,255,0.18)', true: colors.violet }}
+        trackColor={{ false: 'rgba(255,255,255,0.18)', true: colors.gold }}
         thumbColor={colors.textPrimary}
         ios_backgroundColor="rgba(255,255,255,0.18)"
       />
@@ -370,7 +370,8 @@ const styles = StyleSheet.create({
   bubbleText: { ...typography.bodyStrong, color: '#1A1330' },
   soonCard: {
     alignItems: 'center', gap: spacing.sm, padding: spacing.xl,
-    borderRadius: radius.lg, backgroundColor: 'rgba(139,92,246,0.12)',
+    borderRadius: radius.lg, backgroundColor: 'rgba(233,196,106,0.08)',
+    borderWidth: 1, borderColor: 'rgba(233,196,106,0.35)',
   },
   soonTitle: { ...typography.h3, color: colors.textPrimary },
   soonBody: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },

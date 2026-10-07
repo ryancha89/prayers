@@ -3,6 +3,7 @@ import { devlog } from '../../../shared/devlog';
 import { authedFetch } from '../../auth/api/headers';
 import { buyProduct, finishPurchase, storeAvailable } from '../../tickets/providers/purchase';
 import { useCoins } from '../store/coinStore';
+import { noteCoins } from '../../myroom/inbox/inboxStore';
 
 /**
  * The coin wallet (`users.coin_balance` on saju_server): what the journey's paid moments are bought
@@ -111,5 +112,6 @@ export async function buyCoins(productId: string, opts: { dev?: boolean } = {}):
   }
   if (!confirmed.ok) return { ok: false, reason: confirmed.error };
   useCoins.getState().setBalance(confirmed.balance);
+  noteCoins(confirmed.coinsAdded, confirmed.balance);
   return confirmed;
 }

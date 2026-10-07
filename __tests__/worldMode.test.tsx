@@ -99,6 +99,7 @@ import { nativeUnityBridge } from '../src/features/counseling/bridge';
 import { INSETS_SETTLE_MS } from '../src/features/counseling/bridge/viewInsets';
 import { useSoundStore } from '../src/shared/audio/store';
 import { stickVector } from '../src/features/world/components/WorldJoystick';
+import { GoldKnob } from '../src/shared/components/Ornaments';
 import { WorldScreen, worldCoveredPx, HOST_REMOUNT_FALLBACK_MS, worldTiming } from '../src/features/world/screens/WorldScreen';
 
 // Navigation waits for the native UnityView teardown on device; its own test sets it back.
@@ -666,6 +667,32 @@ describe('the World screen', () => {
     throughDoor('shop');
     // An overlay hides the stick; a stick at rest has nothing to stop, so nothing stray is sent.
     expect(tree!.root.findAll(n => n.props.testID === 'world-joystick').length).toBe(0);
+  });
+
+  it('wears My Room’s HUD: the badge with the same level and title, the ornate stick, ring buttons', async () => {
+    const byTestID = (id: string) => tree!.root.findAll(n => n.props.testID === id && typeof n.props.onPress === 'function')[0];
+    await render();
+    fromUnity({ type: 'WORLD_READY' });
+    // No activity, no check-ins known: level 1 and its title, as My Room's badge would say.
+    const badge = tree!.root.findAll(n => n.props.testID === 'world-profile' && n.props.accessibilityLabel != null)[0];
+    expect(badge.props.accessibilityLabel).toMatch(/Lv\. 1 · 새내기 여행자$/);
+    expect(tree!.root.findAllByType(GoldKnob)).toHaveLength(1);
+    for (const id of ['world-run', 'world-map', 'world-quest', 'world-menu', 'world-home']) expect(byTestID(id)).toBeDefined();
+    // Map / Quest / Menu carry their word under the ring; run does not, as in My Room.
+    const texts = tree!.root.findAll(n => typeof n.props.children === 'string').map(n => n.props.children);
+    for (const word of ['Map', 'Quest', 'Menu']) expect(texts).toContain(word);
+    // The badge opens the profile sheet, which reports its rect for VIEW_INSETS like every sheet.
+    act(() => byTestID('world-profile').props.onPress());
+    const sheet = tree!.root.findAll(n => n.props.testID === 'myroom-sheet-profile' && typeof n.props.onRect === 'function');
+    expect(sheet.length).toBeGreaterThan(0);
+    expect(tree!.root.findAll(n => n.props.testID === 'world-joystick')).toHaveLength(0);
+    press('닫기');
+    // Landscape: the same HUD; the badge stays within 60% of the width.
+    rotate(IPHONE_17_SIDE);
+    const wide = tree!.root.findAll(n => n.props.testID === 'world-profile' && n.props.accessibilityLabel != null)[0];
+    const style = StyleSheet.flatten(typeof wide.props.style === 'function' ? wide.props.style({ pressed: false }) : wide.props.style);
+    expect(style.maxWidth).toBeLessThanOrEqual(Math.round(IPHONE_17_SIDE.width * 0.6));
+    expect(byTestID('world-map')).toBeDefined();
   });
 
   it('persists WORLD_POSITION', async () => {

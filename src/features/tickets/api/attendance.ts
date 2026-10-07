@@ -1,5 +1,6 @@
 import { apiBase } from '../../../shared/config/api';
 import { authedFetch } from '../../auth/api/headers';
+import { noteCheckIn } from '../../myroom/inbox/inboxStore';
 
 /**
  * The daily check-in (2026-09-27): two free tickets a day, and free tickets stop piling up at ten.
@@ -14,6 +15,8 @@ export interface AttendanceStatus {
   freeBalance: number;
   freeCap: number;
   tickets: number;
+  /** Every day ever checked in (server `days_total`); 0 from a server that predates it. */
+  daysTotal: number;
 }
 
 export interface CheckInResult {
@@ -24,6 +27,8 @@ export interface CheckInResult {
   freeBalance: number;
   freeCap: number;
   tickets: number | null;
+  /** As AttendanceStatus.daysTotal, after this check-in; null from an older server. */
+  daysTotal: number | null;
 }
 
 export function localDate(d = new Date()): string {
@@ -37,13 +42,17 @@ export async function fetchAttendance(signal?: AbortSignal): Promise<AttendanceS
     if (!res?.ok) return null;
     const b = await res.json();
     if (!b?.success) return null;
-    return {
+    const status: AttendanceStatus = {
       checkedToday: !!b.checked_today,
       dailyTickets: b.daily_tickets ?? 2,
       freeBalance: b.free_balance ?? 0,
       freeCap: b.free_cap ?? 10,
       tickets: b.tickets ?? 0,
+      daysTotal: typeof b.days_total === 'number' ? b.days_total : 0,
     };
+    // My Room's mailbox: today's reward waiting (or already claimed elsewhere).
+    noteCheckIn(localDate(), status.checkedToday);
+    return status;
   } catch {
     return null;
   }
@@ -60,6 +69,7 @@ export async function checkIn(): Promise<CheckInResult | null> {
     const b = await res.json();
     const already = b?.error_code === 'already_checked';
     if (!b?.success && !already) return null;
+    if (b?.success) noteCheckIn(localDate(), true, b.granted ?? 0);
     return {
       ok: !!b.success,
       alreadyChecked: already,
@@ -68,6 +78,7 @@ export async function checkIn(): Promise<CheckInResult | null> {
       freeBalance: b.free_balance ?? 0,
       freeCap: b.free_cap ?? 10,
       tickets: typeof b.tickets === 'number' ? b.tickets : null,
+      daysTotal: typeof b.days_total === 'number' ? b.days_total : null,
     };
   } catch {
     return null;

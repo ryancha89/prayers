@@ -44,7 +44,7 @@ export const ArchiveSectionScreen: React.FC = () => {
   const sorted = React.useMemo(() => {
     const list = [...items];
     if (category === 'story') list.sort((a, b) => (a.details.year ?? '').localeCompare(b.details.year ?? ''));
-    else if (category === 'diary') list.sort((a, b) => (b.details.date ?? '').localeCompare(a.details.date ?? ''));
+    else if (category === 'diary' || category === 'wish' || category === 'plan') list.sort((a, b) => (b.details.date ?? '').localeCompare(a.details.date ?? ''));
     return list;
   }, [items, category]);
 
@@ -88,7 +88,10 @@ export const ArchiveSectionScreen: React.FC = () => {
       case 'diary':
         return m.details.date ?? '';
       case 'goal':
-        return choiceLabel(m, 'status');
+        return [choiceLabel(m, 'status'), m.details.date].filter(Boolean).join(' · ');
+      case 'wish':
+      case 'plan':
+        return m.details.date ?? '';
       case 'interest':
         return choiceLabel(m, 'level');
       case 'possession':

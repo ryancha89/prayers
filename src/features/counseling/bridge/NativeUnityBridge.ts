@@ -5,6 +5,7 @@ import {
   JourneyStatePayload,
   JourneyVoicePayload,
   MyRoomAction,
+  MyRoomBook,
   MyRoomBridge,
   MyRoomCamera,
   MyRoomInitPayload,
@@ -108,8 +109,12 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   private myRoomPending = false;
   private myRoomRetry: ReturnType<typeof setTimeout> | null = null;
   private myRoomTries = 0;
+  /** The room's run toggle, replayed on MYROOM_READY when on. A new visit starts walking. */
+  private myRoomRun = false;
   /** The player's last orbit, replayed on MYROOM_READY. null = never touched: Unity's overview. */
   private myRoomCamera: MyRoomCamera | null = null;
+  /** A page set while the room was still loading, owed to it on MYROOM_READY. */
+  private myRoomBookLate = false;
   private outbox: RNToUnityEvent[] = [];
   /** The latest VIEW_INSETS any Unity-hosting screen reported, and the JSON of the last one that
    *  actually went out (the dedupe key). */
@@ -448,9 +453,11 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   openMyRoom(init: MyRoomInitPayload): void {
     this.myRoomInit = init;
     this.myRoomPending = true;
+    this.myRoomBookLate = false;
     this.myRoomTries = 0;
     this.myRoomCamera = null;
-    devlog(`[unity-bridge] MYROOM_INIT ${init.lang}`);
+    this.myRoomRun = false;
+    devlog(`[unity-bridge] MYROOM_INIT ${init.lang}${init.book ? ` book ${init.book.kind} ${init.book.date}` : ''}`);
     this.post({ type: 'MYROOM_INIT', payload: init });
     this.armMyRoomRetry();
   }
@@ -498,12 +505,33 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.post({ type: 'MYROOM_ACT_END' });
   }
 
+  /** The room's run toggle. Posted straight through and remembered for MYROOM_READY, like WORLD_RUN
+   *  for the world — but its own message: WORLD_RUN would set the world's run for the way back. */
+  sendMyRoomRun(on: boolean): void {
+    this.myRoomRun = on;
+    devlog(`[unity-bridge] MYROOM_RUN ${on}`);
+    if (this.view) this.post({ type: 'MYROOM_RUN', payload: { on } });
+  }
+
+  /** The desk book's page (spec 006). Folded into the remembered INIT, so a retry — or the INIT a
+   *  late view registration sends — carries the newest page rather than the one the visit began
+   *  with; posted live once the room is open. A player that predates the diary ignores both. */
+  sendMyRoomBook(book: MyRoomBook | null): void {
+    if (!this.myRoomInit) return;
+    this.myRoomInit = { ...this.myRoomInit, book };
+    // Still loading: an INIT already delivered carries the old page, so READY re-sends this one.
+    if (this.myRoomPending) { this.myRoomBookLate = true; return; }
+    devlog(`[unity-bridge] MYROOM_BOOK ${book ? `${book.kind} ${book.date}` : 'none'}`);
+    this.post({ type: 'MYROOM_BOOK', payload: { book } });
+  }
+
   /** Leaving My Room. Idempotent, and safe when Unity never booted. */
   closeMyRoom(): void {
     const wasOpen = this.myRoomPending || this.myRoomInit != null;
     this.myRoomPending = false;
     this.myRoomInit = undefined;
     this.myRoomCamera = null;
+    this.myRoomRun = false;
     this.clearMyRoomRetry();
     try {
       if (this.view && wasOpen) this.post({ type: 'MYROOM_END' });
@@ -634,7 +662,9 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     // be watched from. Unity's own Debug.Log does NOT reach the device log once
     // the player runs embedded inside a host app — only its two startup banners
     // do — so on a device this line is the whole Unity->RN trace. Metro shows it.
-    devlog('[unity<-] ' + raw);
+    // Not the button's anchor: it streams while a piece is in reach (up to ~12/s) and would bury the
+    // rest of the trace.
+    if (event.type !== 'MYROOM_ITEM_ANCHOR') devlog('[unity<-] ' + raw);
 
     // Cold boot: the player is up but empty. SESSION_INIT is what loads the
     // room, so it has to go out HERE — waiting for UNITY_READY would wait for
@@ -735,6 +765,11 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       // Insets first: the room fits its landscape frame by them, and the player's orbit on top.
       this.replayViewInsets();
       if (this.myRoomCamera) this.post({ type: 'MYROOM_CAMERA', payload: this.myRoomCamera });
+      if (this.myRoomRun) this.post({ type: 'MYROOM_RUN', payload: { on: true } });
+      if (this.myRoomBookLate && this.myRoomInit) {
+        this.myRoomBookLate = false;
+        this.post({ type: 'MYROOM_BOOK', payload: { book: this.myRoomInit.book ?? null } });
+      }
       // The room is walked now: a stick queued while it loaded is a thumb long gone (as on the world),
       // and left in the outbox it would walk whatever scene says UNITY_READY next.
       this.outbox = this.outbox.filter(e => e.type !== 'WALK_INPUT');

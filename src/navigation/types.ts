@@ -13,7 +13,9 @@ export type TabParamList = {
 
 export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList>;
-  CounselorDetail: { counselorId: string };
+  /** `focusMemoryId`: arriving from a diary entry's Talk to Counselor (spec 006) — the entry the
+   *  consultation's first turn is pinned to (`focus_memory_id`). */
+  CounselorDetail: { counselorId: string; focusMemoryId?: string };
   CounselingSubject: undefined;
   /* CounselingTopic was removed on 18-09: the player no longer picks a subject area, they walk
      straight into the room and the topic comes from the counsellor's own specialty

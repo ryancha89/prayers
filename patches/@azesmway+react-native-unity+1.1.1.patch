@@ -10,6 +10,67 @@ index a10543a..e0f1645 100644
  }
  
  
+diff --git a/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm b/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm
+index 6406f64..adfc69e 100644
+--- a/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm
++++ b/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm
+@@ -43,6 +43,15 @@ @implementation RNUnityView {
+ 
+ NSDictionary* appLaunchOpts;
+ 
++// Unity has ONE root view per process. When two RNUnityViews are alive at once (a room screen
++// popping while the World screen under it remounts its host), each layoutSubviews used to re-add
++// that root view to itself: the other view lost a subview, laid out again, and took it back — an
++// endless layout ping-pong on the main thread that froze the app (sim, 07-10). Now exactly one view
++// owns it: the one that entered a window most recently. The others leave it alone, and get it back
++// when the owner leaves its window.
++static __weak RNUnityView *gUnityOwner = nil;
++static NSHashTable<RNUnityView *> *gUnityViews = nil;
++
+ - (bool)unityIsInitialized {
+     return [self ufw] && [[self ufw] appController];
+ }
+@@ -86,8 +95,27 @@ - (void)initUnityModule {
+     }
+ }
+ 
++- (void)didMoveToWindow {
++   [super didMoveToWindow];
++   if (gUnityViews == nil) gUnityViews = [NSHashTable weakObjectsHashTable];
++   if (self.window != nil) {
++      [gUnityViews addObject:self];
++      gUnityOwner = self;
++      [self setNeedsLayout];
++   } else {
++      [gUnityViews removeObject:self];
++      if (gUnityOwner == self) {
++         gUnityOwner = nil;
++         for (RNUnityView *v in gUnityViews) {
++            if (v.window != nil) { gUnityOwner = v; [v setNeedsLayout]; break; }
++         }
++      }
++   }
++}
++
+ - (void)layoutSubviews {
+    [super layoutSubviews];
++   if (gUnityOwner == nil && self.window != nil) gUnityOwner = self;
+ 
+    // Under Fabric, updateProps: is not reliably dispatched on the initial mount, so Unity
+    // must also be initialized from layoutSubviews or it may never start (#174, #175).
+@@ -97,8 +125,10 @@ - (void)layoutSubviews {
+    }
+ 
+    if([self unityIsInitialized] && self.ufw.appController.rootView != nil) {
+-      self.ufw.appController.rootView.frame = self.bounds;
+-      [self addSubview:self.ufw.appController.rootView];
++      UIView *root = self.ufw.appController.rootView;
++      if (gUnityOwner != nil && gUnityOwner != self) return;   // another view holds it: never steal
++      root.frame = self.bounds;
++      if (root.superview != self) [self addSubview:root];
+ 
+       // Coming back on screen after the view was recycled: resume the shared
+       // instance that prepareForRecycle paused (#180).
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/Info.plist b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/Info.plist
 new file mode 100644
 index 0000000..c05d60c
@@ -47,7 +108,7 @@ index 0000000..c05d60c
 +</plist>
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Managed/Metadata/global-metadata.dat b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Managed/Metadata/global-metadata.dat
 new file mode 100644
-index 0000000..aa4edcb
+index 0000000..93844ac
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Managed/Metadata/global-metadata.dat differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Managed/Resources/mscorlib.dll-resources.dat b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Managed/Resources/mscorlib.dll-resources.dat
 new file mode 100644
@@ -368,10 +429,10 @@ index 0000000..f3b71c4
 +
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/AddressablesLink/link.xml b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/AddressablesLink/link.xml
 new file mode 100644
-index 0000000..b7e0eef
+index 0000000..557612f
 --- /dev/null
 +++ b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/AddressablesLink/link.xml
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,18 @@
 +<linker>
 +  <assembly fullname="Unity.Addressables, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" preserve="all">
 +    <type fullname="UnityEngine.AddressableAssets.Addressables" preserve="all" />
@@ -386,39 +447,30 @@ index 0000000..b7e0eef
 +  <assembly fullname="UnityEngine.AudioModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
 +    <type fullname="UnityEngine.AudioClip" preserve="all" />
 +  </assembly>
++  <assembly fullname="UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
++    <type fullname="UnityEngine.TextAsset" preserve="all" />
++  </assembly>
 +</linker>
 \ No newline at end of file
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/catalog.bin b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/catalog.bin
 new file mode 100644
-index 0000000..ade0e08
+index 0000000..747743f
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/catalog.bin differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/catalog.hash b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/catalog.hash
 new file mode 100644
-index 0000000..adc08bb
+index 0000000..c76a683
 --- /dev/null
 +++ b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/catalog.hash
 @@ -0,0 +1 @@
-+f2b546ed3e5eb1c66b83a316169cdbd0
++c2148cc43404dbe095008dbbd09e2559
 \ No newline at end of file
-diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/iOS/consultationvoice_assets_audio_consultation_en_fd2132cc16243e2fcc5f76f068f71326.bundle b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/iOS/consultationvoice_assets_audio_consultation_en_fd2132cc16243e2fcc5f76f068f71326.bundle
-new file mode 100644
-index 0000000..1dc8715
-Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/iOS/consultationvoice_assets_audio_consultation_en_fd2132cc16243e2fcc5f76f068f71326.bundle differ
-diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/iOS/consultationvoice_assets_audio_consultation_ko_0fab39da71faca6bd2acd4a281116245.bundle b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/iOS/consultationvoice_assets_audio_consultation_ko_0fab39da71faca6bd2acd4a281116245.bundle
-new file mode 100644
-index 0000000..f1f1864
-Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/iOS/consultationvoice_assets_audio_consultation_ko_0fab39da71faca6bd2acd4a281116245.bundle differ
-diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/iOS/consultationvoice_assets_audio_consultation_vi_a990f30c8ab425c76d39ef66d40fee17.bundle b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/iOS/consultationvoice_assets_audio_consultation_vi_a990f30c8ab425c76d39ef66d40fee17.bundle
-new file mode 100644
-index 0000000..763aab5
-Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/iOS/consultationvoice_assets_audio_consultation_vi_a990f30c8ab425c76d39ef66d40fee17.bundle differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/settings.json b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/settings.json
 new file mode 100644
-index 0000000..25f0a6b
+index 0000000..1ad080e
 --- /dev/null
 +++ b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Raw/aa/settings.json
 @@ -0,0 +1 @@
-+{"m_buildTarget":"iOS","m_SettingsHash":"c59918546a045b4786695c277a317cec","m_CatalogLocations":[{"m_Keys":["AddressablesMainContentCatalog"],"m_InternalId":"{UnityEngine.AddressableAssets.Addressables.RuntimePath}/catalog.bin","m_Provider":"UnityEngine.AddressableAssets.ResourceProviders.BinaryCatalogProvider","m_Dependencies":[],"m_ResourceType":{"m_AssemblyName":"Unity.Addressables","m_ClassName":"UnityEngine.AddressableAssets.ResourceLocators.BinaryContentCatalogData"},"SerializedData":[]}],"m_LogResourceManagerExceptions":true,"m_ExtraInitializationData":[],"m_DisableCatalogUpdateOnStart":false,"m_IsLocalCatalogInBundle":false,"m_CertificateHandlerType":{"m_AssemblyName":"","m_ClassName":""},"m_AddressablesVersion":"4.0.1","m_maxConcurrentWebRequests":3,"m_CatalogRequestsTimeout":0}
++{"m_buildTarget":"iOS","m_SettingsHash":"1187bfc66f5440247a2bbd31e255f8a7","m_CatalogLocations":[{"m_Keys":["AddressablesMainContentCatalogRemoteHash"],"m_InternalId":"https://api.perpetualtalk.com/api/v1/prayers/addressables/iOS/catalog_0.1.0.hash","m_Provider":"UnityEngine.ResourceManagement.ResourceProviders.TextDataProvider","m_Dependencies":[],"m_ResourceType":{"m_AssemblyName":"","m_ClassName":"System.String"},"SerializedData":[7,21,85,110,105,116,121,46,82,101,115,111,117,114,99,101,77,97,110,97,103,101,114,75,85,110,105,116,121,69,110,103,105,110,101,46,82,101,115,111,117,114,99,101,77,97,110,97,103,101,109,101,110,116,46,82,101,115,111,117,114,99,101,80,114,111,118,105,100,101,114,115,46,80,114,111,118,105,100,101,114,76,111,97,100,82,101,113,117,101,115,116,79,112,116,105,111,110,115,142,0,0,0,123,0,34,0,109,0,95,0,73,0,103,0,110,0,111,0,114,0,101,0,70,0,97,0,105,0,108,0,117,0,114,0,101,0,115,0,34,0,58,0,116,0,114,0,117,0,101,0,44,0,34,0,109,0,95,0,87,0,101,0,98,0,82,0,101,0,113,0,117,0,101,0,115,0,116,0,84,0,105,0,109,0,101,0,111,0,117,0,116,0,34,0,58,0,48,0,44,0,34,0,109,0,95,0,76,0,111,0,99,0,97,0,108,0,67,0,97,0,99,0,104,0,101,0,80,0,97,0,116,0,104,0,34,0,58,0,34,0,34,0,125,0]},{"m_Keys":["AddressablesMainContentCatalog"],"m_InternalId":"{UnityEngine.AddressableAssets.Addressables.RuntimePath}/catalog.bin","m_Provider":"UnityEngine.AddressableAssets.ResourceProviders.BinaryCatalogProvider","m_Dependencies":["AddressablesMainContentCatalogRemoteHash","AddressablesMainContentCatalogCacheHash","AddressablesMainContentCatalogLocalHash"],"m_ResourceType":{"m_AssemblyName":"Unity.Addressables","m_ClassName":"UnityEngine.AddressableAssets.ResourceLocators.BinaryContentCatalogData"},"SerializedData":[]},{"m_Keys":["AddressablesMainContentCatalogLocalHash"],"m_InternalId":"{UnityEngine.AddressableAssets.Addressables.RuntimePath}/catalog.hash","m_Provider":"UnityEngine.ResourceManagement.ResourceProviders.TextDataProvider","m_Dependencies":[],"m_ResourceType":{"m_AssemblyName":"","m_ClassName":"System.String"},"SerializedData":[]},{"m_Keys":["AddressablesMainContentCatalogCacheHash"],"m_InternalId":"{UnityEngine.Application.persistentDataPath}/com.unity.addressables/catalog_0.1.0.hash","m_Provider":"UnityEngine.ResourceManagement.ResourceProviders.TextDataProvider","m_Dependencies":[],"m_ResourceType":{"m_AssemblyName":"","m_ClassName":"System.String"},"SerializedData":[7,21,85,110,105,116,121,46,82,101,115,111,117,114,99,101,77,97,110,97,103,101,114,75,85,110,105,116,121,69,110,103,105,110,101,46,82,101,115,111,117,114,99,101,77,97,110,97,103,101,109,101,110,116,46,82,101,115,111,117,114,99,101,80,114,111,118,105,100,101,114,115,46,80,114,111,118,105,100,101,114,76,111,97,100,82,101,113,117,101,115,116,79,112,116,105,111,110,115,142,0,0,0,123,0,34,0,109,0,95,0,73,0,103,0,110,0,111,0,114,0,101,0,70,0,97,0,105,0,108,0,117,0,114,0,101,0,115,0,34,0,58,0,116,0,114,0,117,0,101,0,44,0,34,0,109,0,95,0,87,0,101,0,98,0,82,0,101,0,113,0,117,0,101,0,115,0,116,0,84,0,105,0,109,0,101,0,111,0,117,0,116,0,34,0,58,0,48,0,44,0,34,0,109,0,95,0,76,0,111,0,99,0,97,0,108,0,67,0,97,0,99,0,104,0,101,0,80,0,97,0,116,0,104,0,34,0,58,0,34,0,34,0,125,0]}],"m_LogResourceManagerExceptions":true,"m_ExtraInitializationData":[],"m_DisableCatalogUpdateOnStart":false,"m_IsLocalCatalogInBundle":false,"m_CertificateHandlerType":{"m_AssemblyName":"","m_ClassName":""},"m_AddressablesVersion":"4.0.1","m_maxConcurrentWebRequests":3,"m_CatalogRequestsTimeout":0}
 \ No newline at end of file
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Resources/unity default resources b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Resources/unity default resources
 new file mode 100644
@@ -426,7 +478,7 @@ index 0000000..3dbe7ef
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Resources/unity default resources differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Resources/unity_builtin_extra b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Resources/unity_builtin_extra
 new file mode 100644
-index 0000000..30a4a4d
+index 0000000..bc73b4c
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/Resources/unity_builtin_extra differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/RuntimeInitializeOnLoads.json b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/RuntimeInitializeOnLoads.json
 new file mode 100644
@@ -445,27 +497,27 @@ index 0000000..a3745cb
 \ No newline at end of file
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/boot.config b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/boot.config
 new file mode 100644
-index 0000000..c4a6c2b
+index 0000000..ce0f6e6
 --- /dev/null
 +++ b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/boot.config
 @@ -0,0 +1,10 @@
 +player-connection-mode=Listen
-+player-connection-guid=1942074172
++player-connection-guid=3391368789
 +player-connection-debug=0
 +player-connection-project-name=SajuWorld
-+player-connection-ip=192.168.10.110
++player-connection-ip=192.168.1.14
 +gfx-threading-mode=4
 +wait-for-native-debugger=0
 +hdr-display-enabled=0
 +gc-max-time-slice=3
-+build-guid=3545d5312fc14133b3fd20f2b4dd352d
++build-guid=1f79f0eddb0c436bb659ad61f9867952
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/globalgamemanagers b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/globalgamemanagers
 new file mode 100644
-index 0000000..49e2ce6
+index 0000000..8f45d25
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/globalgamemanagers differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/globalgamemanagers.assets b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/globalgamemanagers.assets
 new file mode 100644
-index 0000000..b675789
+index 0000000..ad99797
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/globalgamemanagers.assets differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/globalgamemanagers.assets.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/globalgamemanagers.assets.resS
 new file mode 100644
@@ -473,11 +525,11 @@ index 0000000..b950051
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/globalgamemanagers.assets.resS differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level0 b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level0
 new file mode 100644
-index 0000000..80cf6f4
+index 0000000..f2bd270
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level0 differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level1 b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level1
 new file mode 100644
-index 0000000..4f46112
+index 0000000..ea33189
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level1 differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level1.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level1.resS
 new file mode 100644
@@ -485,15 +537,43 @@ index 0000000..8ec6c9a
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level1.resS differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level2 b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level2
 new file mode 100644
-index 0000000..2f5c92c
+index 0000000..ac8df51
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level2 differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level3 b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level3
+new file mode 100644
+index 0000000..72c3f85
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level3 differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level3.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level3.resS
+new file mode 100644
+index 0000000..658926b
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level3.resS differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level4 b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level4
+new file mode 100644
+index 0000000..6f5223f
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level4 differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level5 b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level5
+new file mode 100644
+index 0000000..c4bdb37
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level5 differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level6 b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level6
+new file mode 100644
+index 0000000..2b8df36
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level6 differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level7 b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level7
+new file mode 100644
+index 0000000..d7477ec
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level7 differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level7.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level7.resS
+new file mode 100644
+index 0000000..7a0c584
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/level7.resS differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/resources.assets b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/resources.assets
 new file mode 100644
-index 0000000..0cdbf73
+index 0000000..681dd7d
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/resources.assets differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/resources.assets.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/resources.assets.resS
 new file mode 100644
-index 0000000..88e3bf7
+index 0000000..1a744e9
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/resources.assets.resS differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/resources.resource b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/resources.resource
 new file mode 100644
@@ -501,7 +581,7 @@ index 0000000..b2512a0
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/resources.resource differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets0.assets b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets0.assets
 new file mode 100644
-index 0000000..a26e255
+index 0000000..78644ea
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets0.assets differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets0.assets.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets0.assets.resS
 new file mode 100644
@@ -513,20 +593,64 @@ index 0000000..84d803c
 \ No newline at end of file
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets1.assets b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets1.assets
 new file mode 100644
-index 0000000..6b5b627
+index 0000000..ea55a6e
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets1.assets differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets1.assets.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets1.assets.resS
 new file mode 100644
-index 0000000..00dbe85
+index 0000000..92770fa
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets1.assets.resS differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets1.resource b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets1.resource
+new file mode 100644
+index 0000000..5437bb0
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets1.resource differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets2.assets b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets2.assets
 new file mode 100644
-index 0000000..d603693
+index 0000000..2358359
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets2.assets differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets2.assets.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets2.assets.resS
 new file mode 100644
-index 0000000..7a88594
+index 0000000..d9f341b
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets2.assets.resS differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets3.assets b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets3.assets
+new file mode 100644
+index 0000000..ffbcec4
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets3.assets differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets3.assets.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets3.assets.resS
+new file mode 100644
+index 0000000..8c65450
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets3.assets.resS differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets4.assets b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets4.assets
+new file mode 100644
+index 0000000..787244f
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets4.assets differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets4.assets.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets4.assets.resS
+new file mode 100644
+index 0000000..fbab3d9
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets4.assets.resS differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets5.assets b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets5.assets
+new file mode 100644
+index 0000000..18849a6
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets5.assets differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets5.assets.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets5.assets.resS
+new file mode 100644
+index 0000000..6e2ed3c
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets5.assets.resS differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets6.assets b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets6.assets
+new file mode 100644
+index 0000000..4f30e26
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets6.assets differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets6.assets.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets6.assets.resS
+new file mode 100644
+index 0000000..87d3ff9
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets6.assets.resS differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets7.assets b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets7.assets
+new file mode 100644
+index 0000000..a58eae1
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets7.assets differ
+diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets7.assets.resS b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets7.assets.resS
+new file mode 100644
+index 0000000..0aaf933
+Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Data/sharedassets7.assets.resS differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Headers/LifeCycleListener.h b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/Headers/LifeCycleListener.h
 new file mode 100644
 index 0000000..6471baa
@@ -1064,7 +1188,7 @@ index 0000000..3223a85
 +</plist>
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/UnityFramework b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/UnityFramework
 new file mode 100755
-index 0000000..5231e25
+index 0000000..7ecb5a6
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/UnityFramework differ
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/il2cpp-symbols.txt b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/il2cpp-symbols.txt
 new file mode 100644

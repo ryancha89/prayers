@@ -91,7 +91,7 @@ export const CounselorDetailScreen: React.FC = () => {
   }
 
   const onStart = () => {
-    begin(counselor);
+    begin(counselor, { focusMemoryId: params.focusMemoryId });
     navigation.navigate('CounselingSubject');
   };
 
