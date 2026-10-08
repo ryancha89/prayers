@@ -25,23 +25,29 @@ import type { UnityBridge } from '../src/features/counseling/types';
 
 const card = { id: 'jiho', characterId: 'jiho_01' } as never;
 
-it('the focus is taken once, and a start not from the diary has none', () => {
+it('the focus lasts the session, and a start not from the diary has none', () => {
   useCounselingStore.getState().begin(card, { focusMemoryId: 'mem_1' });
-  expect(useCounselingStore.getState().takeFocus()).toBe('mem_1');
-  expect(useCounselingStore.getState().takeFocus()).toBeUndefined();
+  expect(useCounselingStore.getState().currentFocus()).toBe('mem_1');
+  expect(useCounselingStore.getState().currentFocus()).toBe('mem_1');
   useCounselingStore.getState().begin(card, { focusMemoryId: 'mem_2' });
   useCounselingStore.getState().begin(card);
-  expect(useCounselingStore.getState().takeFocus()).toBeUndefined();
+  expect(useCounselingStore.getState().currentFocus()).toBeUndefined();
 });
 
-it('rides on the first ORACLE_ASK only', () => {
+it('leaving the room clears the focus, so a resumed session (no begin) never carries the entry', () => {
+  useCounselingStore.getState().begin(card, { focusMemoryId: 'mem_5' });
+  useCounselingStore.getState().clearFocus();
+  expect(useCounselingStore.getState().currentFocus()).toBeUndefined();
+});
+
+it('rides on every ORACLE_ASK of the session (the first is often the memory-free reading)', () => {
   const sent: any[] = [];
   const bridge = { sendEvent: (e: unknown) => sent.push(e) } as unknown as UnityBridge;
   useCounselingStore.getState().begin(card, { focusMemoryId: 'mem_9' });
-  const port = createStagePort(bridge, () => {}, () => useCounselingStore.getState().takeFocus());
+  const port = createStagePort(bridge, () => {}, () => useCounselingStore.getState().currentFocus());
   port.askOracle({ question: 'q1', topic: 'general', scope: 'self' });
   port.askOracle({ question: 'q2', topic: 'general', scope: 'self', loop: true });
-  expect(sent.map(e => e.payload.focusMemoryId)).toEqual(['mem_9', undefined]);
+  expect(sent.map(e => e.payload.focusMemoryId)).toEqual(['mem_9', 'mem_9']);
 });
 
 it('goes out as top-level focus_memory_id on the Prayers path, and not at all when unset', async () => {

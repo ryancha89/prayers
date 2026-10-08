@@ -7,6 +7,7 @@
  * says the page is safe on the phone; still pending at the end of the wait says so. The reflection
  * text is only ever the server's.
  */
+import { useAuthStore } from '../src/features/auth/store/authStore';
 import React from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 
@@ -52,7 +53,8 @@ async function render(onTalk = jest.fn()) {
   return r;
 }
 
-it('says the entry’s counsellor is reading on the first frame, then shows the server’s reflection and topics', async () => {
+it('shows the player’s own page reading on the first frame (their name, not a counsellor’s), then the reflection and topics', async () => {
+  useAuthStore.setState({ displayName: 'Linh' } as never);
   let land!: (v: unknown) => void;
   let update!: (r: unknown) => void;
   mockAwait.mockImplementation((_id: string, lang: string, opts: { onUpdate: (r: unknown) => void }) => {
@@ -61,7 +63,12 @@ it('says the entry’s counsellor is reading on the first frame, then shows the 
     return new Promise(res => { land = res; });
   });
   const r = await render();
-  expect(lineOf(r)).toBe('Jiho is reading your page…');
+  expect(lineOf(r)).toBe('Reading your page…');
+  // The player's bubble carries their name and their own words; the counsellor only names the way out.
+  const byTest = (id: string) => r.root.findAll(n => n.props.testID === id && typeof n.props.children === 'string')[0];
+  expect(byTest('diary-saved-page-name').props.children).toBe('Linh');
+  expect(byTest('diary-saved-page').props.children).toBe('x');
+  expect(allText(r)).toContain('Talk with Jiho');
   const ready = { status: 'ready', text: 'You carried a lot today.', topics: ['work', 'rest', 'astral'], counselor: 'dosa', lang: 'en', stale: false };
   await act(async () => { update(ready); land(ready); });
   expect(lineOf(r)).toBe('You carried a lot today.');
@@ -81,10 +88,17 @@ it('shows the server’s fallback line as it is', async () => {
 it('with no server: the page is safe on the phone; still pending at 45 s: still reading', async () => {
   mockAwait.mockResolvedValueOnce(null);
   let r = await render();
-  expect(lineOf(r)).toBe("Saved on this phone. Jiho will read it once you're back online.");
+  expect(lineOf(r)).toBe("Saved on this phone. The reflection will come once you're back online.");
   mockAwait.mockResolvedValueOnce({ status: 'pending', text: '', topics: [] });
   r = await render();
-  expect(lineOf(r)).toBe('Jiho is still reading. Their reflection will be waiting in your diary.');
+  expect(lineOf(r)).toBe('Still reading. The reflection will be waiting in your diary.');
+});
+
+it('with the AI switch off: nothing is asked for, the page is kept just for the player', async () => {
+  useArchiveStore.getState().setAiEnabled(id, false);
+  const r = await render();
+  expect(mockAwait).not.toHaveBeenCalled();
+  expect(lineOf(r)).toBe('Saved just for you.');
 });
 
 it('Talk to Counselor hands over', async () => {

@@ -49,7 +49,7 @@ beforeEach(() => {
   useConversationsStore.setState({ byId: {}, order: [] } as never);
 });
 
-describe('the counsellor picker', () => {
+describe('the entry’s counsellor (not asked on Write, 08-10)', () => {
   it('offers the four consultable counsellors, by tone', () => {
     expect(diaryCounselors('en').map(c => c.tone).sort()).toEqual(['coldgirl', 'dosa', 'sudam', 'sunyeo']);
   });
@@ -87,14 +87,13 @@ describe('Write', () => {
     expect(byId(r, 'diary-date-next').props.disabled).toBe(false);
   });
 
-  it('saves offline on the phone, with the picked counsellor as a tone and the mood marker', async () => {
+  it('saves offline on the phone, with the latest conversation’s counsellor as a tone and the mood marker; no picker shown', async () => {
     useConversationsStore.setState({
       order: ['session_yunjung_self'],
       byId: { session_yunjung_self: { sessionId: 'session_yunjung_self', counselorId: 'yunjung' } },
     } as never);
     const { r, onSaved } = await open();
-    expect(byId(r, 'diary-counselor-coldgirl').props.accessibilityState.selected).toBe(true);
-    await act(async () => byId(r, 'diary-counselor-dosa').props.onPress());
+    expect(r.root.findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('diary-counselor-'))).toHaveLength(0);
     expect(byId(r, 'diary-save').props.disabled).toBe(true);
     await act(async () => byId(r, 'diary-text').props.onChangeText('Long day at work.'));
     expect(byId(r, 'diary-save').props.disabled).toBe(true); // no mood yet
@@ -105,7 +104,7 @@ describe('Write', () => {
     expect(s.memories).toHaveLength(1);
     expect(s.memories[0]).toMatchObject({
       category: 'diary', content: 'Long day at work.', source: 'diary',
-      details: { mood: 'tired', counselor: 'dosa', moodScale: '2' },
+      details: { mood: 'tired', counselor: 'coldgirl', moodScale: '2' },
     });
     expect(s.memories[0].details.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(s.dirty).toEqual([s.memories[0].id]); // still to push
@@ -125,7 +124,6 @@ describe('Write', () => {
     const m = useArchiveStore.getState().add({ category: 'goal', content: 'Run 10k', details: { status: 'doing', date: '2026-10-01', counselor: 'sudam' } });
     const { r } = await open({ editing: m });
     expect(byId(r, 'diary-kind-diary').props.disabled).toBe(true);
-    expect(byId(r, 'diary-counselor-sudam').props.accessibilityState.selected).toBe(true);
     await act(async () => byId(r, 'diary-text').props.onChangeText('Run 10k in under an hour'));
     await act(async () => byId(r, 'diary-save').props.onPress());
     expect(useArchiveStore.getState().memories[0]).toMatchObject({

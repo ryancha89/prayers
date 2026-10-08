@@ -215,23 +215,47 @@ export async function keepLocal(memoryId: string, photo: PickedPhoto): Promise<s
 export async function removeLocal(uri: string | undefined): Promise<void> {
   const f = fs();
   if (!f || !uri) return;
-  const path = stripScheme(uri);
+  const path = stripScheme(currentLocalUri(uri)!);
   if (!path.startsWith(`${f.DocumentDirectoryPath}/`)) return; // never delete outside our own folder
   try {
     if (await f.exists(path)) await f.unlink(path);
   } catch {}
 }
 
+/** A new photo's slot: after the last one while that fits the server's 0…MAX-1 range, else the
+ *  first free slot — the server clamps a position past the end, which would collide. */
+export function nextPosition(list: { position: number }[]): number {
+  const after = list.reduce((n, p) => Math.max(n, p.position + 1), 0);
+  if (after < MAX_PHOTOS) return after;
+  const used = new Set(list.map(p => p.position));
+  for (let i = 0; i < MAX_PHOTOS; i += 1) if (!used.has(i)) return i;
+  return MAX_PHOTOS - 1;
+}
+
+/**
+ * A kept copy's uri for this launch. The absolute path persisted at Save carries the app
+ * container's UUID, which iOS can change on an update or a restore; the part under Documents/
+ * stays the same, so it is re-rooted on the current Documents folder.
+ */
+export function currentLocalUri(uri: string | undefined): string | undefined {
+  const f = fs();
+  if (!f || !uri) return uri;
+  const path = stripScheme(uri);
+  if (path.startsWith(`${f.DocumentDirectoryPath}/`)) return uri;
+  const at = path.indexOf('/Documents/diary/');
+  if (at < 0) return uri;
+  return `file://${f.DocumentDirectoryPath}${path.slice(at + '/Documents'.length)}`;
+}
+
 /** Attach picked photos to a saved entry: copy each into Documents, then queue it for upload. */
 export async function attachPhotos(memoryId: string, picked: PickedPhoto[]): Promise<void> {
   const already = useDiaryStore.getState().photos[memoryId] ?? [];
-  const start = already.reduce((n, p) => Math.max(n, p.position + 1), 0);
   const kept: DiaryPhoto[] = [];
   for (let i = 0; i < picked.length && already.length + kept.length < MAX_PHOTOS; i += 1) {
     const p = picked[i];
     kept.push({
       id: p.id, localUri: await keepLocal(memoryId, p), width: p.width, height: p.height,
-      position: start + i, uploaded: false,
+      position: nextPosition([...already, ...kept]), uploaded: false,
     });
   }
   if (kept.length > 0) useDiaryStore.getState().addPhotos(memoryId, kept);
@@ -249,4 +273,27 @@ export async function dropLocalPhotos(memoryId: string): Promise<void> {
   const list = useDiaryStore.getState().photos[memoryId] ?? [];
   useDiaryStore.getState().dropMemory(memoryId);
   for (const p of list) await removeLocal(p.localUri);
+}
+
+/** Sign-out / account deletion: every kept copy on the phone, all entries at once. */
+export async function forgetAllLocalPhotos(): Promise<void> {
+  const f = fs();
+  if (!f) return;
+  try {
+    const dir = `${f.DocumentDirectoryPath}/diary`;
+    if (await f.exists(dir)) await f.unlink(dir);
+  } catch {}
+}
+
+/** Entries that left the 아카이브 some other way (deleted on another device, or from the 아카이브
+ *  tab): their reflection, photo rows and kept copies go too. */
+export async function pruneDiary(liveIds: Set<string>): Promise<void> {
+  const { photos, reflections } = useDiaryStore.getState();
+  // Never a photo the server has not got: a pull that raced a Save can miss the new row for one
+  // round, and its un-uploaded picks are the only copies there are.
+  const holdsLocalOnly = (id: string) => (photos[id] ?? []).some(p => !p.uploaded);
+  const gone = new Set(
+    [...Object.keys(photos), ...Object.keys(reflections)].filter(id => !liveIds.has(id) && !holdsLocalOnly(id)),
+  );
+  for (const id of gone) await dropLocalPhotos(id);
 }

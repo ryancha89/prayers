@@ -9,6 +9,10 @@ import { colors, spacing } from '../../../shared/theme';
 import { sfx } from '../../../shared/audio/sfx';
 import type { MyRoomAction, MyRoomItemAnchor } from '../../counseling/types';
 import { PROMPT_LIFT } from '../../world/components/PromptButton';
+
+/** My Room's dock above its bottom row (편집 · the motto · share, ~44pt over safe.bottom + 8): the
+ *  world's low landscape lift put the docked prompt, Leave and the book's bar over the motto. */
+export const MYROOM_LIFT = { portrait: PROMPT_LIFT.portrait, landscape: 64 };
 import { useScreen } from '../../../shared/device/screen';
 
 /** The icon for a piece's action — the chair for sitting (07-10 mockup), and so on. */
@@ -17,7 +21,7 @@ export function actIcon(action: MyRoomAction): IconName {
     case 'sit': return 'armchair';
     case 'rest': return 'bed';
     case 'lamp': return 'lamp';
-    case 'write': return 'pen';
+    case 'write': return 'book';
     default: return 'book';
   }
 }
@@ -111,7 +115,7 @@ export const ItemPrompt: React.FC<{
     ? promptOrigin(anchor.x * screen.width, anchor.y * screen.height, size.w, name ? size.chip : 0, screen, safe, size.h,
         landscape ? PROMPT_CLEAR.landscape : PROMPT_CLEAR.portrait)
     : { x: (screen.width - size.w) / 2,
-        y: screen.height - safe.bottom - (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait) - size.h };
+        y: screen.height - safe.bottom - (landscape ? MYROOM_LIFT.landscape : MYROOM_LIFT.portrait) - size.h };
   useEffect(() => {
     // The first placement jumps there; later ones glide, so the 12/s updates read as one motion.
     if (!placed.current) { pos.setValue(o); placed.current = true; return; }

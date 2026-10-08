@@ -17,7 +17,7 @@ import { CoinPill } from '../../coins/components/CoinPill';
 import { useMyRoomCamera } from '../components/useMyRoomCamera';
 import { WorldJoystick } from '../../world/components/WorldJoystick';
 import type { MyRoomAction, MyRoomItemAnchor, MyRoomNearItem } from '../../counseling/types';
-import { ItemPrompt } from '../components/ItemPrompt';
+import { ItemPrompt, MYROOM_LIFT } from '../components/ItemPrompt';
 import { itemName } from '../names';
 import type { TranslationKey } from '../../../shared/i18n';
 import { useCoins } from '../../coins/store/coinStore';
@@ -26,6 +26,7 @@ import { useArchiveStore } from '../../archive/store/archiveStore';
 import { bookFor, sameBook } from '../diary/book';
 import { syncDiary } from '../diary/diaryApi';
 import { DiaryOverlay, type DiaryRoute } from '../diary/components/DiaryOverlay';
+import { DiaryBookBar } from '../diary/components/DiaryBookBar';
 import { devlog } from '../../../shared/devlog';
 import type { MyRoomBook } from '../../counseling/types';
 import { checkIn, fetchAttendance, type AttendanceStatus } from '../../tickets/api/attendance';
@@ -49,7 +50,7 @@ export function myRoomActLabel(action: MyRoomAction, acting: boolean, lampOn: bo
     case 'sit': return acting ? 'myroom.act.stand' : 'myroom.act.sit';
     case 'rest': return acting ? 'myroom.act.getUp' : 'myroom.act.rest';
     case 'lamp': return lampOn ? 'myroom.act.lampOff' : 'myroom.act.lampOn';
-    case 'write': return acting ? 'myroom.act.back' : 'myroom.act.write';
+    case 'write': return acting ? 'myroom.act.back' : 'myroom.act.openDiary';
     default: return acting ? 'myroom.act.back' : 'myroom.act.look';
   }
 }
@@ -189,8 +190,8 @@ export const MyRoomScreen: React.FC = () => {
         if (p.action === 'lamp') setLampOn(m => ({ ...m, [p.uid]: p.active }));
         else if (p.active) setActing({ uid: p.uid, action: p.action });
         else setActing(cur => (cur && cur.uid === p.uid ? null : cur));
-        // The camera is on the book: Write opens over it (spec 006 US1 1).
-        if (p.action === 'write' && p.active) setDiary(d => d ?? { screen: 'write' });
+        // The camera is on the book: the page is up, and DiaryBookBar offers Read / Write / Back
+        // (08-10: it used to open Write at once, leaving no way to only look).
       } else if (e.type === 'MYROOM_BOOK_STATE') {
         // The book's glyph self-check (R13): the only trace of a missing glyph on a device.
         const p = e.payload;
@@ -214,6 +215,8 @@ export const MyRoomScreen: React.FC = () => {
   // The coin shop opens over everything; the sheet that opened it goes.
   useEffect(() => { if (shopOpen) setSheet(null); }, [shopOpen]);
   const controlsOn = (!unity || roomUp) && !shopOpen && !diary && !sheet;
+  // The desk's act: the camera is on the open book (DiaryBookBar).
+  const atBook = acting?.action === 'write';
   const send = useCallback((c: Parameters<typeof bridge.sendMyRoomCamera>[0]) => bridge.sendMyRoomCamera(c), [bridge]);
   const look = useMyRoomCamera(controlsOn, send);
 
@@ -232,7 +235,7 @@ export const MyRoomScreen: React.FC = () => {
   }, [leaveOn, leaveIn]);
 
   // One button for the piece in reach — the World's Enter, in the same place. Leave wins at the door.
-  const itemOn = !!nearItem && nearItem.action !== '' && controlsOn && !leaveOn;
+  const itemOn = !!nearItem && nearItem.action !== '' && controlsOn && !leaveOn && !atBook;
   const itemActing = !!nearItem && !!acting && acting.uid === nearItem.uid;
   const itemLabel = nearItem && nearItem.action !== ''
     ? t(myRoomActLabel(nearItem.action, itemActing, lampOn[nearItem.uid] !== false))
@@ -243,11 +246,9 @@ export const MyRoomScreen: React.FC = () => {
     else bridge.sendMyRoomAct(nearItem.uid, nearItem.action);
   };
 
-  // Closing the diary ends the desk's act (the camera eases back) when the book opened it.
-  const goDiary = useCallback((next: DiaryRoute | null) => {
-    setDiary(next);
-    if (!next && acting?.action === 'write') bridge.endMyRoomAct();
-  }, [acting, bridge]);
+  // Closing the diary returns to the open book when the desk opened it (the camera stays on the page,
+  // which now shows what was just written); its bar's Back ends the act.
+  const goDiary = useCallback((next: DiaryRoute | null) => setDiary(next), []);
   const openDiary = () => {
     sfx.tap();
     setDiary({ screen: 'list' });
@@ -408,12 +409,12 @@ export const MyRoomScreen: React.FC = () => {
       <View
         pointerEvents="box-none"
         style={[styles.stick, { left: safe.left + spacing.xs, bottom: bottomPad + ROW + spacing.xs }]}>
-        <WorldJoystick visible={controlsOn} />
+        <WorldJoystick visible={controlsOn && !atBook} />
       </View>
 
       {/* Run, over share: MYROOM_RUN, never WORLD_RUN (that would set the WORLD's run for the way
           back). Gold while on. */}
-      {controlsOn && (
+      {controlsOn && !atBook && (
         <View pointerEvents="box-none" style={[styles.run, { right: safe.right + spacing.lg - (RUN - ROW - 4) / 2, bottom: bottomPad + ROW + spacing.lg }]}>
           <RingButton testID="myroom-run" icon="run" size={RUN} label={t('world.run')} active={running} onPress={toggleRun} />
         </View>
@@ -454,12 +455,20 @@ export const MyRoomScreen: React.FC = () => {
         />
       )}
 
+      {atBook && controlsOn && (
+        <DiaryBookBar
+          onRead={() => setDiary({ screen: 'list' })}
+          onWrite={() => setDiary({ screen: 'write' })}
+          onBack={() => bridge.endMyRoomAct()}
+        />
+      )}
+
       {/* At the door: the way out, where the world puts Enter. Hidden with the stick (shop open). */}
       {leaveOn && (
         <Animated.View
           pointerEvents="box-none"
           testID="myroom-leave"
-          style={[styles.leaveWrap, { bottom: safe.bottom + (landscape ? 150 : 250), opacity: leaveIn, transform: [{ scale: leaveIn }] }]}>
+          style={[styles.leaveWrap, { bottom: safe.bottom + (landscape ? MYROOM_LIFT.landscape : MYROOM_LIFT.portrait), opacity: leaveIn, transform: [{ scale: leaveIn }] }]}>
           <Pressable
             onPress={toWorld}
             accessibilityRole="button"
