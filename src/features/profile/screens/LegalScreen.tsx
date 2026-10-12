@@ -8,6 +8,7 @@ import { colors, spacing, typography } from '../../../shared/theme';
 import { useLanguageStore } from '../../../shared/i18n';
 import { docFor } from '../data/legalDocs';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 /**
  * Terms and the privacy policy, in the app rather than behind a link.
@@ -36,6 +37,7 @@ export const LegalScreen: React.FC = () => {
             ))}
           </View>
         ))}
+        <MiniPlayerSpacer />
       </ScrollView>
     </SafeAreaView>
   );

@@ -19,6 +19,7 @@ import { JOURNEYS } from '../../journey/data/journeys';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useLang } from '../../../shared/i18n';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 /**
  * 아카이브 — the tab.
@@ -259,6 +260,7 @@ export const ArchiveScreen: React.FC = () => {
             ))}
           </View>
         )}
+        <MiniPlayerSpacer />
       </ScrollView>
     </SafeAreaView>
   );

@@ -17,6 +17,7 @@ import type { CounselingTopic } from '../types';
 import { saveSajuProfile } from '../api/prayersServer';
 import { sfx } from '../../../shared/audio/sfx';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -141,6 +142,7 @@ export const CounselingSubjectScreen: React.FC = () => {
             <Text style={styles.addLabel}>{t('subject.add')}</Text>
           </Pressable>
         </View>
+        <MiniPlayerSpacer />
       </ScrollView>
 
       <View style={styles.footer}>

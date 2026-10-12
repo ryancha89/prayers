@@ -18,6 +18,7 @@ import {
   type AttendanceStatus,
 } from '../api/attendance';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 type Rt = RouteProp<RootStackParamList, 'Attendance'>;
 
@@ -220,6 +221,7 @@ export const AttendanceScreen: React.FC = () => {
             <Text style={styles.ruleText}>{t(k)}</Text>
           </View>
         ))}
+        <MiniPlayerSpacer />
       </ScrollView>
     </SafeAreaView>
   );

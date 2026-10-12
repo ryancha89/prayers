@@ -17,6 +17,7 @@ import { dropLocalPhotos } from '../../myroom/diary/photos';
 import { MemoryEditor } from '../components/MemoryEditor';
 import { chartFromFields, pillarsText } from '../../saju/chart';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 type Rt = RouteProp<RootStackParamList, 'ArchiveSection'>;
 
@@ -220,6 +221,7 @@ export const ArchiveSectionScreen: React.FC = () => {
             </Pressable>
           ),
         )}
+        <MiniPlayerSpacer />
       </ScrollView>
     </SafeAreaView>
   );

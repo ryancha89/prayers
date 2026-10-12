@@ -4,6 +4,7 @@ import { spacing } from '../../../shared/theme';
 import { CounselorSummary } from '../types';
 import { CounselorCard } from './CounselorCard';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 /**
  * Two-column vertical feed (spec §6). Header/category tabs are passed through
@@ -32,7 +33,7 @@ export const CounselorGrid: React.FC<{
       // than the screen (they keep their aspect).
       contentContainerStyle={[styles.content, column]}
       ListHeaderComponent={ListHeaderComponent}
-      ListFooterComponent={ListFooterComponent}
+      ListFooterComponent={<>{ListFooterComponent}<MiniPlayerSpacer /></>}
       showsVerticalScrollIndicator={false}
     />
   );

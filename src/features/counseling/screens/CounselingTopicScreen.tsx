@@ -15,6 +15,7 @@ import { fetchTopics, type TopicCard } from '../api/prayersServer';
 import { groupTopicsFor } from '../topicsForCounselor';
 import { sfx } from '../../../shared/audio/sfx';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -149,6 +150,7 @@ export const CounselingTopicScreen: React.FC = () => {
             </View>
           </View>
         ))}
+        <MiniPlayerSpacer />
       </ScrollView>
 
       <View style={styles.footer}>

@@ -18,6 +18,7 @@ import { fetchTicketBalance } from '../../counseling/api/tickets';
 import { sfx } from '../../../shared/audio/sfx';
 import { useAuthStore } from '../../auth/store/authStore';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 /** Simple profile page mirroring the reference structure (spec §33). */
 export const MyPageScreen: React.FC = () => {
@@ -168,6 +169,7 @@ export const MyPageScreen: React.FC = () => {
             onPress={() => navigation.navigate('Legal', { doc: 'privacy' })}
           />
         </Section>
+        <MiniPlayerSpacer />
       </ScrollView>
     </SafeAreaView>
   );

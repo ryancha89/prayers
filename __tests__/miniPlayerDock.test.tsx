@@ -22,6 +22,7 @@ jest.mock('react-native-safe-area-context', () => ({
 import { JourneyMiniPlayer } from '../src/features/journey/components/JourneyMiniPlayer';
 import { useJourneyPlayer } from '../src/features/journey/player/journeyPlayer';
 import { useBottomDock } from '../src/shared/layout/bottomDock';
+import { MiniPlayerSpacer, useMiniPlayerInset } from '../src/shared/layout/miniPlayerInset';
 
 const barStyle = (tree: ReactTestRenderer.ReactTestRenderer) =>
   StyleSheet.flatten(tree.root.findAll(n => n.props.accessibilityRole === 'button')[0].props.style);
@@ -48,5 +49,22 @@ describe('the journey mini player', () => {
     const s = barStyle(tree);
     expect(s.left).toBeGreaterThanOrEqual(62);
     expect(s.right).toBeGreaterThanOrEqual(62);
+  });
+
+  // Sim 12-10, Conversations: the last rows sat under the bar with no way to scroll them free.
+  it('tells the scrolling screens how much it covers, and gives it back when it hides', () => {
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    act(() => { tree = ReactTestRenderer.create(<JourneyMiniPlayer aboveTabs hidden={false} onOpen={() => {}} />); });
+    const bar = tree.root.findAll(n => n.props.accessibilityRole === 'button')[0];
+    act(() => bar.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 64 } } }));
+    expect(useMiniPlayerInset.getState().height).toBe(64 + 16);
+
+    let spacer!: ReactTestRenderer.ReactTestRenderer;
+    act(() => { spacer = ReactTestRenderer.create(<MiniPlayerSpacer />); });
+    expect(StyleSheet.flatten(spacer.root.findByProps({ testID: 'mini-player-spacer' }).props.style).height).toBe(80);
+
+    act(() => tree.update(<JourneyMiniPlayer aboveTabs hidden onOpen={() => {}} />));
+    expect(useMiniPlayerInset.getState().height).toBe(0);
+    expect(spacer.toJSON()).toBeNull();
   });
 });
