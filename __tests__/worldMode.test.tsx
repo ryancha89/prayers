@@ -371,6 +371,19 @@ describe('the World screen', () => {
     act(() => node.props.onPress());
   };
   const overlayOpen = (zone: string) => tree!.root.findAll(n => n.props.testID === `world-overlay-${zone}`).length > 0;
+  /** A door's card: since 12-10 only a door Unity never walked through shows one (the fallback) —
+   *  ENTERED goes straight to the door's screen. */
+  const cardOf = async (zone: string) => {
+    const was = worldTiming.enterFallbackMs;
+    worldTiming.enterFallbackMs = 5;
+    try {
+      fromUnity({ type: 'WORLD_ARRIVED', payload: { zone } });
+      await act(async () => { await new Promise(r => setTimeout(r, 25)); });
+    } finally {
+      worldTiming.enterFallbackMs = was;
+    }
+    expect(overlayOpen(zone)).toBe(true);
+  };
 
   it('opens the world at the saved spot, and replays the insets when it answers', async () => {
     await render();
@@ -416,9 +429,12 @@ describe('the World screen', () => {
     expect(byLabel('Map')).toBeUndefined();
     expect(byLabel('달리기')).toBeUndefined();
     expect(tree!.root.findAll(n => n.props.testID === 'world-look')).toHaveLength(0);
+    // Through the door: its own screen, not a card over the world (12-10), the host down first.
     fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'meditation' } });
-    expect(overlayOpen('meditation')).toBe(true);
-    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(overlayOpen('meditation')).toBe(false);
+    expect(mockNav.calls.map(c => c.args)).toEqual([['MeditationRoom']]);
+    expect(mockNav.calls[0].hostUnmounts).toBe(1);
+    expect(useWorldStore.getState().returnZone).toBe('meditation');
   });
 
   it('walking into a doorway (WORLD_ARRIVED): Unity opens the door itself, the screen waits for ENTERED', async () => {
@@ -429,7 +445,18 @@ describe('the World screen', () => {
     expect(anyOverlay()).toBe(0);
     expect(stickShown()).toBe(false);
     fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'shop' } });
-    expect(overlayOpen('shop')).toBe(true);
+    expect(overlayOpen('shop')).toBe(false);
+    expect(mockNavigate).toHaveBeenCalledWith('Tickets');
+    expect(useWorldStore.getState().returnZone).toBe('shop');
+  });
+
+  it('through the counseling door: Home’s counselor list, with the way back at that door', async () => {
+    await render();
+    fromUnity({ type: 'WORLD_READY' });
+    throughDoor('counseling');
+    expect(anyOverlay()).toBe(0);
+    expect(mockNavigate).toHaveBeenCalledWith('Tabs', { screen: 'Home' });
+    expect(useWorldStore.getState().returnZone).toBe('counseling');
   });
 
   it('개인실 through its door goes straight into My Room, the host down first', async () => {
@@ -479,11 +506,14 @@ describe('the World screen', () => {
       fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'garden' } });
       expect(anyOverlay()).toBe(0);
       fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'counseling' } });
-      expect(overlayOpen('counseling')).toBe(true);
-      press('닫기');
+      expect(anyOverlay()).toBe(0);
+      expect(mockNavigate).toHaveBeenCalledWith('Tabs', { screen: 'Home' });
       await act(async () => { await new Promise(r => setTimeout(r, 70)); });
       expect(anyOverlay()).toBe(0);                     // no second card from a stale timer
       // Out of the world mid-walk (the host goes down): no card pops over whatever comes next.
+      act(() => tree!.unmount());
+      await render();
+      fromUnity({ type: 'WORLD_READY' });
       fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'shop' } });
       fire('blur');
       await act(async () => { await new Promise(r => setTimeout(r, 70)); });
@@ -504,8 +534,7 @@ describe('the World screen', () => {
 
   it('상담의 방: four counsellors with rooms first; 상담하기 takes the host down, then opens the counsellor', async () => {
     await render();
-    throughDoor('counseling');
-    expect(overlayOpen('counseling')).toBe(true);
+    await cardOf('counseling');
     const roster = counselingRoster('ko');
     press(roster[1].name);
     press('상담하기 →');
@@ -520,7 +549,6 @@ describe('the World screen', () => {
   it('back from the room: the host waits for the room to go, then the world opens at that door', async () => {
     await render();
     throughDoor('meditation');
-    press('명상 시작하기 →');
     expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
     fire('blur');
     mockPosted.length = 0;
@@ -541,7 +569,6 @@ describe('the World screen', () => {
     try {
       await render();
       throughDoor('meditation');
-      press('명상 시작하기 →');
       expect(mockHost.unmounts).toBe(1);
       expect(mockNavigate).not.toHaveBeenCalled();
       act(() => { jest.advanceTimersByTime(460); });
@@ -557,7 +584,6 @@ describe('the World screen', () => {
     try {
       await render();
       throughDoor('meditation');
-      press('명상 시작하기 →');
       fire('focus');
       act(() => { jest.advanceTimersByTime(HOST_REMOUNT_FALLBACK_MS + 10); });
       expect(mockHost.mounts).toBe(2);
@@ -568,7 +594,7 @@ describe('the World screen', () => {
 
   it('명상의 방: the four session chips all open the one meditation room', async () => {
     await render();
-    throughDoor('meditation');
+    await cardOf('meditation');
     for (const chip of ['호흡 명상', '수면 명상', '마음 안정', '에너지 충전']) expect(byLabel(chip)).toBeDefined();
     press('수면 명상');
     expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
@@ -576,7 +602,7 @@ describe('the World screen', () => {
 
   it('운세 여행의 방: boards the 2027 journey, or resumes the one under way', async () => {
     await render();
-    throughDoor('journey');
+    await cardOf('journey');
     expect(tree!.root.findAll(n => n.props.children === '이제, 2027년으로 출발할까요?').length).toBeGreaterThan(0);
     press('기차에 탑승하기 →');
     expect(mockNavigate).toHaveBeenCalledWith('JourneyCounselor', { journeyId: NEWYEAR_2027.id });
@@ -586,14 +612,14 @@ describe('the World screen', () => {
     mockNavigate.mockClear();
     useJourneyPlayer.setState({ journeyId: NEWYEAR_2027.id, status: 'paused' } as never);
     await render();
-    throughDoor('journey');
+    await cardOf('journey');
     press('여행 이어가기 →');
     expect(mockNavigate).toHaveBeenCalledWith('Journey');
   });
 
   it('상점: the four aisles are coming soon, and 코인 충전 opens the coin shop over the world', async () => {
     await render();
-    throughDoor('shop');
+    await cardOf('shop');
     for (const tab of ['의상', '캐릭터', '배경', '아이템']) {
       expect(tree!.root.findAll(n => n.props.accessibilityLabel === tab).length).toBeGreaterThan(0);
     }
@@ -619,7 +645,7 @@ describe('the World screen', () => {
 
   it('상담사 둘러보기 and the 2D button go back to the Home tab', async () => {
     await render();
-    throughDoor('counseling');
+    await cardOf('counseling');
     press('상담사 둘러보기');
     expect(mockNavigate).toHaveBeenLastCalledWith('Tabs', { screen: 'Home' });
     press('홈으로');
@@ -633,10 +659,12 @@ describe('the World screen', () => {
     for (const label of ['상담의 방', '명상의 방', '운세 여행의 방', '상점', '개인실']) expect(byLabel(label)).toBeDefined();
     press('운세 여행의 방');
     expect(posts('WORLD_GOTO').map(p => p.payload)).toEqual([{ zone: 'journey' }]);
-    // Unity walks there and says so.
+    // Unity walks there, through the door, and the journey's own screen opens.
     throughDoor('journey');
-    expect(overlayOpen('journey')).toBe(true);
-    press('닫기');
+    expect(mockNavigate).toHaveBeenLastCalledWith('JourneyCounselor', { journeyId: NEWYEAR_2027.id });
+    act(() => tree!.unmount());
+    tree = null;
+    await render();
 
     press('Quest');
     expect(tree!.root.findAll(n => n.props.testID === 'world-sheet-quest').length).toBeGreaterThan(0);
@@ -664,7 +692,7 @@ describe('the World screen', () => {
     expect(posts('WORLD_RUN').map(p => p.payload)).toEqual([{ on: true }, { on: false }]);
     // The analogue stick (02-10) is on screen; its maths is pinned in 'the world stick' below.
     expect(tree!.root.findAll(n => n.props.testID === 'world-joystick').length).toBeGreaterThan(0);
-    throughDoor('shop');
+    await cardOf('shop');
     // An overlay hides the stick; a stick at rest has nothing to stop, so nothing stray is sent.
     expect(tree!.root.findAll(n => n.props.testID === 'world-joystick').length).toBe(0);
   });
@@ -703,7 +731,7 @@ describe('the World screen', () => {
 
   it('landscape: the sheet is the right-hand panel, and a rotation never remounts the host', async () => {
     await render();
-    throughDoor('counseling');
+    await cardOf('counseling');
     rotate(IPHONE_17_SIDE);
     const sheet = tree!.root.findAll(n => typeof n.props.onLayout === 'function' && StyleSheet.flatten(n.props.style)?.borderLeftWidth === 1)[0];
     expect(sheet).toBeDefined();

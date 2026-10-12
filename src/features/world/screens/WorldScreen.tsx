@@ -89,8 +89,8 @@ export function worldCoveredPx(r: MeasuredRects, landscape: boolean) {
  *
  * DOORS OPEN (06-10, spec 004 "Enter opens the door"). Enter sends WORLD_ENTER and the screen shows
  * nothing over the world — no stick, no Enter, no buttons — while Unity walks the player to the door,
- * opens it and walks him through; WORLD_ENTERED then opens what WORLD_ARRIVED used to (the zone's
- * card; My Room goes straight in). Unity runs the same walk by itself when the player walks into a
+ * opens it and walks him through; WORLD_ENTERED then goes straight to that door's screen (since
+ * 12-10; it used to open the zone's card over the world). Unity runs the same walk by itself when the player walks into a
  * doorway or an auto-walk arrives, so WORLD_ARRIVED is now only "a door is opening": wait for ENTERED.
  * Either wait ends in the card if ENTERED never comes (worldTiming.enterFallbackMs).
  *
@@ -304,13 +304,25 @@ export const WorldScreen: React.FC = () => {
     myroom: () => leaveTo('myroom', () => navigation.navigate('MyRoom')),
   };
 
-  /** Through the door: My Room is entered for real; every other door opens its card over the world. */
+  /**
+   * Through the door: straight into that door's own screen (12-10, user: the rooms belong on their
+   * screens, not as a card over the map). The doors without a room of their own go to the 2D screen
+   * that does the job: counseling → Home's counselor list, shop → Tickets. Each leaves through
+   * leaveTo, so coming back puts the player on that door's step. The cards (ZoneOverlay) remain for
+   * the fallback below and for a world still loading.
+   */
   const throughDoor = (zone: WorldZone) => {
     clearEnterTimer();
     setEntering(null);
     setSheet(null);
-    if (zone === 'myroom') actions.myroom();
-    else setOverlay(zone);
+    doorScreen[zone]();
+  };
+  const doorScreen: Record<WorldZone, () => void> = {
+    counseling: () => leaveTo('counseling', () => navigation.navigate('Tabs', { screen: 'Home' })),
+    meditation: actions.meditate,
+    journey: actions.journey,
+    shop: () => leaveTo('shop', () => navigation.navigate('Tickets')),
+    myroom: actions.myroom,
   };
   door.current = {
     wait: zone => {

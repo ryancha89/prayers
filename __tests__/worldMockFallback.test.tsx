@@ -74,7 +74,9 @@ it('is the drawn hub: no UnityView, its doors open the overlays, and Map arrives
   press('Map');
   const sheet = tree.root.findAll(n => n.props.testID === 'world-sheet-map')[0];
   act(() => sheet.findAll(n => n.props.accessibilityLabel === '상점' && typeof n.props.onPress === 'function')[0].props.onPress());
-  expect(open('shop')).toBe(true);
+  // …and through the door at once: the shop's own screen (12-10), not a card over the hub.
+  expect(open('shop')).toBe(false);
+  expect(mockNavigate).toHaveBeenLastCalledWith('Tickets');
 
   // Enter on the mock: no door to open, it is through at once (WORLD_ENTERED).
   const seen: string[] = [];
