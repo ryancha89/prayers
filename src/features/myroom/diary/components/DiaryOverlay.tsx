@@ -15,7 +15,7 @@ import { DiaryJourneySheet } from './DiaryJourneySheet';
  *  UnityView stays mounted under them, and closing one is the room again. */
 export type DiaryRoute =
   | { screen: 'write'; editId?: string; kind?: DiaryKind; from?: DiaryRoute }
-  | { screen: 'saved'; id: string }
+  | { screen: 'saved'; id: string; from?: DiaryRoute }
   | { screen: 'list' }
   | { screen: 'detail'; id: string; from?: DiaryRoute }
   | { screen: 'calendar' }
@@ -52,16 +52,18 @@ export const DiaryOverlay: React.FC<{
           editing={editing}
           initialKind={route.kind}
           onClose={() => go(route.from ?? null)}
-          onSaved={m => go({ screen: 'saved', id: m.id })}
+          // Saved asks for the (new) reflection, then closes back to where Write was opened from —
+          // My Diary, the entry's Detail after an edit, or the room.
+          onSaved={m => go({ screen: 'saved', id: m.id, from: route.from })}
         />
       );
     case 'saved':
       return (
         <DiarySavedSheet
           memoryId={route.id}
-          onView={() => go({ screen: 'detail', id: route.id })}
+          onView={() => go({ screen: 'detail', id: route.id, from: route.from })}
           onTalk={() => talk(route.id)}
-          onClose={() => go(null)}
+          onClose={() => go(route.from ?? null)}
         />
       );
     case 'list':

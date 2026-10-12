@@ -209,8 +209,8 @@ export const CounselingRoomScreen: React.FC = () => {
               sessionId: params.sessionId,
               tone: toneForCharacter(counselor?.characterId),
               chatMode: mode,
-              // The diary entry this room was opened from rides on the first server turn only.
-              focusMemoryId: useCounselingStore.getState().takeFocus(),
+              // The diary entry this room was opened from rides on every turn of this visit.
+              focusMemoryId: useCounselingStore.getState().currentFocus(),
             });
       // The scenes go with the words. Dropping them here is what kept the server's break-up from
       // ever reaching a bubble — the greeting has none, and that is correct: it is the room's own
@@ -266,8 +266,8 @@ export const CounselingRoomScreen: React.FC = () => {
   useEffect(() => {
     return () => {
       getUnityBridge().closeCounselingRoom();
-      // A diary focus nobody asked a question with must not ride into the next session.
-      useCounselingStore.getState().takeFocus();
+      // The diary focus belongs to this visit: a resumed or different session opens without it.
+      useCounselingStore.getState().clearFocus();
     };
   }, []);
 

@@ -6,6 +6,9 @@ import { signedOut } from '../store/authStore';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
 import { useFavoritesStore } from '../../counselors/store/favoritesStore';
+import { useArchiveStore } from '../../archive/store/archiveStore';
+import { useDiaryStore } from '../../myroom/diary/diaryStore';
+import { forgetAllLocalPhotos } from '../../myroom/diary/photos';
 
 /** A self with no birth data — the same shape first run starts from, so the app asks again. */
 const EMPTY_SELF = { id: 'self', displayName: '', isUser: true as const };
@@ -64,6 +67,11 @@ export async function forgetLocalData() {
   useSubjectsStore.setState({ self: EMPTY_SELF, subjects: [], profileDeferred: false });
   useConversationsStore.setState({ byId: {}, order: [] });
   useFavoritesStore.setState({ ids: [] });
+  // The 아카이브 and the diary (spec 006) too: left in memory, the next person would see these
+  // entries on the desk book, and their still-dirty rows and photos would push into that account.
+  useArchiveStore.setState({ memories: [], discoveries: [], dirty: [], deleted: [], answeredQuestions: [], lastSyncedAt: undefined });
+  useDiaryStore.setState({ reflections: {}, photos: {}, photoDeletes: [] });
+  await forgetAllLocalPhotos();
 
   try {
     // `removeItem` one at a time rather than multiRemove: this build's AsyncStorage typing does

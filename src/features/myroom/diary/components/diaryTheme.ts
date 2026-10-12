@@ -23,7 +23,8 @@ export const diaryStyles = StyleSheet.create({
   label: { ...typography.caption, color: colors.textSecondary, marginBottom: spacing.xs },
   panel: { backgroundColor: PANEL, borderRadius: radius.md, padding: spacing.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   body: { ...typography.body, color: colors.textPrimary, lineHeight: 22 },
-  muted: { ...typography.caption, color: colors.textMuted },
+  // textSecondary, not textMuted: #6E6E82 on the indigo sheet is 3.6:1, under 4.5:1 for 13pt text.
+  muted: { ...typography.caption, color: colors.textSecondary },
   gold: {
     borderRadius: radius.pill, paddingVertical: spacing.md, alignItems: 'center',
     backgroundColor: colors.gold,

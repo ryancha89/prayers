@@ -3,6 +3,9 @@ import { apiHeaders, authedFetch } from '../../auth/api/headers';
 import { devlog } from '../../../shared/devlog';
 import { pushArchive, syncArchive } from '../../archive/api/memoriesApi';
 import { useArchiveStore } from '../../archive/store/archiveStore';
+import { isDiaryKind } from '../../archive/types';
+import { useLanguageStore } from '../../../shared/i18n/store';
+import { currentLocalUri } from './photos';
 import { readPhotos, readReflection, useDiaryStore, type DiaryReflection, type ServerPhoto } from './diaryStore';
 
 /**
@@ -205,6 +208,11 @@ export function flushPhotos(): Promise<void> {
 }
 
 async function runFlush(): Promise<void> {
+  // Deletes first: the server counts a photo still owed a delete toward the entry's limit, so a
+  // replaced photo uploaded before the delete would be refused as over it.
+  for (const d of [...useDiaryStore.getState().photoDeletes]) {
+    if (await deleteServerPhoto(d.memoryId, d.photoId)) useDiaryStore.getState().photoDeleted(d.memoryId, d.photoId);
+  }
   const diary = useDiaryStore.getState();
   const { dirty, memories } = useArchiveStore.getState();
   const known = new Set(memories.map(m => m.id));
@@ -212,19 +220,48 @@ async function runFlush(): Promise<void> {
     if (!known.has(memoryId) || dirty.includes(memoryId)) continue;
     for (const p of list) {
       if (p.uploaded || p.refused || !p.localUri) continue;
-      const r = await uploadPhoto(memoryId, { id: p.id, localUri: p.localUri, position: p.position });
+      const localUri = currentLocalUri(p.localUri)!;
+      const r = await uploadPhoto(memoryId, { id: p.id, localUri, position: p.position });
       if (r.ok) useDiaryStore.getState().markUploaded(memoryId, r.photo);
       else if (__DEV__) devlog(`[diary] photo upload ${r.status} ${r.code ?? ''}`);
       // A refusal that retrying cannot fix (too big, wrong type, over the limit) is not retried
-      // forever: the photo stays on the phone, and the queue moves on.
-      if (!r.ok && (r.status === 413 || r.status === 415 || r.code === 'PHOTO_LIMIT' || r.code === 'PHOTO_TYPE')) {
+      // forever: the photo stays on the phone, and the queue moves on. Over the limit is final only
+      // when no delete is still owed on the entry — one that failed this run frees a slot later.
+      const deletesOwed = useDiaryStore.getState().photoDeletes.some(d => d.memoryId === memoryId);
+      const limit = r.ok ? false : r.code === 'PHOTO_LIMIT' && !deletesOwed;
+      if (!r.ok && (r.status === 413 || r.status === 415 || limit || r.code === 'PHOTO_TYPE')) {
         useDiaryStore.getState().markRefused(memoryId, p.id);
       }
     }
   }
-  for (const d of [...useDiaryStore.getState().photoDeletes]) {
-    if (await deleteServerPhoto(d.memoryId, d.photoId)) useDiaryStore.getState().photoDeleted(d.memoryId, d.photoId);
-  }
+}
+
+/** How far back a sync looks for an entry that never got its reflection (written offline, or in the
+ *  아카이브 tab), and how many it asks for at once: older rows predate the feature, and the server
+ *  caps reflections per day. */
+const CATCH_UP_DAYS = 14;
+const CATCH_UP_MAX = 3;
+
+/**
+ * Ask for the reflections a Save could not: an entry saved offline, or written or edited in the
+ * 아카이브 tab, has none (or a stale one) until something requests it — the Saved screen is the only
+ * other caller. Only rows already on the server; no polling, the next pull brings the result.
+ */
+export async function catchUpReflections(lang: string): Promise<number> {
+  const { memories, dirty } = useArchiveStore.getState();
+  const { reflections } = useDiaryStore.getState();
+  const since = Date.now() - CATCH_UP_DAYS * 86400000;
+  const due = memories
+    // An entry with its AI switch off is never asked about (US2-3).
+    .filter(m => isDiaryKind(m.category) && m.aiEnabled !== false && !dirty.includes(m.id))
+    .filter(m => {
+      const r = reflections[m.id];
+      if (r) return r.stale;
+      return Date.parse(m.updatedAt) >= since;
+    })
+    .slice(0, CATCH_UP_MAX);
+  for (const m of due) await requestReflection(m.id, lang);
+  return due.length;
 }
 
 /** The diary's sync: the 아카이브 both ways (entries, and their reflections and photos on the
@@ -232,4 +269,5 @@ async function runFlush(): Promise<void> {
 export async function syncDiary(): Promise<void> {
   await syncArchive();
   await flushPhotos();
+  await catchUpReflections(useLanguageStore.getState().lang);
 }

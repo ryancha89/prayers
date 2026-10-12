@@ -7,9 +7,12 @@ import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { sfx } from '../../../shared/audio/sfx';
 import { useScreen } from '../../../shared/device/screen';
 
-/** How far above the safe bottom the prompt floats: clear of the stick's zone (bottom-left, 220pt)
- *  and, in the world, of the run / Map / Quest / Menu stack on the right. Exported for the tests. */
-export const PROMPT_LIFT = { portrait: 250, landscape: 150 };
+/** How far above the safe bottom the prompt floats. Portrait: clear of the stick's zone (bottom-left,
+ *  220pt) and, in the world, of the run / Map / Quest / Menu stack on the right. Landscape: low, near
+ *  the bottom edge — the pill is centred, so it already sits between the stick's corner and the
+ *  right-hand stack, and the old 150pt put it level with the third-person player's head (08-10
+ *  screenshot, the walk-in room's Talk). Exported for the tests. */
+export const PROMPT_LIFT = { portrait: 250, landscape: 20 };
 
 /**
  * The gold "you can do something here" pill: the world's Enter at a door, and the consultation

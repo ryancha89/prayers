@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '../../../../shared/components/Text';
+import { Text, TextInput } from '../../../../shared/components/Text';
 import { Icon } from '../../../../shared/components/Icon';
 import { colors, radius, spacing, typography } from '../../../../shared/theme';
 import { useT, type TranslationKey } from '../../../../shared/i18n';
@@ -49,6 +49,11 @@ export const DiaryListSheet: React.FC<{
       (!q || m.content.toLocaleLowerCase().includes(q)),
     );
   }, [memories, filter, view, query]);
+  // Say why the list is empty: a search miss, no favourites, none of this kind — or truly none yet.
+  const emptyKey: TranslationKey = query.trim() ? 'diary.list.noMatch'
+    : view === 'favorites' ? 'diary.list.emptyFavorites'
+      : filter !== 'all' ? 'diary.list.emptyKind'
+        : 'diary.list.empty';
 
   const tabs: { id: string; label: TranslationKey; on: boolean; press(): void }[] = [
     { id: 'all', label: 'diary.list.all', on: view === 'all', press: () => setView('all') },
@@ -81,7 +86,9 @@ export const DiaryListSheet: React.FC<{
           <View style={styles.viewTabs}>
             {tabs.map(tab => (
               <Pressable key={tab.id} testID={`diary-view-${tab.id}`} onPress={() => { sfx.tap(); tab.press(); }}
-                accessibilityRole="tab" accessibilityState={{ selected: tab.on }} style={[styles.viewTab, tab.on && styles.viewTabOn]}>
+                // Calendar and Mood open their own screens: buttons, not tabs.
+                accessibilityRole={tab.id === 'calendar' || tab.id === 'mood' ? 'button' : 'tab'} accessibilityState={{ selected: tab.on }}
+                style={[styles.viewTab, tab.on && styles.viewTabOn]}>
                 <Text style={[styles.viewTabText, tab.on && styles.viewTabTextOn]} numberOfLines={1}>{t(tab.label)}</Text>
               </Pressable>
             ))}
@@ -103,12 +110,12 @@ export const DiaryListSheet: React.FC<{
           data={rows}
           keyExtractor={m => m.id}
           contentContainerStyle={[styles.list, column, { paddingBottom: safe.bottom + 96 }]}
-          ListEmptyComponent={<Text style={[s.muted, styles.empty]} testID="diary-list-empty">{t('diary.list.empty')}</Text>}
+          ListEmptyComponent={<Text style={[s.muted, styles.empty]} testID="diary-list-empty">{t(emptyKey)}</Text>}
           renderItem={({ item: m }) => <DiaryRow memory={m} onOpen={onOpen} />}
         />
         <Pressable testID="diary-list-write" accessibilityRole="button" accessibilityLabel={t('diary.list.write')}
           onPress={() => { sfx.tap(); onWrite(filter === 'all' ? undefined : filter); }}
-          style={({ pressed }) => [styles.fab, { bottom: safe.bottom + spacing.lg }, pressed && s.pressed]}>
+          style={({ pressed }) => [styles.fab, { bottom: safe.bottom + spacing.lg, right: safe.right + spacing.lg }, pressed && s.pressed]}>
           <Icon name="pen" size={22} color={INK} />
         </Pressable>
       </View>
@@ -119,9 +126,10 @@ export const DiaryListSheet: React.FC<{
 const styles = StyleSheet.create({
   headIcons: { flexDirection: 'row', gap: spacing.md },
   tabs: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.sm },
-  viewTabs: { flexDirection: 'row', gap: spacing.xs },
-  viewTab: { flex: 1, paddingVertical: 7, borderRadius: radius.pill, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)' },
-  viewTabOn: { backgroundColor: colors.violet },
+  // Text tabs over a hairline (the views), so they never read as a second row of the kind pills under them.
+  viewTabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.10)' },
+  viewTab: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  viewTabOn: { borderBottomColor: colors.gold },
   viewTabText: { ...typography.caption, color: colors.textSecondary, fontWeight: '700' },
   viewTabTextOn: { color: colors.textPrimary },
   search: {
@@ -131,7 +139,7 @@ const styles = StyleSheet.create({
   list: { padding: spacing.lg, gap: spacing.sm },
   empty: { textAlign: 'center', marginTop: spacing.xxl },
   fab: {
-    position: 'absolute', right: spacing.lg, width: 56, height: 56, borderRadius: 28,
+    position: 'absolute', width: 56, height: 56, borderRadius: 28,
     alignItems: 'center', justifyContent: 'center', backgroundColor: colors.gold,
     shadowColor: colors.gold, shadowOpacity: 0.45, shadowRadius: 10, shadowOffset: { width: 0, height: 0 },
   },

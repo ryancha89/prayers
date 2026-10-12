@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../../shared/components/Text';
@@ -12,13 +12,15 @@ import { pushArchive } from '../../../archive/api/memoriesApi';
 import { MOOD_ICON } from '../../../archive/types';
 import { MoodFace } from './MoodFace';
 import { useDiaryStore } from '../diaryStore';
+import { fetchReflection, REFLECTION_POLL_MS, REFLECTION_WAIT_MS } from '../diaryApi';
 import { diaryCounselorFor } from '../counselors';
 import { deleteDiaryEntry } from '../diaryActions';
 import { formatDay } from '../text';
 import { isFavorite, withFavorite } from '../stats';
-import { CounselorBubble } from './CounselorBubble';
+import { ReflectionNote } from './DiaryBubbles';
 import { TopicChips } from './TopicChips';
 import { DiaryImage } from './DiaryImage';
+import { PhotoViewer } from './PhotoViewer';
 import { SheetHead } from './SheetHead';
 import { diaryStyles as s } from './diaryTheme';
 
@@ -41,6 +43,21 @@ export const DiaryDetailSheet: React.FC<{
   const reflection = useDiaryStore(st => st.reflections[memoryId]);
   const photos = useDiaryStore(st => st.photos[memoryId]);
   const who = diaryCounselorFor(m?.details.counselor, lang);
+  const pending = reflection?.status === 'pending';
+  const [viewing, setViewing] = useState<number | null>(null);
+
+  // Opened while the counsellor is still writing (View Diary soon after Save, which stops its own
+  // polling on the way out): keep asking here, so the line does not stay "reading…" for the visit.
+  useEffect(() => {
+    if (!pending) return;
+    let waited = 0;
+    const timer = setInterval(() => {
+      waited += REFLECTION_POLL_MS;
+      if (waited > REFLECTION_WAIT_MS) { clearInterval(timer); return; }
+      fetchReflection(memoryId).catch(() => {});
+    }, REFLECTION_POLL_MS);
+    return () => clearInterval(timer);
+  }, [pending, memoryId]);
 
   if (!m) return null;
   const fav = isFavorite(m);
@@ -103,7 +120,12 @@ export const DiaryDetailSheet: React.FC<{
 
           {!!photos?.length && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
-              {photos.map(p => <DiaryImage key={p.id} localUri={p.localUri} url={p.url} style={styles.photo} />)}
+              {photos.map((p, i) => (
+                <Pressable key={p.id} testID={`diary-detail-photo-${i}`} onPress={() => { sfx.tap(); setViewing(i); }}
+                  accessibilityRole="imagebutton" accessibilityLabel={t('diary.photo.open', { n: i + 1, total: photos.length })}>
+                  <DiaryImage localUri={p.localUri} url={p.url} style={styles.photo} />
+                </Pressable>
+              ))}
             </ScrollView>
           )}
 
@@ -111,22 +133,30 @@ export const DiaryDetailSheet: React.FC<{
             <Text style={s.body} selectable testID="diary-detail-text">{m.content}</Text>
           </View>
 
-          <View style={{ gap: spacing.sm }}>
-            <Text style={styles.heading}>{t('diary.saved.reflection')}</Text>
-            <CounselorBubble counselor={who?.counselor} text={line} testID="diary-detail-reflection" />
-            {reflection?.stale && <Text style={s.muted}>{t('diary.detail.stale')}</Text>}
-            {reflection?.status === 'ready' && <TopicChips topics={reflection.topics} />}
-          </View>
+          {/* The page above is the player's own; the reflection is a reply card under it, with no
+              portrait (08-10, "the diary is for the user"), and none at all with the AI switch off. */}
+          {m.aiEnabled !== false && (
+            <View style={{ gap: spacing.sm }}>
+              <ReflectionNote title={t('diary.detail.reflection')} text={line} busy={pending} muted={reflection?.status !== 'ready' && reflection?.status !== 'fallback'} testID="diary-detail-reflection" />
+              {reflection?.stale && <Text style={s.muted}>{t('diary.detail.stale')}</Text>}
+              {reflection?.status === 'ready' && <TopicChips topics={reflection.topics} />}
+            </View>
+          )}
 
-          <Pressable testID="diary-detail-talk" disabled={!who} onPress={() => { sfx.select(); onTalk(); }} accessibilityRole="button"
-            style={({ pressed }) => [s.gold, !who && s.disabled, pressed && s.pressed]}>
-            <Text style={s.goldText}>{t('diary.saved.talk')}</Text>
-          </Pressable>
+          {!!who && (
+            <Pressable testID="diary-detail-talk" onPress={() => { sfx.select(); onTalk(); }} accessibilityRole="button"
+              style={({ pressed }) => [s.ghost, pressed && s.pressed]}>
+              <Text style={s.ghostText}>{t('diary.saved.talkWith', { name: who.counselor.name })}</Text>
+            </Pressable>
+          )}
           <Pressable testID="diary-detail-delete" onPress={del} accessibilityRole="button" style={styles.delete}>
             <Text style={styles.deleteText}>{t('diary.detail.delete')}</Text>
           </Pressable>
         </ScrollView>
       </View>
+      {viewing != null && !!photos?.length && (
+        <PhotoViewer photos={photos} start={Math.min(viewing, photos.length - 1)} onClose={() => setViewing(null)} />
+      )}
     </View>
   );
 };
@@ -138,7 +168,6 @@ const styles = StyleSheet.create({
   kind: { ...typography.caption, color: colors.textSecondary },
   strip: { gap: spacing.sm },
   photo: { width: 140, height: 140, borderRadius: radius.md },
-  heading: { ...typography.h3, color: colors.gold },
-  delete: { alignSelf: 'center', padding: spacing.sm },
+  delete: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.lg },
   deleteText: { ...typography.caption, color: '#F87171', fontWeight: '700' },
 });

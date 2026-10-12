@@ -42,7 +42,7 @@ export const KindTabs: React.FC<{
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.xs, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: radius.pill, padding: 3 },
-  tab: { flex: 1, paddingVertical: 7, borderRadius: radius.pill, alignItems: 'center' },
+  tab: { flex: 1, minHeight: 44, justifyContent: 'center', borderRadius: radius.pill, alignItems: 'center' },
   on: { backgroundColor: colors.gold },
   off: { opacity: 0.35 },
   text: { ...typography.caption, color: colors.textSecondary, fontWeight: '700' },

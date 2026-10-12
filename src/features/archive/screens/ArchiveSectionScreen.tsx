@@ -12,7 +12,8 @@ import type { RootStackParamList } from '../../../navigation/types';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useArchiveStore } from '../store/archiveStore';
 import { syncArchive } from '../api/memoriesApi';
-import { CATEGORY_ICON, FIELDS, KIND_ICON, MOOD_ICON, type ArchiveMemory } from '../types';
+import { CATEGORY_ICON, FIELDS, KIND_ICON, MOOD_ICON, isDiaryKind, type ArchiveMemory } from '../types';
+import { dropLocalPhotos } from '../../myroom/diary/photos';
 import { MemoryEditor } from '../components/MemoryEditor';
 import { chartFromFields, pillarsText } from '../../saju/chart';
 import { column } from '../../../shared/device/screen';
@@ -184,6 +185,8 @@ export const ArchiveSectionScreen: React.FC = () => {
               onCancel={() => setEditingId(null)}
               onDelete={() => {
                 remove(m.id);
+                // A diary-kind row's photos and reflection go with it (spec 006).
+                if (isDiaryKind(m.category)) dropLocalPhotos(m.id).catch(() => {});
                 after();
               }}
             />

@@ -958,24 +958,25 @@ describe('the furniture', () => {
 
   // Unity (07-10): ACT_STATE write active:true lands ~0.5 s after MYROOM_ACT, once the camera is on
   // the page; an ACT_END before that yields only active:false.
-  it('Write opens the diary only when the camera has landed; an early ACT_END opens nothing', async () => {
+  it('the book opens on its page when the camera has landed (no sheet by itself); an early ACT_END opens nothing', async () => {
     await render();
     near('Desk#1', 'write');
-    press('일기 쓰기');
-    expect(has('diary-write')).toBe(false);
+    press('일기장 펴기');
+    expect(has('diary-book-bar')).toBe(false);
     state('Desk#1', 'write', true);
-    expect(has('diary-write')).toBe(true);
+    expect(has('diary-book-bar')).toBe(true);
+    expect(has('diary-write')).toBe(false);
     act(() => tree!.unmount());
 
     await render();
     near('Desk#1', 'write');
-    press('일기 쓰기');
+    press('일기장 펴기');
     state('Desk#1', 'write', false);
-    expect(has('diary-write')).toBe(false);
-    expect(byLabel('일기 쓰기')).toBeDefined();
+    expect(has('diary-book-bar')).toBe(false);
+    expect(byLabel('일기장 펴기')).toBeDefined();
     // Book glyph reports are logged only, whenever they come.
     fromUnity({ type: 'MYROOM_BOOK_STATE', payload: { id: 'x', shown: true, missing: [] } });
-    expect(byLabel('일기 쓰기')).toBeDefined();
+    expect(byLabel('일기장 펴기')).toBeDefined();
   });
 
   it('speaks the player’s language', async () => {

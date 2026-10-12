@@ -27,8 +27,8 @@ export function engineKey(unityKey: string): string {
 export function createStagePort(
   bridge: UnityBridge,
   onExit: () => void,
-  /** The diary entry to pin on the first ask (spec 006), taken once. */
-  takeFocus: () => string | undefined = () => undefined,
+  /** The diary entry to pin on every ask of this session (spec 006). */
+  currentFocus: () => string | undefined = () => undefined,
 ): StagePort {
   const nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const k = (cacheKey: string) => `${cacheKey}${KEY_SEP}${nonce}`;
@@ -55,7 +55,7 @@ export function createStagePort(
       bridge.sendEvent({ type: 'STAGE_STOP_SPEAK' });
     },
     askOracle(payload: OracleAskPayload) {
-      const focusMemoryId = takeFocus();
+      const focusMemoryId = currentFocus();
       bridge.sendEvent({ type: 'ORACLE_ASK', payload: focusMemoryId ? { ...payload, focusMemoryId } : payload });
     },
     startMic(lang: string) {

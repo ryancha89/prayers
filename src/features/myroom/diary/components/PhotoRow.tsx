@@ -22,8 +22,10 @@ export const PhotoRow: React.FC<{
   photos: RowPhoto[];
   onAdd(): void;
   onRemove(id: string): void;
+  /** Tap a tile: the photo full screen. */
+  onOpen?(index: number): void;
   note: 'denied' | 'unavailable' | 'failed' | null;
-}> = ({ photos, onAdd, onRemove, note }) => {
+}> = ({ photos, onAdd, onRemove, onOpen, note }) => {
   const t = useT();
   return (
     <View style={{ gap: spacing.sm }}>
@@ -33,7 +35,10 @@ export const PhotoRow: React.FC<{
             <View style={styles.glyph} pointerEvents="none">
               <Icon name="image" size={22} color="rgba(233,196,106,0.45)" />
             </View>
-            <DiaryImage localUri={p.localUri} url={p.url} style={styles.img} testID={`diary-photo-img-${p.id}`} />
+            <Pressable style={styles.img} disabled={!onOpen} onPress={() => onOpen?.(photos.indexOf(p))} accessibilityRole="imagebutton"
+              accessibilityLabel={t('diary.photo.open', { n: photos.indexOf(p) + 1, total: photos.length })}>
+              <DiaryImage localUri={p.localUri} url={p.url} style={styles.img} testID={`diary-photo-img-${p.id}`} />
+            </Pressable>
             <Pressable
               hitSlop={8}
               onPress={() => onRemove(p.id)}

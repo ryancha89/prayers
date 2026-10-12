@@ -28,7 +28,7 @@ export const SheetHead: React.FC<{
         style={s.headBtn}>
         <Icon name="back" size={20} color={colors.textPrimary} />
       </Pressable>
-      <Text style={s.headTitle} numberOfLines={1}>{title}</Text>
+      <Text style={s.headTitle} numberOfLines={1} accessibilityRole="header">{title}</Text>
       <View style={s.headBtn}>{right}</View>
     </View>
   );

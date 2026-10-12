@@ -8,11 +8,10 @@ import { useLang, useT } from '../../../../shared/i18n';
 import { sfx } from '../../../../shared/audio/sfx';
 import { column } from '../../../../shared/device/screen';
 import { useArchiveStore } from '../../../archive/store/archiveStore';
-import { diaryCounselorFor } from '../counselors';
 import { diaryEntries } from '../book';
 import { localDay } from '../text';
 import { dayMood, entriesByDay, monthCheer, monthGrid, monthOf, monthStats, moodColor, shiftMonth } from '../stats';
-import { CounselorBubble } from './CounselorBubble';
+import { ReflectionNote } from './DiaryBubbles';
 import { MoodFace } from './MoodFace';
 import { DiaryRow } from './DiaryRow';
 import { SheetHead } from './SheetHead';
@@ -53,7 +52,6 @@ export const DiaryCalendarSheet: React.FC<{ onOpen(id: string): void; onClose():
 
   const byDay = useMemo(() => entriesByDay(memories), [memories]);
   const stats = useMemo(() => monthStats(memories, month), [memories, month]);
-  const who = diaryCounselorFor(diaryEntries(memories)[0]?.details.counselor, lang);
   const cheer = monthCheer(stats);
   const cells = monthGrid(month);
   const dayRows = picked && monthOf(picked) === month ? byDay[picked] ?? [] : [];
@@ -129,7 +127,7 @@ export const DiaryCalendarSheet: React.FC<{ onOpen(id: string): void; onClose():
             </View>
           </View>
 
-          <CounselorBubble counselor={who?.counselor} text={t(`diary.calendar.cheer.${cheer}`)} testID="diary-calendar-cheer" />
+          <ReflectionNote title={t('diary.detail.reflection')} text={t(`diary.calendar.cheer.${cheer}`)} indent={false} testID="diary-calendar-cheer" />
         </ScrollView>
       </View>
     </View>

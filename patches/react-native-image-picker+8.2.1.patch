@@ -1,0 +1,44 @@
+diff --git a/node_modules/react-native-image-picker/ios/ImagePickerManager.mm b/node_modules/react-native-image-picker/ios/ImagePickerManager.mm
+index 93e99be..8c6463a 100644
+--- a/node_modules/react-native-image-picker/ios/ImagePickerManager.mm
++++ b/node_modules/react-native-image-picker/ios/ImagePickerManager.mm
+@@ -546,12 +546,34 @@ - (void)picker:(PHPickerViewController *)picker didFinishPicking:(NSArray<PHPick
+                 identifier = @"public.jpeg";
+             }
+ 
++            // Prayers patch (08-10): prefer a JPEG rendition when the provider has one, and never map an
++            // image that failed to load. On iOS 26 the file representation of the first-listed type can
++            // come back with an error and no URL; the stock code ignored it and "returned" an empty file
++            // at 0x0. Fall back to letting the provider decode the image itself, and only then give up
++            // (the asset stays NSNull and the JS side gets errorCode "others", not a phantom file).
++            if ([provider hasItemConformingToTypeIdentifier:@"public.jpeg"]) {
++                identifier = @"public.jpeg";
++            }
+             [provider loadFileRepresentationForTypeIdentifier:identifier completionHandler:^(NSURL * _Nullable url, NSError * _Nullable error) {
+-                NSData *data = [[NSData alloc] initWithContentsOfURL:url];
+-                UIImage *image = [[UIImage alloc] initWithData:data];
+-
+-                assets[index] = [self mapImageToAsset:image data:data phAsset:asset];
+-                dispatch_group_leave(completionGroup);
++                NSData *data = url != nil ? [[NSData alloc] initWithContentsOfURL:url] : nil;
++                UIImage *image = data != nil ? [[UIImage alloc] initWithData:data] : nil;
++                if (image != nil) {
++                    assets[index] = [self mapImageToAsset:image data:data phAsset:asset];
++                    dispatch_group_leave(completionGroup);
++                    return;
++                }
++                if (![provider canLoadObjectOfClass:[UIImage class]]) {
++                    dispatch_group_leave(completionGroup);
++                    return;
++                }
++                [provider loadObjectOfClass:[UIImage class] completionHandler:^(id<NSItemProviderReading> _Nullable object, NSError * _Nullable loadError) {
++                    UIImage *decoded = [(NSObject *)object isKindOfClass:[UIImage class]] ? (UIImage *)object : nil;
++                    if (decoded != nil) {
++                        NSData *jpeg = UIImageJPEGRepresentation(decoded, 1.0);
++                        if (jpeg != nil) assets[index] = [self mapImageToAsset:decoded data:jpeg phAsset:asset];
++                    }
++                    dispatch_group_leave(completionGroup);
++                }];
+             }];
+         } else if ([provider hasItemConformingToTypeIdentifier:(NSString *)kUTTypeMovie]) {
+             [provider loadFileRepresentationForTypeIdentifier:(NSString *)kUTTypeMovie completionHandler:^(NSURL * _Nullable url, NSError * _Nullable error) {

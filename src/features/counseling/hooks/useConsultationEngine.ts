@@ -99,7 +99,7 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
 
   const stage: StagePort = useMemo(() => {
     if (usesUnity) {
-      return createStagePort(getUnityBridge(), () => cbs.current.onFinished?.(), () => useCounselingStore.getState().takeFocus());
+      return createStagePort(getUnityBridge(), () => cbs.current.onFinished?.(), () => useCounselingStore.getState().currentFocus());
     }
     const mock = createMockStagePort({
       onOracle: result => engineRef.current?.onOracleResult(result),

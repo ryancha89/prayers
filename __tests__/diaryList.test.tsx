@@ -96,10 +96,10 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
-it('names the write action, with a pen', () => {
-  expect(myRoomActLabel('write', false, false)).toBe('myroom.act.write');
+it('names the desk book’s action: open the diary, with a book', () => {
+  expect(myRoomActLabel('write', false, false)).toBe('myroom.act.openDiary');
   expect(myRoomActLabel('write', true, false)).toBe('myroom.act.back');
-  expect(actIcon('write')).toBe('pen');
+  expect(actIcon('write')).toBe('book');
 });
 
 it('opens the room on the newest entry’s page', async () => {
@@ -109,7 +109,7 @@ it('opens the room on the newest entry’s page', async () => {
   });
 });
 
-it('the book’s Write opens over the room on ACT_STATE, and closing it ends the act', async () => {
+it('the open book offers Read / Write / Back; closing a diary screen returns to the book, Back ends the act', async () => {
   await render();
   fromUnity({ type: 'MYROOM_READY' });
   fromUnity({ type: 'MYROOM_NEAR_ITEM', payload: { uid: 'book1', item: 'DiaryBook', action: 'write', near: true, active: false } });
@@ -117,10 +117,25 @@ it('the book’s Write opens over the room on ACT_STATE, and closing it ends the
   await press(r, 'myroom-act');
   expect(posts('MYROOM_ACT').map(p => p.payload)).toEqual([{ uid: 'book1', action: 'write' }]);
   fromUnity({ type: 'MYROOM_ACT_STATE', payload: { uid: 'book1', action: 'write', active: true } });
+  // The page is up and nothing opens by itself: only looking is allowed.
+  expect(shown(r, 'diary-write')).toBe(false);
+  expect(shown(r, 'diary-book-bar')).toBe(true);
+  expect(shown(r, 'myroom-act')).toBe(false);
+
+  await press(r, 'diary-book-read');
+  expect(shown(r, 'diary-list')).toBe(true);
+  expect(shown(r, 'diary-book-bar')).toBe(false); // the room's controls are off under the sheet
+  await press(r, 'diary-list-close');
+  expect(shown(r, 'diary-book-bar')).toBe(true);
+
+  await press(r, 'diary-book-write');
   expect(shown(r, 'diary-write')).toBe(true);
-  expect(shown(r, 'myroom-look')).toBe(false); // the room's controls are off under the sheet
   await press(r, 'diary-write-close');
   expect(shown(r, 'diary-write')).toBe(false);
+  expect(shown(r, 'diary-book-bar')).toBe(true);
+  expect(posts('MYROOM_ACT_END')).toHaveLength(0);
+
+  await press(r, 'diary-book-back');
   expect(posts('MYROOM_ACT_END')).toHaveLength(1);
 });
 
