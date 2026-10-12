@@ -3,7 +3,7 @@ import type { Lang } from '../../../shared/i18n';
 import { translate } from '../../../shared/i18n/translations';
 import { devlog } from '../../../shared/devlog';
 import { bundledSoundBase, bundledSoundPath } from '../../../shared/audio/bundledSound';
-import { fetchJourneyContent, journeyBirthOf, narrationUrl, type JourneyContentError, type NarrationClip } from '../api/journeyApi';
+import { fetchJourneyContent, journeyBirthOf, journeyNameOf, narrationUrl, type JourneyContentError, type NarrationClip } from '../api/journeyApi';
 import { beatVoiceSettled, prefetchBeatLines, sayBeatLine, stopBeatVoice } from './beatVoice';
 import { unlockMoment, type UnlockFailure } from './unlockMoment';
 import { ARRIVAL_CHIME_AT_MS, CUE_SFX_LEAD_MS, cancelJourneySfx, playJourneySfx, preloadJourneySfx, releaseJourneySfx, scheduleJourneySfx, setDuckTarget, sfxForCue, type JourneySfx } from './journeySfx';
@@ -106,6 +106,10 @@ interface JourneyState {
   pickedCard: number | null;
   /** The card shown in stage `reveal`. */
   reveal: JourneyCard | null;
+  /** Stage `reveal`: "continue" was pressed and the part's voice is still on its way. */
+  revealBusy: boolean;
+  /** Parts played on this ride, as `chapterIndex.partIndex` — what the record (journeyRecord) lists. */
+  heard: string[];
   /** Seconds into the current part's narration. */
   position: number;
   duration: number;
@@ -385,11 +389,45 @@ export function cardCueOf(chapterId: string, months: number[]): MomentCue | null
   return chapterId === 'monthly' && months.length ? seasonCueOf(months[0]) : null;
 }
 
-/** The one-shot of part `partIndex` of a station, due at position `t` (seconds); fired at most once
- *  (`fired` 0 → 1). */
-export function explainCuesDue(chapterId: string, t: number, duration: number, fired: number, partIndex = 0): { cues: MomentCue[]; fired: number } {
+/** Words that, when the counsellor says them, the station's effect belongs to (10-07: the effects
+ *  fired at a fixed fraction of the part, whatever was being said — "행동이랑 말이 싱크가 안맞음"). */
+const EXPLAIN_WORDS: Record<string, RegExp> = {
+  intro: /정미년|2027|丁未|new year/i,
+  career: /직장|직업|승진|조직|일터|사회운|career|job|work/i,
+  wealth: /재물|돈|수입|재산|투자|wealth|money|income/i,
+  love: /인연|연애|사랑|배우자|love|relationship/i,
+  health: /건강|몸|체력|health|body/i,
+  overall: /한 해|올해|키워드|year|keyword/i,
+  outro: /노트|여정|여행|journey|note/i,
+};
+
+/** Where in the part the effect lands, 0-1: the first of the station's words in `text` (by its share
+ *  of the characters, which is how the voice spends its time), else the schedule's fixed point. */
+export function explainAt(chapterId: string, partIndex: number, text?: string | null): number | null {
   const step = EXPLAIN_SCHEDULE[chapterId]?.[partIndex];
-  if (!step || fired >= 1 || duration <= 0 || t < step.at * duration) return { cues: [], fired };
+  if (!step) return null;
+  const words = EXPLAIN_WORDS[chapterId];
+  if (!text || !words) return step.at;
+  const i = text.search(words);
+  if (i < 0) return step.at;
+  // The station's own name opens most parts ("두 번째 역은 재물운입니다."): a word in the opening
+  // sentence is the title, not the explanation — prefer the next one after it.
+  const firstEnd = text.search(/[.!?。！？]/);
+  if (firstEnd > i) {
+    const later = text.slice(firstEnd + 1).search(words);
+    if (later >= 0) return Math.min(0.9, (firstEnd + 1 + later) / text.length);
+  }
+  return Math.min(0.9, i / text.length);
+}
+
+/** The one-shot of part `partIndex` of a station, due at position `t` (seconds); fired at most once
+ *  (`fired` 0 → 1). Fired CUE_SFX_LEAD_MS early so the bloom lands on the word, not after it. */
+export function explainCuesDue(
+  chapterId: string, t: number, duration: number, fired: number, partIndex = 0, text?: string | null,
+): { cues: MomentCue[]; fired: number } {
+  const step = EXPLAIN_SCHEDULE[chapterId]?.[partIndex];
+  const at = explainAt(chapterId, partIndex, text);
+  if (!step || at == null || fired >= 1 || duration <= 0 || t < at * duration - CUE_SFX_LEAD_MS / 1000) return { cues: [], fired };
   return { cues: [step.cue], fired: 1 };
 }
 
@@ -413,7 +451,7 @@ function explain(t: number) {
   if (!chapterId || s.duration <= 0) return;
   const key = `${generation}:${s.chapterIndex}.${s.partIndex}`;
   if (key !== explainPart) { explainPart = key; explainFired = 0; }
-  const due = explainCuesDue(chapterId, t, s.duration, explainFired, s.partIndex);
+  const due = explainCuesDue(chapterId, t, s.duration, explainFired, s.partIndex, currentPart(s)?.text);
   explainFired = due.fired;
   for (const c of due.cues) fireCue(c);
 }
@@ -521,9 +559,12 @@ async function startPart(ci: number, pi: number, gen: number) {
     silentStart = Date.now();
     useJourneyPlayer.setState({ duration: Math.max(8, text.length / SILENT_CHARS_PER_SECOND) });
   }
+  const heardKey = `${ci}.${pi}`;
+  const heard = useJourneyPlayer.getState().heard;
   useJourneyPlayer.setState({
+    heard: heard.includes(heardKey) ? heard : [...heard, heardKey],
     status: 'playing', stage: '', position: 0, chapterIndex: ci, partIndex: pi, transitionTo: null,
-    moment: part.momentId ? 'premium' : '', momentId: part.momentId, teaserSpeaking: false, reveal: null,
+    moment: part.momentId ? 'premium' : '', momentId: part.momentId, teaserSpeaking: false, reveal: null, revealBusy: false,
   });
   voice?.play?.((ok: boolean) => {
     if (gen !== generation) return;
@@ -632,6 +673,8 @@ function finishJourney() {
 
 /** Set when this ride's end-of-the-line chime has played (reset on boarding and on a replay). */
 let arrivalChimed = false;
+/** JOURNEY_SEATED came before the reading did: depart the moment it lands. */
+let departPending = false;
 
 /** The sound of a transition: the tunnel, TRANSITION_MS long, from its first frame (Unity runs its
  *  tunnel and StationTransition its fade on the same clock). Into the last station the brakes come
@@ -662,7 +705,7 @@ function travelTo(index: number) {
   travelSounds(index === journey.chapters.length - 1, gen);
   useJourneyPlayer.setState({
     status: 'transition', transitionTo: index, activeCard: null, position: 0, stage: '', queue: [],
-    pickedCard: null, reveal: null, moment: '', momentId: null, unlocking: false, unlockError: null, teaserSpeaking: false,
+    pickedCard: null, reveal: null, revealBusy: false, moment: '', momentId: null, unlocking: false, unlockError: null, teaserSpeaking: false,
   });
   const arrived = new Promise<void>(r => {
     transitionTimer = setTimeout(r, TRANSITION_MS);
@@ -687,6 +730,8 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
   stage: '',
   pickedCard: null,
   reveal: null,
+  revealBusy: false,
+  heard: [],
   status: 'idle',
   position: 0,
   duration: 0,
@@ -708,7 +753,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     generation += 1;
     const gen = generation;
     arrivalChimed = false;
-    set({ journeyId, counselorId, tone, lang, status: 'boarding', chapterIndex: 0, partIndex: 0, error: null });
+    set({ journeyId, counselorId, tone, lang, status: 'boarding', chapterIndex: 0, partIndex: 0, error: null, content: null, heard: [] });
     // The reading is the account holder's. Their birth data rides along so the server can build the
     // chart even for an account that has never saved a profile (a consultation is the only other
     // thing that does). Without it there is nothing to read from — say so instead of boarding.
@@ -717,7 +762,14 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
       set({ status: 'error', error: 'no-chart' });
       return;
     }
-    const result = await fetchJourneyContent(journeyId, tone, lang, journeyBirthOf(self));
+    // With the cabin (Unity) the platform storyboard — the walk to the train, sitting down — plays
+    // WHILE the reading is written (~10-20 s the first time): the player was left standing on the
+    // platform for all of it (10-07 "버퍼가 너무 긴데"). Departure waits only if it is still not ready.
+    if (opts?.platform) {
+      departPending = false;
+      set({ status: 'platform' });
+    }
+    const result = await fetchJourneyContent(journeyId, tone, lang, journeyBirthOf(self), undefined, journeyNameOf(self));
     if (gen !== generation) return;
     if ('error' in result) {
       set({ status: 'error', error: result.error });
@@ -729,7 +781,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     startLayers(journeyOf(journeyId)!);
     ensureUrl(0, 0);
     if (opts?.platform) {
-      set({ status: 'platform' });
+      if (departPending) get().depart();
       return;
     }
     arrive(0);
@@ -737,6 +789,12 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
 
   depart() {
     if (get().status !== 'platform') return;
+    // Seated before the reading arrived: leave as soon as it does (board() calls back).
+    if (!get().content) {
+      departPending = true;
+      return;
+    }
+    departPending = false;
     // The wheels start and a whistle sounds ahead: the platform is left behind.
     playJourneySfx('departure');
     arrive(0);
@@ -894,7 +952,10 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
 
   continueReveal() {
     const s = get();
-    if (s.stage !== 'reveal') return;
+    if (s.stage !== 'reveal' || s.revealBusy) return;
+    // The card stays up until the part's voice has loaded (startPart): show the press was heard
+    // (10-08, "계속하기가 안눌려" — a fresh clip took seconds with nothing on screen moving).
+    set({ revealBusy: true });
     generation += 1;
     startPart(s.chapterIndex, s.partIndex, generation);
   },
@@ -940,13 +1001,14 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     // The part is in the content from now on — even if the player has moved on meanwhile.
     const now = get();
     if (now.journeyId === journeyId && now.counselorId === counselorId && now.content) {
-      set({ content: withPart(now.content, chapter.id, result.part, result.summary) });
+      set({ content: result.parts.reduce((c, p) => withPart(c, chapter.id, p, result.summary), now.content) });
     }
-    useSavedJourneys.getState().addUnlock(journeyId, counselorId, chapter.id, result.part, result.summary);
+    result.parts.forEach(p => useSavedJourneys.getState().addUnlock(journeyId, counselorId, chapter.id, p, result.summary));
     noteMoment(journeyId, id, result.part.label);
     if (result.coinBalance != null) useCoins.getState().setBalance(result.coinBalance);
     set({ unlocking: false });
-    urls.delete(clipKey(ci, pi));
+    // The whole chapter opened: any clip cached for a part of it (a teaser) is stale now.
+    partsOf(get().content, chapter.id).forEach((_, i) => urls.delete(clipKey(ci, i)));
     if (gen !== generation || get().momentId !== id || get().moment !== 'locked') return;
     // locked → premium at once: that change IS the cabin's unlock burst. The part's voice follows.
     stopBeatVoice();
@@ -967,9 +1029,11 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     const card = result.part.cards[0];
     if (chapter.interaction !== 'quarters' && id.endsWith('#0') && card) {
       set(st => ({
-        stage: 'reveal', reveal: card, status: 'paused',
+        stage: 'reveal', reveal: card, status: 'paused', revealBusy: false,
         shownCards: [...st.shownCards, cardKey(chapter.id, pi, 0)],
       }));
+      // The voice is asked for now, while the card is read, not when "continue" is pressed.
+      ensureUrl(ci, pi);
       return;
     }
     await startPart(ci, pi, g);
@@ -996,6 +1060,8 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
       stage: '',
       pickedCard: null,
       reveal: null,
+      revealBusy: false,
+      heard: [],
       status: 'idle',
       position: 0,
       duration: 0,
@@ -1098,3 +1164,32 @@ export function cabinMomentOf(
 /** True while a journey is under way (the mini player's condition). */
 export const journeyActive = (s: JourneyState) =>
   s.status === 'playing' || s.status === 'paused' || s.status === 'transition' || s.status === 'boarding' || s.status === 'platform';
+
+/** One station in the ride's record: what was said there, in order. */
+export interface RecordStation {
+  chapterIndex: number;
+  id: string;
+  /** The rail's title key (journey.station.*). */
+  title: string;
+  parts: { key: string; label: string | null; text: string; cards: JourneyCard[] }[];
+}
+
+/**
+ * What has been told so far, station by station (10-08, "이전에 이미 지나간것도 다시 볼수있어야해 기록으로").
+ * During a ride: the parts that have played. A finished or saved ride (`done`): every part that is
+ * open. Locked parts never appear — their text is not on the device.
+ */
+export function journeyRecord(
+  s: Pick<JourneyState, 'journeyId' | 'content' | 'heard' | 'status'>,
+): RecordStation[] {
+  const journey = journeyOf(s.journeyId);
+  if (!journey || !s.content) return [];
+  const all = s.status === 'done';
+  return journey.chapters.flatMap((chapter, ci) => {
+    const parts = partsOf(s.content, chapter.id)
+      .map((p, pi) => ({ p, key: `${ci}.${pi}` }))
+      .filter(({ p, key }) => p.unlocked && !!p.text && (all || s.heard.includes(key)))
+      .map(({ p, key }) => ({ key, label: p.label, text: p.text!, cards: p.cards.filter(c => !!c.title) }));
+    return parts.length ? [{ chapterIndex: ci, id: chapter.id, title: chapter.title, parts }] : [];
+  });
+}

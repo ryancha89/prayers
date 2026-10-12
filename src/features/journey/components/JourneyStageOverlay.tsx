@@ -197,7 +197,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
               {s.reveal.description ? <Text style={styles.blurb} numberOfLines={4}>{s.reveal.description}</Text> : null}
               <Text style={styles.stars}>{'★'.repeat(s.reveal.stars)}{'☆'.repeat(Math.max(0, 5 - s.reveal.stars))}</Text>
             </ScrollView>
-            <Primary label={t('journey.continue')} onPress={() => { sfx.tap(); s.continueReveal(); }} />
+            <Primary label={t('journey.continue')} busy={s.revealBusy} onPress={() => { sfx.tap(); s.continueReveal(); }} />
           </View>
         </View>
         </RevealIn>
@@ -257,9 +257,10 @@ const Card: React.FC<{ landscape: boolean; footer?: React.ReactNode; children: R
   </View>
 );
 
-const Primary: React.FC<{ label: string; onPress(): void }> = ({ label, onPress }) => (
-  <Pressable style={[styles.primary, styles.fixed]} onPress={onPress} accessibilityRole="button">
-    <Text style={styles.primaryText}>{label}</Text>
+const Primary: React.FC<{ label: string; onPress(): void; busy?: boolean }> = ({ label, onPress, busy }) => (
+  <Pressable style={[styles.primary, styles.fixed, busy && styles.busy]} disabled={busy} onPress={onPress}
+    accessibilityRole="button" accessibilityLabel={label}>
+    {busy ? <ActivityIndicator color={INK} /> : <Text style={styles.primaryText}>{label}</Text>}
   </Pressable>
 );
 

@@ -2,7 +2,7 @@ import { apiBase } from '../../../shared/config/api';
 import { devlog } from '../../../shared/devlog';
 import { authedFetch } from '../../auth/api/headers';
 import type { Lang } from '../../../shared/i18n';
-import type { JourneyCard, JourneyContent, JourneyPart, JourneySummary, StationCard } from '../types';
+import type { JourneyCard, JourneyContent, JourneyPart, JourneyReport, JourneySummary, ReportBlock, ReportSection, StationCard } from '../types';
 import type { CounselingSubject } from '../../counseling/types';
 
 /**
@@ -40,6 +40,12 @@ export function journeyBirthOf(subject?: CounselingSubject): JourneyBirth | null
     birth_minute: time ? Number(time[2]) : 0,
     gender: subject.gender,
   };
+}
+
+/** How the guide addresses the player ("{name}님"): the profile's display name, or nothing. */
+export function journeyNameOf(subject?: CounselingSubject): string | undefined {
+  const name = subject?.displayName?.trim();
+  return name && name !== 'Myself' ? name.slice(0, 20) : undefined;
 }
 
 export type JourneyContentError = 'no-chart' | 'purchase' | 'content';
@@ -113,12 +119,13 @@ export async function fetchJourneyContent(
   lang: Lang,
   birth: JourneyBirth | null,
   signal?: AbortSignal,
+  name?: string,
 ): Promise<JourneyContentResult> {
   try {
     const res = await authedFetch(`${apiBase()}/api/v1/prayers/journeys/${journeyId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tone, lang, base_info: { lang, ...(birth ? { first: birth } : {}) } }),
+      body: JSON.stringify({ tone, lang, ...(name ? { name } : {}), base_info: { lang, ...(birth ? { first: birth } : {}) } }),
       signal,
     });
     if (!res) return { error: 'content' };
@@ -138,6 +145,87 @@ export async function fetchJourneyContent(
     return { content, coinBalance: b.coin_balance != null ? Number(b.coin_balance) : null };
   } catch {
     return { error: 'content' };
+  }
+}
+
+function mapBlock(b: any): ReportBlock {
+  const unlocked = b?.unlocked !== false;
+  return {
+    momentId: b?.moment_id ? String(b.moment_id) : null,
+    unlocked,
+    label: b?.label ? String(b.label) : null,
+    teaser: b?.teaser ? String(b.teaser) : null,
+    paragraphs: unlocked && Array.isArray(b?.paragraphs) ? b.paragraphs.map(String).filter(Boolean) : null,
+  };
+}
+
+export function mapReport(b: any): JourneyReport {
+  const status = ['pending', 'generating', 'partial', 'ready'].includes(b?.status) ? b.status : 'pending';
+  return {
+    status,
+    progress: { done: Number(b?.progress?.done ?? 0), total: Number(b?.progress?.total ?? 0) },
+    sections: (b?.sections ?? []).map((x: any): ReportSection => ({
+      id: String(x?.id),
+      kind: x?.kind === 'topic' || x?.kind === 'quarter' ? x.kind : 'text',
+      ...(x?.headline ? { headline: String(x.headline) } : {}),
+      ...(x?.stars != null ? { stars: Number(x.stars) } : {}),
+      ...(Array.isArray(x?.key_months) ? { keyMonths: x.key_months.map(Number) } : {}),
+      ...(Array.isArray(x?.months) ? { months: x.months.map(Number) } : {}),
+      blocks: (x?.blocks ?? []).map(mapBlock),
+      ...(Array.isArray(x?.details)
+        ? {
+            details: x.details.map((d: any) => ({
+              month: Number(d?.month),
+              ganji: String(d?.ganji ?? ''),
+              stars: Number(d?.stars ?? 3),
+              headline: String(d?.headline ?? ''),
+              areas: d?.areas ? d.areas : null,
+            })),
+          }
+        : {}),
+    })),
+  };
+}
+
+/**
+ * The long report, in the guide's voice (POST /journeys/:key/report). The server writes it in the
+ * background from the moment the player boards; poll while `status` is not `ready`. Null on any
+ * failure — the screen keeps what it had and tries again.
+ */
+export async function fetchJourneyReport(
+  journeyId: string,
+  tone: string,
+  lang: Lang,
+  birth: JourneyBirth | null,
+  signal?: AbortSignal,
+  name?: string,
+): Promise<JourneyReport | null> {
+  try {
+    const res = await authedFetch(`${apiBase()}/api/v1/prayers/journeys/${journeyId}/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tone, lang, ...(name ? { name } : {}), base_info: { lang, ...(birth ? { first: birth } : {}) } }),
+      signal,
+    });
+    if (!res?.ok) return null;
+    const b = await res.json();
+    return b?.success ? mapReport(b) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Ask the server to start writing the reading's facts now (fire-and-forget) — called while the
+ *  player picks a guide, so boarding only waits for the guide's narration. */
+export async function prepareJourney(journeyId: string, lang: Lang, birth: JourneyBirth | null): Promise<void> {
+  try {
+    await authedFetch(`${apiBase()}/api/v1/prayers/journeys/${journeyId}/prepare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lang, base_info: { lang, ...(birth ? { first: birth } : {}) } }),
+    });
+  } catch {
+    // Only a head start: boarding writes the facts itself if this did not.
   }
 }
 

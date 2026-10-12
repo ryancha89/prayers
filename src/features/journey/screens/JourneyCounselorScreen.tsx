@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -13,6 +13,8 @@ import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { toneForCharacter } from '../../counseling/api/counselorAI';
 import { isNativeUnity } from '../../counseling/bridge';
 import { JOURNEYS } from '../data/journeys';
+import { journeyBirthOf, prepareJourney } from '../api/journeyApi';
+import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useJourneyPlayer } from '../player/journeyPlayer';
 import { BEAT_LINES, prefetchBeatLines } from '../player/beatVoice';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
@@ -33,6 +35,10 @@ export const JourneyCounselorScreen: React.FC = () => {
   const lang = useLang();
   const journey = JOURNEYS[params.journeyId];
   const board = useJourneyPlayer(s => s.board);
+  // The reading's facts do not depend on the guide: start them while the player is choosing.
+  useEffect(() => {
+    if (journey) void prepareJourney(journey.id, lang, journeyBirthOf(useSubjectsStore.getState().self));
+  }, [journey, lang]);
   if (!journey) return null;
 
   const pick = (counselorId: string) => {

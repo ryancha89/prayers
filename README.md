@@ -150,3 +150,22 @@ Home feed → tap a counselor → detail → Start Counseling → pick subject �
 topic → loading → the 3D room → she greets you and asks what you want to know →
 type a question → the reading is staged across four beats with VFX → free chat →
 leave → Conversations lists the session → tap to resume the same thread.
+
+## Afterglow — playable 3D coffee shop
+
+The reusable café is an evening conversation space: dark walnut bar, amber pendants and shelf lights, candles, arched windows and a blue night skyline. Blender opens at the side-by-side bar conversation camera with scene lighting enabled. The previous daytime file is retained as `assets/afterglow-cafe/afterglow-daylight.blend`.
+
+The reusable café lives in the companion Unity project:
+`../saju_fullstack/saju_world_unity/Assets/Scenes/PrayersCafe.unity`.
+Open that scene and press Play, or run `Builds/PrayersCafe/PrayersCafe.app` in the Unity project after building it with `Prayers.EditorTools.PrayersCafeBuilder.BuildExisting`.
+
+- Walk with WASD/arrow keys, click the floor, or use the on-screen direction buttons.
+- Hold the right mouse button and drag to orbit the character; use the wheel to zoom. Release it to use the pointer. Walls shorten the camera distance; conversation shots preserve the exploration angle for your return.
+- Approach Dosa and press E. The interaction offers the adjacent bar seats or the window lounge.
+- Both characters navigate to their approach anchors before sitting. Tab changes the two-person camera angle; Esc leaves or cancels seating.
+- Conversation uses the existing authenticated Prayers AI service. Opening the scene without a signed-in profile displays a connection notice; it does not simulate AI replies.
+- `ConversationSpot` owns reusable seat/approach/camera anchors and reservations; `LocationActor`, `LocationCamera`, and `LocationConversationProvider` can be used in other locations. The café controller exposes phase-change and conversation-turn events for future items and events.
+
+`Prayers/Locations/Build Afterglow Cafe` regenerates the authored scene, PBR materials, navigation mesh and original-character references. `Prayers/Locations/Export Cafe to Blender` exports the actual scene geometry. Run `tools/blender/import_afterglow_cafe.py` in Blender to create the editable review file at `assets/afterglow-cafe/afterglow-cafe.blend`; its textures are packed.
+
+The standalone argument `-cafeSmoke` exercises navigation, both seating areas, camera changes, leaving and cancellation. Results and screenshots are written to `/tmp/prayers-cafe-review/`.

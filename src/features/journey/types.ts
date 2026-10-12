@@ -187,3 +187,47 @@ export interface JourneyContent {
   /** Coins one moment costs, as the server prices it. Absent from a server without moments. */
   momentPrice?: number;
 }
+
+/**
+ * The long read-after report (server Prayers::JourneyReportService): the year written out in the
+ * guide's own voice, ~13–18k characters when every moment is open. Generated while the player rides;
+ * `status` says whether more sections are still coming.
+ */
+export type ReportArea = 'career' | 'wealth' | 'love' | 'health';
+
+/** A run of paragraphs that opens with one paid moment (`momentId`), or is free (`null`). A locked
+ *  block has its label and teaser and no paragraphs. */
+export interface ReportBlock {
+  momentId: string | null;
+  unlocked: boolean;
+  label: string | null;
+  teaser: string | null;
+  paragraphs: string[] | null;
+}
+
+export interface ReportMonth {
+  month: number;
+  ganji: string;
+  stars: number;
+  headline: string;
+  /** Per area, only once the quarter is unlocked. */
+  areas: Partial<Record<ReportArea, string>> | null;
+}
+
+export interface ReportSection {
+  /** `overview` · `direction` · a topic chapter id · `quarter-0`…`quarter-3`. */
+  id: string;
+  kind: 'text' | 'topic' | 'quarter';
+  headline?: string;
+  stars?: number;
+  keyMonths?: number[];
+  months?: number[];
+  blocks: ReportBlock[];
+  details?: ReportMonth[];
+}
+
+export interface JourneyReport {
+  status: 'pending' | 'generating' | 'partial' | 'ready';
+  progress: { done: number; total: number };
+  sections: ReportSection[];
+}

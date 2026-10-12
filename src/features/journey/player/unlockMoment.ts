@@ -43,6 +43,9 @@ export type UnlockResult =
       charged: number;
       coinBalance: number | null;
       part: JourneyPart;
+      /** Every part this unlock opened — a chapter opens whole (10-07: priced per station). Always
+       *  includes `part`. */
+      parts: JourneyPart[];
       summary: JourneySummary | null;
     }
   | UnlockFailure;
@@ -75,11 +78,16 @@ export async function unlockMoment(req: UnlockRequest): Promise<UnlockResult> {
     const part = mapPart(b.part);
     // A 200 that does not carry the text is not an unlock this phone can play.
     if (!part.unlocked || part.text == null) return { ok: false, reason: 'failed' };
+    const asked = { ...part, momentId: part.momentId ?? req.momentId };
+    const others: JourneyPart[] = Array.isArray(b.parts)
+      ? b.parts.map(mapPart).filter((p: JourneyPart) => p.momentId && p.momentId !== asked.momentId && p.unlocked && p.text != null)
+      : [];
     return {
       ok: true,
       charged: Number(b.charged ?? 0),
       coinBalance: b.coin_balance != null ? Number(b.coin_balance) : null,
-      part: { ...part, momentId: part.momentId ?? req.momentId },
+      part: asked,
+      parts: [asked, ...others],
       summary: b.summary ? mapSummary(b.summary) : null,
     };
   } catch (e) {

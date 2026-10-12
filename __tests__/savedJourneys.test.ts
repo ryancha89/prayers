@@ -111,6 +111,26 @@ describe('the station platform (3D cabin)', () => {
     useJourneyPlayer.getState().stop();
   });
 
+  it('is on the platform before the reading arrives; seated early, it departs as soon as it lands (10-07)', async () => {
+    useSubjectsStore.setState({ self: { id: 'self', displayName: 'me', isUser: true, birthDate: '1990-01-01', gender: 'male' } });
+    let land: (v: unknown) => void = () => {};
+    const spy = jest.spyOn(api, 'fetchJourneyContent').mockReturnValue(new Promise(r => { land = r; }));
+    const boarding = useJourneyPlayer.getState().board('newyear-2027', 'theo', 'theo', 'ko', { platform: true });
+    await new Promise(r => setImmediate(r));
+    expect(useJourneyPlayer.getState()).toMatchObject({ status: 'platform', content: null });
+
+    useJourneyPlayer.getState().depart();   // JOURNEY_SEATED before the reading is written
+    expect(useJourneyPlayer.getState().status).toBe('platform');
+
+    land({ content: content('p') });
+    await boarding;
+    for (let i = 0; i < 20 && useJourneyPlayer.getState().status === 'platform'; i++)
+      await new Promise(r => setImmediate(r));
+    expect(useJourneyPlayer.getState().status).toBe('playing');
+    spy.mockRestore();
+    useJourneyPlayer.getState().stop();
+  });
+
   it('ignores depart() anywhere but the platform', () => {
     useJourneyPlayer.setState({ status: 'paused' });
     useJourneyPlayer.getState().depart();

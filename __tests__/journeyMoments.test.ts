@@ -90,12 +90,10 @@ async function rideTo(id: string) {
   expect(player()).toMatchObject({ chapterIndex: IDX[id], stage: 'title', status: 'paused' });
 }
 
-/** Career: title → pick a card → its free part → (8 s) its first lock. */
+/** Career: title → its free part → (8 s) its first lock. */
 async function rideToCareerLock() {
   await rideTo('career');
   player().beginStation();
-  player().pickCard(1);
-  player().beginReading();
   await jest.advanceTimersByTimeAsync(100);
   expect(player()).toMatchObject({ status: 'playing', partIndex: 0 });
   await jest.advanceTimersByTimeAsync(8500);
@@ -162,18 +160,12 @@ describe('reading the server (v2)', () => {
 });
 
 describe('the station flow', () => {
-  it('a numbered station waits on its title card; career picks a card before its reading', async () => {
+  it('a numbered station waits on its title card, then reads — no card to pick (10-07)', async () => {
     await rideTo('career');
     player().play();
     expect(player().status).toBe('paused');
     player().beginStation();
-    expect(player().stage).toBe('pick');
-    player().beginReading();
-    expect(player().stage).toBe('pick');   // nothing picked yet
-    player().pickCard(2);
-    player().pickCard(0);                  // the first pick stands
-    expect(player().pickedCard).toBe(2);
-    player().beginReading();
+    expect(player().stage).not.toBe('pick');
     await jest.advanceTimersByTimeAsync(100);
     expect(player()).toMatchObject({ stage: '', status: 'playing', partIndex: 0, moment: '' });
   });

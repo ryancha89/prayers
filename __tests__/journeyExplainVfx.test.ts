@@ -9,7 +9,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 jest.mock('react-native-sound', () => null, { virtual: true });
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
 
-import { cabinAmbientOf, cardCueOf, explainCuesDue, seasonCueOf } from '../src/features/journey/player/journeyPlayer';
+import { cabinAmbientOf, cardCueOf, explainAt, explainCuesDue, seasonCueOf } from '../src/features/journey/player/journeyPlayer';
 
 describe('explanation effects', () => {
   it('gives every reading station its ambient and the goodbye none', () => {
@@ -44,5 +44,23 @@ describe('explanation effects', () => {
     expect(explainCuesDue('career', 8, 20, 0).cues).toEqual(['cityLights']);
     expect(explainCuesDue('monthly', 19, 20, 0).cues).toEqual([]);
     expect(explainCuesDue('wealth', 10, 0, 0).cues).toEqual([]);
+  });
+});
+
+describe('the effect lands on its word (10-07)', () => {
+  const text = '두 번째 역은 재물운입니다. 올해는 흐름이 조용하게 시작됩니다. 그러다 여름부터 돈이 들어오는 길이 넓어집니다.';
+  it('skips the station title and lands on the explanation', () => {
+    const at = explainAt('wealth', 0, text)!;
+    expect(at).toBeCloseTo(text.indexOf('돈') / text.length, 5);
+    expect(at).toBeGreaterThan(0.5);
+  });
+  it('fires CUE lead early, not at the fixed 35 %', () => {
+    const d = 20;
+    const at = explainAt('wealth', 0, text)! * d;
+    expect(explainCuesDue('wealth', 0.35 * d, d, 0, 0, text).cues).toEqual([]);
+    expect(explainCuesDue('wealth', at - 0.4, d, 0, 0, text).cues).toEqual(['orb']);
+  });
+  it('falls back to the schedule when no word is said', () => {
+    expect(explainAt('health', 0, 'Nothing to see.')).toBe(0.35);
   });
 });

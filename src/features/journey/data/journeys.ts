@@ -21,7 +21,7 @@ export const NEWYEAR_2027: Journey = {
   // turns with the month card on screen); the end of the line is the 'ending' scene.
   chapters: [
     { id: 'intro', order: 0, title: 'journey.st.intro', subtitle: 'journey.sub.intro', background: { type: 'scene', scene: 'station' } },
-    { id: 'career', order: 1, number: 1, title: 'journey.st.career', subtitle: 'journey.sub.career', heading: 'journey.head.career', blurb: 'journey.blurb.career', interaction: 'pickCard', background: { type: 'scene', scene: 'dawnCity' } },
+    { id: 'career', order: 1, number: 1, title: 'journey.st.career', subtitle: 'journey.sub.career', heading: 'journey.head.career', blurb: 'journey.blurb.career', background: { type: 'scene', scene: 'dawnCity' } },
     { id: 'wealth', order: 2, number: 2, title: 'journey.st.wealth', subtitle: 'journey.sub.wealth', heading: 'journey.head.wealth', blurb: 'journey.blurb.wealth', interaction: 'branch', branchPrompt: 'journey.branch.wealth', background: { type: 'scene', scene: 'nightCity' } },
     { id: 'love', order: 3, number: 3, title: 'journey.st.love', subtitle: 'journey.sub.love', heading: 'journey.head.love', blurb: 'journey.blurb.love', background: { type: 'scene', scene: 'springSunset' } },
     { id: 'health', order: 4, number: 4, title: 'journey.st.health', subtitle: 'journey.sub.health', heading: 'journey.head.health', blurb: 'journey.blurb.health', background: { type: 'scene', scene: 'forestLake' } },

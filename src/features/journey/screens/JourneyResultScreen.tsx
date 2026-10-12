@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,8 +17,11 @@ import { JOURNEYS } from '../data/journeys';
 import { useJourneyPlayer } from '../player/journeyPlayer';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
 import { FortuneTicket } from '../components/FortuneTicket';
-import { monthWithYear, monthsLabel, ticketMonths } from '../format';
+import { monthsLabel, ticketMonths } from '../format';
 import { column } from '../../../shared/device/screen';
+import { JourneyReportBook } from '../report/JourneyReportBook';
+import { JourneyRecordSheet } from '../components/JourneyRecordSheet';
+import { useJourneyReport } from '../report/useJourneyReport';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -37,11 +40,14 @@ export const JourneyResultScreen: React.FC = () => {
   const t = useT();
   const lang = useLang();
   const s = useJourneyPlayer();
+  const [recordOpen, setRecordOpen] = useState(false);
   const self = useSubjectsStore(x => x.self);
   const addMemory = useArchiveStore(a => a.add);
   const keepJourney = useSavedJourneys(x => x.save);
   const journey = s.journeyId ? JOURNEYS[s.journeyId] : null;
   const summary = s.content?.summary;
+  // The long report in this guide's voice — written by the server while the train ran.
+  const report = useJourneyReport(s.journeyId, s.counselorId, s.tone, s.lang);
   // Arrival = the whole year has been told in the counsellor's voice → keep the journey (content,
   // guide, tone) so the 아카이브 can open it again. Upsert, so a replay does not duplicate it.
   useEffect(() => {
@@ -129,21 +135,13 @@ export const JourneyResultScreen: React.FC = () => {
             <Text style={styles.kept}>{t('journey.result.kept')}</Text>
           </View>
 
-          {(summary.months?.length ?? 0) > 0 && (
-            <View style={styles.monthsPanel}>
-              <Text style={styles.monthsTitle}>{t('journey.result.months')}</Text>
-              {summary.months.map(m => (
-                <View key={m.month} style={styles.monthRow}>
-                  <View style={styles.monthHead}>
-                    <Text style={styles.monthName}>{monthWithYear(year, m.month, lang)}</Text>
-                    {!!m.ganji && <Text style={styles.monthGanji}>{m.ganji}</Text>}
-                    <Text style={styles.monthStars}>{'★'.repeat(m.stars)}<Text style={styles.monthStarsOff}>{'★'.repeat(5 - m.stars)}</Text></Text>
-                  </View>
-                  <Text style={styles.monthLine}>{m.headline}</Text>
-                </View>
-              ))}
-            </View>
-          )}
+          <JourneyReportBook
+            year={year}
+            lang={lang}
+            guideName={guide?.name ?? ''}
+            price={s.content?.momentPrice ?? null}
+            state={report}
+          />
 
           <View style={styles.actions}>
             <Pressable
@@ -155,7 +153,11 @@ export const JourneyResultScreen: React.FC = () => {
               }}>
               <Text style={styles.primaryText}>{t('journey.result.replay')}</Text>
             </Pressable>
+            <Pressable style={styles.secondary} onPress={() => { sfx.tap(); setRecordOpen(true); }} accessibilityRole="button">
+              <Text style={styles.secondaryText}>{t('journey.record.title')}</Text>
+            </Pressable>
           </View>
+          <JourneyRecordSheet visible={recordOpen} onClose={() => setRecordOpen(false)} guideName={guide?.name} />
 
           <Text style={styles.section}>{t('journey.ticket.heading', { year })}</Text>
           <FortuneTicket
@@ -208,25 +210,11 @@ const styles = StyleSheet.create({
   rowAccent: { color: colors.gold },
   completed: { ...typography.caption, color: colors.new, fontWeight: '700' },
   kept: { ...typography.tiny, color: colors.textMuted },
-  monthsPanel: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  monthsTitle: { ...typography.h3, color: colors.textPrimary },
-  monthRow: { gap: 2, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.1)' },
-  monthHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  monthName: { ...typography.bodyStrong, color: colors.gold },
-  monthGanji: { ...typography.caption, color: colors.textMuted },
-  monthStars: { ...typography.caption, color: colors.gold, marginLeft: 'auto' },
-  monthStarsOff: { color: 'rgba(255,255,255,0.18)' },
-  monthLine: { ...typography.body, color: colors.textSecondary },
   actions: { flexDirection: 'row', gap: spacing.md },
   primary: { flex: 1, paddingVertical: spacing.md, borderRadius: radius.pill, backgroundColor: colors.gold, alignItems: 'center' },
   primaryText: { ...typography.bodyStrong, color: '#1A1330' },
+  secondary: { flex: 1, paddingVertical: spacing.md, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.gold, alignItems: 'center' },
+  secondaryText: { ...typography.bodyStrong, color: colors.gold },
   section: { ...typography.h3, color: colors.textPrimary, marginTop: spacing.xl },
   ticketKept: { ...typography.tiny, color: colors.textMuted, textAlign: 'center' },
 });

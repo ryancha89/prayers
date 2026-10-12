@@ -21,6 +21,7 @@ import { JourneyBackdrop } from '../components/JourneyBackdrop';
 import { moodOf, roughOf } from '../player/cabinMood';
 import { RailwayProgress } from '../components/RailwayProgress';
 import { JourneyStageOverlay } from '../components/JourneyStageOverlay';
+import { JourneyRecordSheet } from '../components/JourneyRecordSheet';
 import { CoinPill } from '../../coins/components/CoinPill';
 import { useCoins } from '../../coins/store/coinStore';
 import { FortuneCardOverlay } from '../components/FortuneCardOverlay';
@@ -194,6 +195,8 @@ export const JourneyScreen: React.FC = () => {
   // The counsellor is saying a storyboard line right now: the cabin's mouth follows it (beats 9–10,
   // once seated; on the platform the stand-in has no lip sync).
   const [beatSpeaking, setBeatSpeaking] = useState(false);
+  // The record sheet: everything said so far on this ride (JourneyRecordSheet).
+  const [recordOpen, setRecordOpen] = useState(false);
   useEffect(() => {
     if (!unity || !s.journeyId || !s.counselorId) return undefined;
     const st = useJourneyPlayer.getState().status;
@@ -321,7 +324,12 @@ export const JourneyScreen: React.FC = () => {
   // state effect: the voice has to be there when `speaking` starts the mouth's clock.
   useEffect(() => {
     if (unity && s.voice) {
-      const { key, fps, levels, startAt } = s.voice;
+      const { key, fps, levels } = s.voice;
+      // Coming back to a part already playing (the mini player kept the voice going), the mouth
+      // starts where the voice IS, not at the part's start — it replayed the first sentence's shapes
+      // over the middle of the part (10-07 sync). A new part's key has position = its start.
+      const now = useJourneyPlayer.getState();
+      const startAt = now.status === 'playing' ? Math.max(s.voice.startAt, now.position) : s.voice.startAt;
       nativeUnityBridge.sendJourneyVoice({ key, fps, levels, startAt });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -419,6 +427,8 @@ export const JourneyScreen: React.FC = () => {
         </View>
       )}
       <JourneyStageOverlay journey={journey} />
+      <JourneyRecordSheet visible={recordOpen} onClose={() => setRecordOpen(false)} guideName={guide?.name}
+        onStation={i => s.goTo(i)} />
     </>
   );
 
@@ -489,11 +499,14 @@ export const JourneyScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         bounces={false}>
       {/* The dialogue box (mockup): who is speaking, the line, and "››" while the voice goes on. */}
-      <View style={styles.dialogue}>
+      {/* Tapping the box opens the record of everything said so far (10-08). */}
+      <Pressable style={styles.dialogue} onPress={() => { sfx.tap(); setRecordOpen(true); }}
+        accessibilityRole="button" accessibilityLabel={t('journey.record.open')}>
         <View style={[styles.narrator, landscape && styles.narratorSide]}>
           {guide?.avatarImage ? <Image source={guide.avatarImage} style={styles.avatar} /> : null}
           <Text style={styles.guideName}>{guide?.name}</Text>
-          <Text style={styles.station}>{chapter.subtitle ? t(chapter.subtitle) : ''}</Text>
+          <Text style={[styles.station, styles.stationGrow]}>{chapter.subtitle ? t(chapter.subtitle) : ''}</Text>
+          <View style={styles.recordChip}><Text style={styles.recordChipText}>{t('journey.record.open')}</Text></View>
         </View>
         <View style={[styles.lineBox, landscape && styles.lineBoxSide]}>
           <Text style={[styles.line, landscape && styles.lineSide]} numberOfLines={landscape ? 4 : 3}>
@@ -501,7 +514,7 @@ export const JourneyScreen: React.FC = () => {
           </Text>
         </View>
         {s.status === 'playing' && <Text style={styles.more}>››</Text>}
-      </View>
+      </Pressable>
 
       <View style={[styles.progress, storyShowing && styles.dimmed]} pointerEvents={storyShowing ? 'none' : 'auto'}>
         <View style={styles.bar}>
@@ -619,6 +632,9 @@ const styles = StyleSheet.create({
   avatar: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(233,196,106,0.5)' },
   guideName: { ...typography.caption, color: colors.textPrimary, fontWeight: '700' },
   station: { ...typography.caption, color: colors.textMuted },
+  stationGrow: { flex: 1 },
+  recordChip: { borderWidth: 1, borderColor: 'rgba(233,196,106,0.5)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+  recordChipText: { ...typography.caption, color: colors.gold },
   dialogue: {
     marginHorizontal: spacing.md, marginTop: spacing.md, paddingBottom: spacing.sm, borderRadius: radius.lg,
     borderWidth: 1, borderColor: 'rgba(233,196,106,0.3)', backgroundColor: 'rgba(18,14,40,0.55)',
