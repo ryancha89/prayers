@@ -11,7 +11,7 @@ import { useScreen } from '../../../shared/device/screen';
 import type { RootStackParamList } from '../../../navigation/types';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { WorldJoystick } from '../components/WorldJoystick';
-import { PromptButton } from '../components/PromptButton';
+import { DoorCard, DoorTitle } from '../components/DoorCard';
 import { getWorldBridge, isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
 import type { WorldInitPayload, WorldZone } from '../../counseling/types';
@@ -28,6 +28,7 @@ import { useWorldCamera } from '../components/useWorldCamera';
 import { useSoundStore } from '../../../shared/audio/store';
 import { ProfileSheet, useMyRoomLevel, usePlayerName } from '../../myroom/components/ProfileSheet';
 import { fetchAttendance } from '../../tickets/api/attendance';
+import type { CounselorSummary } from '../../counselors/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -317,8 +318,18 @@ export const WorldScreen: React.FC = () => {
     setSheet(null);
     doorScreen[zone]();
   };
+  // The counselor picked on the counselling door's card (DoorCard): through the door goes straight to
+  // them. None picked — Map → Counseling, or walking into the doorway — opens the counselor picker
+  // over the world (13-10: it used to drop the player on Home's 2D list, out of the world for no
+  // reason). Unity puts the player back outside the door and fades in when nothing leaves.
+  const doorCounselor = useRef<CounselorSummary | null>(null);
   const doorScreen: Record<WorldZone, () => void> = {
-    counseling: () => leaveTo('counseling', () => navigation.navigate('Tabs', { screen: 'Home' })),
+    counseling: () => {
+      const c = doorCounselor.current;
+      doorCounselor.current = null;
+      if (c) actions.counsel(c);
+      else setOverlay('counseling');
+    },
     meditation: actions.meditate,
     journey: actions.journey,
     shop: () => leaveTo('shop', () => navigation.navigate('Tickets')),
@@ -340,7 +351,8 @@ export const WorldScreen: React.FC = () => {
     },
     entered: throughDoor,
   };
-  const enter = (zone: WorldZone) => {
+  const enter = (zone: WorldZone, counselor?: CounselorSummary) => {
+    doorCounselor.current = counselor ?? null;
     bridge.sendWorldEnter(zone);
     door.current.wait(zone);
   };
@@ -431,9 +443,11 @@ export const WorldScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Enter pops in when a door is near (re-pops for the next door); the room's Talk is the same
-          pill. It asks Unity to open the door and walk in (WORLD_ENTER). */}
-      {near && !busy && <PromptButton label={t('world.enter')} popKey={near} onPress={() => enter(near)} />}
+      {/* At a door, its card: where it goes, what is live in there, and the way in (WORLD_ENTER). The
+          counselling door's way in is a counselor's face. */}
+      {near && !busy && <DoorCard zone={near} journeyYear={NEWYEAR_2027.year} onEnter={enter} />}
+      {/* Walking through: the room's name while Unity takes the player in. */}
+      {entering && <DoorTitle zone={entering} />}
 
       {overlay && (
         <ZoneOverlay

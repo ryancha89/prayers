@@ -365,6 +365,8 @@ describe('the World screen', () => {
   };
   const byLabel = (label: string) =>
     tree!.root.findAll(n => n.props.accessibilityLabel === label && typeof n.props.onPress === 'function')[0];
+  const doorEnter = () => tree!.root.findAll(n => n.props.testID === 'world-door-enter' && typeof n.props.onPress === 'function')[0];
+  const pressDoor = () => act(() => { doorEnter().props.onPress(); });
   const press = (label: string) => {
     const node = byLabel(label);
     if (!node) throw new Error(`no button "${label}"`);
@@ -417,14 +419,16 @@ describe('the World screen', () => {
   it('a door in reach shows Enter; Enter asks Unity to open it and shows nothing until it is through', async () => {
     await render();
     fromUnity({ type: 'WORLD_READY' });
-    expect(byLabel('들어가기')).toBeUndefined();
+    expect(doorEnter()).toBeUndefined();
     fromUnity({ type: 'WORLD_NEAR', payload: { zone: 'meditation', near: true } });
     expect(stickShown()).toBe(true);
-    press('들어가기');
+    pressDoor();
     expect(posts('WORLD_ENTER').map(p => p.payload)).toEqual([{ zone: 'meditation' }]);
-    // The door is opening: no card yet, and nothing over the world — no Enter, no stick, no buttons.
+    // The door is opening: no card yet, and nothing over the world but the room's name — no Enter, no
+    // stick, no buttons.
     expect(overlayOpen('meditation')).toBe(false);
-    expect(byLabel('들어가기')).toBeUndefined();
+    expect(doorEnter()).toBeUndefined();
+    expect(tree!.root.findAll(n => n.props.testID === 'world-door-title').length).toBeGreaterThan(0);
     expect(stickShown()).toBe(false);
     expect(byLabel('Map')).toBeUndefined();
     expect(byLabel('달리기')).toBeUndefined();
@@ -450,20 +454,20 @@ describe('the World screen', () => {
     expect(useWorldStore.getState().returnZone).toBe('shop');
   });
 
-  it('through the counseling door: Home’s counselor list, with the way back at that door', async () => {
+  it('through the counseling door with no one picked (Map, a walk-in): the picker opens over the world, not Home', async () => {
     await render();
     fromUnity({ type: 'WORLD_READY' });
     throughDoor('counseling');
-    expect(anyOverlay()).toBe(0);
-    expect(mockNavigate).toHaveBeenCalledWith('Tabs', { screen: 'Home' });
-    expect(useWorldStore.getState().returnZone).toBe('counseling');
+    expect(overlayOpen('counseling')).toBe(true);
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockHost.unmounts).toBe(0);
   });
 
   it('개인실 through its door goes straight into My Room, the host down first', async () => {
     await render();
     fromUnity({ type: 'WORLD_READY' });
     fromUnity({ type: 'WORLD_NEAR', payload: { zone: 'myroom', near: true } });
-    press('들어가기');
+    pressDoor();
     expect(posts('WORLD_ENTER').map(p => p.payload)).toEqual([{ zone: 'myroom' }]);
     fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'myroom' } });
     expect(overlayOpen('myroom')).toBe(false);
@@ -480,7 +484,7 @@ describe('the World screen', () => {
       await render();
       fromUnity({ type: 'WORLD_READY' });
       fromUnity({ type: 'WORLD_NEAR', payload: { zone: 'myroom', near: true } });
-      press('들어가기');
+      pressDoor();
       expect(anyOverlay()).toBe(0);
       await act(async () => { await new Promise(r => setTimeout(r, 70)); });
       // My Room's card too: it is what Enter opened before, and its 들어가기 still goes in.
@@ -506,10 +510,12 @@ describe('the World screen', () => {
       fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'garden' } });
       expect(anyOverlay()).toBe(0);
       fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'counseling' } });
-      expect(anyOverlay()).toBe(0);
-      expect(mockNavigate).toHaveBeenCalledWith('Tabs', { screen: 'Home' });
+      expect(overlayOpen('counseling')).toBe(true);     // the picker, over the world
+      expect(mockNavigate).not.toHaveBeenCalled();
       await act(async () => { await new Promise(r => setTimeout(r, 70)); });
-      expect(anyOverlay()).toBe(0);                     // no second card from a stale timer
+      // Still that one card: no other from a stale timer.
+      expect(overlayOpen('counseling')).toBe(true);
+      expect(['meditation', 'journey', 'shop', 'myroom'].some(z => overlayOpen(z as never))).toBe(false);
       // Out of the world mid-walk (the host goes down): no card pops over whatever comes next.
       act(() => tree!.unmount());
       await render();
@@ -527,7 +533,7 @@ describe('the World screen', () => {
     await render();
     fromUnity({ type: 'WORLD_NEAR', payload: { zone: 'shop', near: true } });
     fromUnity({ type: 'WORLD_NEAR', payload: { zone: 'shop', near: false } });
-    expect(byLabel('들어가기')).toBeUndefined();
+    expect(doorEnter()).toBeUndefined();
     fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'garden' } });
     expect(tree!.root.findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('world-overlay')).length).toBe(0);
   });
@@ -543,6 +549,22 @@ describe('the World screen', () => {
     // The UnityView was gone before the next screen was asked for.
     expect(mockNav.calls[0].hostUnmounts).toBe(1);
     expect(posts('WORLD_END')).toHaveLength(1);
+    expect(useWorldStore.getState().returnZone).toBe('counseling');
+  });
+
+  it('the counselling door offers the counselors; a face is the way in, and through the door opens them', async () => {
+    await render();
+    fromUnity({ type: 'WORLD_READY' });
+    fromUnity({ type: 'WORLD_NEAR', payload: { zone: 'counseling', near: true } });
+    // No generic Enter here: the faces are the choice.
+    expect(doorEnter()).toBeUndefined();
+    const roster = counselingRoster('ko');
+    const face = tree!.root.findAll(n => n.props.testID === `world-door-counselor-${roster[2].id}` && typeof n.props.onPress === 'function')[0];
+    act(() => { face.props.onPress(); });
+    expect(posts('WORLD_ENTER').map(p => p.payload)).toEqual([{ zone: 'counseling' }]);
+    fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'counseling' } });
+    expect(mockNav.calls.map(c => c.args)).toEqual([['CounselorDetail', { counselorId: roster[2].id }]]);
+    expect(mockNav.calls[0].hostUnmounts).toBe(1);
     expect(useWorldStore.getState().returnZone).toBe('counseling');
   });
 
