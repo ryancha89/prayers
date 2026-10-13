@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
-import { Icon } from '../../../shared/components/Icon';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
@@ -9,6 +8,7 @@ import { productPrice } from '../../tickets/providers/purchase';
 import { useCoins } from '../store/coinStore';
 import { buyCoins, refreshCoins, type CoinProduct } from '../api/coinsApi';
 import { useScreen } from '../../../shared/device/screen';
+import { CoinGlyph } from './CoinGlyph';
 
 /** A Modal is portrait-only on iOS unless it says otherwise: opened over a landscape journey, the
  *  default would turn the whole app upright under the player for as long as the sheet was up. */
@@ -81,7 +81,7 @@ export const CoinShopSheet: React.FC = () => {
           </Pressable>
         </View>
         <View style={styles.balanceRow}>
-          <Icon name="coin" size={18} color={colors.gold} />
+          <CoinGlyph size={20} />
           <Text style={styles.balance}>{t('journey.moment.balance', { balance: (balance ?? 0).toLocaleString() })}</Text>
         </View>
         <ScrollView style={styles.rows} contentContainerStyle={styles.rowsInner} bounces={false}>
@@ -90,7 +90,7 @@ export const CoinShopSheet: React.FC = () => {
         ) : (
           products.map(p => (
             <Pressable key={p.productId} style={styles.row} onPress={() => buy(p)} disabled={!!busy} accessibilityRole="button">
-              <Icon name="coin" size={22} color={colors.gold} />
+              <CoinGlyph size={26} />
               <Text style={styles.coins}>{p.coins.toLocaleString()}</Text>
               {p.bonusPct > 0 && (
                 <View style={styles.badge}>

@@ -13,6 +13,7 @@ import { useCoins } from '../../coins/store/coinStore';
 import { useScreen } from '../../../shared/device/screen';
 import type { Journey } from '../types';
 import { isNativeUnity } from '../../counseling/bridge';
+import { CoinGlyph } from '../../coins/components/CoinGlyph';
 
 const INK = '#1A1330';
 
@@ -136,7 +137,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
                 ) : (
                   <>
                     <Icon name="lock" size={14} color={colors.gold} />
-                    {price != null && <><Icon name="coin" size={14} color={colors.gold} /><Text style={styles.quarterMeta}>{price}</Text></>}
+                    {price != null && <><CoinGlyph size={16} /><Text style={styles.quarterMeta}>{price}</Text></>}
                   </>
                 )}
               </Pressable>

@@ -13,6 +13,7 @@ import {
   type CatalogItem, type CatalogTheme, type Owned,
 } from '../api/myRoomApi';
 import { itemName, themeName } from '../names';
+import { CoinGlyph } from '../../coins/components/CoinGlyph';
 
 export type DecorTab = 'owned' | 'shop';
 
@@ -218,7 +219,7 @@ const ShopRow: React.FC<{
           <ActivityIndicator size="small" color="#1A1330" />
         ) : (
           <>
-            {!confirming && <Icon name="coin" size={14} color={colors.gold} />}
+            {!confirming && <CoinGlyph size={16} />}
             <Text style={[styles.buyText, confirming && styles.buyTextConfirm]}>{label}</Text>
           </>
         )}
