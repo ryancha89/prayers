@@ -86,7 +86,7 @@ import { lookFromDrag } from '../src/features/journey/components/useCabinCamera'
 import { ConsultationOverlay, landscapeBand } from '../src/features/counseling/components/ConsultationOverlay';
 import { ui } from '../src/features/counseling/flow/strings';
 import { roomCoveredPx } from '../src/features/counseling/screens/CounselingRoomScreen';
-import { MeditationRoomScreen, meditationCoveredPx } from '../src/features/meditation/screens/MeditationRoomScreen';
+import { BOTTOM_BAND, MeditationRoomScreen, meditationCoveredPx } from '../src/features/meditation/screens/MeditationRoomScreen';
 import { useJourneyPlayer } from '../src/features/journey/player/journeyPlayer';
 import { NEWYEAR_2027 } from '../src/features/journey/data/journeys';
 import { useLanguageStore } from '../src/shared/i18n';
@@ -199,12 +199,14 @@ describe('VIEW_INSETS values per orientation', () => {
     expect(roomCoveredPx({ host, topBar: { x: 0, y: 0, width: 874, height: 48 }, panel: { x: 190, y: 250, width: 495, height: 152 } }, true))
       .toEqual({ top: 48, bottom: 152 });
     expect(roomCoveredPx({ host, topBar: { x: 0, y: 0, width: 874, height: 48 } }, true)).toEqual({ top: 48 });
+    // The meditation room has no side panel since 13-10: she is in the middle, the words in a band
+    // along the bottom, in both orientations.
     expect(meditationCoveredPx({
       host,
       header: { x: 0, y: 0, width: 874, height: 56 },
-      body: { x: 24, y: 56, width: 826, height: 325 },
-      panel: { x: 485, y: 0, width: 341, height: 325 },
-    }, true)).toEqual({ top: 56, right: 365 });
+      band: { x: 24, y: 284, width: 826, height: 118 },
+    }, true)).toEqual({ top: 56, bottom: 118 });
+    expect(meditationCoveredPx({ host, header: { x: 0, y: 0, width: 874, height: 56 } }, true)).toEqual({ top: 56 });
   });
 
   it('clamps to 0..1 and never sends a non-number', () => {
@@ -615,18 +617,25 @@ describe('the meditation room in landscape', () => {
     act(() => {
       jest.advanceTimersByTime(3000);
     });
-    expect(tree.root.findAll(n => n.props.children === 'Pause').length).toBeGreaterThan(0);
+    const pauseShown = () => tree.root.findAll(n => n.props.testID === 'med-pause').length > 0;
+    const ringShown = () => tree.root.findAll(n => n.props.testID === 'med-pace').length > 0;
+    expect(pauseShown()).toBe(true);
+    expect(ringShown()).toBe(true);
 
     rotate(IPHONE_17_SIDE);
-    // The ring, the clock and the button moved into the right-hand panel…
-    expect(nodesWithStyle(tree, s => s.width === 341 && s.flex === 0)).toHaveLength(1);
+    // Since 13-10 there is no side panel: the same top row and bottom band, the ring round her, in
+    // either orientation — and no 341 pt panel.
+    expect(nodesWithStyle(tree, s => s.width === 341 && s.flex === 0)).toHaveLength(0);
+    expect(nodesWithStyle(tree, s => s.height === BOTTOM_BAND.landscape)).toHaveLength(1);
     act(() => {
       jest.advanceTimersByTime(3000);
     });
     rotate(IPHONE_17);
+    expect(nodesWithStyle(tree, s => s.height === BOTTOM_BAND.portrait)).toHaveLength(1);
 
     // …and the session never noticed.
-    expect(tree.root.findAll(n => n.props.children === 'Pause').length).toBeGreaterThan(0);
+    expect(pauseShown()).toBe(true);
+    expect(ringShown()).toBe(true);
     expect(mockHost).toEqual({ mounts: 1, unmounts: 0 });
     act(() => tree.unmount());
     jest.useRealTimers();
