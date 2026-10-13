@@ -58,7 +58,7 @@ const MEDITATION_RETRY_MS = 1500;
 const MEDITATION_MAX_TRIES = 4;
 
 /** Absolute-state messages sent while a finger moves: coalesced (see NativeUnityBridge.postStream). */
-const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'JOURNEY_LOOK', 'JOURNEY_ZOOM']);
+const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
 /** ~30 a second per type: smooth under Unity's own easing, a quarter of what a thumb produced. */
 const STREAM_MS = 33;
 

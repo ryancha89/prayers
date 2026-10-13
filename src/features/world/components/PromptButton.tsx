@@ -29,7 +29,9 @@ export const PromptButton: React.FC<{
   onPress(): void;
   popKey?: unknown;
   testID?: string;
-}> = ({ label, onPress, popKey, testID }) => {
+  /** Points above the usual spot — a second prompt shown at once (the room's Leave over Talk). */
+  raise?: number;
+}> = ({ label, onPress, popKey, testID, raise = 0 }) => {
   const safe = useSafeAreaInsets();
   const landscape = useScreen().landscape;
   const pop = useRef(new Animated.Value(0)).current;
@@ -46,7 +48,7 @@ export const PromptButton: React.FC<{
         {
           left: safe.left,
           right: safe.right,
-          bottom: safe.bottom + (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait),
+          bottom: safe.bottom + (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait) + raise,
           opacity: pop,
           transform: [{ scale: pop }],
         },

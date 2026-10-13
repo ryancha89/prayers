@@ -305,6 +305,9 @@ export type RNToUnityEvent =
   /** The player turning the cabin camera with one finger, -1..1 each (+ = right / up); Unity maps
    *  it to degrees (TrainJourneyDirector._lookYawMax / _lookPitchMax) and eases like the zoom. */
   | { type: 'JOURNEY_LOOK'; payload: { yaw: number; pitch: number } }
+  /** The player turning the consultation room's camera with one finger, -1..1 each (+ = right /
+   *  up); Unity turns in place up to ±60° / ±15° (ConsultationLook) and eases. */
+  | { type: 'ROOM_LOOK'; payload: { yaw: number; pitch: number } }
   /** The chapter narration's loudness (server `tts/url` envelope), sent as the chapter starts. The
    *  voice plays here in RN; this is how the counsellor's mouth in the cabin follows it. */
   | { type: 'JOURNEY_VOICE'; payload: JourneyVoicePayload }
@@ -358,6 +361,9 @@ export type RNToUnityEvent =
   /** The Talk button. Opens whoever the room currently has in reach — the room decides who, so
    *  there is only ever one answer to "who is nearest". */
   | { type: 'WALK_TALK' }
+  /** Leave by the consultation room's door (walk-in, within its reach): Unity opens it and answers
+   *  ROOM_LEFT. */
+  | { type: 'WALK_LEAVE' }
   /** How much of the UnityView the app's own UI covers, so the room can frame its camera into the
    *  part the player can actually see. Sent by every screen that hosts Unity on each layout change
    *  (rotation, a panel growing), deduplicated, and replayed on the room's READY message. */
@@ -599,6 +605,10 @@ export type UnityToRNEvent =
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
   | { type: 'WALK_STATE'; payload: { canTalk: boolean; personaId: string } }
+  /** The walking player is within reach of the room's door (or no longer): show/hide Leave. */
+  | { type: 'ROOM_DOOR_NEAR'; payload: { near: boolean } }
+  /** The door is open: take the player out to the 3D World, at the hall's counselling door. */
+  | { type: 'ROOM_LEFT'; payload?: unknown }
   /** DEV ONLY: the answer to CUE_TEST — `"<cue> -> trigger Smile"`, `"… -> alias -> bool
    *  Explaining"`, `"… -> gaze: look at player"` or `"… -> missing"`. The rig, its alias table and
    *  its parameter set are runtime facts, so this is the only place the answer exists. */
