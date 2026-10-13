@@ -15,7 +15,7 @@ import { JOURNEYS } from '../../journey/data/journeys';
 import { useCoins } from '../../coins/store/coinStore';
 import { CoinGlyph } from '../../coins/components/CoinGlyph';
 import { zoneInfo } from '../data/zones';
-import { counselingRoster } from './WorldSheets';
+import { counselingRoster, WorldSheetTop } from './WorldSheets';
 import { PROMPT_LIFT } from './PromptButton';
 
 /**
@@ -31,8 +31,9 @@ import { PROMPT_LIFT } from './PromptButton';
  *   · shop        the balance, and Enter
  *   · myroom      one line, and Enter
  *
- * Same place as the old pill (PROMPT_LIFT, centred between the safe edges), same pop when the door
- * changes — a player who learnt the pill reads this at once.
+ * Portrait: where the old pill was (PROMPT_LIFT, centred between the safe edges). Landscape: top centre,
+ * under the top row — the World camera frames the player low and centred, and at the bottom the card
+ * stood on him (simulator, 13-10). Same pop either way when the door changes.
  */
 export const DoorCard: React.FC<{
   zone: WorldZone;
@@ -43,6 +44,7 @@ export const DoorCard: React.FC<{
   const lang = useLang();
   const safe = useSafeAreaInsets();
   const landscape = useScreen().landscape;
+  const barBottom = React.useContext(WorldSheetTop);
   const info = zoneInfo(zone);
   const pop = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -92,9 +94,9 @@ export const DoorCard: React.FC<{
         {
           left: safe.left + spacing.md,
           right: safe.right + spacing.md,
-          bottom: safe.bottom + (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait),
+          ...(landscape ? { top: Math.max(barBottom, safe.top) + spacing.sm } : { bottom: safe.bottom + PROMPT_LIFT.portrait }),
           opacity: pop,
-          transform: [{ translateY: pop.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }],
+          transform: [{ translateY: pop.interpolate({ inputRange: [0, 1], outputRange: [landscape ? -16 : 16, 0] }) }],
         },
       ]}>
       <View style={styles.card}>
