@@ -25,7 +25,6 @@ export const MyPageScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const t = useT();
   const lang = useLanguageStore(s => s.lang);
-  const setLang = useLanguageStore(s => s.setLang);
   const musicEnabled = useSoundStore(s => s.musicEnabled);
   const setMusicEnabled = useSoundStore(s => s.setMusicEnabled);
   const sfxEnabled = useSoundStore(s => s.sfxEnabled);
@@ -264,7 +263,7 @@ const OptionRow: React.FC<{ label: string; selected: boolean; onPress: () => voi
     accessibilityRole="radio"
     accessibilityState={{ selected }}>
     <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>{label}</Text>
-    {selected && <Text style={styles.optionCheck}>✓</Text>}
+    {selected && <Icon name="check" size={18} color={colors.violet} />}
   </Pressable>
 );
 
@@ -346,5 +345,4 @@ const styles = StyleSheet.create({
   },
   optionLabel: { ...typography.body, color: colors.textSecondary },
   optionLabelSelected: { color: colors.violetSoft, fontWeight: '600' },
-  optionCheck: { ...typography.body, color: colors.violet, fontWeight: '700' },
 });

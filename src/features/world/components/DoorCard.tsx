@@ -14,6 +14,7 @@ import { journeyActive, useJourneyPlayer } from '../../journey/player/journeyPla
 import { JOURNEYS } from '../../journey/data/journeys';
 import { useCoins } from '../../coins/store/coinStore';
 import { CoinGlyph } from '../../coins/components/CoinGlyph';
+import { formatCoins } from '../../coins/format';
 import { zoneInfo } from '../data/zones';
 import { counselingRoster, WorldSheetTop } from './WorldSheets';
 import { PROMPT_LIFT } from './PromptButton';
@@ -78,7 +79,7 @@ export const DoorCard: React.FC<{
     line = (
       <View style={styles.coinLine}>
         <CoinGlyph size={14} />
-        <Text style={styles.line}>{balance == null ? '—' : balance.toLocaleString()}</Text>
+        <Text style={styles.line}>{balance == null ? '—' : formatCoins(balance)}</Text>
       </View>
     );
   }
@@ -111,7 +112,7 @@ export const DoorCard: React.FC<{
           {cta ? (
             <Pressable testID="world-door-enter" onPress={() => go()} accessibilityRole="button" accessibilityLabel={cta}
               style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
-              <Text style={styles.ctaText} numberOfLines={1}>{cta.replace(/\s*→\s*$/, '')}</Text>
+              <Text style={styles.ctaText} numberOfLines={1}>{cta}</Text>
               <Icon name="arrowRight" size={14} color={INK} />
             </Pressable>
           ) : null}

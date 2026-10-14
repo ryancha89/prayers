@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../../../shared/components/Text';
+import { StarRating } from '../../../shared/components/StarRating';
 import { Icon } from '../../../shared/components/Icon';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
@@ -125,7 +126,10 @@ export const JourneyResultScreen: React.FC = () => {
             <Row label={t('journey.result.best')} value={best} accent />
             <Row label={t('journey.result.keywords')} value={keywords} />
             <Row label={t('journey.result.caution')} value={caution} />
-            <Text style={styles.completed}>Journey Completed ✓</Text>
+            <View style={styles.completedRow}>
+              <Icon name="check" size={16} color={colors.new} />
+              <Text style={styles.completed}>{t('journey.result.completed')}</Text>
+            </View>
             <Text style={styles.kept}>{t('journey.result.kept')}</Text>
           </View>
 
@@ -137,7 +141,7 @@ export const JourneyResultScreen: React.FC = () => {
                   <View style={styles.monthHead}>
                     <Text style={styles.monthName}>{monthWithYear(year, m.month, lang)}</Text>
                     {!!m.ganji && <Text style={styles.monthGanji}>{m.ganji}</Text>}
-                    <Text style={styles.monthStars}>{'★'.repeat(m.stars)}<Text style={styles.monthStarsOff}>{'★'.repeat(5 - m.stars)}</Text></Text>
+                    <StarRating count={m.stars} size={12} color={colors.gold} offColor={MONTH_STAR_OFF} offFilled style={styles.monthStars} testID={`journey-month-stars-${m.month}`} />
                   </View>
                   <Text style={styles.monthLine}>{m.headline}</Text>
                 </View>
@@ -189,6 +193,9 @@ const Row: React.FC<{ label: string; value: string; accent?: boolean }> = ({ lab
   </View>
 );
 
+/** A month's unearned stars: filled, faint — as the ★ text drew them. */
+const MONTH_STAR_OFF = 'rgba(255,255,255,0.18)';
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1 },
@@ -206,6 +213,7 @@ const styles = StyleSheet.create({
   rowLabel: { ...typography.tiny, color: colors.textMuted, letterSpacing: 1 },
   rowValue: { ...typography.h2, color: colors.textPrimary },
   rowAccent: { color: colors.gold },
+  completedRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   completed: { ...typography.caption, color: colors.new, fontWeight: '700' },
   kept: { ...typography.tiny, color: colors.textMuted },
   monthsPanel: {
@@ -221,8 +229,7 @@ const styles = StyleSheet.create({
   monthHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   monthName: { ...typography.bodyStrong, color: colors.gold },
   monthGanji: { ...typography.caption, color: colors.textMuted },
-  monthStars: { ...typography.caption, color: colors.gold, marginLeft: 'auto' },
-  monthStarsOff: { color: 'rgba(255,255,255,0.18)' },
+  monthStars: { marginLeft: 'auto' },
   monthLine: { ...typography.body, color: colors.textSecondary },
   actions: { flexDirection: 'row', gap: spacing.md },
   primary: { flex: 1, paddingVertical: spacing.md, borderRadius: radius.pill, backgroundColor: colors.gold, alignItems: 'center' },

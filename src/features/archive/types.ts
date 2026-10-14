@@ -1,3 +1,5 @@
+import type { IconName } from '../../shared/components/Icon';
+
 /**
  * 아카이브 — the player's long-term memory, kept by the player.
  *
@@ -215,29 +217,34 @@ export const FIELDS: Record<ArchiveCategory, FieldSpec[]> = {
   ],
 };
 
-/** The emoji each category and choice wears. Not localized: they are the pictures, not the words. */
-export const CATEGORY_ICON: Record<ArchiveCategory, string> = {
-  profile: '🪪',
-  interest: '🎯',
-  relationship: '👥',
-  career: '💼',
-  story: '🗺️',
-  diary: '📔',
-  goal: '🏁',
-  wish: '🌠',
-  plan: '🗓️',
-  possession: '🎁',
-  like: '❤️',
-  dislike: '💔',
-  manual: '📖',
+/**
+ * The icon each category and choice wears: an `IconName` (shared/components/Icon), drawn in the
+ * app's stroke set. Not localized: they are the pictures, not the words. These used to be emoji,
+ * which came out of the app's Text as "?" boxes — two for a variation-selector emoji (🗺️ 🗓️ ❤️) —
+ * and ignored the tint (14-10).
+ */
+export const CATEGORY_ICON: Record<ArchiveCategory, IconName> = {
+  profile: 'idCard',
+  interest: 'target',
+  relationship: 'people',
+  career: 'briefcase',
+  story: 'map',
+  diary: 'notebook',
+  goal: 'flag',
+  wish: 'shootingStar',
+  plan: 'calendar',
+  possession: 'gift',
+  like: 'heart',
+  dislike: 'heartBroken',
+  manual: 'book',
 };
 
-export const MOOD_ICON: Record<string, string> = {
-  great: '😄',
-  good: '🙂',
-  okay: '😐',
-  down: '😔',
-  tired: '😪',
+export const MOOD_ICON: Record<string, IconName> = {
+  great: 'faceGreat',
+  good: 'faceGood',
+  okay: 'faceOkay',
+  down: 'faceDown',
+  tired: 'faceTired',
 };
 
 /** The four kinds the My Room desk writes (spec 006): diary rows and the goals group. */
@@ -245,12 +252,12 @@ export const DIARY_KINDS = ['diary', 'goal', 'wish', 'plan'] as const;
 export type DiaryKind = (typeof DIARY_KINDS)[number];
 export const isDiaryKind = (c: string): c is DiaryKind => (DIARY_KINDS as readonly string[]).includes(c);
 
-export const KIND_ICON: Record<string, string> = {
-  car: '🚗',
-  device: '💻',
-  fashion: '👕',
-  hobby: '🎸',
-  book: '📚',
-  home: '🏠',
-  other: '📦',
+export const KIND_ICON: Record<string, IconName> = {
+  car: 'car',
+  device: 'laptop',
+  fashion: 'shirt',
+  hobby: 'music',
+  book: 'books',
+  home: 'home',
+  other: 'box',
 };

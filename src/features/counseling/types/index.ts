@@ -349,6 +349,30 @@ export type RNToUnityEvent =
   /** The desk book's page changed (spec 006): after a save, an edit, a delete, or a pull that changed
    *  the newest entry. null = no entry left. */
   | { type: 'MYROOM_BOOK'; payload: { book: MyRoomBook | null } }
+  /** Replace the furnished room in place (spec 005 T022): the account's layout arrived after INIT
+   *  and differs from the one INIT carried, or a save/conflict changed it. Unity answers
+   *  MYROOM_LAYOUT_APPLIED. */
+  | { type: 'MYROOM_LAYOUT'; payload: { layout: MyRoomLayout } }
+  /** Decorate mode on/off (spec 005 T023/T025). `cancel` puts the room back as it was when edit mode
+   *  was entered; off without it keeps the edit (RN follows with MYROOM_LAYOUT = the saved copy). */
+  | { type: 'MYROOM_EDIT'; payload: { on: boolean; cancel?: boolean } }
+  /** Edit mode: a tap on the room, 0..1 of the window from its top-left (WORLD_TAP's convention). */
+  | { type: 'MYROOM_TAP'; payload: { x: number; y: number } }
+  /** Edit mode: one finger dragging the selected piece. Streamed: `move` is coalesced like the
+   *  camera, `begin` and `end` always go out. Same coordinates as MYROOM_TAP. */
+  | { type: 'MYROOM_DRAG'; payload: { phase: MyRoomDragPhase; x: number; y: number } }
+  /** Edit mode: turn the selected piece one 15° step (+1 = clockwise from above). */
+  | { type: 'MYROOM_ROTATE'; payload: { step: 1 | -1 } }
+  /** Edit mode: replace the selected piece with another owned piece id, in the same place. */
+  | { type: 'MYROOM_SWAP'; payload: { item: string } }
+  /** Edit mode: put an owned piece (one more copy) into the room; Unity finds it a place. */
+  | { type: 'MYROOM_ADD'; payload: { item: string } }
+  /** Edit mode: store the selected piece (and whatever stands on it). */
+  | { type: 'MYROOM_REMOVE'; payload: Record<string, never> }
+  /** Edit mode: re-skin the room with `theme` (US3: a preview — owned or not; RN gates the save).
+   *  Unity answers MYROOM_LAYOUT_CHANGED with `layout.theme = theme`, or keeps the old theme and says
+   *  `unknown_theme` when this build has no material set for it. Cancel restores the entry theme. */
+  | { type: 'MYROOM_THEME'; payload: { theme: string } }
   /** Leaving My Room. */
   | { type: 'MYROOM_END' }
   /** A held direction key. x = right, y = forward, each in [-1, 1].
@@ -475,6 +499,63 @@ export interface MyRoomInitPayload {
   /** The desk book's page (spec 006), so the room opens on it — no flash of an old page. null = no
    *  entry yet (Unity draws the blank page). Absent from a build that predates the diary. */
   book?: MyRoomBook | null;
+  /** The account's saved layout (spec 005 T022), from the device cache at first and the server's
+   *  copy after. null/absent = Unity's built-in default room. */
+  layout?: MyRoomLayout | null;
+  /** What the account owns. null/absent = not known yet (Unity treats it as the starter set). */
+  owned?: MyRoomOwned | null;
+}
+
+export type MyRoomDragPhase = 'begin' | 'move' | 'end';
+
+/** Where a piece goes: on the floor (moves, turns), or in a slot on a wall, the cornice or a table
+ *  top (swap only — FR-004). */
+export type MyRoomItemKind = 'floor' | 'wall' | 'hanging' | 'surface';
+
+/** MYROOM_SELECT: what edit mode has selected. `uid: ''` = nothing. */
+export interface MyRoomSelect {
+  uid: string;
+  item: string;
+  kind: MyRoomItemKind;
+  canMove: boolean;
+}
+
+/** Why a layout cannot be saved as it stands ('' = it can). `no_space` / `unknown_item` answer an ADD
+ *  that found no place, or an id this player build has no prefab for. */
+export type MyRoomLayoutReason = '' | 'overlap' | 'bounds' | 'blocked_path' | 'no_space' | 'unknown_item' | 'unknown_theme';
+
+/** MYROOM_LAYOUT_CHANGED: the edit's working copy, once on entering edit mode and after every edit.
+ *  `uid` is the piece the reason is about ('' when none). */
+export interface MyRoomLayoutChanged {
+  layout: MyRoomLayout;
+  valid: boolean;
+  reason: MyRoomLayoutReason;
+  uid: string;
+  /** Pieces stored along with the edit (what sat on a stored or swapped-away host); usually []. */
+  stored?: string[];
+}
+
+/** One placed piece, exactly as saju_server stores and returns it (GET/PUT prayers/myroom). The
+ *  server normalises it; nobody between it and Unity reshapes it. `pos` is metres on the floor;
+ *  `slot` names a wall/hanging anchor or `Host:top`. Each piece has one of the two. */
+export interface MyRoomItem {
+  uid: string;
+  item: string;
+  pos: { x: number; z: number } | null;
+  rot: number;
+  slot: string | null;
+}
+
+/** A room: its theme and its pieces. `items: null` = never saved → Unity's default room. */
+export interface MyRoomLayout {
+  theme: string;
+  items: MyRoomItem[] | null;
+}
+
+/** Copies per piece id (starter + bought), and the themes the account has. */
+export interface MyRoomOwned {
+  items: Record<string, number>;
+  themes: string[];
 }
 
 /**
@@ -601,6 +682,13 @@ export type UnityToRNEvent =
   /** The book's glyph self-check (spec 006 R13), after each page it set: `missing` lists the code
    *  points its fonts could not draw — on a device a missing glyph draws nothing and logs nothing. */
   | { type: 'MYROOM_BOOK_STATE'; payload: { id: string; shown: boolean; missing: number[] } }
+  /** The furnisher applied a layout (INIT's or MYROOM_LAYOUT's): how many pieces stand, and the
+   *  ones it could not place (unknown id, no prefab, no such slot). Logged only; no UI. */
+  /** Edit mode's selection changed (a tap, a swap, a store). */
+  | { type: 'MYROOM_SELECT'; payload: MyRoomSelect }
+  /** Edit mode's working layout changed, and whether it may be saved. */
+  | { type: 'MYROOM_LAYOUT_CHANGED'; payload: MyRoomLayoutChanged }
+  | { type: 'MYROOM_LAYOUT_APPLIED'; payload: { theme: string; placed: number; skipped: { uid: string; item: string; reason: string }[] } }
   /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
@@ -653,6 +741,18 @@ export interface MyRoomBridge {
   sendMyRoomRun(on: boolean): void;
   /** MYROOM_BOOK: the desk book's page (spec 006). Remembered for the next MYROOM_INIT too. */
   sendMyRoomBook(book: MyRoomBook | null): void;
+  /** MYROOM_LAYOUT: the room's layout changed. Folded into the remembered INIT (with `owned`) and
+   *  posted once the room is up — replayed on MYROOM_READY when it arrives while loading. */
+  sendMyRoomLayout(layout: MyRoomLayout, owned?: MyRoomOwned | null): void;
+  /** Decorate mode (spec 005 T025). */
+  sendMyRoomEdit(on: boolean, cancel?: boolean): void;
+  sendMyRoomTap(x: number, y: number): void;
+  sendMyRoomDrag(phase: MyRoomDragPhase, x: number, y: number): void;
+  sendMyRoomRotate(step: 1 | -1): void;
+  sendMyRoomSwap(item: string): void;
+  sendMyRoomAdd(item: string): void;
+  sendMyRoomRemove(): void;
+  sendMyRoomTheme(theme: string): void;
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
 }
 

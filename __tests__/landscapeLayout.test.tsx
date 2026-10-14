@@ -436,7 +436,7 @@ describe('the journey overlays fit a short window', () => {
     useJourneyPlayer.setState({ moment: 'premium', stage: 'reveal', reveal: { at: 0, title: 'The turn', months: [5], description: 'A door opens.', stars: 4 } });
     render();
     expect(nodesWithStyle(tree, s => s.flexDirection === 'row' && s.maxHeight === '100%')).toHaveLength(1);
-    buttonOutsideScroll('Continue →');
+    buttonOutsideScroll('Continue');
   });
 
   it('the title card and the quarter list are capped at the window; their buttons stay outside the scroll', () => {

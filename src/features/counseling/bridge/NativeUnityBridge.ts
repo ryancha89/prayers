@@ -8,7 +8,10 @@ import {
   MyRoomBook,
   MyRoomBridge,
   MyRoomCamera,
+  MyRoomDragPhase,
   MyRoomInitPayload,
+  MyRoomLayout,
+  MyRoomOwned,
   RNToUnityEvent,
   UnityBridge,
   UnitySessionPayload,
@@ -58,7 +61,7 @@ const MEDITATION_RETRY_MS = 1500;
 const MEDITATION_MAX_TRIES = 4;
 
 /** Absolute-state messages sent while a finger moves: coalesced (see NativeUnityBridge.postStream). */
-const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
+const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
 /** ~30 a second per type: smooth under Unity's own easing, a quarter of what a thumb produced. */
 const STREAM_MS = 33;
 
@@ -115,6 +118,8 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   private myRoomCamera: MyRoomCamera | null = null;
   /** A page set while the room was still loading, owed to it on MYROOM_READY. */
   private myRoomBookLate = false;
+  /** A layout set while the room was still loading, owed to it on MYROOM_READY (as the book). */
+  private myRoomLayoutLate = false;
   private outbox: RNToUnityEvent[] = [];
   /** The latest VIEW_INSETS any Unity-hosting screen reported, and the JSON of the last one that
    *  actually went out (the dedupe key). */
@@ -454,10 +459,11 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.myRoomInit = init;
     this.myRoomPending = true;
     this.myRoomBookLate = false;
+    this.myRoomLayoutLate = false;
     this.myRoomTries = 0;
     this.myRoomCamera = null;
     this.myRoomRun = false;
-    devlog(`[unity-bridge] MYROOM_INIT ${init.lang}${init.book ? ` book ${init.book.kind} ${init.book.date}` : ''}`);
+    devlog(`[unity-bridge] MYROOM_INIT ${init.lang}${init.book ? ` book ${init.book.kind} ${init.book.date}` : ''} layout ${describeLayout(init.layout)}`);
     this.post({ type: 'MYROOM_INIT', payload: init });
     this.armMyRoomRetry();
   }
@@ -523,6 +529,58 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     if (this.myRoomPending) { this.myRoomBookLate = true; return; }
     devlog(`[unity-bridge] MYROOM_BOOK ${book ? `${book.kind} ${book.date}` : 'none'}`);
     this.post({ type: 'MYROOM_BOOK', payload: { book } });
+  }
+
+  /** The account's layout (spec 005 T022). Same timing rule as the book: folded into the remembered
+   *  INIT so a retry carries it, held for MYROOM_READY while the room loads (an INIT it already took
+   *  had the old one), and posted as MYROOM_LAYOUT once the room is up. */
+  sendMyRoomLayout(layout: MyRoomLayout, owned?: MyRoomOwned | null): void {
+    if (!this.myRoomInit) return;
+    this.myRoomInit = { ...this.myRoomInit, layout, ...(owned !== undefined ? { owned } : {}) };
+    if (this.myRoomPending) { this.myRoomLayoutLate = true; return; }
+    devlog(`[unity-bridge] MYROOM_LAYOUT ${describeLayout(layout)}`);
+    this.post({ type: 'MYROOM_LAYOUT', payload: { layout } });
+  }
+
+  /* ---- Decorate mode (spec 005 T025). Only meaningful once the room is up — the Decorate button
+     waits for MYROOM_READY — so these post straight through, like the act buttons. ---- */
+
+  sendMyRoomEdit(on: boolean, cancel?: boolean): void {
+    this.post({ type: 'MYROOM_EDIT', payload: cancel ? { on, cancel: true } : { on } });
+  }
+
+  sendMyRoomTap(x: number, y: number): void {
+    if (this.view) this.post({ type: 'MYROOM_TAP', payload: { x: unit(x), y: unit(y) } });
+  }
+
+  /** `move` is a stream (coalesced, latest wins). `begin` and `end` are posted: a stream could fold
+   *  them into a move, and Unity must see where the finger went down and that it lifted. Posting
+   *  `end` also drops a move still waiting in the window — `end` carries the last position. */
+  sendMyRoomDrag(phase: MyRoomDragPhase, x: number, y: number): void {
+    if (!this.view) return;
+    const event = { type: 'MYROOM_DRAG' as const, payload: { phase, x: unit(x), y: unit(y) } };
+    if (phase === 'move') this.postLive(event);
+    else this.post(event);
+  }
+
+  sendMyRoomRotate(step: 1 | -1): void {
+    this.post({ type: 'MYROOM_ROTATE', payload: { step } });
+  }
+
+  sendMyRoomSwap(item: string): void {
+    this.post({ type: 'MYROOM_SWAP', payload: { item } });
+  }
+
+  sendMyRoomAdd(item: string): void {
+    this.post({ type: 'MYROOM_ADD', payload: { item } });
+  }
+
+  sendMyRoomRemove(): void {
+    this.post({ type: 'MYROOM_REMOVE', payload: {} });
+  }
+
+  sendMyRoomTheme(theme: string): void {
+    this.post({ type: 'MYROOM_THEME', payload: { theme } });
   }
 
   /** Leaving My Room. Idempotent, and safe when Unity never booted. */
@@ -770,6 +828,11 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
         this.myRoomBookLate = false;
         this.post({ type: 'MYROOM_BOOK', payload: { book: this.myRoomInit.book ?? null } });
       }
+      if (this.myRoomLayoutLate && this.myRoomInit?.layout) {
+        this.myRoomLayoutLate = false;
+        devlog(`[unity-bridge] MYROOM_LAYOUT ${describeLayout(this.myRoomInit.layout)} (on ready)`);
+        this.post({ type: 'MYROOM_LAYOUT', payload: { layout: this.myRoomInit.layout } });
+      }
       // The room is walked now: a stick queued while it loaded is a thumb long gone (as on the world),
       // and left in the outbox it would walk whatever scene says UNITY_READY next.
       this.outbox = this.outbox.filter(e => e.type !== 'WALK_INPUT');
@@ -859,4 +922,15 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       : JSON.stringify(event)));
     this.view.postMessage(BRIDGE_OBJECT, BRIDGE_METHOD, JSON.stringify(event));
   }
+}
+
+/** One devlog word for a layout: `default`, or `<theme>/<n> pieces`. */
+function describeLayout(layout: MyRoomLayout | null | undefined): string {
+  if (!layout) return 'default';
+  return `${layout.theme}/${layout.items == null ? 'default' : `${layout.items.length} pieces`}`;
+}
+
+/** A screen coordinate clamped to 0..1 (a finger can end past the edge); NaN becomes 0. */
+function unit(v: number): number {
+  return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0;
 }

@@ -106,6 +106,8 @@ it('opens the room on the newest entry’s page', async () => {
   await render();
   expect(posts('MYROOM_INIT')[0].payload).toEqual({
     lang: 'en', book: { id: 'w_new', kind: 'wish', date: 'Mon, October 5, 2026', text: 'See the aurora' },
+    // No cached room on this phone: Unity's default (spec 005 T022).
+    layout: null, owned: null,
   });
 });
 

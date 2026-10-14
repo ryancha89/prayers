@@ -1,6 +1,7 @@
 import { apiBase } from '../../../shared/config/api';
 import { devlog } from '../../../shared/devlog';
 import { authedFetch } from '../../auth/api/headers';
+import { buyWithStore, confirmStorePurchase, type StoreConfirmInput } from '../../tickets/providers/storeBuy';
 import type { Lang } from '../../../shared/i18n';
 import type { JourneyCard, JourneyContent, JourneyPart, JourneySummary, StationCard } from '../types';
 import type { CounselingSubject } from '../../counseling/types';
@@ -205,23 +206,24 @@ export async function fetchJourneyAccess(journeyId: string, signal?: AbortSignal
 /** Hand the store's purchase to the server, which verifies it and unlocks the journey. */
 export async function confirmJourneyPurchase(
   journeyId: string,
-  input: { platform: 'ios' | 'android' | 'dev'; productId?: string; purchaseToken?: string; transactionId?: string },
+  input: StoreConfirmInput,
 ): Promise<{ owned: boolean; error?: string }> {
-  try {
-    const res = await authedFetch(`${apiBase()}/api/v1/prayers/journeys/${journeyId}/purchase`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        platform: input.platform,
-        product_id: input.productId,
-        purchase_token: input.purchaseToken,
-        transaction_id: input.transactionId,
-      }),
-    });
-    if (!res) return { owned: false, error: 'network' };
-    const b = await res.json();
-    return { owned: !!b?.owned, error: b?.success ? undefined : b?.error_code ?? 'invalid' };
-  } catch {
-    return { owned: false, error: 'network' };
-  }
+  const r = await confirmStorePurchase(`/api/v1/prayers/journeys/${journeyId}/purchase`, input);
+  if (!r || r.body == null) return { owned: false, error: 'network' };
+  const b = r.body;
+  return { owned: !!b?.owned, error: b?.success ? undefined : b?.error_code ?? 'invalid' };
+}
+
+/**
+ * Buy the journey pass through `buyWithStore`. `dev` is the server's own `dev_purchase` flag (not
+ * `__DEV__`): checked first, since a simulator has the store module but no App Store. The dev
+ * confirmation carries the platform only, exactly as the pass screen always sent it.
+ */
+export function buyJourneyPass(journeyId: string, productId: string, dev: boolean) {
+  return buyWithStore({
+    productId,
+    dev,
+    confirm: input => confirmJourneyPurchase(journeyId, input.platform === 'dev' ? { platform: 'dev' } : input),
+    accepted: r => r.owned,
+  });
 }

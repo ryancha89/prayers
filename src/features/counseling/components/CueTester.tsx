@@ -22,6 +22,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
+import { Icon } from '../../../shared/components/Icon';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { getUnityBridge } from '../bridge';
 import type { UnityToRNEvent } from '../types';
@@ -123,7 +124,7 @@ export const CueTester: React.FC = () => {
           {counts.tried}/{counts.total} đã thử · {counts.missing} thiếu
         </Text>
         <Pressable onPress={() => setOpen(false)} style={styles.close}>
-          <Text style={styles.closeLabel}>✕</Text>
+          <Icon name="close" size={18} color={colors.textSecondary} />
         </Pressable>
       </View>
 
@@ -173,7 +174,6 @@ const styles = StyleSheet.create({
   title: { ...typography.bodyStrong, color: colors.textPrimary },
   count: { ...typography.caption, color: colors.textSecondary, flex: 1 },
   close: { padding: spacing.sm },
-  closeLabel: { color: colors.textSecondary, fontSize: 18 },
   last: { ...typography.caption, color: '#7ee787', marginTop: spacing.xs },
   scroll: { marginTop: spacing.sm },
   group: { marginBottom: spacing.md },

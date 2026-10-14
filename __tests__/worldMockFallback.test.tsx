@@ -66,7 +66,7 @@ it('is the drawn hub: no UnityView, its doors open the overlays, and Map arrives
   // A door drawn on the hub.
   press('명상의 방');
   expect(open('meditation')).toBe(true);
-  press('명상 시작하기 →');
+  press('명상 시작하기');
   expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
   expect(useWorldStore.getState().returnZone).toBe('meditation');
 

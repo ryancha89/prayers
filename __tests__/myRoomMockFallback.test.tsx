@@ -53,7 +53,7 @@ it('is the picture of the room: no UnityView, no loading caption, and the mock t
 
   const mock = getMyRoomBridge() as MockUnityBridge;
   expect(mock).toBeInstanceOf(MockUnityBridge);
-  expect(mock.lastMyRoomInit).toEqual({ lang: 'ja', book: null });
+  expect(mock.lastMyRoomInit).toEqual({ lang: 'ja', book: null, layout: null, owned: null });
   expect(mock.myRoomOpen).toBe(true);
   mock.sendMyRoomCamera({ zoom: 0.4, yaw: 0.1, pitch: -0.2 });
   expect(mock.myRoomCamera).toEqual({ zoom: 0.4, yaw: 0.1, pitch: -0.2 });

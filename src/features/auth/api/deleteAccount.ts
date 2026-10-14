@@ -9,6 +9,7 @@ import { useFavoritesStore } from '../../counselors/store/favoritesStore';
 import { useArchiveStore } from '../../archive/store/archiveStore';
 import { useDiaryStore } from '../../myroom/diary/diaryStore';
 import { forgetAllLocalPhotos } from '../../myroom/diary/photos';
+import { useMyRoomStore } from '../../myroom/store/myRoomStore';
 
 /** A self with no birth data — the same shape first run starts from, so the app asks again. */
 const EMPTY_SELF = { id: 'self', displayName: '', isUser: true as const };
@@ -71,6 +72,8 @@ export async function forgetLocalData() {
   // entries on the desk book, and their still-dirty rows and photos would push into that account.
   useArchiveStore.setState({ memories: [], discoveries: [], dirty: [], deleted: [], answeredQuestions: [], lastSyncedAt: undefined });
   useDiaryStore.setState({ reflections: {}, photos: {}, photoDeletes: [] });
+  // My Room's cached layout is keyed per account already; dropped all the same, with the rest.
+  useMyRoomStore.setState({ byUser: {} });
   await forgetAllLocalPhotos();
 
   try {

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
-import { Icon } from '../../../shared/components/Icon';
+import { StarRating } from '../../../shared/components/StarRating';
+import { Icon, type IconName } from '../../../shared/components/Icon';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
@@ -14,6 +15,7 @@ import { useScreen } from '../../../shared/device/screen';
 import type { Journey } from '../types';
 import { isNativeUnity } from '../../counseling/bridge';
 import { CoinGlyph } from '../../coins/components/CoinGlyph';
+import { formatCoins } from '../../coins/format';
 
 const INK = '#1A1330';
 
@@ -90,7 +92,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
           title={card?.title ?? station}
           line={card?.line}
           small={landscape}
-          footer={<Primary label={t('journey.continue')} onPress={() => { sfx.tap(); s.beginReading(); }} />}
+          footer={<Primary label={t('journey.continue')} icon="arrowRight" onPress={() => { sfx.tap(); s.beginReading(); }} />}
         />
       </View>
     );
@@ -144,7 +146,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
             )))}
           </ScrollView>
           <UnlockNote error={s.unlockError} coins={coins} price={price} />
-          <Primary label={t('journey.stationEnd.next')} onPress={() => { sfx.tap(); s.nextStation(); }} />
+          <Primary label={t('journey.stationEnd.next')} icon="chevronRight" onPress={() => { sfx.tap(); s.nextStation(); }} />
         </View>
       </View>
     );
@@ -196,9 +198,9 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
               <Text style={styles.heading}>{s.reveal.title}</Text>
               {s.reveal.months.length > 0 && <Text style={styles.months}>{monthsLabel(s.reveal.months, lang)}</Text>}
               {s.reveal.description ? <Text style={styles.blurb} numberOfLines={4}>{s.reveal.description}</Text> : null}
-              <Text style={styles.stars}>{'★'.repeat(s.reveal.stars)}{'☆'.repeat(Math.max(0, 5 - s.reveal.stars))}</Text>
+              <StarRating count={s.reveal.stars} size={16} color={colors.gold} style={styles.stars} testID="journey-reveal-stars" />
             </ScrollView>
-            <Primary label={t('journey.continue')} onPress={() => { sfx.tap(); s.continueReveal(); }} />
+            <Primary label={t('journey.continue')} icon="arrowRight" onPress={() => { sfx.tap(); s.continueReveal(); }} />
           </View>
         </View>
         </RevealIn>
@@ -211,7 +213,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
     return (
       <View style={styles.bottom}>
         {stage === 'stationEnd'
-          ? <Primary label={t('journey.stationEnd.next')} onPress={() => { sfx.tap(); s.nextStation(); }} />
+          ? <Primary label={t('journey.stationEnd.next')} icon="chevronRight" onPress={() => { sfx.tap(); s.nextStation(); }} />
           : <Primary label={t('journey.ending.finish')} onPress={() => { sfx.select(); s.finish(); }} />}
       </View>
     );
@@ -242,9 +244,9 @@ const UnlockNote: React.FC<{ error: string | null; coins: number | null; price: 
   // Stale once the shop has topped the wallet up past the price (sim QA 01-10: "Not enough coins
   // (you have 500)" stayed under the button after buying 500).
   const short = coins == null || price == null || coins < price;
-  if (error === 'insufficient' && short) return <Text style={styles.error}>{t('journey.moment.noCoins', { balance: coins ?? 0 })}</Text>;
+  if (error === 'insufficient' && short) return <Text style={styles.error}>{t('journey.moment.noCoins', { balance: formatCoins(coins) })}</Text>;
   if (error === 'failed' || error === 'unknown') return <Text style={styles.error}>{t('journey.moment.failed')}</Text>;
-  return coins != null ? <Text style={styles.note}>{t('journey.moment.balance', { balance: coins.toLocaleString() })}</Text> : null;
+  return coins != null ? <Text style={styles.note}>{t('journey.moment.balance', { balance: formatCoins(coins) })}</Text> : null;
 };
 
 /** A card over the window: its words scroll when the window is too short for them, its `footer` (the
@@ -258,9 +260,11 @@ const Card: React.FC<{ landscape: boolean; footer?: React.ReactNode; children: R
   </View>
 );
 
-const Primary: React.FC<{ label: string; onPress(): void }> = ({ label, onPress }) => (
-  <Pressable style={[styles.primary, styles.fixed]} onPress={onPress} accessibilityRole="button">
+/** The gold button; `icon` after the word (the → / › that used to be part of the string). */
+const Primary: React.FC<{ label: string; icon?: IconName; onPress(): void }> = ({ label, icon, onPress }) => (
+  <Pressable style={[styles.primary, styles.fixed, !!icon && styles.primaryRow]} onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
     <Text style={styles.primaryText}>{label}</Text>
+    {icon && <Icon name={icon} size={16} color={INK} />}
   </Pressable>
 );
 
@@ -318,6 +322,7 @@ const styles = StyleSheet.create({
     shadowColor: colors.gold, shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 0 },
   },
   primaryText: { ...typography.bodyStrong, color: INK },
+  primaryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   busy: { opacity: 0.6 },
   secondary: { paddingVertical: spacing.sm, paddingHorizontal: spacing.lg },
   secondaryText: { ...typography.body, color: colors.textSecondary, textDecorationLine: 'underline' },
@@ -339,5 +344,5 @@ const styles = StyleSheet.create({
   revealBodySide: { flex: 1, flexShrink: 1, padding: spacing.md },
   eyebrow: { ...typography.tiny, color: colors.gold, letterSpacing: 2 },
   months: { ...typography.h3, color: colors.gold },
-  stars: { fontSize: 16, color: colors.gold, letterSpacing: 3 },
+  stars: { justifyContent: 'center' },
 });

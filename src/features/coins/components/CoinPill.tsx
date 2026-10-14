@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Text } from '../../../shared/components/Text';
+import { Icon } from '../../../shared/components/Icon';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { sfx } from '../../../shared/audio/sfx';
 import { useCoins } from '../store/coinStore';
 import { refreshCoins } from '../api/coinsApi';
 import { CoinGlyph } from './CoinGlyph';
+import { formatCoins } from '../format';
 
 /** "[coin] 1,200 +" in a journey header (mockup, 01-10). The whole pill opens the coin shop. */
 export const CoinPill: React.FC = () => {
@@ -23,8 +25,8 @@ export const CoinPill: React.FC = () => {
       accessibilityRole="button"
       accessibilityLabel={`${balance ?? 0}`}>
       <CoinGlyph size={18} />
-      <Text style={styles.count}>{balance == null ? '—' : balance.toLocaleString()}</Text>
-      <Text style={styles.plus}>+</Text>
+      <Text style={styles.count}>{balance == null ? '—' : formatCoins(balance)}</Text>
+      <Icon name="plus" size={14} color={colors.gold} style={styles.plus} />
     </Pressable>
   );
 };
@@ -36,5 +38,5 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(18,14,40,0.8)', borderWidth: 1, borderColor: 'rgba(233,196,106,0.45)',
   },
   count: { ...typography.caption, color: colors.textPrimary, fontWeight: '700' },
-  plus: { ...typography.bodyStrong, color: colors.gold, marginLeft: 2 },
+  plus: { marginLeft: 2 },
 });

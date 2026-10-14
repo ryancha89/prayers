@@ -543,7 +543,7 @@ describe('the World screen', () => {
     await cardOf('counseling');
     const roster = counselingRoster('ko');
     press(roster[1].name);
-    press('상담하기 →');
+    press('상담하기');
     expect(mockNav.calls).toHaveLength(1);
     expect(mockNav.calls[0].args).toEqual(['CounselorDetail', { counselorId: roster[1].id }]);
     // The UnityView was gone before the next screen was asked for.
@@ -626,7 +626,7 @@ describe('the World screen', () => {
     await render();
     await cardOf('journey');
     expect(tree!.root.findAll(n => n.props.children === '이제, 2027년으로 출발할까요?').length).toBeGreaterThan(0);
-    press('기차에 탑승하기 →');
+    press('기차에 탑승하기');
     expect(mockNavigate).toHaveBeenCalledWith('JourneyCounselor', { journeyId: NEWYEAR_2027.id });
 
     act(() => tree!.unmount());
@@ -635,7 +635,7 @@ describe('the World screen', () => {
     useJourneyPlayer.setState({ journeyId: NEWYEAR_2027.id, status: 'paused' } as never);
     await render();
     await cardOf('journey');
-    press('여행 이어가기 →');
+    press('여행 이어가기');
     expect(mockNavigate).toHaveBeenCalledWith('Journey');
   });
 
@@ -660,7 +660,7 @@ describe('the World screen', () => {
     worldTiming.enterFallbackMs = was;
     expect(overlayOpen('myroom')).toBe(true);
     expect(tree!.root.findAll(n => n.props.children === '개인실 · My Room').length).toBeGreaterThan(0);
-    press('들어가기 →');
+    press('들어가기');
     expect(mockNav.calls.map(c => c.args)).toEqual([['MyRoom']]);
     expect(mockNav.calls[0].hostUnmounts).toBe(1);
   });

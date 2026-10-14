@@ -4,6 +4,7 @@ import { Text, TextInput } from '../../../shared/components/Text';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
+import { Icon } from '../../../shared/components/Icon';
 import { FIELDS, MOOD_ICON, isDiaryKind, type ArchiveCategory, type FieldSpec } from '../types';
 import { dayKey } from '../questions';
 import { validate } from '../validation';
@@ -69,11 +70,11 @@ export const MemoryEditor: React.FC<{
                     sfx.tap();
                     set(f.key, opt);
                   }}
-                  style={[styles.chip, on && styles.chipOn]}
+                  style={[styles.chip, on && styles.chipOn, !!icon && styles.chipWithIcon]}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: on }}>
+                  {icon && <Icon name={icon} size={16} color={on ? colors.textPrimary : colors.textSecondary} />}
                   <Text style={[styles.chipText, on && styles.chipTextOn]}>
-                    {icon ? `${icon} ` : ''}
                     {t(`${f.optionLabelPrefix}.${opt}` as TranslationKey)}
                   </Text>
                 </Pressable>
@@ -206,6 +207,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.06)',
   },
   chipOn: { backgroundColor: colors.violetDim, borderColor: colors.violetSoft },
+  chipWithIcon: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   chipText: { ...typography.caption, color: colors.textSecondary },
   chipTextOn: { color: colors.textPrimary },
   actions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },

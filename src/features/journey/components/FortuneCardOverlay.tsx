@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
+import { Icon } from '../../../shared/components/Icon';
+import { StarRating } from '../../../shared/components/StarRating';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
@@ -76,7 +78,7 @@ const RisenCard: React.FC<Props & { holdMs: number }> = ({ card, year, onDone, o
       <Text style={styles.eyebrow}>{t('journey.card.eyebrow', { year })}</Text>
       {card.months.length > 0 && <Text style={styles.months}>{monthsLabel(card.months, lang)}</Text>}
       <Text style={styles.title}>{card.title}</Text>
-      <Text style={styles.stars}>{'★'.repeat(card.stars)}{'☆'.repeat(5 - card.stars)}</Text>
+      <StarRating count={card.stars} size={18} color={colors.gold} style={styles.stars} testID="journey-card-stars" />
       {card.saveable && (
         <Pressable
           style={[styles.save, saved && styles.saved]}
@@ -86,7 +88,10 @@ const RisenCard: React.FC<Props & { holdMs: number }> = ({ card, year, onDone, o
             onSave(card);
             setSaved(true);
           }}>
-          <Text style={styles.saveText}>{saved ? t('journey.card.saved') : t('journey.card.save')}</Text>
+          <View style={styles.saveRow}>
+            {saved && <Icon name="check" size={14} color={colors.gold} />}
+            <Text style={styles.saveText}>{saved ? t('journey.card.saved') : t('journey.card.save')}</Text>
+          </View>
         </Pressable>
       )}
     </Animated.View>
@@ -114,7 +119,8 @@ const styles = StyleSheet.create({
   eyebrow: { ...typography.tiny, color: colors.gold, letterSpacing: 2 },
   months: { ...typography.h1, color: colors.textPrimary },
   title: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
-  stars: { fontSize: 18, color: colors.gold, letterSpacing: 3 },
+  stars: { justifyContent: 'center' },
+  saveRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   // The in-world ghost button (the diary's): gold outline, gold word.
   save: {
     marginTop: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
