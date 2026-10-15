@@ -98,7 +98,7 @@ preloadSfx();
 const useCurrentRoute = create<{ name: string | null }>(() => ({ name: null }));
 
 /** Screens the mini player stays off: the journey's own screens, and the rooms that own the sound. */
-const NO_MINI_PLAYER = new Set(['Journey', 'JourneyResult', 'JourneyEnding', 'JourneyCollection', 'JourneyCounselor', 'JourneyPass', 'Login', 'ProfileSetup']);
+const NO_MINI_PLAYER = new Set(['Journey', 'JourneyResult', 'JourneyEnding', 'JourneyCollection', 'JourneyCounselor', 'JourneyPass', 'JourneyProfile', 'JourneySaju', 'Login', 'ProfileSetup']);
 
 const syncAudioToRoute = () => {
   const route = navigationRef.isReady() ? navigationRef.getCurrentRoute() : undefined;

@@ -14,7 +14,7 @@ import { toneForCharacter } from '../../counseling/api/counselorAI';
 import { isNativeUnity } from '../../counseling/bridge';
 import { JOURNEYS } from '../data/journeys';
 import { journeyBirthOf, prepareJourney } from '../api/journeyApi';
-import { useSubjectsStore } from '../../subjects/store/subjectsStore';
+import { journeySubject } from '../store/journeyProfileStore';
 import { useJourneyPlayer } from '../player/journeyPlayer';
 import { BEAT_LINES, prefetchBeatLines } from '../player/beatVoice';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
@@ -35,9 +35,10 @@ export const JourneyCounselorScreen: React.FC = () => {
   const lang = useLang();
   const journey = JOURNEYS[params.journeyId];
   const board = useJourneyPlayer(s => s.board);
-  // The reading's facts do not depend on the guide: start them while the player is choosing.
+  // The reading's facts do not depend on the guide: start them while the player is choosing — for
+  // the person picked on the profile step.
   useEffect(() => {
-    if (journey) void prepareJourney(journey.id, lang, journeyBirthOf(useSubjectsStore.getState().self));
+    if (journey) void prepareJourney(journey.id, lang, journeyBirthOf(journeySubject()));
   }, [journey, lang]);
   if (!journey) return null;
 

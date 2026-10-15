@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { absoluteFill, colors, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
 import { RING_COMPACT, RingButton } from '../../../shared/components/hud/Hud';
+import { SubjectSwitcher } from '../components/SubjectSwitcher';
 import { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
@@ -411,6 +412,9 @@ export const CounselingRoomScreen: React.FC = () => {
         testID="room-top-bar">
         {/* Silent on purpose, as the room has always been: its mix is Unity's (uiSounds.test). */}
         <RingButton testID="room-back" icon="back" size={RING_COMPACT} label={t('hud.back')} onPress={onExit} />
+        {/* Whose chart: me, or someone I am asking about (10-13). Unity rooms only — the pixel room
+            is told by the app and has no SUBJECT_SWITCH to hear. */}
+        {!pixel && subject && <SubjectSwitcher initialId={subject.id} />}
         {/* Drawn but not live: the room's mix (her voice, the track, the ritual) is Unity's, and no
             bridge message silences it yet — the app's music switch does not reach it. Shown
             disabled rather than as a button that silently does nothing, as it did before. */}

@@ -57,11 +57,17 @@ export const CounselingSubjectScreen: React.FC = () => {
 
     setSaving(true);
     setSaveFailed(false);
+    // The account's profile is the HOLDER's (10-13: "내 사주를 기준으로"). Asking about a friend used to
+    // overwrite it with the friend; the room now sends the friend beside the holder instead
+    // (roomSubjects), so the account keeps standing for the person signed in. Only when the holder
+    // has no chart of their own is the chosen person saved, as before.
+    const self = useSubjectsStore.getState().self;
+    const owner = subject.id !== 'self' && hasBirthData(self) ? self : subject;
     const saved = await saveSajuProfile({
-      name: subject.displayName,
-      birthDate: subject.birthDate!,
-      birthTime: subject.birthTime,
-      gender: subject.gender!,
+      name: owner.displayName,
+      birthDate: owner.birthDate!,
+      birthTime: owner.birthTime,
+      gender: owner.gender!,
     });
     setSaving(false);
 

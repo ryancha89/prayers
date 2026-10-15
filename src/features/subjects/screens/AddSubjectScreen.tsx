@@ -9,6 +9,7 @@ import { Icon } from '../../../shared/components/Icon';
 import { PrimaryButton } from '../../../shared/components/PrimaryButton';
 import { SELF, useSubjectsStore } from '../store/subjectsStore';
 import { maskBirthDate, maskBirthTime } from '../birthMask';
+import { chartFromFields } from '../../saju/chart';
 import type { RootStackParamList } from '../../../navigation/types';
 import type { CounselingSubject } from '../../counseling/types';
 import { column } from '../../../shared/device/screen';
@@ -117,6 +118,9 @@ export const AddSubjectScreen: React.FC = () => {
         {/* Directly under the field it describes. Sitting below the gender row instead, it read as
             a note about gender — so the one field that IS optional looked required, and the one
             that is required looked optional. */}
+        {chartFromFields(birthDate, birthTime)?.summerTime ? (
+          <Text style={[styles.hint, styles.summerHint]}>{t('addSubject.summerHint')}</Text>
+        ) : null}
         <Text style={styles.hint}>{t('addSubject.hint')}</Text>
         <Text style={styles.label}>{t('addSubject.gender')}</Text>
         <View style={styles.genderRow}>
@@ -212,6 +216,7 @@ const styles = StyleSheet.create({
   genderLabel: { ...typography.body, color: colors.textSecondary },
   genderLabelActive: { color: colors.violetSoft },
   hint: { ...typography.caption, color: colors.textMuted, lineHeight: 18 },
+  summerHint: { color: colors.violetSoft },
   intro: { ...typography.body, color: colors.textSecondary, lineHeight: 22 },
   footer: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, gap: spacing.sm },
   later: { alignItems: 'center', paddingVertical: spacing.md },

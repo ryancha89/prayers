@@ -58,7 +58,10 @@ export const NEWYEAR_2027: Journey = {
 
 export const JOURNEYS: Record<string, Journey> = { [NEWYEAR_2027.id]: NEWYEAR_2027 };
 
-/** Where "start the journey" goes: a journey sold whole goes through its boarding pass; a coin
+/** Where "start the journey" goes: choosing whose year it is (10-12), then their saju. */
+export const journeyEntryRoute = (_journey: Journey): 'JourneyProfile' => 'JourneyProfile';
+
+/** After the profile and its saju: a journey sold whole goes through its boarding pass; a coin
  *  journey (2027 since 01-10) goes straight to choosing the guide — the pass screen never shows. */
-export const journeyEntryRoute = (journey: Journey): 'JourneyPass' | 'JourneyCounselor' =>
+export const journeyAfterProfile = (journey: Journey): 'JourneyPass' | 'JourneyCounselor' =>
   journey.pass ? 'JourneyPass' : 'JourneyCounselor';

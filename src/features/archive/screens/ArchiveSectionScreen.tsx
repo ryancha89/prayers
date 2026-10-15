@@ -72,6 +72,11 @@ export const ArchiveSectionScreen: React.FC = () => {
     return spec.kind === 'choice' ? t(`${spec.optionLabelPrefix}.${v}` as TranslationKey) : v;
   };
 
+  // Read from the birth fields rather than the stored flag: entries saved before 10-12 judged the
+  // 1987/88 switch days by the date alone.
+  const summerOf = (m: ArchiveMemory) =>
+    !!m.details.birthDate && chartFromFields(m.details.birthDate, m.details.birthTime)?.summerTime === true;
+
   const subtitle = (m: ArchiveMemory): string => {
     switch (category) {
       case 'relationship':
@@ -79,8 +84,10 @@ export const ArchiveSectionScreen: React.FC = () => {
           choiceLabel(m, 'relation'),
           m.details.since,
           choiceLabel(m, 'closeness'),
-          m.details.birthDate ? `${m.details.birthDate}${m.details.birthTime ? ` ${m.details.birthTime}` : ''}` : '',
-          m.details.pillars ? `${m.details.pillars}${m.details.summerTime === 'true' ? ' ☀' : ''}` : '',
+          m.details.birthDate
+            ? `${m.details.birthDate}${m.details.birthTime ? ` ${m.details.birthTime}` : ''}${summerOf(m) ? ` (${t('myInfo.summerTag')})` : ''}`
+            : '',
+          m.details.pillars ?? '',
         ]
           .filter(Boolean)
           .join(' · ');

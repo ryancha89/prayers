@@ -60,6 +60,13 @@ export const JourneyMiniPlayer: React.FC<{ aboveTabs: boolean; hidden: boolean; 
           accessibilityRole="button" style={styles.play}>
           <Icon name={s.status === 'playing' ? 'pause' : 'play'} size={16} color={colors.bg} />
         </Pressable>
+        {/* Close (10-13, "밑에 이게 남아있잖아"): leaving the train with < keeps the ride alive here,
+            and this is the way to end it — silence, and the bar goes away. The ride is not lost: a
+            finished one is kept in 아카이브 → 저장한 여행. */}
+        <Pressable hitSlop={12} onPress={() => { sfx.tap(); s.stop(); }}
+          accessibilityRole="button" accessibilityLabel={t('journey.mini.close')} style={styles.close}>
+          <Icon name="close" size={16} color={colors.textSecondary} />
+        </Pressable>
       </View>
       <View style={styles.track}>
         <View style={[styles.fill, { width: `${progress * 100}%` }]} />
@@ -80,6 +87,7 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   title: { ...typography.caption, color: colors.textPrimary, fontWeight: '700' },
   sub: { ...typography.tiny, color: colors.textSecondary, marginTop: 2 },
+  close: { width: 28, height: 34, alignItems: 'center', justifyContent: 'center', marginLeft: -spacing.xs },
   play: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center' },
   track: { height: 2, backgroundColor: 'rgba(255,255,255,0.1)' },
   fill: { height: 2, backgroundColor: colors.gold },

@@ -75,9 +75,9 @@ describe('boarding with the player\'s own chart', () => {
 
   it('shapes self birth data as base_info.first, hour absent when the time is unknown', () => {
     expect(journeyBirthOf({ id: 'self', displayName: 'me', isUser: true, birthDate: '1989-12-05', birthTime: '00:20', gender: 'male' }))
-      .toEqual({ birth_year: 1989, birth_month: 12, birth_day: 5, birth_hour: 0, birth_minute: 20, gender: 'male' });
+      .toEqual({ birth_year: 1989, birth_month: 12, birth_day: 5, birth_hour: 0, birth_minute: 20, gender: 'male', self: true });
     const unknown = journeyBirthOf({ id: 'self', displayName: 'me', isUser: true, birthDate: '1995-04-12', gender: 'female' });
-    expect(unknown).toEqual({ birth_year: 1995, birth_month: 4, birth_day: 12, birth_minute: 0, gender: 'female' });
+    expect(unknown).toEqual({ birth_year: 1995, birth_month: 4, birth_day: 12, birth_minute: 0, gender: 'female', self: true });
     expect('birth_hour' in unknown!).toBe(false);
     expect(journeyBirthOf({ id: 'self', displayName: 'me', isUser: true })).toBeNull();
   });
@@ -88,6 +88,44 @@ describe('boarding with the player\'s own chart', () => {
     const p = useJourneyPlayer.getState();
     expect(p.status).toBe('error');
     expect(p.error).toBe('no-chart');
+  });
+});
+
+describe('a journey per person (10-12)', () => {
+  const { journeyBirthOf, whoOf } = require('../src/features/journey/api/journeyApi');
+  const { useSubjectsStore } = require('../src/features/subjects/store/subjectsStore');
+  const { useJourneyProfile, journeySubject, journeyProfileKey, journeyWho } = require('../src/features/journey/store/journeyProfileStore');
+  const mom = { id: 'mom', displayName: '엄마', isUser: false, birthDate: '1962-03-04', birthTime: '07:30', gender: 'female' };
+
+  beforeEach(() => {
+    useSubjectsStore.setState({ self: { id: 'self', displayName: 'me', isUser: true, birthDate: '1989-12-05', gender: 'male' }, subjects: [mom] });
+    useJourneyProfile.setState({ subjectId: 'self' });
+    useSavedJourneys.setState({ journeys: [], unlocks: {}, heard: {} });
+  });
+
+  it('rides for the chosen person, and only the account holder is sent as self', () => {
+    expect(journeySubject().id).toBe('self');
+    useJourneyProfile.setState({ subjectId: 'mom' });
+    expect(journeySubject()).toBe(mom);
+    expect(whoOf('ko', journeyBirthOf(mom))).toEqual({
+      base_info: { lang: 'ko', first: { birth_year: 1962, birth_month: 3, birth_day: 4, birth_hour: 7, birth_minute: 30, gender: 'female' } },
+    });
+    // A profile deleted since: back to the account holder.
+    useJourneyProfile.setState({ subjectId: 'gone' });
+    expect(journeySubject().id).toBe('self');
+  });
+
+  it('keeps another person\'s ride apart from the player\'s own, under the old keys for the player', () => {
+    const store = useSavedJourneys.getState();
+    store.save({ journeyId: 'newyear-2027', counselorId: 'theo', tone: 'theo', lang: 'ko', year: 2027, content: content('me') });
+    useJourneyProfile.setState({ subjectId: 'mom' });
+    expect(journeyProfileKey()).toBe('1962-03-04 07:30 F');
+    store.save({ journeyId: 'newyear-2027', counselorId: 'theo', tone: 'theo', lang: 'ko', year: 2027, content: content('mom'), ...journeyWho() });
+    store.markHeard('newyear-2027', 'career');
+    const rows = useSavedJourneys.getState().journeys;
+    expect(rows.map(r => r.id).sort()).toEqual([savedJourneyId('newyear-2027', 'theo'), savedJourneyId('newyear-2027', 'theo', '1962-03-04 07:30 F')].sort());
+    expect(rows.find(r => r.profileKey)?.subjectName).toBe('엄마');
+    expect(useSavedJourneys.getState().heard).toEqual({ 'newyear-2027@1962-03-04 07:30 F': ['career'] });
   });
 });
 

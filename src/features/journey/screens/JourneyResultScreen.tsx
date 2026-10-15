@@ -10,14 +10,14 @@ import { useLang, useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import type { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
-import { useSubjectsStore } from '../../subjects/store/subjectsStore';
+import { journeyWho, useJourneySubject } from '../store/journeyProfileStore';
 import { useArchiveStore } from '../../archive/store/archiveStore';
 import { useSavedJourneys } from '../store/savedJourneysStore';
 import { JOURNEYS } from '../data/journeys';
 import { useJourneyPlayer } from '../player/journeyPlayer';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
 import { FortuneTicket } from '../components/FortuneTicket';
-import { monthsLabel, ticketMonths } from '../format';
+import { journeyMonthsLabel, ticketMonths } from '../format';
 import { column } from '../../../shared/device/screen';
 import { JourneyReportBook } from '../report/JourneyReportBook';
 import { JourneyRecordSheet } from '../components/JourneyRecordSheet';
@@ -41,7 +41,8 @@ export const JourneyResultScreen: React.FC = () => {
   const lang = useLang();
   const s = useJourneyPlayer();
   const [recordOpen, setRecordOpen] = useState(false);
-  const self = useSubjectsStore(x => x.self);
+  // Whose year this was — the profile picked before the guide.
+  const self = useJourneySubject();
   const addMemory = useArchiveStore(a => a.add);
   const keepJourney = useSavedJourneys(x => x.save);
   const journey = s.journeyId ? JOURNEYS[s.journeyId] : null;
@@ -52,7 +53,7 @@ export const JourneyResultScreen: React.FC = () => {
   // guide, tone) so the 아카이브 can open it again. Upsert, so a replay does not duplicate it.
   useEffect(() => {
     if (!journey || !s.content || !s.counselorId || !s.tone) return;
-    keepJourney({ journeyId: journey.id, counselorId: s.counselorId, tone: s.tone, lang: s.lang, year: journey.year, content: s.content });
+    keepJourney({ journeyId: journey.id, counselorId: s.counselorId, tone: s.tone, lang: s.lang, year: journey.year, content: s.content, ...journeyWho() });
   }, [journey, s.content, s.counselorId, s.tone, s.lang, keepJourney]);
   // Kept without a tap (27-09): the summary and the ticket go to the 아카이브 the moment the train
   // arrives, like the journey itself above. Keyed on journey × guide in `details` so a replay
@@ -61,13 +62,14 @@ export const JourneyResultScreen: React.FC = () => {
   useEffect(() => {
     if (!journey || !summary || !s.counselorId) return;
     const year = journey.year;
-    const best = monthsLabel(summary.bestMonths, lang);
-    const caution = monthsLabel(summary.cautionMonths, lang);
+    const best = journeyMonthsLabel(journey.year, summary.bestMonths, lang);
+    const caution = journeyMonthsLabel(journey.year, summary.cautionMonths, lang);
     const keywords = summary.keywords.join(' · ');
     const guide = getLocalizedCounselor(s.counselorId, lang);
     const keep = (kind: 'summary' | 'ticket', content: string, note: string, importance: 2 | 3) => {
-      const key = `${journey.id}::${s.counselorId}::${kind}`;
-      const details = { year: String(year), kind: 'travel', note, journey: key };
+      const { profileKey, subjectName } = journeyWho();
+      const key = `${journey.id}::${s.counselorId}::${kind}${profileKey ? `::${profileKey}` : ''}`;
+      const details = { year: String(year), kind: 'travel', note: subjectName ? `${subjectName} · ${note}` : note, journey: key };
       const existing = useArchiveStore.getState().memories.find(m => m.details?.journey === key);
       if (existing) {
         if (existing.content !== content) updateMemory(existing.id, { content, details });
@@ -95,8 +97,8 @@ export const JourneyResultScreen: React.FC = () => {
   }
   const year = journey.year;
   const guide = s.counselorId ? getLocalizedCounselor(s.counselorId, lang) : undefined;
-  const best = monthsLabel(summary.bestMonths, lang);
-  const caution = monthsLabel(summary.cautionMonths, lang);
+  const best = journeyMonthsLabel(journey.year, summary.bestMonths, lang);
+  const caution = journeyMonthsLabel(journey.year, summary.cautionMonths, lang);
   const keywords = summary.keywords.join(' · ');
   const passenger = self.displayName && self.displayName !== 'Myself' ? self.displayName : t('journey.ticket.you');
   const issued = issuedToday();

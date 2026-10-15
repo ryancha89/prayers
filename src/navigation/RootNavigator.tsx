@@ -12,10 +12,13 @@ import { hasBirthData, useSubjectsStore } from '../features/subjects/store/subje
 import { LoginScreen } from '../features/auth/screens/LoginScreen';
 import { AccountScreen } from '../features/profile/screens/AccountScreen';
 import { LibraryScreen } from '../features/profile/screens/LibraryScreen';
+import { MyInfoScreen } from '../features/profile/screens/MyInfoScreen';
 import { MeditationRoomScreen } from '../features/meditation/screens/MeditationRoomScreen';
 import { TicketsScreen } from '../features/tickets/screens/TicketsScreen';
 import { AttendanceScreen } from '../features/tickets/screens/AttendanceScreen';
 import { JourneyCounselorScreen } from '../features/journey/screens/JourneyCounselorScreen';
+import { JourneyProfileScreen } from '../features/journey/screens/JourneyProfileScreen';
+import { JourneySajuScreen } from '../features/journey/screens/JourneySajuScreen';
 import { JourneyPassScreen } from '../features/journey/screens/JourneyPassScreen';
 import { JourneyScreen } from '../features/journey/screens/JourneyScreen';
 import { JourneyResultScreen } from '../features/journey/screens/JourneyResultScreen';
@@ -69,8 +72,11 @@ export const RootNavigator: React.FC = () => {
     <Stack.Screen name="Tabs" component={BottomTabNavigator} />
     <Stack.Screen name="Account" component={AccountScreen} />
     <Stack.Screen name="Library" component={LibraryScreen} />
+    <Stack.Screen name="MyInfo" component={MyInfoScreen} />
     <Stack.Screen name="Tickets" component={TicketsScreen} />
     <Stack.Screen name="Attendance" component={AttendanceScreen} />
+    <Stack.Screen name="JourneyProfile" component={JourneyProfileScreen} />
+    <Stack.Screen name="JourneySaju" component={JourneySajuScreen} />
     <Stack.Screen name="JourneyPass" component={JourneyPassScreen} />
     <Stack.Screen name="JourneyCounselor" component={JourneyCounselorScreen} />
     {/* No swipe-back: a one-finger drag on the cabin turns the camera (useCabinCamera), and iOS 26's

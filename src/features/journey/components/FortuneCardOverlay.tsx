@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
-import { sfx } from '../../../shared/audio/sfx';
 import type { ActiveCard } from '../player/journeyPlayer';
-import { monthsLabel } from '../format';
+import { journeyMonthsLabel } from '../format';
 
 /** How long a card stays before it drifts away on its own. */
 const CARD_MS = 6500;
@@ -51,7 +50,12 @@ const RisenCard: React.FC<Props & { holdMs: number }> = ({ card, year, onDone, o
   const t = useT();
   const lang = useLang();
   const a = useRef(new Animated.Value(0)).current;
-  const [saved, setSaved] = useState(false);
+  // Kept without a tap (10-13, "여행중에 아카이브에 저장하기 누르지않아도 저장되어야해"): the card
+  // goes to the 아카이브 the moment it rises; the pill only says so.
+  useEffect(() => {
+    if (card.saveable) onSave(card);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card.key]);
 
   useEffect(() => {
     Animated.spring(a, { toValue: 1, useNativeDriver: true, friction: 8 }).start();
@@ -74,20 +78,13 @@ const RisenCard: React.FC<Props & { holdMs: number }> = ({ card, year, onDone, o
         },
       ]}>
       <Text style={styles.eyebrow}>{t('journey.card.eyebrow', { year })}</Text>
-      {card.months.length > 0 && <Text style={styles.months}>{monthsLabel(card.months, lang)}</Text>}
+      {card.months.length > 0 && <Text style={styles.months}>{journeyMonthsLabel(year, card.months, lang)}</Text>}
       <Text style={styles.title}>{card.title}</Text>
       <Text style={styles.stars}>{'★'.repeat(card.stars)}{'☆'.repeat(5 - card.stars)}</Text>
       {card.saveable && (
-        <Pressable
-          style={[styles.save, saved && styles.saved]}
-          disabled={saved}
-          onPress={() => {
-            sfx.select();
-            onSave(card);
-            setSaved(true);
-          }}>
-          <Text style={styles.saveText}>{saved ? t('journey.card.saved') : t('journey.card.save')}</Text>
-        </Pressable>
+        <View style={[styles.save, styles.saved]}>
+          <Text style={styles.saveText}>{t('journey.card.saved')}</Text>
+        </View>
       )}
     </Animated.View>
   );

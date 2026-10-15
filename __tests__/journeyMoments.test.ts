@@ -39,7 +39,7 @@ import {
 import { useSavedJourneys } from '../src/features/journey/store/savedJourneysStore';
 import { useSubjectsStore } from '../src/features/subjects/store/subjectsStore';
 import { useCoins } from '../src/features/coins/store/coinStore';
-import { NEWYEAR_2027, journeyEntryRoute } from '../src/features/journey/data/journeys';
+import { NEWYEAR_2027, journeyAfterProfile, journeyEntryRoute } from '../src/features/journey/data/journeys';
 import { collectionOf } from '../src/features/journey/collection';
 import { NativeUnityBridge } from '../src/features/counseling/bridge/NativeUnityBridge';
 import type { JourneyContent, JourneyPart } from '../src/features/journey/types';
@@ -146,9 +146,17 @@ describe('reading the server (v2)', () => {
 
   it('unlockMoment reads every answer of the unlock route', async () => {
     const req = { journeyId: 'newyear-2027', momentId: 'career#0', tone: 'theo', lang: 'en' as const };
+    // Whose stations: the ride's person goes with every unlock (10-12, unlocks are per person).
+    useSubjectsStore.setState({ self: { id: 'self', displayName: 'me', isUser: true, birthDate: '1989-12-05', birthTime: '00:50', gender: 'male' } });
     fetchMock.mockResolvedValueOnce(reply(200, unlockBody('career#0', 0, 380)));
     expect(await unlockMoment(req)).toMatchObject({ ok: true, charged: 0, coinBalance: 380 });
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ moment_id: 'career#0', tone: 'theo', lang: 'en' });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      moment_id: 'career#0',
+      tone: 'theo',
+      lang: 'en',
+      self: true,
+      base_info: { lang: 'en', first: { birth_year: 1989, birth_month: 12, birth_day: 5, birth_hour: 0, birth_minute: 50, gender: 'male' } },
+    });
     expect(fetchMock.mock.calls[0][0]).toMatch(/\/api\/v1\/prayers\/journeys\/newyear-2027\/unlock$/);
     fetchMock.mockResolvedValueOnce(reply(402, { error_code: 'INSUFFICIENT_COINS', price: 100, coin_balance: 30 }));
     expect(await unlockMoment(req)).toEqual({ ok: false, reason: 'insufficient', price: 100, coinBalance: 30 });
@@ -371,9 +379,10 @@ describe('resume and the collection', () => {
     expect(rows.map(r => r.number)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
-  it('a coin journey never goes through the pass screen', () => {
-    expect(journeyEntryRoute(NEWYEAR_2027)).toBe('JourneyCounselor');
-    expect(journeyEntryRoute({ ...NEWYEAR_2027, pass: true })).toBe('JourneyPass');
+  it('starts on whose year it is, and a coin journey never goes through the pass screen', () => {
+    expect(journeyEntryRoute(NEWYEAR_2027)).toBe('JourneyProfile');
+    expect(journeyAfterProfile(NEWYEAR_2027)).toBe('JourneyCounselor');
+    expect(journeyAfterProfile({ ...NEWYEAR_2027, pass: true })).toBe('JourneyPass');
   });
 });
 

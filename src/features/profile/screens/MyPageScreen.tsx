@@ -86,7 +86,7 @@ export const MyPageScreen: React.FC = () => {
         <Section title={t('my.library')}>
           <Row
             label={t('addSubject.myProfile')}
-            onPress={() => navigation.navigate('AddSubject', { subjectId: 'self' })}
+            onPress={() => navigation.navigate('MyInfo')}
           />
           {/* Both of these were labels with no onPress — while the stat row above counted exactly
               what they would have shown. The data was never missing; the destination was. */}

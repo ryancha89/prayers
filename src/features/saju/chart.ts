@@ -11,7 +11,7 @@
  *   - Month/year pillar: the solar term's exact time decides a birth on the term's day
  *     (before 절입 = previous month; on 立春 also the previous year).
  *   - Clock correction: longitude (Seoul −30 min under the 135°E standard) THEN Korean summer
- *     time (1948-51, 1955-60, 1987-88: −1 h). Auto-detected from the date; a caller may force it.
+ *     time (1948-51, 1955-60, 1987-88: −1 h). Auto-detected from the date and clock; a caller may force it.
  *   - 야자시 (night 子時, 23:00–00:59) is the NEXT day's 子 unless `nightMouse`.
  *
  * Solar dates only, 1900–2099 (the table's range). Lunar input is converted by the sister app
@@ -66,7 +66,7 @@ export interface ChartInput {
   minute?: number | null;
   /** Default: Seoul under the standard the country used on that date (`locationFor`). */
   location?: Location;
-  /** Default: `isSummerTime(date)`. */
+  /** Default: `isSummerTime(date, clock)`. */
   summerTime?: boolean;
   /** 야자시 as the same day's 子 rather than the next day's. */
   nightMouse?: boolean;
@@ -79,15 +79,18 @@ export interface Chart {
   zodiacTime: string | null;
   /** The clock after longitude and summer-time correction — what the hour pillar was read from. */
   adjusted: { hour: number; minute: number } | null;
+  /** Summer time moved the birth clock back an hour (never with time unknown). */
   summerTime: boolean;
   location: Location;
   timeUnknown: boolean;
 }
 
 // ── Korean summer time ────────────────────────────────────────────────────────────────────────
-// Verbatim from the sister app (which cites ko.wikipedia 일광 절약 시간제#대한민국): a date-only
-// check against local-midnight of the birth date, so the 1987/88 start days (02:00) are out and
-// their end days (03:00) are in — exactly as the app has always answered.
+// Periods from ko.wikipedia 일광 절약 시간제#대한민국 (the sister app's source), matching tzdb's
+// Asia/Seoul: each starts at the given wall-clock hour and ends at the given one, so the end
+// entry is the first moment that is NOT summer time (1948-60 ended at midnight, 1987/88 at 03:00).
+// The sister app checks the date alone against local midnight, which wrongly puts the whole of
+// 1987/88's start days out and every end day in; the birth clock decides it here.
 const SUMMER_RANGES: [number, number, number, number, number, number, number, number][] = [
   // [startY, startM, startD, startH, endY, endM, endD, endH]
   [1948, 6, 1, 0, 1948, 9, 13, 0],
@@ -104,10 +107,12 @@ const SUMMER_RANGES: [number, number, number, number, number, number, number, nu
   [1988, 5, 8, 2, 1988, 10, 9, 3],
 ];
 
-export function isSummerTime(year: number, month: number, day: number): boolean {
-  const t = Date.UTC(year, month - 1, day);
+/** Was Korea on summer time at this wall-clock moment? Without an hour (time unknown) the day
+ *  is read at noon — the hour pillar is not drawn then anyway, this only labels the date. */
+export function isSummerTime(year: number, month: number, day: number, hour?: number | null, minute?: number | null): boolean {
+  const t = Date.UTC(year, month - 1, day, hour ?? 12, hour == null ? 0 : (minute ?? 0));
   return SUMMER_RANGES.some(
-    ([sy, sm, sd, sh, ey, em, ed, eh]) => t >= Date.UTC(sy, sm - 1, sd, sh) && t <= Date.UTC(ey, em - 1, ed, eh),
+    ([sy, sm, sd, sh, ey, em, ed, eh]) => t >= Date.UTC(sy, sm - 1, sd, sh) && t < Date.UTC(ey, em - 1, ed, eh),
   );
 }
 
@@ -174,7 +179,7 @@ export function computeChart(input: ChartInput): Chart | null {
   const hour = timeKnown ? Number(input.hour) : null;
   const minute = timeKnown ? Number(input.minute ?? 0) : 0;
   const location = input.location ?? locationFor(year, month, day);
-  const summerTime = input.summerTime ?? isSummerTime(year, month, day);
+  const summerTime = input.summerTime ?? isSummerTime(year, month, day, hour, minute);
   const nightMouse = input.nightMouse === true;
 
   // The month's first solar-term row (節, always within the first ten days).
@@ -226,7 +231,8 @@ export function computeChart(input: ChartInput): Chart | null {
     zodiacDay,
     zodiacTime,
     adjusted: adjusted ? { hour: adjusted[0], minute: adjusted[1] } : null,
-    summerTime,
+    // Only when it moved the clock: with no birth time there is nothing to correct or to label.
+    summerTime: summerTime && adjusted !== null,
     location,
     timeUnknown: hour === null,
   };

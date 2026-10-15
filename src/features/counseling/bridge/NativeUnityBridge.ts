@@ -400,8 +400,10 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   }
 
   /** The player's music / sound-effect switches for the world's own audio. Posted straight through
-   *  and remembered for WORLD_READY (and kept across a reopen — they are settings, not session state). */
+   *  and remembered for every scene's READY (and kept across a reopen — they are settings, not
+   *  session state). Fed app-wide from the sound store in bridge/index.ts, whatever screen is up. */
   sendWorldAudio(music: boolean, sfx: boolean): void {
+    if (this.worldAudio?.music === music && this.worldAudio?.sfx === sfx) return;
     this.worldAudio = { music, sfx };
     if (this.view) this.post({ type: 'WORLD_AUDIO', payload: this.worldAudio });
   }
@@ -665,6 +667,14 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     // Not the button's anchor: it streams while a piece is in reach (up to ~12/s) and would bury the
     // rest of the trace.
     if (event.type !== 'MYROOM_ITEM_ANCHOR') devlog('[unity<-] ' + raw);
+
+    // The music / sound switches reach EVERY Unity scene, not only the world: the rooms' tracks,
+    // the meditation bed and My Room all play through Unity's SoundManager, and a switch the
+    // player turned off must hold there too (10-12: "배경음악 오프했는데 나오는거"). Replayed on
+    // each scene's READY, since a freshly loaded scene starts at Unity's own defaults.
+    if (event.type.endsWith('_READY') && this.worldAudio && event.type !== 'WORLD_READY') {
+      this.post({ type: 'WORLD_AUDIO', payload: this.worldAudio });
+    }
 
     // Cold boot: the player is up but empty. SESSION_INIT is what loads the
     // room, so it has to go out HERE — waiting for UNITY_READY would wait for

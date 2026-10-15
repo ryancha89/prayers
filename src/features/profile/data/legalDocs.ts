@@ -49,7 +49,7 @@ const EN: Record<LegalDoc, Document> = {
         heading: '2. Your account',
         body: [
           'You sign in with a third-party provider. We keep the account identifier that provider returns, so your readings and question tickets stay with you across devices.',
-          'You may delete your account from inside the app at any time, under My → Account. Deletion is immediate and permanent.',
+          'You may delete your account from inside the app at any time, under Profile → Account. Deletion is immediate and permanent.',
         ],
       },
       {
@@ -113,7 +113,7 @@ const EN: Record<LegalDoc, Document> = {
       {
         heading: '5. Your choices',
         body: [
-          'You can edit or remove a saved person at any time, change the app language, and delete your account under My → Account.',
+          'You can edit or remove a saved person at any time, change the app language, and delete your account under Profile → Account.',
           'For any question about this policy, contact the operator through the store listing.',
         ],
       },
@@ -137,7 +137,7 @@ const KO: Record<LegalDoc, Document> = {
         heading: '2. 계정',
         body: [
           '외부 제공자를 통해 로그인합니다. 제공자가 돌려주는 계정 식별자를 보관하여, 기기를 바꿔도 상담 기록과 질문권이 따라가도록 합니다.',
-          '마이 → 계정에서 언제든 앱 안에서 계정을 삭제할 수 있습니다. 삭제는 즉시, 되돌릴 수 없습니다.',
+          '프로필 → 계정에서 언제든 앱 안에서 계정을 삭제할 수 있습니다. 삭제는 즉시, 되돌릴 수 없습니다.',
         ],
       },
       {
@@ -201,7 +201,7 @@ const KO: Record<LegalDoc, Document> = {
       {
         heading: '5. 이용자의 선택',
         body: [
-          '저장된 사람은 언제든 수정·삭제할 수 있고, 언어를 바꿀 수 있으며, 마이 → 계정에서 계정을 삭제할 수 있습니다.',
+          '저장된 사람은 언제든 수정·삭제할 수 있고, 언어를 바꿀 수 있으며, 프로필 → 계정에서 계정을 삭제할 수 있습니다.',
           '이 방침에 대한 문의는 스토어 등록 정보의 연락처로 보내주세요.',
         ],
       },
@@ -225,7 +225,7 @@ const VI: Record<LegalDoc, Document> = {
         heading: '2. Tài khoản',
         body: [
           'Bạn đăng nhập qua một nhà cung cấp bên thứ ba. Chúng tôi giữ mã định danh tài khoản mà bên đó trả về, để lịch sử tư vấn và lượt hỏi đi theo bạn khi đổi thiết bị.',
-          'Bạn có thể xoá tài khoản ngay trong ứng dụng bất cứ lúc nào, tại Của tôi → Tài khoản. Xoá là lập tức và không khôi phục được.',
+          'Bạn có thể xoá tài khoản ngay trong ứng dụng bất cứ lúc nào, tại Hồ sơ → Tài khoản. Xoá là lập tức và không khôi phục được.',
         ],
       },
       {
@@ -289,7 +289,7 @@ const VI: Record<LegalDoc, Document> = {
       {
         heading: '5. Lựa chọn của bạn',
         body: [
-          'Bạn có thể sửa hoặc xoá người đã lưu bất cứ lúc nào, đổi ngôn ngữ, và xoá tài khoản tại Của tôi → Tài khoản.',
+          'Bạn có thể sửa hoặc xoá người đã lưu bất cứ lúc nào, đổi ngôn ngữ, và xoá tài khoản tại Hồ sơ → Tài khoản.',
           'Mọi thắc mắc về chính sách này, xin liên hệ nhà vận hành qua thông tin trên trang cửa hàng.',
         ],
       },

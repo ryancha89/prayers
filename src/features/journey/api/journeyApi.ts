@@ -25,6 +25,17 @@ export interface JourneyBirth {
   birth_hour?: number;
   birth_minute: number;
   gender: 'male' | 'female';
+  /** Not part of the chart: marks the account holder's own ride (sent as top-level `self`), which
+   *  inherits the server's journey rows from before journeys were per person. */
+  self?: true;
+}
+
+/** The "whose journey" part of every journey request: the birth data as `base_info.first`, and
+ *  `self` for the account holder. */
+export function whoOf(lang: Lang, birth: JourneyBirth | null) {
+  if (!birth) return { base_info: { lang } };
+  const { self, ...first } = birth;
+  return { ...(self ? { self: true } : {}), base_info: { lang, first } };
 }
 
 export function journeyBirthOf(subject?: CounselingSubject): JourneyBirth | null {
@@ -39,6 +50,7 @@ export function journeyBirthOf(subject?: CounselingSubject): JourneyBirth | null
     ...(time ? { birth_hour: Number(time[1]) } : {}),
     birth_minute: time ? Number(time[2]) : 0,
     gender: subject.gender,
+    ...(subject.isUser || subject.id === 'self' ? { self: true as const } : {}),
   };
 }
 
@@ -125,7 +137,7 @@ export async function fetchJourneyContent(
     const res = await authedFetch(`${apiBase()}/api/v1/prayers/journeys/${journeyId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tone, lang, ...(name ? { name } : {}), base_info: { lang, ...(birth ? { first: birth } : {}) } }),
+      body: JSON.stringify({ tone, lang, ...(name ? { name } : {}), ...whoOf(lang, birth) }),
       signal,
     });
     if (!res) return { error: 'content' };
@@ -204,7 +216,7 @@ export async function fetchJourneyReport(
     const res = await authedFetch(`${apiBase()}/api/v1/prayers/journeys/${journeyId}/report`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tone, lang, ...(name ? { name } : {}), base_info: { lang, ...(birth ? { first: birth } : {}) } }),
+      body: JSON.stringify({ tone, lang, ...(name ? { name } : {}), ...whoOf(lang, birth) }),
       signal,
     });
     if (!res?.ok) return null;
@@ -222,7 +234,7 @@ export async function prepareJourney(journeyId: string, lang: Lang, birth: Journ
     await authedFetch(`${apiBase()}/api/v1/prayers/journeys/${journeyId}/prepare`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lang, base_info: { lang, ...(birth ? { first: birth } : {}) } }),
+      body: JSON.stringify({ lang, ...whoOf(lang, birth) }),
     });
   } catch {
     // Only a head start: boarding writes the facts itself if this did not.

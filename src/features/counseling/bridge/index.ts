@@ -4,6 +4,7 @@ import { apiBase } from '../../../shared/config/api';
 import { MyRoomBridge, UnityBridge, WorldBridge } from '../types';
 import { MockUnityBridge } from './MockUnityBridge';
 import { NativeUnityBridge } from './NativeUnityBridge';
+import { useSoundStore } from '../../../shared/audio/store';
 
 /**
  * Single entry point for the Unity bridge (rule §52-7/8). Picks the real
@@ -89,6 +90,16 @@ if (__DEV__) {
 
 /** Always instantiated so UnityHost can wire itself even in mock builds. */
 export const nativeUnityBridge = new NativeUnityBridge();
+
+// The player's music / sound switches follow Unity everywhere (rooms, meditation, My Room, the
+// world), not just while the world screen is mounted: sent now, on every change (including the
+// stored value arriving after launch), and replayed by the bridge on each scene's READY.
+const syncUnityAudio = () => {
+  const { musicEnabled, sfxEnabled } = useSoundStore.getState();
+  nativeUnityBridge.sendWorldAudio(musicEnabled, sfxEnabled);
+};
+syncUnityAudio();
+useSoundStore.subscribe(syncUnityAudio);
 
 // A JS reload skips React cleanups, so a running Unity instance (and its BGM)
 // survives into this fresh context. Silence it natively and, if one survived,

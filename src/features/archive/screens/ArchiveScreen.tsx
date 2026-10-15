@@ -14,6 +14,7 @@ import { CATEGORIES, CATEGORY_ICON, MOOD_ICON, type ArchiveCategory } from '../t
 import { dayKey, questionFor } from '../questions';
 import { MemoryEditor } from '../components/MemoryEditor';
 import { useSavedJourneys } from '../../journey/store/savedJourneysStore';
+import { selectJourneyProfile } from '../../journey/store/journeyProfileStore';
 import { useJourneyPlayer } from '../../journey/player/journeyPlayer';
 import { JOURNEYS } from '../../journey/data/journeys';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
@@ -202,6 +203,7 @@ export const ArchiveScreen: React.FC = () => {
                   onPress={() => {
                     sfx.select();
                     touchJourney(j.id);
+                    selectJourneyProfile(j.profileKey);
                     openSaved(j);
                     navigation.navigate('JourneyResult');
                   }}>
@@ -212,6 +214,7 @@ export const ArchiveScreen: React.FC = () => {
                     </Text>
                     <Text style={styles.diaryText} numberOfLines={2}>
                       {journey ? t(journey.title, { year: j.year }) : String(j.year)}
+                      {j.subjectName ? ` · ${j.subjectName}` : ''}
                     </Text>
                   </View>
                   <Text style={styles.journeyOpen}>{t('archive.journeys.open')} ›</Text>

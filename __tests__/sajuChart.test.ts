@@ -7,10 +7,25 @@ import { adjustTime, chartFromFields, computeChart, isSummerTime, locationFor, p
 describe('summer time', () => {
   it('knows the Korean daylight-saving years', () => {
     expect(isSummerTime(1988, 7, 28)).toBe(true);
-    expect(isSummerTime(1987, 10, 11)).toBe(true); // the end day counts
-    expect(isSummerTime(1987, 5, 10)).toBe(false); // the start day (02:00) does not
     expect(isSummerTime(1989, 7, 28)).toBe(false);
     expect(isSummerTime(1959, 6, 1)).toBe(true);
+  });
+
+  it('switches at the hour the clocks changed, not at midnight', () => {
+    // 1987: on at 05-10 02:00, off at 10-11 03:00.
+    expect(isSummerTime(1987, 5, 10, 1, 59)).toBe(false);
+    expect(isSummerTime(1987, 5, 10, 10, 0)).toBe(true);
+    expect(isSummerTime(1987, 10, 11, 2, 30)).toBe(true);
+    expect(isSummerTime(1987, 10, 11, 10, 0)).toBe(false);
+    // 1948-60 ended at midnight: the listed end day is already standard time.
+    expect(isSummerTime(1958, 9, 20, 23, 59)).toBe(true);
+    expect(isSummerTime(1958, 9, 21, 10, 0)).toBe(false);
+  });
+
+  it('labels summer time only when it moved a known birth clock', () => {
+    expect(computeChart({ year: 1987, month: 5, day: 10, hour: 10, minute: 0 })!.summerTime).toBe(true);
+    expect(computeChart({ year: 1987, month: 10, day: 11, hour: 10, minute: 0 })!.summerTime).toBe(false);
+    expect(computeChart({ year: 1988, month: 7, day: 28 })!.summerTime).toBe(false);
   });
 
   it('takes an hour off the clock after the longitude correction', () => {

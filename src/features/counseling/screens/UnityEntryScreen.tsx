@@ -7,6 +7,7 @@ import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
 import { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
+import { roomSubjects } from '../bridge/subjectPayload';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useCounselingStore } from '../store/counselingStore';
 import { defaultTopicFor } from '../topicsForCounselor';
@@ -102,13 +103,7 @@ export const UnityEntryScreen: React.FC = () => {
         roomId: counselor.roomId,
         name: counselor.name,
       },
-      subject: {
-        id: subject.id,
-        displayName: subject.displayName,
-        birthDate: subject.birthDate,
-        birthTime: subject.birthTime,
-        gender: subject.gender,
-      },
+      ...roomSubjects(subject, useSubjectsStore.getState().self),
       topic,
       apiBase: unityApiBase,
       locale: lang,

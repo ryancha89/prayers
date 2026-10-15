@@ -33,6 +33,8 @@ export type RootStackParamList = {
   Login: undefined;
   /** The account itself: who is signed in, signing out, and deleting it. */
   Account: undefined;
+  /** 내 정보: the account holder's birth data and the saju chart computed from it. */
+  MyInfo: undefined;
   /**
    * The two My Page library lists — saved people, and favourited counsellors.
    *
@@ -43,7 +45,10 @@ export type RootStackParamList = {
   Library: { list: 'people' | 'favorites' };
   /** Question tickets: the balance, the allowance, and the only way to buy more. */
   Tickets: undefined;
-  /** Season journeys (2027 신년운세 여행 …): choose the guide, ride, arrive. */
+  /** Season journeys (2027 신년운세 여행 …): whose year (a profile), their saju, then the guide, ride,
+   *  arrive. */
+  JourneyProfile: { journeyId: string };
+  JourneySaju: { journeyId: string };
   JourneyCounselor: { journeyId: string };
   /** The paid journey's boarding pass (purchase). Redirects to JourneyCounselor once owned. */
   JourneyPass: { journeyId: string };

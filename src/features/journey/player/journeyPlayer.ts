@@ -11,7 +11,8 @@ import { setStationAmbience, stationAmbienceOf, stopStationAmbience } from './st
 import { useSoundStore } from '../../../shared/audio/store';
 import { useSavedJourneys, withPart } from '../store/savedJourneysStore';
 import { useCoins } from '../../coins/store/coinStore';
-import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
+import { hasBirthData } from '../../subjects/store/subjectsStore';
+import { journeySubject } from '../store/journeyProfileStore';
 import { JOURNEYS } from '../data/journeys';
 import type { CabinAmbient, Chapter, FortuneCard, Journey, JourneyCard, JourneyContent, JourneyPart, MomentCue, MomentPresentation } from '../types';
 import type { JourneyStatePayload } from '../../counseling/types';
@@ -290,6 +291,8 @@ function startLayer(which: 'bgm' | 'ambient', file: string | null, volume: numbe
     devlog(`[journey] ${which} ${file} playing at ${volume}`);
     s.setNumberOfLoops?.(-1);
     s.setVolume?.(volume);
+    // Loaded while the ride is paused (music switched back on mid-pause): the resume starts it.
+    if (useJourneyPlayer.getState().status === 'paused') return;
     s.play?.();
   });
   layers[which] = s;
@@ -297,13 +300,34 @@ function startLayer(which: 'bgm' | 'ambient', file: string | null, volume: numbe
   if (which === 'bgm') setDuckTarget(s, volume);
 }
 
+/** The ride's music, kept while the switch is off so turning it back on mid-ride can start it. */
+let bgmFile: string | null = null;
+
+function startBgm() {
+  if (!bgmFile || !useSoundStore.getState().musicEnabled) return;
+  startLayer('bgm', bgmFile, JOURNEY_BGM_VOLUME);
+}
+
+function stopBgm() {
+  setDuckTarget(null);
+  try {
+    layers.bgm?.stop?.();
+    layers.bgm?.release?.();
+  } catch {}
+  layers.bgm = null;
+}
+
 function startLayers(journey: Journey) {
-  startLayer('bgm', journey.audio.bgm, JOURNEY_BGM_VOLUME);
+  // The music obeys the player's switch like every other bed (10-12: it played with music off).
+  // The carriage's rolling stays: it is the train, not music.
+  bgmFile = journey.audio.bgm;
+  startBgm();
   startLayer('ambient', journey.audio.ambient, 0.35);
   preloadJourneySfx();
 }
 
 function stopLayers() {
+  bgmFile = null;
   setDuckTarget(null);
   for (const k of ['bgm', 'ambient'] as const) {
     try {
@@ -754,11 +778,11 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     const gen = generation;
     arrivalChimed = false;
     set({ journeyId, counselorId, tone, lang, status: 'boarding', chapterIndex: 0, partIndex: 0, error: null, content: null, heard: [] });
-    // The reading is the account holder's. Their birth data rides along so the server can build the
-    // chart even for an account that has never saved a profile (a consultation is the only other
-    // thing that does). Without it there is nothing to read from — say so instead of boarding.
-    const self = useSubjectsStore.getState().self;
-    if (!hasBirthData(self)) {
+    // The reading is the chosen person's (the profile picked before the guide — the account holder
+    // by default). Their birth data rides along so the server builds that chart, and keeps the
+    // journey under that person. Without it there is nothing to read from — say so instead of boarding.
+    const who = journeySubject();
+    if (!hasBirthData(who)) {
       set({ status: 'error', error: 'no-chart' });
       return;
     }
@@ -769,7 +793,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
       departPending = false;
       set({ status: 'platform' });
     }
-    const result = await fetchJourneyContent(journeyId, tone, lang, journeyBirthOf(self), undefined, journeyNameOf(self));
+    const result = await fetchJourneyContent(journeyId, tone, lang, journeyBirthOf(who), undefined, journeyNameOf(who));
     if (gen !== generation) return;
     if ('error' in result) {
       set({ status: 'error', error: result.error });
@@ -1141,7 +1165,10 @@ export function wantedAmbience(s: Pick<JourneyState, 'status' | 'journeyId' | 'c
 const syncAmbience = () => setStationAmbience(wantedAmbience(useJourneyPlayer.getState()));
 useJourneyPlayer.subscribe(syncAmbience);
 useSoundStore.subscribe((now, prev) => {
-  if (now.musicEnabled !== prev.musicEnabled) syncAmbience();
+  if (now.musicEnabled === prev.musicEnabled) return;
+  syncAmbience();
+  if (now.musicEnabled) startBgm();
+  else stopBgm();
 });
 
 /** The paid-moment part of the cabin's JOURNEY_STATE. A locked moment brings the camera in close

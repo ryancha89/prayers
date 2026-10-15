@@ -3,6 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Lang } from '../../../shared/i18n';
 import type { JourneyContent, JourneyPart, JourneySummary } from '../types';
+import { journeyProfileKey, scopedJourneyKey } from './journeyProfileStore';
 
 /**
  * 저장된 여행(신년운세) — a finished journey, kept on the phone so it can be opened again.
@@ -22,6 +23,10 @@ import type { JourneyContent, JourneyPart, JourneySummary } from '../types';
  * nothing here can open one. An unlock made on a ride is patched into that guide's saved row so the
  * row replays it offline, and the moment ids are kept per journey (unlocks are per account +
  * journey, not per guide) as a cache of what this phone has seen unlocked.
+ *
+ * Per person since 10-12: a ride for someone in the player's profiles (`profileKey`, see
+ * journeyProfileStore) is its own row, its own unlocks and its own heard stations. The account
+ * holder's records keep their old keys (profileKey '').
  */
 export interface SavedJourney {
   id: string;
@@ -35,6 +40,9 @@ export interface SavedJourney {
   savedAt: string;
   /** ISO. Last completion or reopen. */
   updatedAt: string;
+  /** Whose year ('' / absent = the account holder's) and their name, for the list. */
+  profileKey?: string;
+  subjectName?: string;
 }
 
 export interface NewSavedJourney {
@@ -44,6 +52,8 @@ export interface NewSavedJourney {
   lang: Lang;
   year: number;
   content: JourneyContent;
+  profileKey?: string;
+  subjectName?: string;
 }
 
 interface SavedJourneysState {
@@ -57,11 +67,13 @@ interface SavedJourneysState {
     chapterId: string,
     part: JourneyPart,
     summary: JourneySummary | null,
+    /** Default: the person this ride is for. */
+    profileKey?: string,
   ) => void;
   unlocksOf: (journeyId: string) => string[];
   /** Stations whose free part has been heard, by journey id — the collection counts them. */
   heard: Record<string, string[]>;
-  markHeard: (journeyId: string, chapterId: string) => void;
+  markHeard: (journeyId: string, chapterId: string, profileKey?: string) => void;
   /** Upsert by journey × counsellor. Returns the row. */
   save: (j: NewSavedJourney) => SavedJourney;
   remove: (id: string) => void;
@@ -91,20 +103,22 @@ export function withPart(
     }),
   };
 }
-export const savedJourneyId = (journeyId: string, counselorId: string) => `${journeyId}::${counselorId}`;
+export const savedJourneyId = (journeyId: string, counselorId: string, profileKey = '') =>
+  profileKey ? `${journeyId}::${counselorId}::${profileKey}` : `${journeyId}::${counselorId}`;
 
 export const useSavedJourneys = create<SavedJourneysState>()(
   persist(
     (set, get) => ({
       journeys: [],
       unlocks: {},
-      addUnlock: (journeyId, counselorId, chapterId, part, summary) => {
-        const id = savedJourneyId(journeyId, counselorId);
+      addUnlock: (journeyId, counselorId, chapterId, part, summary, profileKey = journeyProfileKey()) => {
+        const id = savedJourneyId(journeyId, counselorId, profileKey);
+        const key = scopedJourneyKey(journeyId, profileKey);
         const mid = part.momentId;
         set(s => {
-          const prev = s.unlocks[journeyId] ?? [];
+          const prev = s.unlocks[key] ?? [];
           return {
-            unlocks: mid && !prev.includes(mid) ? { ...s.unlocks, [journeyId]: [...prev, mid] } : s.unlocks,
+            unlocks: mid && !prev.includes(mid) ? { ...s.unlocks, [key]: [...prev, mid] } : s.unlocks,
             journeys: s.journeys.map(j =>
               j.id !== id ? j : { ...j, content: withPart(j.content, chapterId, part, summary) },
             ),
@@ -113,12 +127,13 @@ export const useSavedJourneys = create<SavedJourneysState>()(
       },
       unlocksOf: journeyId => get().unlocks[journeyId] ?? [],
       heard: {},
-      markHeard: (journeyId, chapterId) => {
-        const prev = get().heard[journeyId] ?? [];
-        if (!prev.includes(chapterId)) set(s => ({ heard: { ...s.heard, [journeyId]: [...prev, chapterId] } }));
+      markHeard: (journeyId, chapterId, profileKey = journeyProfileKey()) => {
+        const key = scopedJourneyKey(journeyId, profileKey);
+        const prev = get().heard[key] ?? [];
+        if (!prev.includes(chapterId)) set(s => ({ heard: { ...s.heard, [key]: [...prev, chapterId] } }));
       },
       save: input => {
-        const id = savedJourneyId(input.journeyId, input.counselorId);
+        const id = savedJourneyId(input.journeyId, input.counselorId, input.profileKey);
         const prev = get().journeys.find(j => j.id === id);
         const row: SavedJourney = {
           id,
@@ -130,6 +145,7 @@ export const useSavedJourneys = create<SavedJourneysState>()(
           content: input.content,
           savedAt: prev?.savedAt ?? now(),
           updatedAt: now(),
+          ...(input.profileKey ? { profileKey: input.profileKey, subjectName: input.subjectName } : {}),
         };
         set(s => ({ journeys: [row, ...s.journeys.filter(j => j.id !== id)] }));
         return row;

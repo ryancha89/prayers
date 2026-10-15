@@ -12,7 +12,9 @@ import { sfx } from '../../../shared/audio/sfx';
 import type { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useArchiveStore } from '../../archive/store/archiveStore';
-import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
+import { hasBirthData } from '../../subjects/store/subjectsStore';
+import { journeyWho, useJourneySubject } from '../store/journeyProfileStore';
+import { useSavedJourneys } from '../store/savedJourneysStore';
 import { JOURNEYS } from '../data/journeys';
 import { TRANSITION_MS, cabinAmbientOf, cabinMomentOf, currentPart, teaserOf, useJourneyPlayer, type ActiveCard } from '../player/journeyPlayer';
 import { BEAT_LINES, dropPendingBeatLines, openStoryboard, prefetchBeatLines, sayBeatLine, stopBeatVoice } from '../player/beatVoice';
@@ -26,7 +28,7 @@ import { CoinPill } from '../../coins/components/CoinPill';
 import { useCoins } from '../../coins/store/coinStore';
 import { FortuneCardOverlay } from '../components/FortuneCardOverlay';
 import { StationTransition } from '../components/StationTransition';
-import { clock, monthsLabel } from '../format';
+import { clock, journeyMonthsLabel } from '../format';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import type { JourneyStatePayload } from '../../counseling/types';
@@ -114,6 +116,15 @@ export const JourneyScreen: React.FC = () => {
   const addMemory = useArchiveStore(a => a.add);
   const journey = s.journeyId ? JOURNEYS[s.journeyId] : null;
 
+  // Kept in 아카이브 → 저장한 여행 from the moment the telling arrives, and again on every unlock
+  // (10-13, "이미 본거 어디에 나온다고?"): it used to be saved only on reaching the result screen, so
+  // a ride left half-way with < was nowhere to be found afterwards.
+  const keepJourney = useSavedJourneys(x => x.save);
+  useEffect(() => {
+    if (!journey || !s.content || !s.counselorId || !s.tone) return;
+    keepJourney({ journeyId: journey.id, counselorId: s.counselorId, tone: s.tone, lang: s.lang, year: journey.year, content: s.content, ...journeyWho() });
+  }, [journey, s.content, s.counselorId, s.tone, s.lang, keepJourney]);
+
   // The journey finished → the ending painting, then the collection (mockup panels 21-22).
   useEffect(() => {
     if (s.status === 'done') navigation.replace('JourneyEnding');
@@ -137,7 +148,7 @@ export const JourneyScreen: React.FC = () => {
   // Boarding refused for want of birth data → the player went to the form → came back with it.
   // Leave again on their behalf; a "try again" tap after filling in a form reads as the app not
   // having noticed.
-  const selfReady = useSubjectsStore(st => hasBirthData(st.self));
+  const selfReady = hasBirthData(useJourneySubject());
   const reboard = useCallback(() => {
     if (s.journeyId && s.counselorId && s.tone) void s.board(s.journeyId, s.counselorId, s.tone, lang);
   }, [s, lang]);
@@ -360,10 +371,15 @@ export const JourneyScreen: React.FC = () => {
   const saveCard = useCallback(
     (card: ActiveCard) => {
       if (!journey) return;
+      // Saved as it rises (FortuneCardOverlay), so a replay or a second telling of the same month
+      // must not stack copies: one row per journey × person × months × title.
+      const { profileKey } = journeyWho();
+      const key = `${journey.id}::card::${card.months.join(',')}::${card.title}${profileKey ? `::${profileKey}` : ''}`;
+      if (useArchiveStore.getState().memories.some(m => m.details?.journey === key)) return;
       addMemory({
         category: 'story',
-        content: `${journey.year} ${monthsLabel(card.months, lang)} · ${card.title}`,
-        details: { year: String(journey.year), kind: 'travel', note: card.description },
+        content: `${journey.year} ${journeyMonthsLabel(journey.year, card.months, lang)} · ${card.title}`,
+        details: { year: String(journey.year), kind: 'travel', note: card.description, journey: key },
         importance: 2,
       });
     },
@@ -572,6 +588,7 @@ export const JourneyScreen: React.FC = () => {
         chapters={journey.chapters}
         current={index}
         progress={s.status === 'transition' ? 0 : progress}
+        content={s.content}
         onStation={i => { sfx.tap(); s.goTo(i); }}
       />
       </View>

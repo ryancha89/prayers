@@ -11,6 +11,7 @@ import { sfx } from '../../../shared/audio/sfx';
 import type { RootStackParamList } from '../../../navigation/types';
 import { CoinPill } from '../../coins/components/CoinPill';
 import { useSavedJourneys } from '../store/savedJourneysStore';
+import { journeyWho, scopedJourneyKey } from '../store/journeyProfileStore';
 import { JOURNEYS } from '../data/journeys';
 import { useJourneyPlayer } from '../player/journeyPlayer';
 import { collectionOf } from '../collection';
@@ -28,12 +29,12 @@ export const JourneyCollectionScreen: React.FC = () => {
   const t = useT();
   const s = useJourneyPlayer();
   const journey = s.journeyId ? JOURNEYS[s.journeyId] : null;
-  const heard = useSavedJourneys(x => (s.journeyId ? x.heard[s.journeyId] : undefined));
+  const heard = useSavedJourneys(x => (s.journeyId ? x.heard[scopedJourneyKey(s.journeyId)] : undefined));
   const keepJourney = useSavedJourneys(x => x.save);
   // Reaching the end keeps the journey for the 아카이브, as arriving did before (upsert).
   useEffect(() => {
     if (!journey || !s.content || !s.counselorId || !s.tone) return;
-    keepJourney({ journeyId: journey.id, counselorId: s.counselorId, tone: s.tone, lang: s.lang, year: journey.year, content: s.content });
+    keepJourney({ journeyId: journey.id, counselorId: s.counselorId, tone: s.tone, lang: s.lang, year: journey.year, content: s.content, ...journeyWho() });
   }, [journey, s.content, s.counselorId, s.tone, s.lang, keepJourney]);
 
   // Back from the collection leaves the journey: it is the end of the line.

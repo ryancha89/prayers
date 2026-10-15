@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Lang } from '../../../shared/i18n';
-import { useSubjectsStore } from '../../subjects/store/subjectsStore';
+import { journeySubject } from '../store/journeyProfileStore';
 import { useCoins } from '../../coins/store/coinStore';
 import { fetchJourneyReport, journeyBirthOf, journeyNameOf } from '../api/journeyApi';
 import { unlockMoment, type UnlockFailure } from '../player/unlockMoment';
@@ -44,8 +44,8 @@ export function useJourneyReport(
 
   const load = useCallback(async (signal?: AbortSignal) => {
     if (!journeyId || !tone) return null;
-    const self = useSubjectsStore.getState().self;
-    return fetchJourneyReport(journeyId, tone, lang, journeyBirthOf(self), signal, journeyNameOf(self));
+    const who = journeySubject();
+    return fetchJourneyReport(journeyId, tone, lang, journeyBirthOf(who), signal, journeyNameOf(who));
   }, [journeyId, tone, lang]);
 
   useEffect(() => {

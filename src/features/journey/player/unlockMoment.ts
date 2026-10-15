@@ -2,7 +2,8 @@ import { apiBase } from '../../../shared/config/api';
 import { devlog } from '../../../shared/devlog';
 import { authedFetch } from '../../auth/api/headers';
 import type { Lang } from '../../../shared/i18n';
-import { mapPart, mapSummary } from '../api/journeyApi';
+import { journeyBirthOf, mapPart, mapSummary, whoOf } from '../api/journeyApi';
+import { journeySubject } from '../store/journeyProfileStore';
 import type { JourneyPart, JourneySummary } from '../types';
 
 /**
@@ -10,7 +11,7 @@ import type { JourneyPart, JourneySummary } from '../types';
  *
  * The server owns the charge: it prices the moment, takes the coins from the account's wallet
  * (`users.coin_balance`) and answers with the unlocked part — the text and cards this phone has
- * never had. The client only asks. Unlocks are per account + journey: asking again, or with another
+ * never had. The client only asks. Unlocks are per account + person + journey: asking again, or with another
  * counsellor, is not charged twice (`charged: 0`) and returns that counsellor's telling.
  *
  * POST /api/v1/prayers/journeys/:key/unlock { moment_id, tone, lang }
@@ -55,7 +56,14 @@ export async function unlockMoment(req: UnlockRequest): Promise<UnlockResult> {
     const res = await authedFetch(`${apiBase()}/api/v1/prayers/journeys/${req.journeyId}/unlock`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ moment_id: req.momentId, tone: req.tone, lang: req.lang }),
+      // Whose stations: unlocks are per person (10-12). Without the birth data the server would fall
+      // back to the account's stored profile — whoever the last consultation was about.
+      body: JSON.stringify({
+        moment_id: req.momentId,
+        tone: req.tone,
+        lang: req.lang,
+        ...whoOf(req.lang, journeyBirthOf(journeySubject())),
+      }),
     });
     if (!res) return { ok: false, reason: 'failed' };
     const b = await res.json().catch(() => null);

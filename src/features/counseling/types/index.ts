@@ -88,6 +88,17 @@ export interface CounselorResponse {
 }
 
 /* ---- Unity session payload (spec §40) ---- */
+/** A person as the room is told about them: inline birth data, no lookup. */
+export interface UnitySubject {
+  id: string;
+  displayName: string;
+  birthDate?: string;
+  birthTime?: string;
+  gender?: string;
+  /** How the account holder knows them; empty = 지인. */
+  relationship?: string;
+}
+
 export interface UnitySessionPayload {
   sessionId: string;
   counselor: {
@@ -96,13 +107,10 @@ export interface UnitySessionPayload {
     roomId: string;
     name: string;
   };
-  subject: {
-    id: string;
-    displayName: string;
-    birthDate?: string;
-    birthTime?: string;
-    gender?: string;
-  };
+  subject: UnitySubject;
+  /** The account holder, when `subject` is someone they are asking about (10-13): the reading goes
+   *  out as "holder asks about subject", not as the subject's own consultation. */
+  holder?: UnitySubject;
   /** The consultation mode the user picked (main_topic) — focus, not a limit. */
   topic?: CounselingTopic;
   /** Rails host override for the embedded player (dev/staging). */
@@ -250,6 +258,8 @@ export interface OracleResultPayload {
 /* ---- Bridge events (spec §41). Serialized as JSON across the boundary. ---- */
 export type RNToUnityEvent =
   | { type: 'SESSION_INIT'; payload: UnitySessionPayload }
+  /** Read for another person without leaving the room (10-13). The avatar and the room stay. */
+  | { type: 'SUBJECT_SWITCH'; payload: { subject: UnitySubject; holder?: UnitySubject } }
   | { type: 'COUNSELOR_RESPONSE'; payload: CounselorResponse }
   /** Enter a phase: camera, animation, VFX, sound. No text — RN draws that. */
   | { type: 'STAGE_PHASE'; payload: StagePhasePayload }
