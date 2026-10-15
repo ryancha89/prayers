@@ -16,9 +16,11 @@ import { CategoryTabs } from '../../counselors/components/CategoryTabs';
 import { HomeHeader } from '../../counselors/components/HomeHeader';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
 import { syncConversationsFromServer } from '../../conversations/syncConversations';
-import { fetchTicketBalance } from '../../counseling/api/tickets';
+import { useCoins } from '../../coins/store/coinStore';
+import { refreshCoins } from '../../coins/api/coinsApi';
+import { formatCoins } from '../../coins/format';
 import { checkIn, fetchAttendance, type AttendanceStatus } from '../../tickets/api/attendance';
-import { PRAYER_TICKET_ART } from '../../tickets/assets/art';
+import { PRAYER_COIN_ART } from '../../tickets/assets/art';
 import { JourneyHeroCard } from '../../journey/components/JourneyHeroCard';
 import { NEWYEAR_2027, journeyEntryRoute } from '../../journey/data/journeys';
 import { journeyActive, useJourneyPlayer } from '../../journey/player/journeyPlayer';
@@ -30,9 +32,10 @@ export const HomeScreen: React.FC = () => {
   const t = useT();
   const lang = useLang();
   const [category, setCategory] = useState<string>('recommended');
-  const [tickets, setTickets] = useState<number | null>(null);
-  // The daily check-in (27-09): two free tickets a day, up to ten kept. Null = not known yet, and
-  // then the card is not drawn at all rather than guessing a state.
+  // Prayer Coins (10-15, the one currency) — the coin wallet. Null until the server has said.
+  const coins = useCoins(s => s.balance);
+  // The daily check-in: 20 PC a day. Null = not known yet, and then the card is not drawn at all
+  // rather than guessing a state.
   const [attendance, setAttendance] = useState<AttendanceStatus | null>(null);
   const [attendMsg, setAttendMsg] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -59,10 +62,7 @@ export const HomeScreen: React.FC = () => {
   useFocusEffect(useCallback(() => {
     const ac = new AbortController();
     // Refresh after a consultation or purchase; an unknown balance is never displayed as zero.
-    setTickets(null);
-    fetchTicketBalance(ac.signal).then(balance => {
-      if (!ac.signal.aborted) setTickets(balance?.tickets ?? null);
-    });
+    void refreshCoins();
     fetchAttendance(ac.signal).then(status => {
       if (!ac.signal.aborted) setAttendance(status);
     });
@@ -83,18 +83,11 @@ export const HomeScreen: React.FC = () => {
     const r = await checkIn();
     setChecking(false);
     if (!r) return;
-    setAttendance(a => (a ? { ...a, checkedToday: true, freeBalance: r.freeBalance, freeCap: r.freeCap } : a));
-    if (r.tickets != null) setTickets(r.tickets);
-    else fetchTicketBalance().then(b => setTickets(b?.tickets ?? null));
-    setAttendMsg(
-      r.granted > 0
-        ? t('home.attend.granted', { count: r.granted })
-        : r.capReached
-          ? t('home.attend.full', { cap: r.freeCap })
-          : t('home.attend.done'),
-    );
+    setAttendance(a => (a ? { ...a, checkedToday: true, coinBalance: r.coinBalance ?? a.coinBalance } : a));
+    if (r.coinBalance == null) void refreshCoins();
+    setAttendMsg(r.granted > 0 ? t('home.attend.granted', { count: r.granted }) : t('home.attend.done'));
     // "누르면 출석체크했습니다 하고 페이지 이동" — the page opens on the result and the calendar.
-    navigation.navigate('Attendance', { justChecked: { granted: r.granted, capReached: r.capReached } });
+    navigation.navigate('Attendance', { justChecked: { granted: r.granted } });
   };
 
   return (
@@ -105,7 +98,7 @@ export const HomeScreen: React.FC = () => {
         ListHeaderComponent={
           <View>
             <HomeHeader
-              balanceLabel={tickets == null ? t('tickets.title') : t('home.balance', { count: tickets })}
+              balanceLabel={coins == null ? t('tickets.title') : t('home.balance', { count: formatCoins(coins) })}
               onPressBalance={() => navigation.navigate('Tickets')}
               onPress3D={() => navigation.navigate('World')}
             />
@@ -121,7 +114,7 @@ export const HomeScreen: React.FC = () => {
                   pressed && styles.pressed,
                 ]}>
                 <Image
-                  source={PRAYER_TICKET_ART}
+                  source={PRAYER_COIN_ART}
                   style={[styles.attendTicket, attendance.checkedToday && styles.attendTicketDone]}
                   resizeMode="contain"
                 />
@@ -131,14 +124,9 @@ export const HomeScreen: React.FC = () => {
                     {attendMsg ??
                       (attendance.checkedToday
                         ? t('home.attend.done')
-                        : attendance.freeBalance >= attendance.freeCap
-                          ? t('home.attend.full', { cap: attendance.freeCap })
-                          : t('home.attend.cta', { count: attendance.dailyTickets }))}
+                        : t('home.attend.cta', { count: attendance.dailyCoins }))}
                   </Text>
                 </View>
-                <Text style={styles.attendWallet}>
-                  {t('home.attend.wallet', { free: attendance.freeBalance, cap: attendance.freeCap })}
-                </Text>
               </Pressable>
             )}
             {recent && recentCounselor && (
@@ -224,10 +212,9 @@ const styles = StyleSheet.create({
   },
   // Not yet checked in: gold-edged, so it reads as something to press today.
   attendOpen: { borderWidth: 1, borderColor: colors.gold },
-  attendTicket: { width: 40, height: 27 },
+  attendTicket: { width: 34, height: 34 },
   attendTicketDone: { opacity: 0.45 },
   attendDone: { ...typography.body, color: colors.textSecondary },
-  attendWallet: { ...typography.tiny, color: colors.textMuted },
   cardBody: { flex: 1, gap: spacing.xs },
   eyebrow: { ...typography.tiny, color: colors.violetSoft },
   name: { ...typography.h3, color: colors.textPrimary },

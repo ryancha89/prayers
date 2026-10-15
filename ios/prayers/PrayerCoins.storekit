@@ -1,0 +1,123 @@
+{
+  "identifier": "42E3606B-FB61-4BB5-91DC-52A8982DDB84",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "1100",
+      "familyShareable": false,
+      "internalID": "6700000001",
+      "localizations": [
+        {
+          "description": "100 PC",
+          "displayName": "Prayer Coins 100",
+          "locale": "ko"
+        }
+      ],
+      "productID": "prayer_coin_100",
+      "referenceName": "Prayer Coins 100",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "3300",
+      "familyShareable": false,
+      "internalID": "6700000002",
+      "localizations": [
+        {
+          "description": "310 PC (기본 300 + 보너스 3%)",
+          "displayName": "Prayer Coins 310",
+          "locale": "ko"
+        }
+      ],
+      "productID": "prayer_coin_300",
+      "referenceName": "Prayer Coins 300",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "5500",
+      "familyShareable": false,
+      "internalID": "6700000003",
+      "localizations": [
+        {
+          "description": "530 PC (기본 500 + 보너스 6%)",
+          "displayName": "Prayer Coins 530",
+          "locale": "ko"
+        }
+      ],
+      "productID": "prayer_coin_500",
+      "referenceName": "Prayer Coins 500",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "11000",
+      "familyShareable": false,
+      "internalID": "6700000004",
+      "localizations": [
+        {
+          "description": "1,100 PC (기본 1,000 + 보너스 10%)",
+          "displayName": "Prayer Coins 1,100",
+          "locale": "ko"
+        }
+      ],
+      "productID": "prayer_coin_1000",
+      "referenceName": "Prayer Coins 1000",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "22000",
+      "familyShareable": false,
+      "internalID": "6700000005",
+      "localizations": [
+        {
+          "description": "2,300 PC (기본 2,000 + 보너스 15%)",
+          "displayName": "Prayer Coins 2,300",
+          "locale": "ko"
+        }
+      ],
+      "productID": "prayer_coin_2000",
+      "referenceName": "Prayer Coins 2000",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "55000",
+      "familyShareable": false,
+      "internalID": "6700000006",
+      "localizations": [
+        {
+          "description": "6,000 PC (기본 5,000 + 보너스 20%)",
+          "displayName": "Prayer Coins 6,000",
+          "locale": "ko"
+        }
+      ],
+      "productID": "prayer_coin_5000",
+      "referenceName": "Prayer Coins 5000",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "9900",
+      "familyShareable": false,
+      "internalID": "6700000099",
+      "localizations": [
+        {
+          "description": "2027년 운명의 기차여행",
+          "displayName": "2027 New Year Journey",
+          "locale": "ko"
+        }
+      ],
+      "productID": "new_year_journey",
+      "referenceName": "New Year Journey",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {
+    "_developerTeamID": "LMV326UNSN",
+    "_failTransactionsEnabled": false,
+    "_locale": "ko_KR",
+    "_storefront": "KOR",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

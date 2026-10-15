@@ -10,25 +10,26 @@ describe('daily check-in api', () => {
   beforeEach(() => mockFetch.mockReset());
 
   it("sends the phone's own date", async () => {
-    mockFetch.mockResolvedValue(reply({ success: true, checked_today: false, daily_tickets: 2, free_balance: 3, free_cap: 10, tickets: 5 }));
+    mockFetch.mockResolvedValue(reply({ success: true, checked_today: false, daily_coins: 20, coin_balance: 50 }));
     const s = await fetchAttendance();
     expect(mockFetch.mock.calls[0][0]).toContain(`local_date=${localDate()}`);
     // An older server sends no days_total: 0, never undefined.
-    expect(s).toEqual({ checkedToday: false, dailyTickets: 2, freeBalance: 3, freeCap: 10, tickets: 5, daysTotal: 0 });
+    expect(s).toEqual({ checkedToday: false, dailyCoins: 20, coinBalance: 50, daysTotal: 0 });
   });
 
   it('reads days_total, every day ever checked in (My Room level), on the status and the check-in', async () => {
-    mockFetch.mockResolvedValue(reply({ success: true, checked_today: true, daily_tickets: 2, free_balance: 3, free_cap: 10, tickets: 5, days_total: 12 }));
+    mockFetch.mockResolvedValue(reply({ success: true, checked_today: true, daily_coins: 20, coin_balance: 50, days_total: 12 }));
     expect((await fetchAttendance())?.daysTotal).toBe(12);
-    mockFetch.mockResolvedValue(reply({ success: true, granted: 2, free_balance: 5, free_cap: 10, tickets: 7, days_total: 13 }));
+    mockFetch.mockResolvedValue(reply({ success: true, granted: 20, coin_balance: 70, days_total: 13 }));
     expect((await checkIn())?.daysTotal).toBe(13);
-    mockFetch.mockResolvedValue(reply({ success: true, granted: 2, free_balance: 5, free_cap: 10, tickets: 7 }));
+    mockFetch.mockResolvedValue(reply({ success: true, granted: 20, coin_balance: 90 }));
     expect((await checkIn())?.daysTotal).toBeNull();
   });
 
-  it('reports what was granted, and a full wallet as capped', async () => {
-    mockFetch.mockResolvedValue(reply({ success: true, granted: 1, cap_reached: true, free_balance: 10, free_cap: 10, tickets: 12 }));
-    expect(await checkIn()).toMatchObject({ ok: true, granted: 1, capReached: true, freeBalance: 10, tickets: 12 });
+  it('reports the coins granted and writes the wallet', async () => {
+    mockFetch.mockResolvedValue(reply({ success: true, granted: 20, coin_balance: 120 }));
+    expect(await checkIn()).toMatchObject({ ok: true, granted: 20, coinBalance: 120 });
+    expect(require('../src/features/coins/store/coinStore').useCoins.getState().balance).toBe(120);
   });
 
   it('treats "already checked" as an answer, not a failure', async () => {

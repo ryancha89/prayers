@@ -97,6 +97,7 @@ export const nativeUnityBridge = new NativeUnityBridge();
 const syncUnityAudio = () => {
   const { musicEnabled, sfxEnabled } = useSoundStore.getState();
   nativeUnityBridge.sendWorldAudio(musicEnabled, sfxEnabled);
+  nativeUnityBridge.sendVoiceAudio(useSoundStore.getState().voiceEnabled);
 };
 syncUnityAudio();
 useSoundStore.subscribe(syncUnityAudio);

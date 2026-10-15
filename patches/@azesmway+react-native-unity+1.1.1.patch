@@ -11,7 +11,7 @@ index a10543a..e0f1645 100644
  
  
 diff --git a/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm b/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm
-index 6406f64..adfc69e 100644
+index 6406f64..0c7a661 100644
 --- a/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm
 +++ b/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm
 @@ -43,6 +43,15 @@ @implementation RNUnityView {
@@ -71,6 +71,29 @@ index 6406f64..adfc69e 100644
  
        // Coming back on screen after the view was recycled: resume the shared
        // instance that prepareForRecycle paused (#180).
+@@ -163,6 +193,22 @@ - (void)unityDidUnload:(NSNotification*)notification {
+             self.onPlayerUnload(nil);
+         }
+     }
++
++    // Leaving a room unloads the engine asynchronously. The World screen mounts its host ~0.6 s
++    // later, and when the unload had not finished by then this NEW view attached to the engine on
++    // its way down — then the unload landed, nothing re-booted it, and the world sat on "Loading
++    // the world…" with Unity silent (sim, 10-15). A view still on screen that did not ask for the
++    // unload drops its stale handle and boots Unity again.
++    if (!_unloaded && self.window != nil) {
++        if ([self ufw]) {
++            [[self ufw] unregisterFrameworkListener:self];
++            [self setUfw: nil];
++        }
++        __weak RNUnityView *weakSelf = self;
++        dispatch_async(dispatch_get_main_queue(), ^{
++            [weakSelf setNeedsLayout];
++        });
++    }
+ }
+ 
+ - (void)unityDidQuit:(NSNotification*)notification {
 diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/Info.plist b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/Info.plist
 new file mode 100644
 index 0000000..c05d60c

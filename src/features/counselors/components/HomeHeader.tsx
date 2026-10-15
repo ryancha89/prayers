@@ -4,7 +4,7 @@ import { Text } from '../../../shared/components/Text';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { Icon } from '../../../shared/components/Icon';
 import { sfx } from '../../../shared/audio/sfx';
-import { PRAYER_TICKET_ART } from '../../tickets/assets/art';
+import { PRAYER_COIN_ART } from '../../tickets/assets/art';
 import { useT } from '../../../shared/i18n';
 
 export const HomeHeader: React.FC<{
@@ -22,7 +22,7 @@ export const HomeHeader: React.FC<{
           accessibilityRole="button"
           onPress={() => { sfx.tap(); onPressBalance(); }}
           style={({ pressed }) => [styles.balance, pressed && styles.pressed]}>
-          <Image source={PRAYER_TICKET_ART} style={styles.ticket} resizeMode="contain" />
+          <Image source={PRAYER_COIN_ART} style={styles.ticket} resizeMode="contain" />
           <Text style={styles.balanceText}>{balanceLabel}</Text>
           <Icon name="plus" size={16} color={colors.gold} />
         </Pressable>
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.goldDim, borderRadius: radius.pill,
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
   },
-  ticket: { width: 27, height: 18 },
+  ticket: { width: 22, height: 22 },
   pills: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
   // The mockup's violet pill with a glow round its border: the one door on Home that leads out of
   // the cards, so it is the one thing up here that is not gold.

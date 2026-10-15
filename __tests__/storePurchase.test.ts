@@ -39,11 +39,11 @@ beforeEach(() => {
 
 it('coins and the journey pass both go through buyWithStore', async () => {
   fetchMock.mockResolvedValueOnce(reply(200, { success: true, coins_added: 500, coin_balance: 600 }));
-  await buyCoins('prayers_coin_500', { dev: false });
+  await buyCoins('prayer_coin_500', { dev: false });
   fetchMock.mockResolvedValueOnce(reply(200, { success: true, owned: true }));
   await buyJourneyPass('newyear-2027', 'prayers_journey_2027', false);
   expect(spy.mock.calls.map(c => [c[0].productId, c[0].dev])).toEqual([
-    ['prayers_coin_500', false],
+    ['prayer_coin_500', false],
     ['prayers_journey_2027', false],
   ]);
   expect(finishPurchase).toHaveBeenCalledTimes(2);

@@ -5,6 +5,7 @@ import { Icon } from '../../../shared/components/Icon';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT, type Lang, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
+import { formatCoins } from '../../coins/format';
 import { monthLabel, monthWithYear } from '../format';
 import type { JourneyReport, ReportArea, ReportBlock, ReportSection } from '../types';
 import type { ReportState } from './useJourneyReport';
@@ -165,7 +166,7 @@ const Block: React.FC<{ block: ReportBlock; price: number | null; state: ReportS
           <ActivityIndicator color="#1A1330" size="small" />
         ) : (
           <Text style={styles.unlockText}>
-            {price != null ? t('journey.report.unlock', { price }) : t('journey.moment.unlock')}
+            {price ? t('journey.report.unlock', { price: formatCoins(price) }) : t('journey.moment.unlock')}
           </Text>
         )}
       </Pressable>

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { StatusBar } from 'react-native';
 import {
   NavigationContainer,
@@ -17,6 +17,8 @@ import { preload as preloadSfx } from './shared/audio/sfx';
 import { create } from 'zustand';
 import { JourneyMiniPlayer } from './features/journey/components/JourneyMiniPlayer';
 import { CoinShopSheet } from './features/coins/components/CoinShopSheet';
+import { startCoinPurchaseRecovery } from './features/coins/api/coinsApi';
+import { useAuthStore } from './features/auth/store/authStore';
 import { useJourneyPlayer } from './features/journey/player/journeyPlayer';
 
 const queryClient = new QueryClient();
@@ -146,6 +148,10 @@ useJourneyPlayer.subscribe((st, prev) => {
 const App: React.FC = () => {
   const [splashDone, setSplashDone] = useState(false);
   const routeName = useCurrentRoute(s => s.name);
+  // A coin purchase the store still holds unfinished (the app died between paying and being
+  // credited) is credited once someone is signed in — the server needs whose wallet it is.
+  const signedIn = useAuthStore(s => s.userAuth);
+  useEffect(() => (signedIn ? startCoinPurchaseRecovery() : undefined), [signedIn]);
   const onSplashDone = useCallback(() => {
     setSplashDone(true);
     // The splash chime has finished; the bed can come up under whatever screen is showing.

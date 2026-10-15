@@ -33,6 +33,7 @@ import { useScreen } from '../../../shared/device/screen';
 import { useViewInsets, type MeasuredRects } from '../bridge/viewInsets';
 import { useRoomLook } from '../components/useRoomLook';
 import { useWorldStore } from '../../world/store/worldStore';
+import { useSoundStore } from '../../../shared/audio/store';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'CounselingRoom'>;
@@ -140,6 +141,8 @@ export const CounselingRoomScreen: React.FC = () => {
 
   // A pixel counselor is drawn here, not staged in Unity — see pixel/pixelCounselors.ts.
   const pixel = isPixelCounselor(counselor?.characterId);
+  const voiceOn = useSoundStore(s => s.voiceEnabled);
+  const setVoiceOn = useSoundStore(s => s.setVoiceEnabled);
 
   // Landscape moves the overlay into a centred band along the bottom, under the top bar; the Unity
   // room is told what is covered so its camera frames the counselor into the part left visible. Only the native
@@ -448,10 +451,17 @@ export const CounselingRoomScreen: React.FC = () => {
         {/* Whose chart: me, or someone I am asking about (10-13). Unity rooms only — the pixel room
             is told by the app and has no SUBJECT_SWITCH to hear. */}
         {!pixel && subject && <SubjectSwitcher initialId={subject.id} />}
-        {/* Drawn but not live: the room's mix (her voice, the track, the ritual) is Unity's, and no
-            bridge message silences it yet — the app's music switch does not reach it. Shown
-            disabled rather than as a button that silently does nothing, as it did before. */}
-        <RingButton testID="room-sound" icon="speaker" size={RING_COMPACT} label={t('hud.sound')} disabled />
+        {/* The counselor's voice on/off (10-15). Her lines play on Unity's Voice bus; VOICE_AUDIO
+            mutes it, the line already playing included, and the subtitles carry on. Remembered
+            (sound store) and replayed to every room on READY. The pixel room has no voice to mute. */}
+        <RingButton
+          testID="room-sound"
+          icon={voiceOn ? 'speaker' : 'speakerOff'}
+          size={RING_COMPACT}
+          label={t(voiceOn ? 'hud.voiceOff' : 'hud.voiceOn')}
+          disabled={pixel}
+          onPress={() => setVoiceOn(!voiceOn)}
+        />
       </View>
 
       {/* Dev only, and mounted LAST on purpose: it has to sit above ConsultationOverlay, whose

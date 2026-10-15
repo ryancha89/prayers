@@ -30,6 +30,13 @@ interface SoundState {
    */
   sfxEnabled: boolean;
   setSfxEnabled: (on: boolean) => void;
+  /**
+   * The counselor's VOICE in the consultation room (10-15: the room's speaker button, "음성버튼
+   * 누르면 끄고 키기"). Its own switch: reading the answers in silence on a bus is a different wish
+   * from turning the music off. Subtitles carry on either way. Travels to Unity as VOICE_AUDIO.
+   */
+  voiceEnabled: boolean;
+  setVoiceEnabled: (on: boolean) => void;
 }
 
 export const useSoundStore = create<SoundState>()(
@@ -40,6 +47,8 @@ export const useSoundStore = create<SoundState>()(
       toggleMusic: () => set({ musicEnabled: !get().musicEnabled }),
       sfxEnabled: true,
       setSfxEnabled: on => set({ sfxEnabled: !!on }),
+      voiceEnabled: true,
+      setVoiceEnabled: on => set({ voiceEnabled: !!on }),
     }),
     {
       name: 'prayers.sound.v1',
@@ -52,6 +61,7 @@ export const useSoundStore = create<SoundState>()(
           ...current,
           musicEnabled: saved?.musicEnabled !== false,
           sfxEnabled: saved?.sfxEnabled !== false,
+          voiceEnabled: saved?.voiceEnabled !== false,
         };
       },
     },

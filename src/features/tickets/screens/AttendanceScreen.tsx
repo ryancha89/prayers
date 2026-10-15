@@ -8,7 +8,8 @@ import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import type { RootStackParamList } from '../../../navigation/types';
-import { PRAYER_TICKET_ART } from '../assets/art';
+import { formatCoins } from '../../coins/format';
+import { PRAYER_COIN_ART } from '../assets/art';
 import {
   checkIn,
   fetchAttendance,
@@ -25,9 +26,7 @@ type Rt = RouteProp<RootStackParamList, 'Attendance'>;
 /** Rules, in the order a player asks about them. Each is one key per language. */
 const RULES: TranslationKey[] = [
   'attend.rule.daily',
-  'attend.rule.cap',
   'attend.rule.spend',
-  'attend.rule.bought',
   'attend.rule.missed',
 ];
 
@@ -90,8 +89,8 @@ export const AttendanceScreen: React.FC = () => {
     const r = await checkIn();
     setBusy(false);
     if (!r) return;
-    setJust({ granted: r.granted, capReached: r.capReached });
-    setStatus(s => (s ? { ...s, checkedToday: true, freeBalance: r.freeBalance, tickets: r.tickets ?? s.tickets } : s));
+    setJust({ granted: r.granted });
+    setStatus(s => (s ? { ...s, checkedToday: true, coinBalance: r.coinBalance ?? s.coinBalance } : s));
     setCursor({ year: now.getFullYear(), month: now.getMonth() + 1 });
   };
 
@@ -126,13 +125,11 @@ export const AttendanceScreen: React.FC = () => {
         {/* Just checked in: say so first — that is what the tap was for. */}
         {just && (
           <View style={styles.banner}>
-            <Image source={PRAYER_TICKET_ART} style={styles.bannerTicket} resizeMode="contain" />
+            <Image source={PRAYER_COIN_ART} style={styles.bannerTicket} resizeMode="contain" />
             <View style={styles.flex}>
               <Text style={styles.bannerTitle}>{t('attend.checked')}</Text>
               <Text style={styles.bannerBody}>
-                {just.granted > 0
-                  ? t('home.attend.granted', { count: just.granted })
-                  : t('home.attend.full', { cap: status?.freeCap ?? 10 })}
+                {just.granted > 0 ? t('home.attend.granted', { count: just.granted }) : t('home.attend.done')}
               </Text>
             </View>
           </View>
@@ -140,29 +137,17 @@ export const AttendanceScreen: React.FC = () => {
 
         <View style={styles.statusCard}>
           <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>{t('attend.free')}</Text>
-            <Text style={styles.statusValue}>
-              {status ? `${status.freeBalance} / ${status.freeCap}` : '—'}
-            </Text>
-          </View>
-          <View style={styles.bar}>
-            <View
-              style={[
-                styles.barFill,
-                { width: `${status ? Math.min(100, (status.freeBalance / status.freeCap) * 100) : 0}%` },
-              ]}
-            />
-          </View>
-          <View style={styles.statusRow}>
             <Text style={styles.statusLabel}>{t('attend.total')}</Text>
-            <Text style={styles.statusSmall}>{status ? t('home.balance', { count: status.tickets }) : '—'}</Text>
+            <Text style={styles.statusValue}>
+              {status?.coinBalance != null ? t('home.balance', { count: formatCoins(status.coinBalance) }) : '—'}
+            </Text>
           </View>
           {status && !status.checkedToday && (
             <Pressable style={styles.cta} onPress={onCheckIn} disabled={busy} accessibilityRole="button">
               {busy ? (
                 <ActivityIndicator color={colors.bg} />
               ) : (
-                <Text style={styles.ctaText}>{t('home.attend.cta', { count: status.dailyTickets })}</Text>
+                <Text style={styles.ctaText}>{t('home.attend.cta', { count: status.dailyCoins })}</Text>
               )}
             </Pressable>
           )}
@@ -210,7 +195,7 @@ export const AttendanceScreen: React.FC = () => {
             </View>
           )}
           <Text style={styles.calSummary}>
-            {t('attend.summary', { days: month?.count ?? 0, tickets: month?.tickets ?? 0 })}
+            {t('attend.summary', { days: month?.count ?? 0, coins: formatCoins(month?.coins ?? 0) })}
           </Text>
         </View>
 
@@ -241,16 +226,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.violetDim, borderRadius: radius.lg,
     borderWidth: 1, borderColor: colors.gold,
   },
-  bannerTicket: { width: 48, height: 32 },
+  bannerTicket: { width: 40, height: 40 },
   bannerTitle: { ...typography.h3, color: colors.textPrimary },
   bannerBody: { ...typography.body, color: colors.gold },
   statusCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm, marginBottom: spacing.lg },
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   statusLabel: { ...typography.caption, color: colors.textSecondary },
   statusValue: { ...typography.h2, color: colors.gold },
-  statusSmall: { ...typography.body, color: colors.textPrimary },
-  bar: { height: 8, borderRadius: 4, backgroundColor: colors.overlay, overflow: 'hidden' },
-  barFill: { height: '100%', backgroundColor: colors.gold },
   cta: {
     marginTop: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.lg,
     backgroundColor: colors.gold, alignItems: 'center',

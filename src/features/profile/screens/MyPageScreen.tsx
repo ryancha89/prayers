@@ -14,7 +14,9 @@ import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useFavoritesStore } from '../../counselors/store/favoritesStore';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
 import { useSoundStore } from '../../../shared/audio/store';
-import { fetchTicketBalance } from '../../counseling/api/tickets';
+import { useCoins } from '../../coins/store/coinStore';
+import { refreshCoins } from '../../coins/api/coinsApi';
+import { formatCoins } from '../../coins/format';
 import { sfx } from '../../../shared/audio/sfx';
 import { useAuthStore } from '../../auth/store/authStore';
 import { column } from '../../../shared/device/screen';
@@ -35,15 +37,10 @@ export const MyPageScreen: React.FC = () => {
   const sessionCount = useConversationsStore(s => s.order.length);
   const displayName = useAuthStore(s => s.displayName);
 
-  // Read once when the page opens rather than held in a store: it changes on the server (a
-  // consultation spends one, the daily allowance adds some) and a cached copy here would be the
-  // number that is wrong at exactly the moment someone looks at it.
-  const [tickets, setTickets] = React.useState<number | null>(null);
-  React.useEffect(() => {
-    const ac = new AbortController();
-    fetchTicketBalance(ac.signal).then(b => setTickets(b?.tickets ?? null));
-    return () => ac.abort();
-  }, []);
+  // Prayer Coins: asked again when the page opens — a consultation or a check-in elsewhere changed
+  // it on the server, and the store's copy is only as fresh as its last answer.
+  const coins = useCoins(s => s.balance);
+  React.useEffect(() => { void refreshCoins(); }, []);
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
@@ -72,7 +69,7 @@ export const MyPageScreen: React.FC = () => {
         <View style={styles.credits}>
           <View>
             <Text style={styles.creditsLabel}>{t('tickets.balance')}</Text>
-            <Text style={styles.creditsValue}>{tickets ?? '—'}</Text>
+            <Text style={styles.creditsValue}>{coins == null ? '—' : formatCoins(coins)}</Text>
           </View>
           <View style={styles.creditsActions}>
             <PrimaryButton

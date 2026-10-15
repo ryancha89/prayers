@@ -10,6 +10,7 @@ import { PrimaryButton } from '../../../shared/components/PrimaryButton';
 import { SELF, useSubjectsStore } from '../store/subjectsStore';
 import { maskBirthDate, maskBirthTime } from '../birthMask';
 import { chartFromFields } from '../../saju/chart';
+import { BirthPreview } from '../../saju/components/BirthPreview';
 import type { RootStackParamList } from '../../../navigation/types';
 import type { CounselingSubject } from '../../counseling/types';
 import { column } from '../../../shared/device/screen';
@@ -136,6 +137,8 @@ export const AddSubjectScreen: React.FC = () => {
             </Pressable>
           ))}
         </View>
+        {/* The star sign, the animal and the pillars, live as the date is typed (10-15). */}
+        <BirthPreview birthDate={birthDate.trim()} birthTime={birthTime.trim() || undefined} />
         <MiniPlayerSpacer />
       </ScrollView>
 

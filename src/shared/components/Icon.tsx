@@ -24,6 +24,8 @@ export type IconName =
   | 'mic'
   | 'stop'
   | 'speaker'
+  | 'speakerOff'
+  | 'exit'
   | 'plus'
   | 'sparkle'
   | 'play'
@@ -201,6 +203,14 @@ const ICONS: Record<IconName, Draw> = {
       <Path d="M18.5 5.5a9.5 9.5 0 0 1 0 13" stroke={c} />
     </>
   ),
+  // The same speaker with an × where the waves were: the room's voice switched off (10-15).
+  speakerOff: c => (
+    <>
+      <Polygon points="11 5 6.5 9 3 9 3 15 6.5 15 11 19" stroke={c} />
+      <Line x1="15.5" y1="9.5" x2="20.5" y2="14.5" stroke={c} />
+      <Line x1="20.5" y1="9.5" x2="15.5" y2="14.5" stroke={c} />
+    </>
+  ),
   plus: c => (
     <>
       <Line x1="12" y1="5" x2="12" y2="19" stroke={c} />
@@ -373,6 +383,13 @@ const ICONS: Record<IconName, Draw> = {
     </>
   ),
   // An arrow up out of a tray: the share sheet's own glyph on iOS.
+  exit: c => (
+    <>
+      <Path d="M14 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H14" stroke={c} />
+      <Line x1="10" y1="12" x2="20.5" y2="12" stroke={c} />
+      <Polyline points="16.5 8 20.5 12 16.5 16" stroke={c} />
+    </>
+  ),
   share: c => (
     <>
       <Path d="M8 9.5H6.5A1.5 1.5 0 0 0 5 11v8.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V11a1.5 1.5 0 0 0-1.5-1.5H16" stroke={c} />

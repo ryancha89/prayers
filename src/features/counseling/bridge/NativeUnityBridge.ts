@@ -107,6 +107,8 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   private worldRun = false;
   /** The sound switches as last sent; null = never sent (Unity plays at its defaults). */
   private worldAudio: { music: boolean; sfx: boolean } | null = null;
+  /** The counselor's voice switch; replayed on every scene's READY like worldAudio. */
+  private voiceOn: boolean | null = null;
   /** My Room (the world's 개인실 door): the same open-until-answered rule as the world. */
   private myRoomInit?: MyRoomInitPayload;
   private myRoomPending = false;
@@ -430,6 +432,15 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     if (this.view) this.post({ type: 'WORLD_ENTER', payload: { zone } });
   }
 
+  /** The room's speaker button: the counselor's voice on or off (Unity's Voice bus, the line
+   *  playing included). Posted straight through and remembered for every READY — Unity keeps its own
+   *  copy in PlayerPrefs too, but this is the source of truth. */
+  sendVoiceAudio(on: boolean): void {
+    if (this.voiceOn === on) return;
+    this.voiceOn = on;
+    if (this.view) this.post({ type: 'VOICE_AUDIO', payload: { on } });
+  }
+
   /** Pinch / look-around drag. Posted straight through like JOURNEY_ZOOM (a late one is worthless)
    *  and remembered for WORLD_READY. */
   sendWorldCamera(zoom: number, yaw: number, pitch = 0): void {
@@ -732,6 +743,9 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     // each scene's READY, since a freshly loaded scene starts at Unity's own defaults.
     if (event.type.endsWith('_READY') && this.worldAudio && event.type !== 'WORLD_READY') {
       this.post({ type: 'WORLD_AUDIO', payload: this.worldAudio });
+    }
+    if (event.type.endsWith('_READY') && this.voiceOn !== null) {
+      this.post({ type: 'VOICE_AUDIO', payload: { on: this.voiceOn } });
     }
 
     // Cold boot: the player is up but empty. SESSION_INIT is what loads the

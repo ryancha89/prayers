@@ -22,7 +22,7 @@
  *    menu sheet holds back / 2D / coins.
  */
 import React from 'react';
-import { Dimensions, PanResponder, Share, StyleSheet } from 'react-native';
+import { Dimensions, PanResponder, StyleSheet } from 'react-native';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -388,7 +388,7 @@ describe('the My Room screen', () => {
   it('the badge shows the level and title the player has earned, and opens the profile sheet', async () => {
     useAuthStore.setState({ displayName: '하늘' });
     // Four check-ins ever (the server's days_total) = 40 XP = level 2.
-    mockAttendance.status = { checkedToday: true, dailyTickets: 2, freeBalance: 3, freeCap: 10, tickets: 3, daysTotal: 4 };
+    mockAttendance.status = { checkedToday: true, dailyCoins: 20, coinBalance: 30, daysTotal: 4 };
     await render();
     // The pressable, not the ProfileBadge element that hands it the testID (shared/components/hud).
     const badge = tree!.root.findAll(n => n.props.testID === 'myroom-profile' && n.props.accessibilityLabel != null)[0];
@@ -447,7 +447,7 @@ describe('the My Room screen', () => {
     await render();
     expect(has('myroom-mail-badge')).toBe(true);
     await tap('myroom-mail');
-    expect(texts()).toContain('코인 500개가 충전됐어요');
+    expect(texts()).toContain('500 PC가 충전됐어요');
     await tap('myroom-inbox-coins:1');
     // Read, and the coin shop opens over the room (the sheet makes way).
     expect(useInbox.getState().items[0].read).toBe(true);
@@ -458,8 +458,8 @@ describe('the My Room screen', () => {
   });
 
   it("the check-in mail checks in where the player stands; the diary mail opens the entry", async () => {
-    mockAttendance.status = { checkedToday: false, dailyTickets: 2, freeBalance: 3, freeCap: 10, tickets: 3, daysTotal: 0 };
-    mockAttendance.checkIn.mockResolvedValue({ ok: true, alreadyChecked: false, granted: 2, capReached: false, freeBalance: 5, freeCap: 10, tickets: 5, daysTotal: 1 });
+    mockAttendance.status = { checkedToday: false, dailyCoins: 20, coinBalance: 30, daysTotal: 0 };
+    mockAttendance.checkIn.mockResolvedValue({ ok: true, alreadyChecked: false, granted: 2, coinBalance: 50, daysTotal: 1 });
     const memory = useArchiveStore.getState().add({ category: 'diary', content: '비 오는 날의 일기' });
     act(() => {
       useInbox.getState().push({ id: 'checkin:today', kind: 'checkin', data: { date: 'today', claimed: false } });
@@ -469,7 +469,7 @@ describe('the My Room screen', () => {
     await tap('myroom-mail');
     await tap('myroom-inbox-checkin:today');
     expect(mockAttendance.checkIn).toHaveBeenCalledTimes(1);
-    expect(texts()).toContain('무료 티켓 2장을 받았어요!');
+    expect(texts()).toContain('2 PC를 받았어요!');
     // The badge counted the new check-in: 10 XP.
     await tap('myroom-profile');
     expect(texts()).toContain('출석 1일');
@@ -552,13 +552,13 @@ describe('the My Room screen', () => {
 
   it('the gift is the daily check-in: a dot only while today is unclaimed, and it checks in where the player stands', async () => {
     jest.useFakeTimers();
-    mockAttendance.status = { checkedToday: false, dailyTickets: 2, freeBalance: 3, freeCap: 10, tickets: 3 };
-    mockAttendance.checkIn.mockResolvedValue({ ok: true, alreadyChecked: false, granted: 2, capReached: false, freeBalance: 5, freeCap: 10, tickets: 5 });
+    mockAttendance.status = { checkedToday: false, dailyCoins: 20, coinBalance: 30 };
+    mockAttendance.checkIn.mockResolvedValue({ ok: true, alreadyChecked: false, granted: 2, coinBalance: 50 });
     await render();
     expect(has('myroom-gift-badge')).toBe(true);
     await tap('myroom-gift');
     expect(mockAttendance.checkIn).toHaveBeenCalledTimes(1);
-    expect(texts()).toContain('무료 티켓 2장을 받았어요!');
+    expect(texts()).toContain('2 PC를 받았어요!');
     expect(has('myroom-gift-badge')).toBe(false);
     // No route change: a non-Unity screen on top would post SESSION_END under the room.
     expect(mockNavigate).not.toHaveBeenCalled();
@@ -571,18 +571,11 @@ describe('the My Room screen', () => {
     await render();
     expect(has('myroom-gift-badge')).toBe(false);
     act(() => tree!.unmount());
-    mockAttendance.status = { checkedToday: true, dailyTickets: 2, freeBalance: 3, freeCap: 10, tickets: 3 };
+    mockAttendance.status = { checkedToday: true, dailyCoins: 20, coinBalance: 30 };
     await render();
     expect(has('myroom-gift-badge')).toBe(false);
     // Nor on mail: nothing is unread.
     expect(has('myroom-mail-badge')).toBe(false);
-  });
-
-  it('share opens the system share sheet with one line', async () => {
-    const spy = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
-    await render();
-    await tap('myroom-share');
-    expect(spy).toHaveBeenCalledWith({ message: '내 방에서 잠시 쉬어 가는 중이에요 — Prayers' });
   });
 
   // The book icon's way into My Diary is pinned in diaryList.test (testID myroom-diary, kept).
@@ -593,7 +586,7 @@ describe('the My Room screen', () => {
     expect(has('myroom-sheet-menu')).toBe(true);
     expect(has('world-joystick')).toBe(false);
     expect(has('myroom-look')).toBe(false);
-    expect(texts()).toContain('코인 충전');
+    expect(texts()).toContain('Prayer Coins 충전');
     // The coin pill opens the shop, and the sheet makes way for it.
     press('100');
     expect(useCoins.getState().shopOpen).toBe(true);
@@ -602,9 +595,13 @@ describe('the My Room screen', () => {
 
   it('back returns to the world (goBack, where it re-opens at the door); 2D goes to Home; leaving says MYROOM_END', async () => {
     await render();
-    await tap('myroom-menu');
-    press('월드로 돌아가기');
+    // The bottom row's exit, from anywhere in the room.
+    await tap('myroom-exit');
     expect(mockGoBack).toHaveBeenCalledTimes(1);
+    await tap('myroom-menu');
+    const rows = tree!.root.findAll(n => n.props.accessibilityLabel === '월드로 돌아가기' && typeof n.props.onPress === 'function' && n.props.testID !== 'myroom-exit');
+    act(() => rows[rows.length - 1].props.onPress());
+    expect(mockGoBack).toHaveBeenCalledTimes(2);
     expect(has('myroom-sheet-menu')).toBe(false);
     await tap('myroom-menu');
     press('2D 화면으로 돌아가기');

@@ -328,6 +328,8 @@ export type RNToUnityEvent =
   /** The player's sound switches, for the world's own audio (music = BGM/ambience, sfx = footsteps,
    *  doors, chimes). Sent on every change and replayed on WORLD_READY. */
   | { type: 'WORLD_AUDIO'; payload: { music: boolean; sfx: boolean } }
+  /** The consultation's speaker button (10-15): the counselor's voice on/off (Unity's Voice bus). */
+  | { type: 'VOICE_AUDIO'; payload: { on: boolean } }
   /** Auto-walk along the NavMesh to that zone's door; Unity answers WORLD_ARRIVED on arrival. */
   | { type: 'WORLD_GOTO'; payload: { zone: WorldZone } }
   /** Enter (spec 004, 06-10): Unity walks the player to that door, opens it, walks him through and

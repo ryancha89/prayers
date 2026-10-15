@@ -15,6 +15,7 @@ import { formatKrw } from '../../coins/format';
 import { JOURNEYS } from '../data/journeys';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
 import { column } from '../../../shared/device/screen';
+import { devPurchases } from '../../../shared/device/simulator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'JourneyPass'>;
@@ -67,7 +68,7 @@ export const JourneyPassScreen: React.FC = () => {
     setBusy(true);
     try {
       // Development only: the server refuses `dev` anywhere else (see buyJourneyPass).
-      const r = await buyJourneyPass(journey.id, access.productId, access.devPurchase);
+      const r = await buyJourneyPass(journey.id, access.productId, access.devPurchase && devPurchases());
       if (r.ok) unlocked();
       // Cancelled is the player's own choice, and with no store the button was never enabled.
       else if (r.reason !== 'cancelled' && r.reason !== 'unavailable') Alert.alert(t('journey.pass.failed'));

@@ -12,8 +12,8 @@ const ko = {
   sophiaHint: 'Sophia와의 대화는 준비 중이에요. 먼저 다른 상담사와 마음속 이야기를 나눠보세요.',
   dailyBody: '모든 답을 오늘 찾지 않아도 괜찮아요. 잠시 숨을 고르고, 지금 가장 마음에 남는 일 하나에 귀 기울여 보세요.',
   choose: '상담사 만나기', roomBody: '좋아하는 아이템으로 나만의 공간을 꾸밀 수 있도록 준비하고 있어요.',
-  profile: '내 프로필 보기', shopBody: '공간을 꾸미는 아이템은 준비 중이에요. 상담에 사용하는 질문 티켓은 지금 만나볼 수 있어요.',
-  tickets: '질문 티켓 보기',
+  profile: '내 프로필 보기', shopBody: '공간을 꾸미는 아이템은 준비 중이에요. 상담에 사용하는 Prayer Coins는 지금 만나볼 수 있어요.',
+  tickets: 'Prayer Coins 보기',
 };
 type Copy = Record<keyof typeof ko, string>;
 const en: Copy = {
@@ -27,7 +27,7 @@ const en: Copy = {
   sophiaTitle: 'Meet Sophia soon', sophiaHint: 'Conversations with Sophia are on their way. In the meantime, share what’s on your mind with a counselor.',
   dailyBody: 'You don’t have to find every answer today. Take a breath and listen to the one thing that stays on your mind.',
   choose: 'Meet a counselor', roomBody: 'Your own space to decorate with your favorite items is on its way.',
-  profile: 'View my profile', shopBody: 'Items for your space are on their way. Question tickets for counseling are available now.', tickets: 'View question tickets',
+  profile: 'View my profile', shopBody: 'Items for your space are on their way. Prayer Coins for counseling are available now.', tickets: 'View Prayer Coins',
 };
 // Fall back to English for newly introduced copy until localized editions are available.
 export const homeCopy = (lang: Lang): Copy => lang === 'ko' ? ko : en;

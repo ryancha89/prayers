@@ -83,7 +83,7 @@ it('portrait: My Room\'s row — the status-bar inset plus sm, md at the sides',
   });
 });
 
-it('the buttons are the HUD\'s rings: back leaves without a tap sound (the room owns its mix), sound is drawn but disabled', async () => {
+it('the buttons are the HUD\'s rings: back leaves without a tap sound (the room owns its mix), the speaker turns her voice off and on', async () => {
   const { sfx } = jest.requireMock('../src/shared/audio/sfx');
   let tree!: ReactTestRenderer.ReactTestRenderer;
   act(() => {
@@ -93,7 +93,15 @@ it('the buttons are the HUD\'s rings: back leaves without a tap sound (the room 
   expect(rings.map(r => r.props.testID)).toEqual(['room-back', 'room-sound']);
   for (const r of rings) expect(r.props.size).toBe(RING_COMPACT);
   expect(rings[0].props.label).toBeTruthy();
-  expect(rings[1].props.disabled).toBe(true);
+  // The speaker is live (10-15): it flips the counselor's voice, remembered in the sound store.
+  const { useSoundStore } = require('../src/shared/audio/store');
+  expect(rings[1].props.disabled).toBeFalsy();
+  expect(rings[1].props.icon).toBe('speaker');
+  await act(async () => rings[1].props.onPress());
+  expect(useSoundStore.getState().voiceEnabled).toBe(false);
+  expect(tree.root.findAllByType(RingButton)[1].props.icon).toBe('speakerOff');
+  await act(async () => tree.root.findAllByType(RingButton)[1].props.onPress());
+  expect(useSoundStore.getState().voiceEnabled).toBe(true);
   // The press target is padded out to 44pt around the 40pt ring.
   const back = tree.root.find(n => n.props.testID === 'room-back' && n.props.hitSlop != null);
   expect(RING_COMPACT + 2 * back.props.hitSlop).toBeGreaterThanOrEqual(MIN_HIT);

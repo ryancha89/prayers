@@ -134,6 +134,10 @@
       "sha1": "19eabdb7e0a36f38f5e461815d89d068e90d3e54"
     },
     {
+      "path": "src/shared/assets/sounds/meditation_bed_music.m4a",
+      "sha1": "bc57c739c665669b4d24b58bcbdd010ec846af0d"
+    },
+    {
       "path": "src/shared/assets/sounds/meditation_bed.m4a",
       "sha1": "b11b06eca6ae503bd99f6c6f6f75f979850052d5"
     },

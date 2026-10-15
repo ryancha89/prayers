@@ -41,12 +41,23 @@ try {
  * delivered file fades in from silence and ends at full level, so looping the original drops to
  * nothing every 9 minutes — audible, and worst exactly where a session runs long.
  */
-export type Bed = 'app' | 'meditation';
+export type Bed = 'app' | 'meditation' | 'meditationKo';
 
+/**
+ * ⚠️ `meditation_bed.m4a` has a KOREAN affirmation voice mixed into the music for its whole nine
+ * minutes — it is the Korean session's guide. Every other language heard Korean under its own
+ * guide (10-15: "언어 영어일때 한글안들리게"), so they get `meditation_bed_music.m4a`: the same
+ * track with the voice taken out (Demucs htdemucs two-stem, no_vocals, +2.9 dB back to the
+ * original's -14 LUFS). Same length and loop point as the voiced bed.
+ */
 const TRACKS: Record<Bed, string> = {
   app: 'prayers_ambient.m4a',
-  meditation: 'meditation_bed.m4a',
+  meditation: 'meditation_bed_music.m4a',
+  meditationKo: 'meditation_bed.m4a',
 };
+
+/** The meditation bed for a language: the voiced one is the Korean guide, so Korean only. */
+export const meditationBed = (lang: string): Bed => (lang === 'ko' ? 'meditationKo' : 'meditation');
 
 /** The bed the loaded `sound` belongs to. */
 let track: Bed = 'app';

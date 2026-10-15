@@ -1,97 +1,43 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import React, { useCallback } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT } from '../../../shared/i18n';
 import { Icon } from '../../../shared/components/Icon';
 import { sfx } from '../../../shared/audio/sfx';
-import {
-  TIERS,
-  TIER_GRANT,
-  activateSubscription,
-  claimDaily,
-  fetchSubscription,
-  productIdFor,
-  type SubscriptionStatus,
-  type Tier,
-} from '../api/subscription';
-import { buySubscription, purchaseAvailable } from '../providers/purchase';
-import { PRAYER_TICKET_ART } from '../assets/art';
+import { PRAYER_COIN_ART } from '../assets/art';
 import { column, useScreen } from '../../../shared/device/screen';
 import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
+import { useCoins } from '../../coins/store/coinStore';
+import { refreshCoins } from '../../coins/api/coinsApi';
+import { CoinPackList } from '../../coins/components/CoinPackList';
+import { formatCoins } from '../../coins/format';
 
 /**
- * Where tickets come from.
- *
- * Until now they came from nowhere: the app read the balance on the way into a room, refused entry
- * at zero, and offered a Back button — while MyPage showed a wallet of 120 credits that was a
- * constant in a file. The server has sold a ticket subscription for years; this screen is the app
- * finally asking for it.
- *
- * The allowance is claimed on arrival, not on a button. An allowance you have to remember to
- * collect is one you will be annoyed to find you lost, and `claim` is safe to call at any time —
- * it answers 200 with `granted: 0` when there is nothing to give.
+ * Prayer Coins (10-15): the one currency — a consultation, the journey and My Room are all paid in
+ * it — and where it is bought: the six store packs (CoinPackList). The balance is the coin wallet;
+ * the daily check-in adds to it from its own page.
  */
 export const TicketsScreen: React.FC = () => {
   const t = useT();
   const navigation = useNavigation();
-  const [status, setStatus] = useState<SubscriptionStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<Tier | null>(null);
-  const canBuy = purchaseAvailable();
+  const coins = useCoins(s => s.balance);
   // Sized from the window, not from the asset: a static require() carries its pixel size, and a
   // percentage width on it resolved to that (a 960pt ticket sailing off the right edge).
-  // From the COLUMN, and in landscape no taller than half the window: the full width of a phone held
-  // sideways made a 550pt-tall ticket on a 402pt screen.
+  // From the COLUMN, and in landscape no taller than half the window.
   const screen = useScreen();
-  const heroWidth = Math.min(
-    screen.column - spacing.xl * 2,
-    screen.landscape ? Math.round(screen.height * 0.75) : Number.POSITIVE_INFINITY,
+  const heroSize = Math.round(
+    Math.min(screen.column - spacing.xl * 2, screen.landscape ? screen.height * 0.75 : Number.POSITIVE_INFINITY) * (2 / 3),
   );
 
-  const refresh = useCallback(async () => {
-    const granted = await claimDaily();
-    const next = await fetchSubscription();
-    setStatus(next);
-    setLoading(false);
-    if (granted > 0) Alert.alert(t('tickets.claimedTitle'), t('tickets.claimed', { count: granted }));
-  }, [t]);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  const subscribe = async (tier: Tier) => {
-    sfx.select();
-    setBusy(tier);
-    try {
-      const purchase = await buySubscription(productIdFor(tier));
-      const ok = await activateSubscription(purchase);
-      if (!ok) Alert.alert(t('tickets.failedTitle'), t('tickets.activateFailed'));
-      await refresh();
-    } catch (e) {
-      // The provider's own message in dev — "cancelled" and "no pod" are different problems.
-      Alert.alert(t('tickets.failedTitle'), __DEV__ && e instanceof Error ? e.message : t('tickets.failed'));
-    } finally {
-      setBusy(null);
-    }
-  };
+  useFocusEffect(useCallback(() => { void refreshCoins(); }, []));
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
       <ScrollView contentContainerStyle={[styles.scroll, column]}>
-        {/* The stack draws no header (RootNavigator), so the way back is this screen's to draw —
-            it was reachable only by the edge swipe, which nobody is told about. */}
+        {/* The stack draws no header (RootNavigator), so the way back is this screen's to draw. */}
         <View style={styles.header}>
           <Pressable
             onPress={() => {
@@ -107,54 +53,19 @@ export const TicketsScreen: React.FC = () => {
         </View>
 
         <Image
-          source={PRAYER_TICKET_ART}
-          style={[styles.hero, { width: heroWidth, height: Math.round((heroWidth * 2) / 3) }]}
+          source={PRAYER_COIN_ART}
+          style={[styles.hero, { width: heroSize, height: heroSize }]}
           resizeMode="contain"
           accessibilityIgnoresInvertColors
         />
 
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>{t('tickets.balance')}</Text>
-          <Text style={styles.balanceValue}>
-            {loading ? '—' : (status?.balance ?? 0)}
-          </Text>
-          {status?.active && status.tier ? (
-            <Text style={styles.balanceNote}>
-              {t('tickets.activeTier', { tier: status.tier, daily: String(status.daily ?? 0) })}
-            </Text>
-          ) : (
-            <Text style={styles.balanceNote}>{t('tickets.noSubscription')}</Text>
-          )}
+          <Text style={styles.balanceValue}>{coins == null ? '—' : formatCoins(coins)}</Text>
         </View>
 
-        {TIERS.map(tier => (
-          <Pressable
-            key={tier}
-            style={[
-              styles.tier,
-              status?.tier === tier && status.active ? styles.tierCurrent : null,
-              canBuy ? null : styles.tierDisabled,
-            ]}
-            // Not tappable when there is nothing to tap into. The note below says purchases are
-            // unavailable, but a row that still presses and then apologises is the exact "button
-            // that always fails" this file set out not to ship — and in a release build the
-            // apology is the generic one, with no hint of why.
-            disabled={busy != null || !canBuy}
-            onPress={() => subscribe(tier)}>
-            <View style={styles.tierText}>
-              <Text style={styles.tierName}>{t(`tickets.tier.${tier}` as never)}</Text>
-              <Text style={styles.tierGrant}>
-                {t('tickets.grant', {
-                  start: String(TIER_GRANT[tier].start),
-                  daily: String(TIER_GRANT[tier].daily),
-                })}
-              </Text>
-            </View>
-            {busy === tier ? <ActivityIndicator color={colors.violetSoft} /> : null}
-          </Pressable>
-        ))}
+        <CoinPackList />
 
-        {!canBuy && <Text style={styles.unavailable}>{t('tickets.unavailable')}</Text>}
         <Text style={styles.note}>{t('tickets.note')}</Text>
         <MiniPlayerSpacer />
       </ScrollView>
@@ -176,21 +87,5 @@ const styles = StyleSheet.create({
   },
   balanceLabel: { ...typography.caption, color: colors.textSecondary },
   balanceValue: { ...typography.h1, color: colors.gold },
-  balanceNote: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs ?? 4 },
-  tier: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  tierCurrent: { borderWidth: 1, borderColor: colors.violetSoft },
-  tierDisabled: { opacity: 0.45 },
-  tierText: { flexShrink: 1 },
-  tierName: { ...typography.body, color: colors.textPrimary, fontWeight: '600' },
-  tierGrant: { ...typography.caption, color: colors.textSecondary },
-  unavailable: { ...typography.caption, color: colors.gold, marginTop: spacing.md },
   note: { ...typography.caption, color: colors.textMuted, marginTop: spacing.lg },
 });
