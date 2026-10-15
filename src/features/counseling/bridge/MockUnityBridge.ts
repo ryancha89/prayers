@@ -3,7 +3,10 @@ import {
   MyRoomBook,
   MyRoomBridge,
   MyRoomCamera,
+  MyRoomDragPhase,
   MyRoomInitPayload,
+  MyRoomLayout,
+  MyRoomOwned,
   RNToUnityEvent,
   UnityBridge,
   UnitySessionPayload,
@@ -147,6 +150,26 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge {
   sendMyRoomBook(book: MyRoomBook | null): void {
     this.myRoomBooks.push(book);
   }
+
+  /** The layouts sent, for tests. */
+  myRoomLayouts: { layout: MyRoomLayout; owned?: MyRoomOwned | null }[] = [];
+
+  sendMyRoomLayout(layout: MyRoomLayout, owned?: MyRoomOwned | null): void {
+    this.myRoomLayouts.push({ layout, owned });
+  }
+
+  /** Decorate mode, recorded for tests. With no room nothing answers, so edit mode never starts
+   *  (the Decorate button waits for MYROOM_READY). */
+  myRoomEdits: { type: string; payload?: unknown }[] = [];
+
+  sendMyRoomEdit(on: boolean, cancel?: boolean): void { this.myRoomEdits.push({ type: 'MYROOM_EDIT', payload: { on, cancel } }); }
+  sendMyRoomTap(x: number, y: number): void { this.myRoomEdits.push({ type: 'MYROOM_TAP', payload: { x, y } }); }
+  sendMyRoomDrag(phase: MyRoomDragPhase, x: number, y: number): void { this.myRoomEdits.push({ type: 'MYROOM_DRAG', payload: { phase, x, y } }); }
+  sendMyRoomRotate(step: 1 | -1): void { this.myRoomEdits.push({ type: 'MYROOM_ROTATE', payload: { step } }); }
+  sendMyRoomSwap(item: string): void { this.myRoomEdits.push({ type: 'MYROOM_SWAP', payload: { item } }); }
+  sendMyRoomAdd(item: string): void { this.myRoomEdits.push({ type: 'MYROOM_ADD', payload: { item } }); }
+  sendMyRoomRemove(): void { this.myRoomEdits.push({ type: 'MYROOM_REMOVE' }); }
+  sendMyRoomTheme(theme: string): void { this.myRoomEdits.push({ type: 'MYROOM_THEME', payload: { theme } }); }
 
   onEvent(handler: (event: UnityToRNEvent) => void): () => void {
     this.handlers.add(handler);

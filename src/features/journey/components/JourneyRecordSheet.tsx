@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/Text';
+import { Icon } from '../../../shared/components/Icon';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
@@ -50,7 +51,12 @@ export const JourneyRecordSheet: React.FC<{
                 <Text style={[styles.stationTitle, station.chapterIndex === current && status !== 'done' && styles.stationNow]}>
                   {t(station.title as 'journey.continue')}
                 </Text>
-                {onStation ? <Text style={styles.again}>{t('journey.record.again')}</Text> : null}
+                {onStation ? (
+                  <View style={styles.againRow}>
+                    <Text style={styles.again}>{t('journey.record.again')}</Text>
+                    <Icon name="arrowRight" size={12} color={colors.textSecondary} />
+                  </View>
+                ) : null}
               </Pressable>
               {station.parts.map(part => (
                 <View key={part.key} style={styles.part}>
@@ -89,6 +95,7 @@ const styles = StyleSheet.create({
   stationHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stationTitle: { ...typography.bodyStrong, color: colors.gold, letterSpacing: 1 },
   stationNow: { textDecorationLine: 'underline' },
+  againRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   again: { ...typography.caption, color: colors.textSecondary },
   part: { gap: spacing.xs },
   label: { ...typography.caption, color: colors.gold, opacity: 0.8 },

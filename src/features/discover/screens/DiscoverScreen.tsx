@@ -12,6 +12,7 @@ import { openCounselor } from '../../counselors/openCounselor';
 import { CounselorSummary } from '../../counselors/types';
 import { sfx } from '../../../shared/audio/sfx';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -95,6 +96,7 @@ const Rail: React.FC<{
             </Text>
           </Pressable>
         ))}
+        <MiniPlayerSpacer />
       </ScrollView>
     </View>
   );

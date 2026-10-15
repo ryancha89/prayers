@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Lang } from '../../../shared/i18n';
 import { journeySubject } from '../store/journeyProfileStore';
-import { useCoins } from '../../coins/store/coinStore';
 import { fetchJourneyReport, journeyBirthOf, journeyNameOf } from '../api/journeyApi';
 import { unlockMoment, type UnlockFailure } from '../player/unlockMoment';
 import { useSavedJourneys, withPart } from '../store/savedJourneysStore';
@@ -19,7 +18,7 @@ export interface ReportState {
   failed: boolean;
   unlocking: string | null;
   /** The last unlock that failed, and why. */
-  unlockError: { momentId: string; reason: UnlockFailure['reason'] } | null;
+  unlockError: { momentId: string; reason: UnlockFailure['kind'] } | null;
   retry: () => void;
   unlock: (momentId: string) => Promise<void>;
 }
@@ -79,12 +78,11 @@ export function useJourneyReport(
     setUnlockError(null);
     const result = await unlockMoment({ journeyId, momentId, tone, lang });
     if (!result.ok) {
-      if (result.reason === 'insufficient' && result.coinBalance != null) useCoins.getState().setBalance(result.coinBalance);
-      setUnlockError({ momentId, reason: result.reason });
+      // The wallet is already written by unlockMoment (402 and 200 alike).
+      setUnlockError({ momentId, reason: result.kind });
       setUnlocking(null);
       return;
     }
-    if (result.coinBalance != null) useCoins.getState().setBalance(result.coinBalance);
     const chapterId = momentId.split('#')[0];
     result.parts.forEach(p => useSavedJourneys.getState().addUnlock(journeyId, counselorId, chapterId, p, result.summary));
     const player = useJourneyPlayer.getState();

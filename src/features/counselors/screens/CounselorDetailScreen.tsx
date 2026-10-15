@@ -22,6 +22,7 @@ import {
 import { sfx } from '../../../shared/audio/sfx';
 import { column } from '../../../shared/device/screen';
 import { useBottomDock } from '../../../shared/layout/bottomDock';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'CounselorDetail'>;
@@ -146,6 +147,7 @@ export const CounselorDetailScreen: React.FC = () => {
             ))}
           </View>
         </View>
+        <MiniPlayerSpacer />
       </ScrollView>
 
       {/* Floating top controls (spec §10) */}

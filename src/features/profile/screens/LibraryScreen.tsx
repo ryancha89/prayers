@@ -16,6 +16,7 @@ import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { CounselorCard } from '../../counselors/components/CounselorCard';
 import { openCounselor } from '../../counselors/openCounselor';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -90,6 +91,7 @@ export const LibraryScreen: React.FC = () => {
           data={people}
           keyExtractor={s => s.id}
           contentContainerStyle={[styles.list, column]}
+          ListFooterComponent={<MiniPlayerSpacer />}
           renderItem={({ item }) => (
             <SubjectCard
               subject={item}
@@ -108,6 +110,7 @@ export const LibraryScreen: React.FC = () => {
           data={favorites}
           keyExtractor={c => c.id}
           contentContainerStyle={[styles.list, column]}
+          ListFooterComponent={<MiniPlayerSpacer />}
           renderItem={({ item }) => (
             <CounselorCard counselor={item} onPress={() => openCounselor(navigation, item)} />
           )}

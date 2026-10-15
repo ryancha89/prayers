@@ -45,7 +45,7 @@ export const PhotoRow: React.FC<{
               accessibilityRole="button"
               accessibilityLabel={t('diary.photo.remove')}
               style={styles.remove}>
-              <Text style={styles.removeText}>×</Text>
+              <Icon name="close" size={12} color="#fff" />
             </Pressable>
           </View>
         ))}
@@ -101,7 +101,6 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 2, right: 2, width: 20, height: 20, borderRadius: 10,
     alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)',
   },
-  removeText: { color: '#fff', fontSize: 14, lineHeight: 16, fontWeight: '700' },
   note: { gap: 4, padding: spacing.sm, borderRadius: radius.sm, backgroundColor: 'rgba(255,255,255,0.05)' },
   noteText: { ...typography.caption, color: colors.textSecondary },
   link: { ...typography.caption, color: colors.gold, fontWeight: '700' },

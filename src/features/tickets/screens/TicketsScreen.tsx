@@ -28,6 +28,7 @@ import {
 import { buySubscription, purchaseAvailable } from '../providers/purchase';
 import { PRAYER_TICKET_ART } from '../assets/art';
 import { column, useScreen } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 /**
  * Where tickets come from.
@@ -155,6 +156,7 @@ export const TicketsScreen: React.FC = () => {
 
         {!canBuy && <Text style={styles.unavailable}>{t('tickets.unavailable')}</Text>}
         <Text style={styles.note}>{t('tickets.note')}</Text>
+        <MiniPlayerSpacer />
       </ScrollView>
     </SafeAreaView>
   );

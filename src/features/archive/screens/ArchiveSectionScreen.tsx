@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../../../shared/components/Text';
-import { Icon } from '../../../shared/components/Icon';
+import { Icon, type IconName } from '../../../shared/components/Icon';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
@@ -17,6 +17,7 @@ import { dropLocalPhotos } from '../../myroom/diary/photos';
 import { MemoryEditor } from '../components/MemoryEditor';
 import { chartFromFields, pillarsText } from '../../saju/chart';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 type Rt = RouteProp<RootStackParamList, 'ArchiveSection'>;
 
@@ -115,12 +116,14 @@ export const ArchiveSectionScreen: React.FC = () => {
     }
   };
 
-  const lead = (m: ArchiveMemory): string => {
-    if (category === 'diary') return MOOD_ICON[m.details.mood] ?? '📔';
-    if (category === 'possession') return KIND_ICON[m.details.kind] ?? '📦';
-    if (category === 'story') return m.details.year ?? '';
-    if (category === 'goal') return m.details.status === 'done' ? '☑' : '☐';
-    return CATEGORY_ICON[category];
+  /** What leads a row: a year (story), or an icon — a goal's box, the mood, the kind, or the
+   *  category's own, with the category's as the fallback for a value this build does not know. */
+  const lead = (m: ArchiveMemory): { icon: IconName } | { text: string } => {
+    if (category === 'diary') return { icon: MOOD_ICON[m.details.mood] ?? CATEGORY_ICON.diary };
+    if (category === 'possession') return { icon: KIND_ICON[m.details.kind] ?? KIND_ICON.other };
+    if (category === 'story') return { text: m.details.year ?? '' };
+    if (category === 'goal') return { icon: m.details.status === 'done' ? 'checkSquare' : 'square' };
+    return { icon: CATEGORY_ICON[category] };
   };
 
   return (
@@ -135,9 +138,12 @@ export const ArchiveSectionScreen: React.FC = () => {
           accessibilityRole="button">
           <Icon name="back" size={22} />
         </Pressable>
-        <Text style={styles.title} numberOfLines={1}>
-          {CATEGORY_ICON[category]} {t(`archive.cat.${category}` as TranslationKey)}
-        </Text>
+        <View style={styles.titleRow}>
+          <Icon name={CATEGORY_ICON[category]} size={24} color={colors.violetSoft} />
+          <Text style={styles.title} numberOfLines={1}>
+            {t(`archive.cat.${category}` as TranslationKey)}
+          </Text>
+        </View>
         <Pressable
           hitSlop={12}
           onPress={() => {
@@ -206,7 +212,14 @@ export const ArchiveSectionScreen: React.FC = () => {
                 setAdding(false);
                 setEditingId(m.id);
               }}>
-              <Text style={[styles.lead, category === 'story' && styles.leadYear]}>{lead(m)}</Text>
+              {(() => {
+                const l = lead(m);
+                return 'icon' in l ? (
+                  <View style={styles.leadIcon}><Icon name={l.icon} size={22} color={colors.textSecondary} /></View>
+                ) : (
+                  <Text style={[styles.lead, category === 'story' && styles.leadYear]}>{l.text}</Text>
+                );
+              })()}
               <View style={styles.body}>
                 <Text style={styles.content}>{m.content}</Text>
                 {!!subtitle(m) && <Text style={styles.sub}>{subtitle(m)}</Text>}
@@ -227,6 +240,7 @@ export const ArchiveSectionScreen: React.FC = () => {
             </Pressable>
           ),
         )}
+        <MiniPlayerSpacer />
       </ScrollView>
     </SafeAreaView>
   );
@@ -242,7 +256,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  title: { ...typography.h2, color: colors.textPrimary, flex: 1 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
+  title: { ...typography.h2, color: colors.textPrimary, flexShrink: 1 },
   scroll: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
   linked: { backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md, gap: spacing.xs },
   linkedText: { ...typography.bodyStrong, color: colors.textPrimary },
@@ -252,6 +267,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.md, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md },
   rowPressed: { backgroundColor: colors.cardPressed },
   lead: { fontSize: 22, width: 32, textAlign: 'center' },
+  leadIcon: { width: 32, alignItems: 'center', paddingTop: 2 },
   leadYear: { ...typography.caption, color: colors.gold, width: 44, paddingTop: 4 },
   body: { flex: 1, gap: 2 },
   content: { ...typography.body, color: colors.textPrimary },

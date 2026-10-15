@@ -1,7 +1,6 @@
 import { apiBase } from '../../../shared/config/api';
-import { devlog } from '../../../shared/devlog';
 import { authedFetch } from '../../auth/api/headers';
-import { buyProduct, finishPurchase, storeAvailable } from '../../tickets/providers/purchase';
+import { buyWithStore, confirmStorePurchase, type StoreConfirmInput } from '../../tickets/providers/storeBuy';
 import { useCoins } from '../store/coinStore';
 import { noteCoins } from '../../myroom/inbox/inboxStore';
 
@@ -49,32 +48,12 @@ export async function refreshCoins(): Promise<void> {
 
 type ConfirmResult = { ok: true; coinsAdded: number; balance: number } | { ok: false; error: 'invalid' | 'failed' };
 
-async function confirmCoinPurchase(input: {
-  platform: 'ios' | 'android' | 'dev';
-  productId: string;
-  purchaseToken?: string;
-  transactionId?: string;
-}): Promise<ConfirmResult> {
-  try {
-    const res = await authedFetch(`${apiBase()}/api/v1/prayers/coins/purchase`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        platform: input.platform,
-        product_id: input.productId,
-        purchase_token: input.purchaseToken,
-        transaction_id: input.transactionId,
-      }),
-    });
-    if (!res) return { ok: false, error: 'failed' };
-    const b = await res.json().catch(() => null);
-    if (res.status === 422) return { ok: false, error: 'invalid' };
-    if (!res.ok || !b?.success) return { ok: false, error: 'failed' };
-    return { ok: true, coinsAdded: Number(b.coins_added ?? 0), balance: Number(b.coin_balance ?? 0) };
-  } catch (e) {
-    devlog(`[coins] purchase confirm failed: ${String(e)}`);
-    return { ok: false, error: 'failed' };
-  }
+async function confirmCoinPurchase(input: StoreConfirmInput): Promise<ConfirmResult> {
+  const r = await confirmStorePurchase('/api/v1/prayers/coins/purchase', input);
+  if (!r) return { ok: false, error: 'failed' };
+  if (r.status === 422) return { ok: false, error: 'invalid' };
+  if (!r.ok || !r.body?.success) return { ok: false, error: 'failed' };
+  return { ok: true, coinsAdded: Number(r.body.coins_added ?? 0), balance: Number(r.body.coin_balance ?? 0) };
 }
 
 export type BuyCoinsResult =
@@ -82,34 +61,14 @@ export type BuyCoinsResult =
   | { ok: false; reason: 'cancelled' | 'invalid' | 'unavailable' | 'failed' };
 
 /**
- * Buy one coin product. A dev build goes through the server's `dev` platform (accepted only in
- * development/test — a simulator has the store module but no store to take the money). Otherwise:
- * the store takes the money, the server verifies the receipt and adds the coins, and only THEN is
- * the purchase consumed (`finishPurchase`). A purchase the server refused stays unfinished, so the
- * store re-delivers it rather than it being lost.
+ * Buy one coin product, through `buyWithStore` (dev platform in a dev build, otherwise the store,
+ * then the server, then consume). The wallet is set here from the server's answer.
  */
 export async function buyCoins(productId: string, opts: { dev?: boolean } = {}): Promise<BuyCoinsResult> {
   const dev = opts.dev ?? (typeof __DEV__ !== 'undefined' && __DEV__);
-  let confirmed: ConfirmResult;
-  if (dev) {
-    confirmed = await confirmCoinPurchase({ platform: 'dev', productId });
-  } else {
-    if (!storeAvailable()) return { ok: false, reason: 'unavailable' };
-    let purchase;
-    try {
-      purchase = await buyProduct(productId);
-    } catch (e) {
-      const cancelled = String((e as Error)?.message ?? '').toLowerCase().includes('cancel');
-      return { ok: false, reason: cancelled ? 'cancelled' : 'failed' };
-    }
-    confirmed = await confirmCoinPurchase({
-      platform: purchase.platform,
-      productId: purchase.productId,
-      purchaseToken: purchase.purchaseToken,
-      transactionId: purchase.transactionId,
-    });
-    if (confirmed.ok) await finishPurchase(purchase);
-  }
+  const r = await buyWithStore<ConfirmResult>({ productId, dev, confirm: confirmCoinPurchase, accepted: c => c.ok });
+  if (!r.ok && r.reason !== 'refused') return { ok: false, reason: r.reason };
+  const confirmed = r.confirmed;
   if (!confirmed.ok) return { ok: false, reason: confirmed.error };
   useCoins.getState().setBalance(confirmed.balance);
   noteCoins(confirmed.coinsAdded, confirmed.balance);

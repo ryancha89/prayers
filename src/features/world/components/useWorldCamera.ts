@@ -83,6 +83,11 @@ export interface FollowCameraOptions {
   onTap?: (x: number, y: number) => void;
   /** A double-tap sends `home` (My Room). */
   doubleTapHome?: boolean;
+  /** When set, ONE finger past the slop drags this instead of looking around (My Room's decorate
+   *  mode): `begin` where the finger went down, `move` under it, `end` where it lifted — 0..1 of the
+   *  window, like `onTap`. Two fingers still pinch and turn the camera; a second finger landing
+   *  mid-drag ends the drag first. */
+  onDrag?: (phase: 'begin' | 'move' | 'end', x: number, y: number) => void;
 }
 
 /**
@@ -108,6 +113,8 @@ export function useFollowCamera(options: FollowCameraOptions): PanResponderInsta
   /** The touch that might still be a tap: where and when it went down, and whether it moved. */
   const press = useRef<{ x: number; y: number; at: number; moved: boolean; two: boolean } | null>(null);
   const lastTap = useRef(0);
+  /** The `onDrag` in progress: the finger's last position (page coordinates). */
+  const dragging = useRef<{ x: number; y: number } | null>(null);
 
   const pan = useMemo(() => {
     const two = (e: GestureResponderEvent) => e.nativeEvent.touches.length >= 2;
@@ -125,7 +132,17 @@ export function useFollowCamera(options: FollowCameraOptions): PanResponderInsta
       drag.current = { yaw: camera.current.yaw, pitch: camera.current.pitch, x: g.dx, y: g.dy };
     };
     const send = () => opts.current.send({ ...camera.current });
-    const end = () => { gesture.current = null; drag.current = null; press.current = null; };
+    const unit = (x: number, y: number): [number, number] => {
+      const { width, height } = Dimensions.get('window');
+      return [x / Math.max(1, width), y / Math.max(1, height)];
+    };
+    const endPieceDrag = () => {
+      const d = dragging.current;
+      if (!d) return;
+      dragging.current = null;
+      opts.current.onDrag?.('end', ...unit(d.x, d.y));
+    };
+    const end = () => { endPieceDrag(); gesture.current = null; drag.current = null; press.current = null; };
     const release = () => {
       const p = press.current;
       end();
@@ -158,7 +175,20 @@ export function useFollowCamera(options: FollowCameraOptions): PanResponderInsta
           p.moved = true;
           beginDrag(g);
         }
+        if (!two(e) && opts.current.onDrag && (dragging.current || !gesture.current)) {
+          const t = e.nativeEvent;
+          if (!dragging.current) {
+            // From where the finger went down: that is the piece the player meant to pick up.
+            opts.current.onDrag('begin', ...unit(p?.x ?? t.pageX, p?.y ?? t.pageY));
+          }
+          dragging.current = { x: t.pageX, y: t.pageY };
+          opts.current.onDrag('move', ...unit(t.pageX, t.pageY));
+          return;
+        }
+        // The finger left over after a pinch moves neither the piece nor the camera.
+        if (!two(e) && opts.current.onDrag) return;
         if (two(e)) {
+          endPieceDrag();
           // A second finger landing mid-drag starts the pinch from where the camera is.
           if (!gesture.current) return begin(e);
           const [a, b] = e.nativeEvent.touches;

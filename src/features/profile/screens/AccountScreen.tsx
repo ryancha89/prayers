@@ -7,6 +7,7 @@ import { useT } from '../../../shared/i18n';
 import { useAuthStore, signedOut } from '../../auth/store/authStore';
 import { deleteAccount, forgetLocalData } from '../../auth/api/deleteAccount';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 /**
  * The account screen, and the one thing on it that is not optional.
@@ -72,6 +73,7 @@ export const AccountScreen: React.FC = () => {
         <Text style={styles.note}>{t('account.deleteNote')}</Text>
 
         {busy && <ActivityIndicator color={colors.violetSoft} style={styles.spinner} />}
+        <MiniPlayerSpacer />
       </ScrollView>
     </SafeAreaView>
   );

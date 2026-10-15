@@ -18,7 +18,7 @@ import { useMyRoomCamera } from '../components/useMyRoomCamera';
 import { WorldJoystick } from '../../world/components/WorldJoystick';
 import type { MyRoomAction, MyRoomItemAnchor, MyRoomNearItem } from '../../counseling/types';
 import { ItemPrompt, MYROOM_LIFT } from '../components/ItemPrompt';
-import { itemName } from '../names';
+import { itemName, themeName } from '../names';
 import type { TranslationKey } from '../../../shared/i18n';
 import { useCoins } from '../../coins/store/coinStore';
 import { MYROOM_PICTURE } from '../picture';
@@ -28,13 +28,18 @@ import { syncDiary } from '../diary/diaryApi';
 import { DiaryOverlay, type DiaryRoute } from '../diary/components/DiaryOverlay';
 import { DiaryBookBar } from '../diary/components/DiaryBookBar';
 import { devlog } from '../../../shared/devlog';
-import type { MyRoomBook } from '../../counseling/types';
+import type { MyRoomBook, MyRoomInitPayload, MyRoomLayout } from '../../counseling/types';
+import { myRoomUserKey, sameLayout, useMyRoomStore } from '../store/myRoomStore';
 import { checkIn, fetchAttendance, type AttendanceStatus } from '../../tickets/api/attendance';
 import { WorldSheet, WorldSheetTop } from '../../world/components/WorldSheets';
 import { HUD_ICON, HudIcon, IVORY, Motto, PillButton, ProfileBadge, RingButton, badgeMaxWidth } from '../../../shared/components/hud/Hud';
 import { ProfileSheet, useMyRoomLevel, usePlayerName } from '../components/ProfileSheet';
 import { InboxSheet } from '../components/InboxSheet';
-import { DecorateSheet, type DecorTab } from '../components/DecorateSheet';
+import { DecorateBar, SelectionBar } from '../components/DecorateBar';
+import { DecorateTray } from '../components/DecorateTray';
+import { DecorateCoach } from '../components/DecorateCoach';
+import { useDecorate } from '../edit/useDecorate';
+import { skinList, swapCandidates } from '../edit/decorate';
 import { unreadCount, useInbox } from '../inbox/inboxStore';
 import type { InboxLink } from '../inbox/lines';
 
@@ -62,7 +67,9 @@ export { itemName } from '../names';
  * What of the room the screen's UI hides, for VIEW_INSETS: the top row (badge and icons) and the
  * bottom row (편집, the motto, share), in either orientation. The stick and the run button stand in
  * the corners and are not counted — the player walks behind them, the camera does not frame around
- * them (the world's rule). Exported for the layout test.
+ * them (the world's rule). In decorate mode `top` is DecorateBar and `bottom` the tray's dock
+ * (selection bar included), both measured — Unity fits the edit camera into what is left, and the
+ * HUD rows re-measure on the way out. Exported for the layout test.
  */
 export function myRoomCoveredPx(r: MeasuredRects) {
   const { host, top, bottom } = r;
@@ -144,7 +151,7 @@ export const MyRoomScreen: React.FC = () => {
     sfx.tap();
     setStalled(false);
     setAttempt(a => a + 1);
-    bridge.openMyRoom({ lang });
+    bridge.openMyRoom(initFor());
   };
 
   const insets = useViewInsets({
@@ -162,6 +169,17 @@ export const MyRoomScreen: React.FC = () => {
   const memories = useArchiveStore(s => s.memories);
   const book = React.useMemo(() => bookFor(memories, lang), [memories, lang]);
   const bookRef = useRef<MyRoomBook | null>(book);
+  // The furnished room (spec 005 T022/T024): INIT carries the cached layout at once, and the GET's
+  // copy follows as MYROOM_LAYOUT only when it differs from what INIT carried.
+  const sentLayout = useRef<MyRoomLayout | null>(null);
+  // This visit's GET answered. Until it does — offline, signed out — the cached room is shown and
+  // Decorate says it needs a connection.
+  const [online, setOnline] = useState(false);
+  const initFor = (): MyRoomInitPayload => {
+    const cached = useMyRoomStore.getState().current();
+    sentLayout.current = cached?.layout ?? null;
+    return { lang, book: bookRef.current, layout: cached?.layout ?? null, owned: cached?.owned ?? null };
+  };
   useEffect(() => {
     if (sameBook(bookRef.current, book)) return;
     bookRef.current = book;
@@ -192,14 +210,30 @@ export const MyRoomScreen: React.FC = () => {
         else setActing(cur => (cur && cur.uid === p.uid ? null : cur));
         // The camera is on the book: the page is up, and DiaryBookBar offers Read / Write / Back
         // (08-10: it used to open Write at once, leaving no way to only look).
+      } else if (e.type === 'MYROOM_LAYOUT_APPLIED') {
+        const p = e.payload;
+        if (p) devlog(`[myroom] layout applied ${p.theme} placed=${p.placed} skipped=${p.skipped?.length ? p.skipped.map(x => `${x.item}:${x.reason}`).join(',') : 'none'}`);
       } else if (e.type === 'MYROOM_BOOK_STATE') {
         // The book's glyph self-check (R13): the only trace of a missing glyph on a device.
         const p = e.payload;
         if (p) devlog(`[myroom] book ${p.id} shown=${p.shown} missing=${p.missing?.length ? p.missing.map(c => c.toString(16)).join(',') : 'none'}`);
       }
     });
-    bridge.openMyRoom({ lang, book: bookRef.current });
+    bridge.openMyRoom(initFor());
+    // Then the account's copy. Offline (null) the cached room stands. The bridge holds a layout that
+    // lands while the room is still loading and posts it on MYROOM_READY.
+    const ac = new AbortController();
+    useMyRoomStore.getState().refresh(ac.signal).then(room => {
+      if (!room || ac.signal.aborted) return;
+      if (!sameLayout(room.layout, sentLayout.current)) {
+        sentLayout.current = room.layout;
+        bridge.sendMyRoomLayout(room.layout, room.owned);
+      }
+      // Decorate needs this answer: a save sends the version it brought (spec 005 US2 scenario 2).
+      setOnline(true);
+    });
     return () => {
+      ac.abort();
       off();
       bridge.closeMyRoom();
     };
@@ -209,16 +243,72 @@ export const MyRoomScreen: React.FC = () => {
   // The stick and the look layer wait for the room (until READY the picture covers it, and a stick
   // pushed then would walk the player off on their own once it loads); the coin shop covers both.
   const shopOpen = useCoins(s => s.shopOpen);
-  // One sheet at a time over the room: the menu, the profile, the mailbox, or 편집.
-  const [sheet, setSheet] = useState<'menu' | 'profile' | 'inbox' | 'decor' | null>(null);
-  const [decorTab, setDecorTab] = useState<DecorTab>('owned');
+  // One sheet at a time over the room: the menu, the profile or the mailbox. 편집 is not a sheet
+  // any more: it is decorate mode (DecorateBar + DecorateTray), the room itself the canvas.
+  const [sheet, setSheet] = useState<'menu' | 'profile' | 'inbox' | null>(null);
   // The coin shop opens over everything; the sheet that opened it goes.
   useEffect(() => { if (shopOpen) setSheet(null); }, [shopOpen]);
   const controlsOn = (!unity || roomUp) && !shopOpen && !diary && !sheet;
   // The desk's act: the camera is on the open book (DiaryBookBar).
   const atBook = acting?.action === 'write';
   const send = useCallback((c: Parameters<typeof bridge.sendMyRoomCamera>[0]) => bridge.sendMyRoomCamera(c), [bridge]);
-  const look = useMyRoomCamera(controlsOn, send);
+
+  // One short line over the room, for the check-in's
+  // answer. Gone after a moment; a new one replaces it.
+  const [note, setNote] = useState<string | null>(null);
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const say = useCallback((line: string) => {
+    if (noteTimer.current) clearTimeout(noteTimer.current);
+    setNote(line);
+    noteTimer.current = setTimeout(() => setNote(null), NOTE_MS);
+  }, []);
+  useEffect(() => () => { if (noteTimer.current) clearTimeout(noteTimer.current); }, []);
+
+  // Decorate mode (spec 005 T025). While it is on there is no walking and nothing to use: the stick,
+  // run, the item button and Leave go, and one finger on the room selects and drags instead.
+  const decorate = useDecorate({
+    bridge,
+    roomUp,
+    online,
+    acting: !!acting,
+    say,
+    showLayout: (layout, owned) => {
+      sentLayout.current = layout;
+      bridge.sendMyRoomLayout(layout, owned);
+    },
+  });
+  const editing = decorate.editing;
+  // Walk mode's HUD stays away while decorating AND for the moment after (decorate.settling: until
+  // Unity's MYROOM_LAYOUT_APPLIED, or 300 ms), so it never flashes over the edit camera on its way out.
+  const held = editing || decorate.settling;
+  const walkOn = controlsOn && !held;
+  // Back while decorating (Android's back, or any navigation away) is Cancel — with Cancel's own
+  // question when something changed — not leaving the room with an edit half-done. The edit stays
+  // on screen until the player answers; a save in flight is not interrupted.
+  const cancelRef = useRef(decorate.cancel);
+  cancelRef.current = decorate.cancel;
+  const savingRef = useRef(decorate.saving);
+  savingRef.current = decorate.saving;
+  useEffect(() => {
+    if (!editing) return undefined;
+    return navigation.addListener('beforeRemove', e => {
+      e.preventDefault();
+      if (!savingRef.current) cancelRef.current();
+    });
+  }, [editing, navigation]);
+  // The 편집 pill grew a longer word and an icon (꾸미기 / Trang trí phòng): the motto between it and
+  // share is sized from its measured width, not a constant.
+  const [pillW, setPillW] = useState(76);
+  const look = useMyRoomCamera(controlsOn, send, editing ? { onTap: decorate.tap, onDrag: decorate.drag } : null);
+  const owned = useMyRoomStore(s => s.byUser[myRoomUserKey()]?.owned ?? null);
+  const skins = skinList(decorate.catalogThemes, owned, id => themeName(t, id) !== '');
+  const swaps = swapCandidates(decorate.selected, owned, decorate.pending?.layout, decorate.catalog, id => itemName(t, id) !== '');
+  const startDecorate = () => {
+    if (!decorate.enter() && roomUp && !online) {
+      // Offline: try the server again, so the button comes back on by itself once it answers.
+      useMyRoomStore.getState().refresh().then(r => { if (r) setOnline(true); });
+    }
+  };
 
   // Back to the world: it re-opens at the 개인실 door it remembered on the way in.
   const toWorld = () => {
@@ -227,7 +317,7 @@ export const MyRoomScreen: React.FC = () => {
   };
   // Leave pops in when the door is near, rather than appearing on one frame (the world's Enter).
   const leaveIn = useRef(new Animated.Value(0)).current;
-  const leaveOn = nearDoor && controlsOn;
+  const leaveOn = nearDoor && walkOn;
   useEffect(() => {
     if (!leaveOn) return;
     leaveIn.setValue(0);
@@ -235,7 +325,7 @@ export const MyRoomScreen: React.FC = () => {
   }, [leaveOn, leaveIn]);
 
   // One button for the piece in reach — the World's Enter, in the same place. Leave wins at the door.
-  const itemOn = !!nearItem && nearItem.action !== '' && controlsOn && !leaveOn && !atBook;
+  const itemOn = !!nearItem && nearItem.action !== '' && walkOn && !leaveOn && !atBook;
   const itemActing = !!nearItem && !!acting && acting.uid === nearItem.uid;
   const itemLabel = nearItem && nearItem.action !== ''
     ? t(myRoomActLabel(nearItem.action, itemActing, lampOn[nearItem.uid] !== false))
@@ -266,17 +356,8 @@ export const MyRoomScreen: React.FC = () => {
     navigation.navigate('Tabs', { screen: 'Home' });
   };
 
-  // One short line over the room, for the check-in's
-  // answer. Gone after a moment; a new one replaces it.
-  const [note, setNote] = useState<string | null>(null);
-  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const say = useCallback((line: string) => {
-    if (noteTimer.current) clearTimeout(noteTimer.current);
-    setNote(line);
-    noteTimer.current = setTimeout(() => setNote(null), NOTE_MS);
-  }, []);
-  useEffect(() => () => { if (noteTimer.current) clearTimeout(noteTimer.current); }, []);
   const explain = (line: string) => { sfx.tap(); say(line); };
+
 
   // Who the badge names (the same name the World's badge shows).
   const playerName = usePlayerName();
@@ -319,7 +400,6 @@ export const MyRoomScreen: React.FC = () => {
   };
 
   const openSheet = (which: 'menu' | 'profile' | 'inbox') => () => { sfx.tap(); setSheet(which); };
-  const openDecor = (tab: DecorTab = 'owned') => { setDecorTab(tab); setSheet('decor'); };
   const fromMenu = (go: () => void) => () => { setSheet(null); go(); };
   const closeSheet = useCallback(() => setSheet(null), []);
 
@@ -330,7 +410,7 @@ export const MyRoomScreen: React.FC = () => {
     if (link.to === 'diary') setDiary({ screen: 'detail', id: link.memoryId });
     else if (link.to === 'checkin') onGift();
     else if (link.to === 'coins') useCoins.getState().openShop();
-    else openDecor('owned');
+    else startDecorate();
   };
 
   // Run: the room's own toggle (MYROOM_RUN). A visit starts walking, as the bridge does.
@@ -382,7 +462,25 @@ export const MyRoomScreen: React.FC = () => {
           the UnityView itself never reaches RN (useFollowCamera says why). */}
       {controlsOn && <View style={StyleSheet.absoluteFill} testID="myroom-look" {...look} />}
 
-      {/* Top row: who you are on the left, the four icons on the right. */}
+      {/* Top row: who you are on the left, the four icons on the right. Decorate mode's bar instead. */}
+      {held && !editing ? null : editing ? (
+        <DecorateBar
+          pending={decorate.pending}
+          selected={decorate.selected}
+          canUndo={decorate.canUndo}
+          onUndo={decorate.undo}
+          onHelp={decorate.showCoach}
+          saving={decorate.saving}
+          skin={decorate.unownedSkin}
+          buyingSkin={decorate.buyingSkin}
+          onBuySkin={decorate.buySkin}
+          topInset={safe.top}
+          sideInset={Math.max(safe.left, safe.right)}
+          onCancel={decorate.cancel}
+          onDone={decorate.done}
+          onLayout={onTopLayout}
+        />
+      ) : (
       <View
         testID="myroom-top"
         pointerEvents="box-none"
@@ -403,35 +501,70 @@ export const MyRoomScreen: React.FC = () => {
           <HudIcon testID="myroom-menu" icon="menu" label={t('world.menu.title')} onPress={openSheet('menu')} />
         </View>
       </View>
+      )}
 
       {/* The world's stick, bottom-left over 편집 (WALK_INPUT), drawn in the room's gold. Hidden —
           and so released — while anything covers the room. */}
       <View
         pointerEvents="box-none"
         style={[styles.stick, { left: safe.left + spacing.xs, bottom: bottomPad + ROW + spacing.xs }]}>
-        <WorldJoystick visible={controlsOn && !atBook} />
+        <WorldJoystick visible={walkOn && !atBook} />
       </View>
 
       {/* Run, over share: MYROOM_RUN, never WORLD_RUN (that would set the WORLD's run for the way
           back). Gold while on. */}
-      {controlsOn && !atBook && (
+      {walkOn && !atBook && (
         <View pointerEvents="box-none" style={[styles.run, { right: safe.right + spacing.lg - (RUN - ROW - 4) / 2, bottom: bottomPad + ROW + spacing.lg }]}>
           <RingButton testID="myroom-run" icon="run" size={RUN} label={t('world.run')} active={running} onPress={toggleRun} />
         </View>
       )}
 
-      {/* Bottom row: 편집, the motto, share. */}
+      {/* Bottom row: 편집, the motto, share. Decorate mode's tray instead. */}
+      {held && !editing ? null : editing ? (
+        <DecorateTray
+          owned={owned}
+          layout={decorate.pending?.layout ?? null}
+          bottomInset={safe.bottom}
+          onAdd={decorate.add}
+          furnitureForSale={decorate.furnitureForSale}
+          onNotForSale={decorate.notForSale}
+          skins={skins}
+          catalog={decorate.catalog}
+          currentTheme={decorate.pending?.layout.theme ?? null}
+          onTheme={decorate.theme}
+          onLayout={insets.track('bottom')}
+          top={decorate.selected ? (
+            <SelectionBar
+              selected={decorate.selected}
+              category={decorate.catalog?.find(c => c.id === decorate.selected!.item)?.category}
+              swaps={swaps}
+              onRotate={decorate.rotate}
+              onSwap={decorate.swap}
+              onStore={decorate.store}
+            />
+          ) : null}
+        />
+      ) : (
       <View
         testID="myroom-bottom"
         pointerEvents="box-none"
         style={[styles.bottom, { paddingBottom: bottomPad, paddingLeft: safe.left + spacing.lg, paddingRight: safe.right + spacing.lg }]}
         onLayout={insets.track('bottom')}>
-        <PillButton testID="myroom-edit" label={t('myroom.edit')} onPress={() => { sfx.tap(); openDecor('owned'); }} />
+        {/* Muted, not hidden, until the room is up and the server answered: a tap says why. */}
+        <PillButton
+          testID="myroom-edit"
+          icon="armchair"
+          label={t('myroom.edit')}
+          muted={!decorate.canEnter}
+          onPress={startDecorate}
+          onLayout={e => setPillW(Math.max(76, Math.round(e.nativeEvent.layout.width)))}
+        />
         <View style={styles.mottoBox} pointerEvents="none">
-          <Motto text={t('myroom.motto')} width={Math.min(260, screen.width - 2 * (spacing.lg + 76 + spacing.md) - safe.left - safe.right)} />
+          <Motto text={t('myroom.motto')} width={Math.max(0, Math.min(260, screen.width - 2 * (spacing.lg + pillW + spacing.md) - safe.left - safe.right))} />
         </View>
         <RingButton testID="myroom-share" icon="share" size={ROW + 4} label={t('myroom.share')} onPress={share} />
       </View>
+      )}
 
       {note && (
         <View pointerEvents="none" style={[styles.noteWrap, { top: topEnd + spacing.md }]} testID="myroom-note">
@@ -455,7 +588,7 @@ export const MyRoomScreen: React.FC = () => {
         />
       )}
 
-      {atBook && controlsOn && (
+      {atBook && walkOn && (
         <DiaryBookBar
           onRead={() => setDiary({ screen: 'list' })}
           onWrite={() => setDiary({ screen: 'write' })}
@@ -495,7 +628,10 @@ export const MyRoomScreen: React.FC = () => {
         <ProfileSheet name={playerName} activity={level.activity} xp={level.xp} info={level.info} onClose={closeSheet} />
       )}
       {sheet === 'inbox' && <InboxSheet onClose={closeSheet} onLink={followLink} />}
-      {sheet === 'decor' && <DecorateSheet initialTab={decorTab} onClose={closeSheet} />}
+
+      {editing && decorate.coachStep != null && (
+        <DecorateCoach step={decorate.coachStep} topInset={safe.top} bottomInset={safe.bottom} onNext={decorate.nextCoach} />
+      )}
 
       {diary && <DiaryOverlay route={diary} go={goDiary} onTalk={talkAbout} />}
     </View>

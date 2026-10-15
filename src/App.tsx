@@ -97,8 +97,25 @@ preloadSfx();
 /** The route on screen, for what floats above the navigator (the journey's mini player). */
 const useCurrentRoute = create<{ name: string | null }>(() => ({ name: null }));
 
-/** Screens the mini player stays off: the journey's own screens, and the rooms that own the sound. */
-const NO_MINI_PLAYER = new Set(['Journey', 'JourneyResult', 'JourneyEnding', 'JourneyCollection', 'JourneyCounselor', 'JourneyPass', 'JourneyProfile', 'JourneySaju', 'Login', 'ProfileSetup']);
+/** Screens the mini player stays off: the journey's own screens, the rooms that own the sound, and
+ *  the forms whose one action is a button on the bottom edge — the bar sat right on "Continue"
+ *  (CounselingSubject, sim 13-10). */
+const NO_MINI_PLAYER = new Set([
+  'Journey', 'JourneyResult', 'JourneyEnding', 'JourneyCollection', 'JourneyCounselor', 'JourneyPass', 'JourneyProfile', 'JourneySaju', 'Login', 'ProfileSetup',
+  'CounselingSubject', 'AddSubject',
+]);
+
+/** Where a consultation begins. The journey pauses here, not only in the room: hiding the mini
+ *  player while the narration carries on would leave a voice playing with nothing to stop it. */
+const CONSULTATION_START = new Set(['CounselingSubject']);
+
+/** Whether the journey's mini player is kept off `route` (exported for tests). */
+export const miniPlayerHiddenOn = (route: string | null | undefined): boolean =>
+  route == null || NO_MINI_PLAYER.has(route) || UNITY_SCREENS.has(route) || SELF_SCORED_SCREENS.has(route);
+
+/** Whether arriving on `route` pauses a playing journey (exported for tests). */
+export const pausesJourneyOn = (route: string | null | undefined): boolean =>
+  !!route && (UNITY_SCREENS.has(route) || SELF_SCORED_SCREENS.has(route) || CONSULTATION_START.has(route));
 
 const syncAudioToRoute = () => {
   const route = navigationRef.isReady() ? navigationRef.getCurrentRoute() : undefined;
@@ -111,7 +128,7 @@ const syncAudioToRoute = () => {
 
   // A journey's narration must not talk over a counsellor or the meditation bell: it pauses there
   // and waits in the mini player.
-  if (inUnity || selfScored) useJourneyPlayer.getState().pause();
+  if (pausesJourneyOn(route?.name)) useJourneyPlayer.getState().pause();
 
   const journeySounding =
     (!!route && UNITY_SCENERY_SCREENS.has(route.name)) || JOURNEY_SOUNDING.has(useJourneyPlayer.getState().status);
@@ -149,13 +166,7 @@ const App: React.FC = () => {
         </NavigationContainer>
         <JourneyMiniPlayer
           aboveTabs={routeName === 'Home' || routeName === 'Conversations' || routeName === 'Archive' || routeName === 'My'}
-          hidden={
-            !splashDone ||
-            routeName == null ||
-            NO_MINI_PLAYER.has(routeName) ||
-            UNITY_SCREENS.has(routeName) ||
-            SELF_SCORED_SCREENS.has(routeName)
-          }
+          hidden={!splashDone || miniPlayerHiddenOn(routeName)}
           onOpen={() => navigationRef.isReady() && navigationRef.navigate('Journey')}
         />
         {/* One coin shop for the whole app: the header pills and the journey's locks open it. */}

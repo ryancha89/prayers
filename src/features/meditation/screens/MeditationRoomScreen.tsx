@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Image, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { HAIRLINE, IVORY, PLATE, RING_COMPACT, RingButton } from '../../../shared/components/hud/Hud';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +15,8 @@ import { guideVoice } from '../guideVoice';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
 import { useScreen } from '../../../shared/device/screen';
+import { BottomFade, MED, PaceLine, Threshold, Vignette } from '../components/BreathStage';
+import { SERIF } from '../../../shared/components/hud/Hud';
 
 /**
  * The meditation room: ten minutes, music and text, no guided voice (decided 15-09).
@@ -43,27 +45,30 @@ import { useScreen } from '../../../shared/device/screen';
  * still deciding whether they have ten minutes — and would keep playing through a pause, which is
  * the bit that gives away that nobody is really listening to the player.
  */
-const RING = 244;
-const RING_MIN = 0.62;
-const RING_MAX = 1;
-/** The ember's own orbit, a hair outside the stroke so it reads as travelling ON the ring. */
-const EMBER = 9;
+/** The breath, as the ring's scale round her: a halo that swells and settles, never closing in on
+ *  her (the old free-floating ring went to 0.62; drawn round a person that cuts through her). */
+const RING_MIN = 0.9;
+const RING_MAX = 1.08;
 
-/** Landscape: what the ring may be at most, so ring + clock + the button fit under the header in a
- *  402pt-tall window. The breath scales the ring down from this, never past it. */
-const ringFor = (landscape: boolean, height: number) =>
-  landscape ? Math.max(132, Math.min(RING, height - 230)) : RING;
+/** The fixed band along the bottom that holds the words and the one button, in either orientation.
+ *  FIXED, not measured per state: it is what Unity frames her above (VIEW_INSETS), and a band that
+ *  grew for the end card and shrank while breathing would move the camera every time it changed. */
+export const BOTTOM_BAND = { portrait: 210, landscape: 118 };
 
-/** What of the room the screen's UI hides, for VIEW_INSETS. Portrait: the header and the button
- *  strip (the ring floats over the middle — the room is scenery behind a wash here, not a stage to
- *  frame). Landscape: the header, and the panel the ring, clock and button move into. */
-export function meditationCoveredPx(r: MeasuredRects, landscape: boolean) {
-  const { host, header, body, panel, actions } = r;
+/** After the room answers, how long the camera's glide in from the doorway takes
+ *  (MeditationDirector._arriveSeconds) — the title and Begin wait for it, so the player arrives
+ *  first and is asked second. */
+export const ARRIVE_MS = 3600;
+
+/** What of the room the screen's UI hides, for VIEW_INSETS: the top row and the bottom band — the
+ *  same in both orientations since 13-10, when the landscape side panel went and she moved to the
+ *  middle of the screen. */
+export function meditationCoveredPx(r: MeasuredRects, _landscape: boolean) {
+  const { host, header, band } = r;
   if (!host) return null;
   const top = header ? header.y + header.height : 0;
-  if (!body || !panel) return { top };
-  if (landscape) return { top, right: host.width - (body.x + panel.x) };
-  return actions ? { top, bottom: host.height - (body.y + panel.y + actions.y) } : { top };
+  if (!band) return { top };
+  return { top, bottom: host.height - band.y };
 }
 
 const PHASE_KEY: Record<Phase, 'med.in' | 'med.hold' | 'med.out'> = {
@@ -95,12 +100,13 @@ export const MeditationRoomScreen: React.FC = () => {
   // its animations and the UnityHost exactly as they were.
   const screen = useScreen();
   const landscape = screen.landscape;
-  const ring = ringFor(landscape, screen.height);
   const insets = useViewInsets({
     send: isNativeUnity() ? i => nativeUnityBridge.sendViewInsets(i) : undefined,
     landscape,
     compute: r => meditationCoveredPx(r, landscape),
   });
+  const trackHost = insets.track('host');
+  const trackHeader = insets.track('header');
   const session = useRef(new MeditationSession()).current;
   const [state, setState] = useState<SessionState>(() => session.read());
 
@@ -113,6 +119,22 @@ export const MeditationRoomScreen: React.FC = () => {
    *  effect below, and the warning in the render for why it is the ART that moves. */
   const artOut = useRef(new Animated.Value(1)).current;
   const loops = useRef<Animated.CompositeAnimation[]>([]);
+  /** The camera has finished gliding in: show the title and Begin. */
+  const [arrived, setArrived] = useState(false);
+  const arrive = useRef(new Animated.Value(0)).current;
+  /** The threshold's lantern, breathing slowly while the room loads. */
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 2200, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+  const [view, setView] = useState({ width: screen.width, height: screen.height });
 
   /** Tell the girl in the room what the session is doing: eyes shut and breathing with the ring
    *  while it runs, eyes open when it pauses, a smile when it is done. */
@@ -192,9 +214,15 @@ export const MeditationRoomScreen: React.FC = () => {
   // up: all of them land on the photo this screen always had. A fallback is only a fallback if
   // something can actually fall back to it.
   useEffect(() => {
-    if (!isNativeUnity()) return undefined;
+    if (!isNativeUnity()) {
+      setArrived(true);
+      return undefined;
+    }
+    let arriveTimer: ReturnType<typeof setTimeout> | null = null;
     const off = nativeUnityBridge.onEvent(e => {
       if (e.type !== 'MEDITATION_READY') return;
+      // The camera glides in from the doorway first; the words and Begin come when it has arrived.
+      if (!arriveTimer) arriveTimer = setTimeout(() => setArrived(true), ARRIVE_MS);
       Animated.timing(artOut, {
         toValue: 0,
         duration: 420,
@@ -203,11 +231,22 @@ export const MeditationRoomScreen: React.FC = () => {
       }).start();
     });
     nativeUnityBridge.openMeditationRoom();
+    // A room that never answers must not leave the player with no Begin at all: the art fallback
+    // is up, and the session runs without Unity.
+    const fallback = setTimeout(() => setArrived(true), 8000);
     return () => {
       off();
+      if (arriveTimer) clearTimeout(arriveTimer);
+      clearTimeout(fallback);
       nativeUnityBridge.closeMeditationRoom();
     };
   }, [artOut]);
+
+  // The words and the button rise in once the player has arrived.
+  useEffect(() => {
+    if (!arrived) return;
+    Animated.timing(arrive, { toValue: 1, duration: 700, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+  }, [arrived, arrive]);
 
   useEffect(() => {
     if (state.status !== 'running') return undefined;
@@ -307,18 +346,20 @@ export const MeditationRoomScreen: React.FC = () => {
   const done = state.status === 'done';
   const remaining = state.status === 'idle' ? SESSION_MS : state.remainingSeconds * 1000;
 
-  const spin = useMemo(
-    () => orbit.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }),
-    [orbit],
-  );
-  // The room sinks a little further back while breathing, so one word can carry the screen.
-  const wash = useMemo(
-    () => chrome.interpolate({ inputRange: [0, 1], outputRange: [0.44, 0.26] }),
+  // The room's edges sink further while breathing — never her, she is in the clear middle.
+  const vignette = useMemo(
+    () => chrome.interpolate({ inputRange: [0, 1], outputRange: [1, 0.7] }),
     [chrome],
   );
 
   return (
-    <View style={styles.bg} onLayout={insets.track('host')}>
+    <View
+      style={styles.bg}
+      onLayout={e => {
+        trackHost(e);
+        const { width, height } = e.nativeEvent.layout;
+        setView({ width, height });
+      }}>
       {/* ⚠️ THE UNITY VIEW IS NEVER HIDDEN. It sits at the back at full opacity for the whole life
           of the screen, and the concept art FADES OUT on top of it once the room answers.
           The obvious shape — mount Unity at opacity 0 and fade it in — was written first and is
@@ -327,78 +368,75 @@ export const MeditationRoomScreen: React.FC = () => {
           (frame 1) still arrived, then the scene-load coroutine never advanced and
           MEDITATION_READY never came. The same screen with the art on top loads the room fine. */}
       {isNativeUnity() && <UnityHost style={styles.unity} />}
-      {landscape ? (
-        // Landscape (02-10, "medition chưa làm landscape?"): the art is a tall portrait, and covering
-        // a wide screen with it cut her off at the chin with the panel over her hand. A blurred copy
-        // fills the screen; the whole picture stands, uncropped, in the space left of the panel.
+      {isNativeUnity() ? (
+        // While the room loads: a threshold — dusk, one lantern breathing, the room's name — not the
+        // 2D concept art, whose girl is not the one in the room and whose crop was a strip in
+        // landscape (13-10). It lifts the moment the room answers, as the camera starts gliding in.
         <Animated.View style={[styles.art, { opacity: artOut }]} pointerEvents="none">
-          <Image source={ROOM_ART} style={styles.art} resizeMode="cover" blurRadius={18} />
-          {/* ⚠️ A bounded box with the image at 100 % inside it: an Image given only edges lays out
-              at the bitmap's size, pinned top-left (the 23-09 trap again, 02-10). */}
-          <View style={[styles.artSide, { right: screen.sidePanel + spacing.xl }]}>
-            <Image source={ROOM_ART} style={styles.artFill} resizeMode="contain" />
-          </View>
+          <Threshold title={t('med.title')} pulse={pulse} />
         </Animated.View>
       ) : (
+        // Without the embedded player (Expo, Jest, a build without Unity) the art IS the room.
         <Animated.Image source={ROOM_ART} style={[styles.art, { opacity: artOut }]} resizeMode="cover" />
       )}
-      <Animated.View style={[styles.wash, { opacity: wash }]} />
+      <Vignette width={view.width} height={view.height} strength={vignette} />
+      <BottomFade width={view.width} height={(landscape ? BOTTOM_BAND.landscape : BOTTOM_BAND.portrait) + 60} />
+
+      {/* The breath's light is IN the room now (Unity's MeditationBreathLight, behind her and on the
+          rug): an overlay here can only sit on top of the 3D view, and it washed over her (13-10). */}
+
       <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
-        <View style={[styles.header, landscape && styles.headerSide]} onLayout={insets.track('header')}>
-          {/* The way out. It does NOT fade with the rest of the chrome: everything else on this
-              screen may recede while the player breathes, but the door cannot. Quiet, not gone. */}
-          <View style={[styles.back, landscape && styles.backSide]}>
+        {/* Top row: the way out (it does NOT fade — everything else may recede, the door cannot), the
+            clock in the middle once the session is under way, and Pause on the right while breathing. */}
+        <View style={styles.header} onLayout={trackHeader}>
+          <View style={styles.back}>
             <RingButton testID="med-back" icon="back" size={RING_COMPACT} label={t('hud.back')} onPress={leave} />
           </View>
-          <Animated.View style={{ opacity: chrome }} pointerEvents="none">
-            <Text style={[styles.title, landscape && styles.titleSide]}>{t('med.title')}</Text>
-            <Text style={styles.subtitle} numberOfLines={landscape ? 1 : undefined}>{t('med.subtitle')}</Text>
-          </Animated.View>
+          <View style={styles.headerMid} pointerEvents="none">
+            {/* The clock lives in the bottom band now: up here it sat on the bright window. */}
+          </View>
+          <View style={styles.headerEnd}>
+            {running && <RingButton testID="med-pause" icon="pause" size={RING_COMPACT} label={t('med.pause')} onPress={pause} muted />}
+          </View>
         </View>
 
-        <View style={[styles.body, landscape && styles.bodySide]} onLayout={insets.track('body')}>
+        <View style={styles.fill} />
+
+        {/* The bottom band, fixed in height (BOTTOM_BAND): the words of whatever state this is, and its
+            one button. On a soft plate so the words read over a bright window. */}
         <View
-          style={[styles.panel, landscape && styles.panelSide, landscape && { width: screen.sidePanel }]}
-          onLayout={insets.track('panel')}>
-        <View style={styles.middle}>
+          style={[styles.band, { height: landscape ? BOTTOM_BAND.landscape : BOTTOM_BAND.portrait }]}
+          onLayout={insets.track('band')}>
           {done ? (
-            <View style={styles.done}>
-              <Text style={styles.doneTitle}>{t('med.doneTitle')}</Text>
-              <Text style={styles.doneBody}>
-                {t('med.doneBody').replace('{0}', String(state.breaths))}
-              </Text>
+            <Animated.View style={styles.plate}>
+              <Text style={styles.plateTitle}>{t('med.doneTitle')}</Text>
+              <Text style={styles.plateLine}>{t('med.doneBody').replace('{0}', String(state.breaths))}</Text>
+              <Action label={t('med.again')} onPress={again} />
+            </Animated.View>
+          ) : running ? (
+            <View style={styles.breathing}>
+              <Text style={styles.phase} testID="med-phase">{t(PHASE_KEY[state.phase])}</Text>
+              <PaceLine width={landscape ? 220 : 240} cycle={orbit} />
+              <Text style={styles.clock}>{clock(remaining)}</Text>
+            </View>
+          ) : state.status === 'paused' ? (
+            <View style={styles.plate}>
+              <Text style={styles.plateLine}>{t('med.paused')}</Text>
+              <Text style={styles.clock}>{clock(remaining)}</Text>
+              <Action label={t('med.resume')} onPress={begin} />
             </View>
           ) : (
-            <>
-              <Animated.View
-                style={[styles.ringWrap, { width: ring, height: ring, transform: [{ scale: breath }] }]}>
-                <View style={[styles.ring, { borderRadius: ring / 2 }]}>
-                  <Text style={styles.phase}>{running ? t(PHASE_KEY[state.phase]) : ''}</Text>
-                </View>
-                {running && (
-                  <Animated.View
-                    style={[styles.orbit, { transform: [{ rotate: spin }] }]}
-                    pointerEvents="none">
-                    <View style={styles.ember} />
-                  </Animated.View>
-                )}
-              </Animated.View>
-              <Text style={[styles.clock, landscape && styles.clockSide]}>{clock(remaining)}</Text>
-              {state.status === 'paused' && <Text style={styles.paused}>{t('med.paused')}</Text>}
-            </>
+            <Animated.View
+              pointerEvents={arrived ? 'auto' : 'none'}
+              style={[
+                styles.plate,
+                { opacity: arrive, transform: [{ translateY: arrive.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] },
+              ]}>
+              <Text style={styles.plateTitle}>{t('med.title')}</Text>
+              <Text style={styles.plateLine}>{t('med.meta')}</Text>
+              <Action label={t('med.start')} onPress={begin} />
+            </Animated.View>
           )}
-        </View>
-
-        <View style={[styles.actions, landscape && styles.actionsSide]} onLayout={insets.track('actions')}>
-          {done ? (
-            <Action label={t('med.again')} onPress={again} />
-          ) : running ? (
-            <Action label={t('med.pause')} onPress={pause} quiet />
-          ) : (
-            <Action label={state.status === 'paused' ? t('med.resume') : t('med.start')} onPress={begin} />
-          )}
-        </View>
-        </View>
         </View>
       </SafeAreaView>
     </View>
@@ -436,62 +474,41 @@ const styles = StyleSheet.create({
   art: { ...absoluteFill, width: '100%', height: '100%' },
   artSide: { position: 'absolute', top: 0, bottom: 0, left: 0 },
   artFill: { width: '100%', height: '100%' },
-  wash: { ...absoluteFill, backgroundColor: '#181220' },
-  safe: { flex: 1, paddingHorizontal: spacing.xl },
-  header: { paddingTop: spacing.sm },
-  // Landscape: the way out and the title side by side, one short row.
-  headerSide: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingTop: spacing.sm },
-  backSide: { marginBottom: 0 },
-  titleSide: { ...typography.h2, color: '#FFFFFF' },
-  // Below the header: the ring and the button, stacked down the screen in portrait, in a panel on
-  // the right in landscape.
-  body: { flex: 1 },
-  bodySide: { flexDirection: 'row', justifyContent: 'flex-end' },
-  panel: { flex: 1, justifyContent: 'space-between' },
-  panelSide: { flex: 0, justifyContent: 'center', gap: spacing.md },
+  artCentre: { position: 'absolute', top: 0, bottom: 0, left: '25%', right: '25%' },
+  safe: { ...absoluteFill, paddingHorizontal: spacing.xl },
+  header: { flexDirection: 'row', alignItems: 'center', paddingTop: spacing.sm, minHeight: RING_COMPACT + spacing.sm },
   // The HUD's compact ring, where My Room's top row puts its first control: md from the safe edge
-  // (the screen's own gutter is xl, so it steps out of it), sm under the status bar.
-  back: { alignSelf: 'flex-start', marginLeft: spacing.md - spacing.xl, marginBottom: spacing.md },
-  title: { ...typography.h1, color: '#FFFFFF' },
-  subtitle: { ...typography.body, color: 'rgba(255,255,255,0.84)', marginTop: spacing.xs },
-  middle: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  ringWrap: { width: RING, height: RING, alignItems: 'center', justifyContent: 'center' },
-  ring: {
-    ...absoluteFill,
-    borderRadius: RING / 2,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.7)',
-    backgroundColor: 'rgba(255,255,255,0.10)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  phase: { ...typography.h1, color: '#FFFFFF', letterSpacing: -0.2 },
-  // The ember rides a full-size layer that rotates; the dot itself sits at 12 o'clock.
-  orbit: { ...absoluteFill, alignItems: 'center' },
-  ember: {
-    width: EMBER,
-    height: EMBER,
-    borderRadius: EMBER / 2,
-    backgroundColor: colors.gold,
-    marginTop: -(EMBER / 2),
-    shadowColor: colors.gold,
-    shadowOpacity: 0.9,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 0 },
+  // (the screen's own gutter is xl, so it steps out of it).
+  back: { marginLeft: spacing.md - spacing.xl, width: RING_COMPACT },
+  headerMid: { flex: 1, alignItems: 'center' },
+  headerEnd: { width: RING_COMPACT, alignItems: 'flex-end', marginRight: spacing.md - spacing.xl },
+  fill: { flex: 1 },
+  band: { justifyContent: 'flex-end', alignItems: 'center', paddingBottom: spacing.md },
+  // The words of the state, over the floor's fade (BottomFade) — no box: the room is the surface.
+  plate: { alignItems: 'center', gap: spacing.sm, maxWidth: 440 },
+  plateTitle: { fontFamily: SERIF, fontSize: 24, color: MED.paper, letterSpacing: 0.4, textAlign: 'center' },
+  plateLine: { fontFamily: SERIF, fontSize: 14, color: MED.ash, letterSpacing: 1.2, textAlign: 'center', marginBottom: spacing.xs },
+  // While breathing: one word, quiet, and the rhythm under it.
+  breathing: { alignItems: 'center', gap: spacing.md },
+  phase: {
+    fontFamily: SERIF,
+    fontSize: 26,
+    color: MED.paper,
+    letterSpacing: 1.5,
+    textShadowColor: 'rgba(27,18,34,0.6)',
+    textShadowRadius: 12,
+    textShadowOffset: { width: 0, height: 1 },
   },
   clock: {
-    ...typography.caption,
-    color: 'rgba(255,255,255,0.72)',
-    marginTop: spacing.xl,
+    fontFamily: SERIF,
+    fontSize: 14,
+    letterSpacing: 1.5,
+    color: MED.ash,
     fontVariant: ['tabular-nums'],
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowRadius: 6,
+    textShadowOffset: { width: 0, height: 1 },
   },
-  clockSide: { marginTop: spacing.md },
-  paused: { ...typography.caption, color: 'rgba(255,255,255,0.9)', marginTop: spacing.md },
-  done: { alignItems: 'center' },
-  doneTitle: { ...typography.h1, color: '#FFFFFF', textAlign: 'center' },
-  doneBody: { ...typography.body, color: 'rgba(255,255,255,0.88)', marginTop: spacing.sm },
-  actions: { paddingBottom: spacing.xl },
-  actionsSide: { paddingBottom: spacing.sm },
   // The in-world gold call to action (the diary's and the world sheets'), and while breathing the
   // HUD's navy plate with its gold hairline: still reachable, no longer asking to be looked at.
   action: {

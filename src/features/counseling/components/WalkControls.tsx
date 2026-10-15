@@ -52,10 +52,12 @@ export const WalkControls: React.FC<{ visible: boolean }> = ({ visible }) => {
   // Placed as the world places it: bottom-left, clear of the island and the home indicator.
   const safe = useSafeAreaInsets();
   const [canTalk, setCanTalk] = useState(false);
+  const [nearDoor, setNearDoor] = useState(false);
 
   useEffect(() => {
     return getUnityBridge().onEvent((e: UnityToRNEvent) => {
       if (e.type === 'WALK_STATE') setCanTalk(!!e.payload?.canTalk);
+      else if (e.type === 'ROOM_DOOR_NEAR') setNearDoor(e.payload?.near === true);
     });
   }, []);
 
@@ -71,6 +73,16 @@ export const WalkControls: React.FC<{ visible: boolean }> = ({ visible }) => {
           testID="walk-talk"
           label={t('room.talk')}
           onPress={() => getUnityBridge().sendEvent({ type: 'WALK_TALK' })}
+        />
+      )}
+      {/* The way out: the room's door is in reach. Unity opens it and answers ROOM_LEFT, which the
+          room screen turns into the walk back out to the World. Above Talk when both are offered. */}
+      {visible && nearDoor && (
+        <PromptButton
+          testID="walk-leave"
+          label={t('room.leave')}
+          raise={canTalk ? 64 : 0}
+          onPress={() => getUnityBridge().sendEvent({ type: 'WALK_LEAVE' })}
         />
       )}
     </>

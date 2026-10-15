@@ -31,6 +31,8 @@ import { isPixelCounselor } from '../pixel/pixelCounselors';
 import type { CatCue, CatGesture } from '../pixel/cues';
 import { useScreen } from '../../../shared/device/screen';
 import { useViewInsets, type MeasuredRects } from '../bridge/viewInsets';
+import { useRoomLook } from '../components/useRoomLook';
+import { useWorldStore } from '../../world/store/worldStore';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'CounselingRoom'>;
@@ -116,19 +118,21 @@ export const CounselingRoomScreen: React.FC = () => {
     [appendMessage, params.sessionId],
   );
 
-  const onExit = useCallback(async () => {
+  const exitTo = useCallback(async (toWorld: boolean) => {
     if (exited.current) return;
     exited.current = true;
     await getUnityBridge().closeCounselingRoom();
     // Entered from the 3D world (spec 004): back to the world, at the counselling door
-    // (WorldScreen re-opens with its returnZone). Otherwise land on the Conversations tab so the
-    // session is visible (spec §50-23).
-    if (navigation.getState().routes.some(r => r.name === 'World')) {
+    // (WorldScreen re-opens with its returnZone). Out through the room's own door: to the world
+    // whichever way the room was entered. Otherwise land on the Conversations tab so the session
+    // is visible (spec §50-23).
+    if (toWorld || navigation.getState().routes.some(r => r.name === 'World')) {
       navigation.navigate('World');
       return;
     }
     navigation.navigate('Tabs', { screen: 'Conversations' });
   }, [navigation]);
+  const onExit = useCallback(() => exitTo(false), [exitTo]);
 
   // Her register, from what the roster says she reads — not from her name, and not from the topic
   // the player picked: a career counselor asked about love still talks like a career counselor.
@@ -157,7 +161,14 @@ export const CounselingRoomScreen: React.FC = () => {
     },
     [trackTopBar],
   );
-  const onPanelLayout = useCallback((rect: LayoutRectangle | null) => insets.put('panel', rect), [insets]);
+  const panelRect = useRef<LayoutRectangle | null>(null);
+  const onPanelLayout = useCallback(
+    (rect: LayoutRectangle | null) => {
+      panelRect.current = rect;
+      insets.put('panel', rect);
+    },
+    [insets],
+  );
   const [catThinking, setCatThinking] = useState(false);
   const [catGesture, setCatGesture] = useState<{ name: CatGesture; seq: number } | null>(null);
   const onCue = useCallback((cue: CatCue) => {
@@ -292,12 +303,17 @@ export const CounselingRoomScreen: React.FC = () => {
   useEffect(() => {
     return getUnityBridge().onEvent(e => {
       if (e.type === 'EXIT_SESSION') onExit();
+      // Out through the room's door (walk-in): to the World, standing at the hall's counselling door.
+      if (e.type === 'ROOM_LEFT') {
+        useWorldStore.getState().setReturnZone('counseling');
+        exitTo(true);
+      }
       else if (e.type === 'SESSION_ERROR') {
         console.warn(`[room] session error: ${e.payload?.reason ?? 'unknown'}`);
         onExit();
       }
     });
-  }, [onExit]);
+  }, [onExit, exitTo]);
 
   // …and the room can also say NOTHING at all, which the block above does not cover.
   //
@@ -323,6 +339,15 @@ export const CounselingRoomScreen: React.FC = () => {
     return () => clearTimeout(timer);
   }, [pixel, consultation.ready, onExit]);
 
+  // The player turning their head in the room (one-finger drag over it → ROOM_LOOK).
+  const lookHandlers = useRoomLook({
+    enabled: !pixel && isNativeUnity() && consultation.ready,
+    walking: consultation.walking,
+    topBarBottom,
+    panelTop: () => (panelRect.current ? panelRect.current.y : null),
+    resetKey: consultation.state.phaseId ?? undefined,
+  });
+
   if (!counselor || !subject) {
     return (
       <View style={styles.container}>
@@ -332,7 +357,7 @@ export const CounselingRoomScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container} onLayout={insets.track('host')}>
+    <View style={styles.container} onLayout={insets.track('host')} {...lookHandlers}>
       {pixel ? (
         <PixelCatStage
           speaking={consultation.state.speaking}
@@ -343,7 +368,15 @@ export const CounselingRoomScreen: React.FC = () => {
           gesture={catGesture}
         />
       ) : isNativeUnity() ? (
-        <UnityHost style={StyleSheet.absoluteFill} />
+        <>
+          <UnityHost style={StyleSheet.absoluteFill} />
+          {/* An RN surface over the player so a finger on the room reaches the responder system
+              (useRoomLook, captured on the root). Without it a touch with no RN view above the
+              room — the free chat, where tap-to-continue is gone — lands on Unity's native view and
+              JS never hears it: the look-around worked during the staged phases only (sim, 13-10).
+              The room takes no touch of its own; every control in it is drawn by RN. */}
+          <View style={StyleSheet.absoluteFill} testID="room-look-surface" />
+        </>
       ) : (
         <CounselorStage
           name={counselor.name}

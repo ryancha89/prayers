@@ -34,7 +34,7 @@ jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
-jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
+jest.mock('../src/shared/devlog', () => ({ devlog: jest.fn() }));
 jest.mock('../src/shared/audio/sfx', () => ({
   sfx: { tap: jest.fn(), select: jest.fn(), back: jest.fn(), send: jest.fn() },
 }));
@@ -115,6 +115,9 @@ import { useJourneyPlayer } from '../src/features/journey/player/journeyPlayer';
 import { useLanguageStore } from '../src/shared/i18n';
 import { useAuthStore } from '../src/features/auth/store/authStore';
 import { useInbox } from '../src/features/myroom/inbox/inboxStore';
+import { useMyRoomStore } from '../src/features/myroom/store/myRoomStore';
+import { MYROOM_FEATURES } from '../src/features/myroom/edit/features';
+import { devlog } from '../src/shared/devlog';
 import { useArchiveStore } from '../src/features/archive/store/archiveStore';
 import { WorldJoystick } from '../src/features/world/components/WorldJoystick';
 import { GoldKnob } from '../src/shared/components/Ornaments';
@@ -265,6 +268,8 @@ beforeEach(async () => {
   useCoins.setState({ balance: 100, shopOpen: false });
   useAuthStore.setState({ displayName: null });
   useInbox.setState({ items: [] });
+  useMyRoomStore.setState({ byUser: {}, pending: null, coachSeen: { '-': true } });
+  MYROOM_FEATURES.storage = true; // the decorate test below was written with Storage
   useArchiveStore.setState({ memories: [] });
   mockAttendance.status = null;
   mockAttendance.checkIn.mockReset();
@@ -308,7 +313,7 @@ describe('the world’s 개인실 door', () => {
     // No "coming soon" on the door any more.
     expect(overlay.findAll(n => n.props.children === '곧 만나요')).toHaveLength(0);
 
-    press('들어가기 →');
+    press('들어가기');
     expect(mockNav.calls).toHaveLength(1);
     expect(mockNav.calls[0].args).toEqual(['MyRoom']);
     expect(mockNav.calls[0].hostUnmounts).toBe(1);
@@ -348,7 +353,7 @@ describe('the My Room screen', () => {
     useLanguageStore.setState({ lang: 'vi' });
     await render();
     expect(mockHost.mounts).toBe(1);
-    expect(posts('MYROOM_INIT')[0].payload).toEqual({ lang: 'vi', book: null });
+    expect(posts('MYROOM_INIT')[0].payload).toEqual({ lang: 'vi', book: null, layout: null, owned: null });
     expect(pictureShown()).toBe(true);
     fromUnity({ type: 'MYROOM_READY' });
     expect(pictureShown()).toBe(false);
@@ -475,7 +480,7 @@ describe('the My Room screen', () => {
     expect(tree!.root.findAll(n => n.props.testID === 'diary-detail').length).toBeGreaterThan(0);
   });
 
-  it('편집 opens the decorate sheet: what you own (and that arranging is coming), and the shop with coins', async () => {
+  it('편집 opens decorate mode: the tray lists what is owned and not placed, and the shop buys with coins', async () => {
     const { authedFetch } = jest.requireMock('../src/features/auth/api/headers') as { authedFetch: jest.Mock };
     const reply = (status: number, body: object) => ({ ok: status < 300, status, json: async () => body });
     const bought: string[] = [];
@@ -507,12 +512,16 @@ describe('the My Room screen', () => {
     fromUnity({ type: 'MYROOM_READY' });
     await tap('myroom-edit');
     await act(async () => {});
-    expect(has('myroom-sheet-decor')).toBe(true);
+    expect(posts('MYROOM_EDIT').map(p => p.payload)).toEqual([{ on: true }]);
+    expect(has('myroom-decorate-tray')).toBe(true);
     expect(has('world-joystick')).toBe(false);
-    // Owned: counts, and a plain note instead of a mover that does nothing.
-    expect(has('myroom-decor-arrange-soon')).toBe(true);
-    expect(texts()).toContain('가구 배치는 곧 만나요 — 지금은 모아 둘 수 있어요');
+    // Unity reports the working copy: the sofa and the pouf stand in the room.
+    const piece = (uid: string, item: string) => ({ uid, item, pos: { x: 0, z: 0 }, rot: 0, slot: null });
+    fromUnity({ type: 'MYROOM_LAYOUT_CHANGED', payload: { layout: { theme: 'basic', items: [piece('s', 'Sofa'), piece('p', 'Pouf')] }, valid: true, reason: '', uid: '' } });
+    // Owned minus placed: only the diary book is left; a piece with no name in this build is left out.
     expect(has('myroom-owned-DiaryBook')).toBe(true);
+    expect(has('myroom-owned-Sofa')).toBe(false);
+    expect(has('myroom-owned-Pouf')).toBe(false);
     expect(has('myroom-owned-Teapot')).toBe(false);
     expect(texts()).toContain('일기장');
 
@@ -530,11 +539,14 @@ describe('the My Room screen', () => {
     expect(texts()).toContain('푸프 구매 완료');
     expect(useCoins.getState().balance).toBe(50);
     expect(useInbox.getState().items[0]).toMatchObject({ kind: 'furniture', data: { sku: 'item:Pouf' } });
+    // The bought copy is in Owned at once: two owned, one placed.
+    await tap('myroom-decor-tab-owned');
+    expect(has('myroom-owned-Pouf')).toBe(true);
+    await tap('myroom-decor-tab-shop');
     // Short of coins: the coin shop, no purchase.
     await tap('myroom-buy-item:Sofa');
     expect(bought).toEqual(['item:Pouf']);
     expect(useCoins.getState().shopOpen).toBe(true);
-    expect(has('myroom-sheet-decor')).toBe(false);
     authedFetch.mockReset();
   });
 
@@ -995,5 +1007,200 @@ describe('the furniture', () => {
       for (const k of keys) expect([lang, k, typeof translations[lang][k]]).toEqual([lang, k, 'string']);
     for (const a of ['sit', 'rest', 'lamp', 'look'] as const)
       for (const on of [true, false]) expect(keys).toContain(myRoomActLabel(a, on, on));
+  });
+});
+
+/* ---- the layout and the shop (spec 005 T022/T024/T033) ------------------------------------- */
+
+describe('the room’s layout and purchases', () => {
+  const { authedFetch } = jest.requireMock('../src/features/auth/api/headers') as { authedFetch: jest.Mock };
+  const reply = (status: number, body: object) => ({ ok: status < 300, status, json: async () => body });
+  const SOFA = { uid: 'a1', item: 'Sofa', pos: { x: 1, z: -0.5 }, rot: 90, slot: null };
+  const CURTAIN = { uid: 'c1', item: 'Curtains', pos: null, rot: 0, slot: 'arch.1' };
+  const OWNED = { items: { Sofa: 1, Pouf: 1, Curtains: 3 }, themes: ['basic'] };
+  const room = (items: unknown[] | null, version: number, owned: object = OWNED) =>
+    ({ success: true, theme: 'basic', items, version, owned, coin_balance: 100 });
+  const render = async () => {
+    await act(async () => { tree = ReactTestRenderer.create(<MyRoomScreen />); });
+    await act(async () => {});
+  };
+  const texts = () => tree!.root.findAll(n => typeof n.props.children === 'string').map(n => n.props.children as string);
+  const button = (testID: string) => {
+    const node = tree!.root.findAll(n => n.props.testID === testID && typeof n.props.onPress === 'function')[0];
+    if (!node) throw new Error(`no ${testID}`);
+    return node;
+  };
+  const tap = (testID: string) => act(async () => { await button(testID).props.onPress(); });
+  const catalog = {
+    success: true, coin_balance: 100,
+    items: [{ id: 'Pouf', kind: 'floor', category: 'seat', size: 'small', theme: 'basic', price: 50, starter: 1, owned: 1 }],
+    themes: [{ id: 'basic', price: 0, starter: true, owned: true }, { id: 'modern', price: 500, starter: false, owned: false }],
+  };
+  const openShop = async () => {
+    await tap('myroom-edit');
+    await act(async () => {});
+    await tap('myroom-decor-tab-shop');
+  };
+
+  afterEach(() => {
+    authedFetch.mockReset();
+    useAuthStore.setState({ userAuth: null });
+  });
+
+  it('MYROOM_INIT carries this account’s cached layout and owned at once; offline, that room stands', async () => {
+    useAuthStore.setState({ userAuth: 'u-1' });
+    useMyRoomStore.setState({ byUser: {
+      'u-1': { layout: { theme: 'modern', items: [SOFA] }, version: 3, owned: OWNED, updatedAt: '2026-10-14T00:00:00Z' },
+      'u-2': { layout: { theme: 'basic', items: [CURTAIN] }, version: 9, owned: OWNED, updatedAt: '2026-10-14T00:00:00Z' },
+    } });
+    authedFetch.mockResolvedValue(undefined); // no answer
+    await render();
+    expect(posts('MYROOM_INIT')[0].payload).toEqual({
+      lang: 'ko', book: null, layout: { theme: 'modern', items: [SOFA] }, owned: OWNED,
+    });
+    fromUnity({ type: 'MYROOM_READY' });
+    expect(posts('MYROOM_LAYOUT')).toHaveLength(0);
+    expect(useMyRoomStore.getState().byUser['u-1'].version).toBe(3);
+  });
+
+  it('a server copy that differs follows as MYROOM_LAYOUT — held for READY while the room loads — and is cached', async () => {
+    authedFetch.mockImplementation(async (url: string) => (url.endsWith('/myroom') ? reply(200, room([SOFA, CURTAIN], 2)) : null));
+    await render();
+    expect(posts('MYROOM_INIT')[0].payload).toMatchObject({ layout: null, owned: null });
+    // The GET answered before the room was up: nothing posted yet, but a retry INIT carries it.
+    expect(posts('MYROOM_LAYOUT')).toHaveLength(0);
+    fromUnity({ type: 'MYROOM_READY' });
+    expect(posts('MYROOM_LAYOUT').map(p => p.payload)).toEqual([{ layout: { theme: 'basic', items: [SOFA, CURTAIN] } }]);
+    expect(useMyRoomStore.getState().current()).toMatchObject({ version: 2, layout: { theme: 'basic', items: [SOFA, CURTAIN] }, owned: OWNED });
+    expect(useCoins.getState().balance).toBe(100);
+    act(() => tree!.unmount());
+    tree = null;
+
+    // Next visit: INIT already has it, and the same copy from the server sends nothing.
+    mockPosted.length = 0;
+    await render();
+    expect(posts('MYROOM_INIT')[0].payload).toMatchObject({ layout: { theme: 'basic', items: [SOFA, CURTAIN] }, owned: OWNED });
+    fromUnity({ type: 'MYROOM_READY' });
+    expect(posts('MYROOM_LAYOUT')).toHaveLength(0);
+  });
+
+  it('a GET that lands after READY posts MYROOM_LAYOUT at once; a never-saved room is the default and sends nothing', async () => {
+    let answer: (v: unknown) => void = () => {};
+    authedFetch.mockImplementation((url: string) =>
+      url.endsWith('/myroom') ? new Promise(r => { answer = r; }) : Promise.resolve(null));
+    useMyRoomStore.setState({ byUser: { '-': { layout: { theme: 'basic', items: [SOFA] }, version: 1, owned: OWNED, updatedAt: 'x' } } });
+    await render();
+    fromUnity({ type: 'MYROOM_READY' });
+    await act(async () => { answer(reply(200, room([CURTAIN], 4))); });
+    expect(posts('MYROOM_LAYOUT').map(p => p.payload)).toEqual([{ layout: { theme: 'basic', items: [CURTAIN] } }]);
+    act(() => tree!.unmount());
+    tree = null;
+
+    useMyRoomStore.setState({ byUser: {} });
+    authedFetch.mockImplementation(async (url: string) => (url.endsWith('/myroom') ? reply(200, room(null, 0)) : null));
+    mockPosted.length = 0;
+    await render();
+    fromUnity({ type: 'MYROOM_READY' });
+    expect(posts('MYROOM_LAYOUT')).toHaveLength(0);
+  });
+
+  it('MYROOM_LAYOUT_APPLIED is logged, with what was skipped, and changes nothing on screen', async () => {
+    authedFetch.mockResolvedValue(undefined);
+    await render();
+    fromUnity({ type: 'MYROOM_READY' });
+    (devlog as jest.Mock).mockClear();
+    fromUnity({ type: 'MYROOM_LAYOUT_APPLIED', payload: { theme: 'basic', placed: 24, skipped: [{ uid: 'x1', item: 'Jukebox', reason: 'unknown' }] } });
+    expect((devlog as jest.Mock).mock.calls.map(c => c[0])).toContain('[myroom] layout applied basic placed=24 skipped=Jukebox:unknown');
+    expect(pictureShown()).toBe(false);
+  });
+
+  it('a double tap on Buy sends ONE purchase, keyed by a UUID v4', async () => {
+    const bought: { sku: string; idem_key: string }[] = [];
+    authedFetch.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (url.endsWith('/myroom/catalog')) return reply(200, catalog);
+      if (url.endsWith('/myroom/purchase')) {
+        bought.push(JSON.parse(init!.body!));
+        return reply(200, { success: true, sku: 'item:Pouf', charged: 50, coin_balance: 50, owned: { ...OWNED, items: { ...OWNED.items, Pouf: 2 } } });
+      }
+      if (url.endsWith('/myroom')) return reply(200, room(null, 0));
+      return null;
+    });
+    await render();
+    fromUnity({ type: 'MYROOM_READY' });
+    await openShop();
+    await tap('myroom-buy-item:Pouf'); // asks first
+    const buy = button('myroom-buy-item:Pouf');
+    await act(async () => { buy.props.onPress(); buy.props.onPress(); });
+    await act(async () => {});
+    expect(bought).toHaveLength(1);
+    expect(bought[0].idem_key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    // The bought copy is in the cache too.
+    expect(useMyRoomStore.getState().current()?.owned.items.Pouf).toBe(2);
+  });
+
+  it('a buy that got no answer is retried with the SAME key; a definitive answer ends it, the next buy gets a new one', async () => {
+    const keys: string[] = [];
+    let mode: 'offline' | 'ok' = 'offline';
+    authedFetch.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (url.endsWith('/myroom/catalog')) return reply(200, catalog);
+      if (url.endsWith('/myroom/purchase')) {
+        keys.push(JSON.parse(init!.body!).idem_key);
+        if (mode === 'offline') throw new TypeError('Network request failed');
+        return reply(200, { success: true, sku: 'item:Pouf', charged: 50, coin_balance: 50, owned: OWNED });
+      }
+      if (url.endsWith('/myroom')) return reply(200, room(null, 0));
+      return null;
+    });
+    await render();
+    fromUnity({ type: 'MYROOM_READY' });
+    await openShop();
+    const buyOnce = async () => { await tap('myroom-buy-item:Pouf'); await tap('myroom-buy-item:Pouf'); };
+    await buyOnce();
+    expect(texts()).toContain('구매하지 못했어요. 다시 시도해 주세요');
+    mode = 'ok';
+    await buyOnce();
+    expect(texts()).toContain('푸프 구매 완료');
+    await buyOnce();
+    expect(keys).toHaveLength(3);
+    expect(keys[1]).toBe(keys[0]);
+    expect(keys[2]).not.toBe(keys[1]);
+  });
+
+  it('409 IDEM_KEY_REUSED / ALREADY_OWNED: says so, reloads what the account owns, and the next tap is a new intent', async () => {
+    const keys: string[] = [];
+    let code = 'IDEM_KEY_REUSED';
+    let gets = 0;
+    // A theme the wallet can pay for, so the tap reaches the server instead of the coin shop.
+    const cheap = { ...catalog, themes: [catalog.themes[0], { ...catalog.themes[1], price: 50 }] };
+    authedFetch.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (url.endsWith('/myroom/catalog')) return reply(200, cheap);
+      if (url.endsWith('/myroom/purchase')) {
+        keys.push(JSON.parse(init!.body!).idem_key);
+        return reply(409, { success: false, error_code: code });
+      }
+      if (url.endsWith('/myroom')) {
+        gets += 1;
+        return reply(200, room(null, 0, gets > 1 ? { items: { ...OWNED.items, Pouf: 2 }, themes: ['basic', 'modern'] } : OWNED));
+      }
+      return null;
+    });
+    await render();
+    fromUnity({ type: 'MYROOM_READY' });
+    await openShop();
+    const before = gets;
+    await tap('myroom-buy-theme:modern');
+    await tap('myroom-buy-theme:modern');
+    await act(async () => {});
+    expect(texts()).toContain('이 구매는 이미 처리됐어요. 목록을 새로 불러왔으니 다시 시도해 주세요');
+    expect(gets).toBe(before + 1);
+    expect(useMyRoomStore.getState().current()?.owned.themes).toEqual(['basic', 'modern']);
+
+    code = 'ALREADY_OWNED';
+    await tap('myroom-buy-item:Pouf');
+    await tap('myroom-buy-item:Pouf');
+    await act(async () => {});
+    expect(texts()).toContain('이미 가지고 있어요 — 목록을 새로 불러왔어요');
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).not.toBe(keys[0]);
   });
 });

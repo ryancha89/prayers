@@ -12,6 +12,7 @@ import { useConversationsStore } from '../store/conversationsStore';
 import { ConversationRow } from '../components/ConversationRow';
 import { syncConversationsFromServer } from '../syncConversations';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -79,6 +80,7 @@ export const ConversationsScreen: React.FC = () => {
             />
           }
           ListHeaderComponent={<Text style={styles.sub}>{t('conv.recent')}</Text>}
+          ListFooterComponent={<MiniPlayerSpacer />}
           renderItem={({ item }) => (
             <ConversationRow
               conversation={item}

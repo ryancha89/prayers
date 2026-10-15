@@ -11,7 +11,7 @@ import { useScreen } from '../../../shared/device/screen';
 import type { RootStackParamList } from '../../../navigation/types';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { WorldJoystick } from '../components/WorldJoystick';
-import { PromptButton } from '../components/PromptButton';
+import { DoorCard, DoorTitle } from '../components/DoorCard';
 import { getWorldBridge, isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
 import type { WorldInitPayload, WorldZone } from '../../counseling/types';
@@ -28,6 +28,7 @@ import { useWorldCamera } from '../components/useWorldCamera';
 import { useSoundStore } from '../../../shared/audio/store';
 import { ProfileSheet, useMyRoomLevel, usePlayerName } from '../../myroom/components/ProfileSheet';
 import { fetchAttendance } from '../../tickets/api/attendance';
+import type { CounselorSummary } from '../../counselors/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -89,8 +90,8 @@ export function worldCoveredPx(r: MeasuredRects, landscape: boolean) {
  *
  * DOORS OPEN (06-10, spec 004 "Enter opens the door"). Enter sends WORLD_ENTER and the screen shows
  * nothing over the world — no stick, no Enter, no buttons — while Unity walks the player to the door,
- * opens it and walks him through; WORLD_ENTERED then opens what WORLD_ARRIVED used to (the zone's
- * card; My Room goes straight in). Unity runs the same walk by itself when the player walks into a
+ * opens it and walks him through; WORLD_ENTERED then goes straight to that door's screen (since
+ * 12-10; it used to open the zone's card over the world). Unity runs the same walk by itself when the player walks into a
  * doorway or an auto-walk arrives, so WORLD_ARRIVED is now only "a door is opening": wait for ENTERED.
  * Either wait ends in the card if ENTERED never comes (worldTiming.enterFallbackMs).
  *
@@ -304,13 +305,35 @@ export const WorldScreen: React.FC = () => {
     myroom: () => leaveTo('myroom', () => navigation.navigate('MyRoom')),
   };
 
-  /** Through the door: My Room is entered for real; every other door opens its card over the world. */
+  /**
+   * Through the door: straight into that door's own screen (12-10, user: the rooms belong on their
+   * screens, not as a card over the map). The doors without a room of their own go to the 2D screen
+   * that does the job: counseling → Home's counselor list, shop → Tickets. Each leaves through
+   * leaveTo, so coming back puts the player on that door's step. The cards (ZoneOverlay) remain for
+   * the fallback below and for a world still loading.
+   */
   const throughDoor = (zone: WorldZone) => {
     clearEnterTimer();
     setEntering(null);
     setSheet(null);
-    if (zone === 'myroom') actions.myroom();
-    else setOverlay(zone);
+    doorScreen[zone]();
+  };
+  // The counselor picked on the counselling door's card (DoorCard): through the door goes straight to
+  // them. None picked — Map → Counseling, or walking into the doorway — opens the counselor picker
+  // over the world (13-10: it used to drop the player on Home's 2D list, out of the world for no
+  // reason). Unity puts the player back outside the door and fades in when nothing leaves.
+  const doorCounselor = useRef<CounselorSummary | null>(null);
+  const doorScreen: Record<WorldZone, () => void> = {
+    counseling: () => {
+      const c = doorCounselor.current;
+      doorCounselor.current = null;
+      if (c) actions.counsel(c);
+      else setOverlay('counseling');
+    },
+    meditation: actions.meditate,
+    journey: actions.journey,
+    shop: () => leaveTo('shop', () => navigation.navigate('Tickets')),
+    myroom: actions.myroom,
   };
   door.current = {
     wait: zone => {
@@ -328,7 +351,8 @@ export const WorldScreen: React.FC = () => {
     },
     entered: throughDoor,
   };
-  const enter = (zone: WorldZone) => {
+  const enter = (zone: WorldZone, counselor?: CounselorSummary) => {
+    doorCounselor.current = counselor ?? null;
     bridge.sendWorldEnter(zone);
     door.current.wait(zone);
   };
@@ -419,9 +443,11 @@ export const WorldScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Enter pops in when a door is near (re-pops for the next door); the room's Talk is the same
-          pill. It asks Unity to open the door and walk in (WORLD_ENTER). */}
-      {near && !busy && <PromptButton label={t('world.enter')} popKey={near} onPress={() => enter(near)} />}
+      {/* At a door, its card: where it goes, what is live in there, and the way in (WORLD_ENTER). The
+          counselling door's way in is a counselor's face. */}
+      {near && !busy && <DoorCard zone={near} journeyYear={NEWYEAR_2027.year} onEnter={enter} />}
+      {/* Walking through: the room's name while Unity takes the player in. */}
+      {entering && <DoorTitle zone={entering} />}
 
       {overlay && (
         <ZoneOverlay
