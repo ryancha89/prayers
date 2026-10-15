@@ -1,0 +1,246 @@
+import React, { useCallback, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../../shared/components/Text';
+import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { colors, spacing, typography } from '../../../shared/theme';
+import { useLang, useT } from '../../../shared/i18n';
+import { Icon } from '../../../shared/components/Icon';
+import { Tag } from '../../../shared/components/Tag';
+import { PrimaryButton } from '../../../shared/components/PrimaryButton';
+import { RootStackParamList } from '../../../navigation/types';
+import { getLocalizedCounselor } from '../data/mockCounselors';
+import { CounselorHero } from '../components/CounselorHero';
+import { CounselorPreviewCarousel } from '../components/CounselorPreviewCarousel';
+import { useFavoritesStore } from '../store/favoritesStore';
+import { useCounselingStore } from '../../counseling/store/counselingStore';
+import {
+  checkConsultationReadiness,
+  type ConsultationReadiness,
+} from '../../counseling/api/prayersServer';
+import { sfx } from '../../../shared/audio/sfx';
+import { column } from '../../../shared/device/screen';
+import { useBottomDock } from '../../../shared/layout/bottomDock';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+type Rt = RouteProp<RootStackParamList, 'CounselorDetail'>;
+
+/**
+ * Emotional interest before the 3D room (spec §9). Implemented fully in RN —
+ * Unity is NOT initialized here (spec §9, §45).
+ */
+export const CounselorDetailScreen: React.FC = () => {
+  const navigation = useNavigation<Nav>();
+  const { params } = useRoute<Rt>();
+  const t = useT();
+  const lang = useLang();
+  const counselor = getLocalizedCounselor(params.counselorId, lang);
+  // The CTA bar is docked to the bottom edge: tell the journey mini player to ride above it while
+  // this screen is focused, and give the space back when it is not (another screen may stack on top).
+  const setDock = useBottomDock(d => d.set);
+  const ctaHeight = React.useRef(0);
+  const [focused, setFocused] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setFocused(true);
+      if (ctaHeight.current > 0) setDock(ctaHeight.current);
+      return () => { setFocused(false); setDock(0); };
+    }, [setDock]),
+  );
+
+  /**
+   * Whether a consultation can actually happen, asked BEFORE the room opens.
+   *
+   * It used to be asked by opening the room and finding out. The player watched the scene load and
+   * the counselor sit down, typed a question, and got "the connection was interrupted — try
+   * again?" over a server that was up: the real answer was `code 1204`, this account has no saju
+   * chart, which retrying can never fix. A precondition said at the door reads as a precondition;
+   * the same thing said from a chair reads as the product breaking.
+   *
+   * `undefined` while the answer is still in flight — the button says so rather than looking
+   * enabled and then refusing the tap.
+   */
+  const [readiness, setReadiness] = useState<ConsultationReadiness | undefined>();
+
+  // On focus, not on mount: the player can leave to fix the thing that was missing (add a birth
+  // date, get back online) and come straight back to this screen.
+  useFocusEffect(
+    useCallback(() => {
+      const ac = new AbortController();
+      setReadiness(undefined);
+      checkConsultationReadiness(ac.signal)
+        .then(r => {
+          if (!ac.signal.aborted) setReadiness(r);
+        })
+        .catch(() => {});
+      return () => ac.abort();
+    }, []),
+  );
+
+  const isFavorite = useFavoritesStore(s => s.ids.includes(params.counselorId));
+  const toggleFavorite = useFavoritesStore(s => s.toggle);
+  const begin = useCounselingStore(s => s.begin);
+
+  if (!counselor) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.missing}>{t('detail.notFound')}</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const onStart = () => {
+    begin(counselor, { focusMemoryId: params.focusMemoryId });
+    navigation.navigate('CounselingSubject');
+  };
+
+  // The button carries the reason. "Coming soon" already worked this way and it is the right
+  // shape: a disabled CTA that does not say why is indistinguishable from a broken one.
+  const ctaLabel = counselor.comingSoon
+    ? t('detail.comingSoon')
+    : readiness === undefined
+      ? t('detail.checking')
+      : readiness === 'offline'
+        ? t('detail.serverDown')
+        : readiness === 'no-chart'
+          ? t('detail.needChart')
+          : t('detail.start');
+
+  const blockedHint =
+    counselor.comingSoon || readiness === undefined || readiness === 'ok'
+      ? null
+      : readiness === 'offline'
+        ? t('detail.serverDownHint')
+        : t('detail.needChartHint');
+
+  return (
+    <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scroll, column]}>
+        <CounselorHero counselor={counselor} />
+
+        <View style={styles.section}>
+          <View style={styles.tagsRow}>
+            {counselor.tags.map(tag => (
+              <Tag key={tag} label={tag} tone="violet" />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('detail.preview')}</Text>
+          <CounselorPreviewCarousel previews={counselor.previews} accent={counselor.accent} />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('detail.about', { name: counselor.name })}</Text>
+          <Text style={styles.personality}>{counselor.personality.join('  ·  ')}</Text>
+          <Text style={styles.about}>{counselor.about}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('detail.specialties')}</Text>
+          <View style={styles.tagsRow}>
+            {counselor.specialties.map(s => (
+              <Tag key={s} label={s} tone="gold" />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Floating top controls (spec §10) */}
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.topBar} pointerEvents="box-none">
+        <Pressable
+          style={styles.roundBtn}
+          hitSlop={8}
+          // `back` is the same pluck as `select` a fifth DOWN, so leaving is audibly the opposite
+          // of arriving. That only pays off if going back actually uses it.
+          onPress={() => {
+            sfx.back();
+            navigation.goBack();
+          }}>
+          <Icon name="back" size={26} />
+        </Pressable>
+        <Pressable
+          style={styles.roundBtn}
+          hitSlop={8}
+          onPress={() => {
+            sfx.select();
+            toggleFavorite(counselor.id);
+          }}>
+          <Icon
+            name={isFavorite ? 'heartFilled' : 'heart'}
+            size={22}
+            color={isFavorite ? colors.trending : '#FFFFFF'}
+          />
+        </Pressable>
+      </SafeAreaView>
+
+      {/* Single dominant CTA (spec §13) */}
+      <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.ctaBar}
+        onLayout={e => {
+          ctaHeight.current = e.nativeEvent.layout.height;
+          if (focused) setDock(ctaHeight.current);
+        }}>
+        {/* A counselor with no 3D model cannot hold a consultation. Saying so on the button is
+            better than letting the tap through to a room that would substitute somebody else's
+            face, and far better than the version before it — a room that loaded and then ejected
+            the player with no explanation. */}
+        {blockedHint ? <Text style={styles.blockedHint}>{blockedHint}</Text> : null}
+        <PrimaryButton
+          label={ctaLabel}
+          onPress={onStart}
+          // `no-chart` is NOT blocked any more, because the flow behind this button can now fix it:
+          // the subject step collects the birth data and puts it on the server. Blocking it was
+          // right only while nothing downstream could. `offline` still blocks — nothing the player
+          // does inside will reach a server that is not answering.
+          disabled={counselor.comingSoon || readiness === undefined || readiness === 'offline'}
+        />
+      </SafeAreaView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
+  scroll: { paddingBottom: 120 },
+  missing: { color: colors.textSecondary, padding: spacing.xl },
+  blockedHint: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  section: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl, gap: spacing.md },
+  sectionTitle: { ...typography.h2, color: colors.textPrimary },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  personality: { ...typography.bodyStrong, color: colors.violetSoft },
+  about: { ...typography.body, color: colors.textSecondary, lineHeight: 23 },
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+  },
+  roundBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(10,10,15,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    backgroundColor: colors.scrim,
+  },
+});

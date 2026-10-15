@@ -1,0 +1,94 @@
+import React from 'react';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from '../../../shared/components/Text';
+import { Icon } from '../../../shared/components/Icon';
+import { colors, radius, spacing, typography } from '../../../shared/theme';
+import { useLang, useT } from '../../../shared/i18n';
+import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
+import { journeyActive, useJourneyPlayer } from '../player/journeyPlayer';
+import { sfx } from '../../../shared/audio/sfx';
+import { JOURNEYS } from '../data/journeys';
+import { JOURNEY_HERO_ART } from './JourneyTrainArt';
+import { useBottomDock } from '../../../shared/layout/bottomDock';
+
+/**
+ * The journey, kept alive while the player looks at something else: 🚂 title, the station and the
+ * guide, a thin progress line, play/pause. Tapping it goes back to the train.
+ *
+ * Mounted once, above the navigator (App.tsx), and told where it sits: above the tab bar on the
+ * tabs, just above the home indicator elsewhere.
+ */
+export const JourneyMiniPlayer: React.FC<{ aboveTabs: boolean; hidden: boolean; onOpen(): void }> = ({
+  aboveTabs,
+  hidden,
+  onOpen,
+}) => {
+  const t = useT();
+  const lang = useLang();
+  const insets = useSafeAreaInsets();
+  const s = useJourneyPlayer();
+  const dock = useBottomDock(d => d.height);
+  if (hidden || !journeyActive(s) || !s.journeyId) return null;
+  const journey = JOURNEYS[s.journeyId];
+  const chapter = journey?.chapters[s.transitionTo ?? s.chapterIndex];
+  const guide = s.counselorId ? getLocalizedCounselor(s.counselorId, lang) : undefined;
+  const progress = s.duration > 0 ? Math.min(1, s.position / s.duration) : 0;
+  // Above the tab bar on the tabs; above a screen's own bottom bar (its height includes the safe
+  // area) where it has one; else just above the home indicator.
+  const bottom = aboveTabs ? insets.bottom + 49 + spacing.sm : dock > 0 ? dock + spacing.sm : insets.bottom + spacing.sm;
+  // Landscape: keep clear of the Dynamic Island / notch on either long side.
+  const sides = { left: spacing.md + insets.left, right: spacing.md + insets.right };
+
+  return (
+    <Pressable style={[styles.bar, { bottom, ...sides }]} onPress={() => { sfx.tap(); onOpen(); }} accessibilityRole="button">
+      <View style={styles.row}>
+        {/* The key art, not 🚂: the emoji drew as a "?" box on the simulator's font set. */}
+        <Image source={JOURNEY_HERO_ART} style={styles.thumb} />
+        <View style={styles.body}>
+          <Text style={styles.title} numberOfLines={1}>
+            {t('journey.mini.title', { year: journey?.year ?? '' })}
+          </Text>
+          <Text style={styles.sub} numberOfLines={1}>
+            {chapter?.subtitle ? t(chapter.subtitle) : ''}
+            {guide ? ` · ${guide.name}` : ''}
+          </Text>
+        </View>
+        {/* At a lock or an overlay (a title card, a choice) play cannot carry on — the answer lives
+            on the train, so go there. */}
+        <Pressable hitSlop={12} onPress={() => { sfx.tap(); if (s.moment === 'locked' || s.stage !== '') onOpen(); else s.toggle(); }}
+          accessibilityRole="button" style={styles.play}>
+          <Icon name={s.status === 'playing' ? 'pause' : 'play'} size={16} color={colors.bg} />
+        </Pressable>
+        {/* Close (10-13, "밑에 이게 남아있잖아"): leaving the train with < keeps the ride alive here,
+            and this is the way to end it — silence, and the bar goes away. The ride is not lost: a
+            finished one is kept in 아카이브 → 저장한 여행. */}
+        <Pressable hitSlop={12} onPress={() => { sfx.tap(); s.stop(); }}
+          accessibilityRole="button" accessibilityLabel={t('journey.mini.close')} style={styles.close}>
+          <Icon name="close" size={16} color={colors.textSecondary} />
+        </Pressable>
+      </View>
+      <View style={styles.track}>
+        <View style={[styles.fill, { width: `${progress * 100}%` }]} />
+      </View>
+    </Pressable>
+  );
+};
+
+const styles = StyleSheet.create({
+  bar: {
+    position: 'absolute', left: spacing.md, right: spacing.md,
+    borderRadius: radius.lg, backgroundColor: 'rgba(26,20,52,0.97)',
+    borderWidth: 1, borderColor: 'rgba(167,139,250,0.35)', overflow: 'hidden',
+    shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
+  },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+  thumb: { width: 40, height: 40, borderRadius: radius.sm, borderWidth: 1, borderColor: 'rgba(233,196,106,0.5)' },
+  body: { flex: 1 },
+  title: { ...typography.caption, color: colors.textPrimary, fontWeight: '700' },
+  sub: { ...typography.tiny, color: colors.textSecondary, marginTop: 2 },
+  close: { width: 28, height: 34, alignItems: 'center', justifyContent: 'center', marginLeft: -spacing.xs },
+  play: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center' },
+  track: { height: 2, backgroundColor: 'rgba(255,255,255,0.1)' },
+  fill: { height: 2, backgroundColor: colors.gold },
+});

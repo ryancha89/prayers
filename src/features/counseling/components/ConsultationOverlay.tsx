@@ -1,0 +1,770 @@
+/**
+ * Everything the player reads or taps during a consultation.
+ *
+ * This is the canvas that used to live inside Unity. `ConsultationFlowUI` drew a
+ * dialogue card, a choice list, a question box, a report and a chat transcript
+ * on a world-space canvas in the embedded player — which meant the app's fonts,
+ * its keyboard and IME, its safe areas and its back gesture all stopped at the
+ * edge of a texture. All of it is React now, sitting above the Unity view.
+ *
+ * It is presentational: every decision (which surface, what text, when the beat
+ * ends) belongs to `ConsultationEngine`. This file only knows how it looks.
+ */
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Image,
+  KeyboardAvoidingView,
+  LayoutChangeEvent,
+  LayoutRectangle,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { Text, TextInput } from '../../../shared/components/Text';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  absoluteFill,
+  colors,
+  radius,
+  spacing,
+  typography,
+} from '../../../shared/theme';
+import { sfx } from '../../../shared/audio/sfx';
+import { useLang } from '../../../shared/i18n';
+import { Icon } from '../../../shared/components/Icon';
+import { HAIRLINE, IVORY, PLATE, RING_COMPACT, RingButton } from '../../../shared/components/hud/Hud';
+import { useScreen } from '../../../shared/device/screen';
+import { ui } from '../flow/strings';
+import { CounselorVoice, voiced } from '../flow/voice';
+import type { FlowState } from '../flow/engine';
+import type { PhaseChoice } from '../flow/types';
+import type { ChatMode } from '../types';
+
+const QUICK_CHAT_ICON = require('../../../shared/assets/icons/quick_chat.png');
+
+/** The landscape dialogue band: this share of the width between the safe-area edges… */
+export const BAND_SHARE = 0.66;
+/** …never narrower than a chat input stays usable at (or the whole safe width, if that is less)… */
+const BAND_MIN = 360;
+/** …and never a line so long it reads as a banner. */
+const BAND_MAX = 640;
+
+/** The width of the landscape band for a window this wide with these insets. Pure, for tests. */
+export function landscapeBand(width: number, safe: { left: number; right: number }): number {
+  const free = Math.max(0, width - safe.left - safe.right);
+  return Math.round(Math.min(free, Math.max(BAND_MIN, Math.min(BAND_MAX, free * BAND_SHARE))));
+}
+
+export interface ConsultationOverlayProps {
+  state: FlowState;
+  onTap(): void;
+  onChoose(choice: PhaseChoice): void;
+  onSubmit(text: string): void;
+  onRetry(): void;
+  onLeave(): void;
+  /** Press the mic. Cuts the counselor off and starts recording. */
+  onMicStart?(): void;
+  /** Finished speaking — transcribe what was said. */
+  onMicStop?(): void;
+  /** Drop the take; the counselor picks her answer back up. */
+  onMicCancel?(): void;
+  /**
+   * Who is speaking, by name ("Yuna"). The flow asset only knows ONE speaker and labels every line
+   * with the generic `consult_speaker_counselor` ("Counselor" / "Thầy"), so without this the card
+   * never said whose room the player was in. Falls back to that label when absent.
+   */
+  counselorName?: string;
+  /** Stop her talking, with no question behind it. */
+  onHush?(): void;
+  /** False in builds with no embedded player — the button is hidden rather than offered and then
+   *  failing, because there is no microphone on this side of the bridge. */
+  micAvailable?: boolean;
+  /** The counselor's register for the two input placeholders. Everything else on this overlay is
+   *  the APP talking (mic errors, "tap to continue"), and the app has one voice whoever is in the
+   *  chair — only the prompts she is asking through follow her. */
+  voice?: CounselorVoice;
+  /** SAVIS's two answer styles, as a segment above the free-chat box: ⚡ 티키타카 | 깊은 풀이. Shown
+   *  only in the loop, because that is the only turn it changes — the staged reading keeps its own
+   *  shape. Absent `onChatMode` hides the segment (a room with no server has no styles to pick). */
+  chatMode?: ChatMode;
+  onChatMode?(mode: ChatMode): void;
+  /** Landscape: the room's top bar ends here, and the band never grows above it. */
+  panelTop?: number;
+  /** The box the overlay's UI occupies, in the coordinates of the screen it is laid over — the
+   *  stack along the bottom, full width in portrait and the centred band in landscape — or null
+   *  while it shows nothing. The room reports this to Unity as VIEW_INSETS. */
+  onPanelLayout?(rect: LayoutRectangle | null): void;
+}
+
+export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
+  state,
+  onTap,
+  onChoose,
+  onSubmit,
+  onRetry,
+  onLeave,
+  voice = 'default',
+  onMicStart,
+  onMicStop,
+  onMicCancel,
+  onHush,
+  micAvailable = false,
+  chatMode = 'detail',
+  onChatMode,
+  counselorName,
+  panelTop = 0,
+  onPanelLayout,
+}) => {
+  const lang = useLang();
+  // The one-line explanation of the style just picked, the way SAVIS toasts it. Shown under the
+  // segment for a moment rather than permanently: the label is the setting, the hint is the
+  // answer to "what did that just do".
+  const [modeHint, setModeHint] = useState<ChatMode | null>(null);
+  const modeHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (modeHintTimer.current) clearTimeout(modeHintTimer.current);
+    },
+    [],
+  );
+  const pickMode = (mode: ChatMode) => {
+    if (mode !== chatMode) onChatMode?.(mode);
+    setModeHint(mode);
+    if (modeHintTimer.current) clearTimeout(modeHintTimer.current);
+    modeHintTimer.current = setTimeout(() => setModeHint(null), 3000);
+  };
+  // Heights here are shares of the window, not constants: see useScreen. On a 667pt phone the
+  // three panels below used to add up to more screen than there was, under an open keyboard.
+  const screen = useScreen();
+  const safe = useSafeAreaInsets();
+  /** A prompt SHE is asking through, in her register. Falls back to the shared copy. */
+  const say = (key: Parameters<typeof ui>[0]) =>
+    voiced(voice, key, lang) ?? ui(key, lang);
+  const [input, setInput] = useState('');
+  const mic = state.mic;
+  const recording = mic.state !== 'idle';
+
+  const send = () => {
+    const text = input.trim();
+    if (!text) return;
+    setInput('');
+    sfx.send();
+    onSubmit(text);
+  };
+
+  // `none` is the doc's "minimal UI; prioritize environmental immersion" — the
+  // entrance beat and the closing pull-back are meant to be watched, not read.
+  const hidden = state.screen === 'none' && !state.line;
+  useEffect(() => {
+    if (hidden) onPanelLayout?.(null);
+  }, [hidden, onPanelLayout]);
+  if (hidden) return null;
+
+  // LANDSCAPE. One tree for both orientations — only styles change — so turning the phone
+  // mid-sentence keeps the typed question, the open keyboard's input and the transcript's scroll.
+  //
+  // 01-10 put the stack in a panel down the right-hand side. 02-10 moved it to a band at the
+  // BOTTOM-CENTRE, the way ZZZ lays out its dialogue (the user's reference): the right-hand column
+  // sat against the Dynamic Island in landscape-left ("vẫn ở bên phải?"), its length chips ran out
+  // of it, and a speech box in a corner reads as a sidebar rather than as someone talking. The band
+  // is about two thirds of the safe width (landscapeBand), centred between the safe-area edges —
+  // so it is clear of the island whichever way the phone is turned — and lifted off the home
+  // indicator. Heights are shares of the window kept small on purpose: the room is told the band
+  // covers the bottom (VIEW_INSETS, roomCoveredPx) and frames the counsellor in what is above it.
+  const landscape = screen.landscape;
+  const report = (e: LayoutChangeEvent) => onPanelLayout?.(e.nativeEvent.layout);
+
+  // Landscape height is the scarce thing — every line the band takes is a line less of the
+  // counsellor above it — so "leave" moves up into the chips' row there instead of a row of its own.
+  const leaveInBar = landscape && !!onChatMode && state.screen === 'loop';
+  const leaveLink = (
+    <Pressable style={styles.leave} onPress={onLeave} hitSlop={8}>
+      <Text style={styles.leaveText}>{ui('loop.leave', lang)}</Text>
+    </Pressable>
+  );
+  const modeRow = (
+    <View style={[styles.modeRow, landscape && styles.modeRowSide]} accessibilityRole="radiogroup" testID="chat-mode-row">
+      {(['short', 'tiki', 'detail'] as ChatMode[]).map(m => {
+        const on = chatMode === m;
+        return (
+          <Pressable
+            key={m}
+            style={[styles.modeSeg, on && styles.modeSegOn]}
+            onPress={() => pickMode(m)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: on }}
+          >
+            <View style={styles.modeLabel}>
+              {/* An image, not the ⚡ emoji it replaced: the app font has no glyph
+                  for it, so on device it drew as a boxed "?" (25-09). Tinted to the
+                  label so it follows the selected state with it. */}
+              {m === 'short' && (
+                <Image
+                  source={QUICK_CHAT_ICON}
+                  style={[styles.modeIcon, { tintColor: on ? ON_GOLD : colors.textSecondary }]}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+              )}
+              <Text style={[styles.modeText, on && styles.modeTextOn]}>
+                {ui(m === 'short' ? 'mode.short' : m === 'tiki' ? 'mode.tiki' : 'mode.detail', lang)}
+              </Text>
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  return (
+    <>
+      {/* Tap-to-continue catches the whole screen, not just the card: a dialogue
+          beat is advanced by tapping anywhere, the way it was in the engine. Outside the panel so
+          that in landscape "anywhere" still includes the room above the band. */}
+      {state.canTap && (
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onTap}
+          accessibilityRole="button"
+        />
+      )}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={
+        landscape
+          ? [styles.root, styles.rootBand, { paddingTop: panelTop, paddingLeft: safe.left, paddingRight: safe.right }]
+          : styles.root
+      }
+      pointerEvents="box-none"
+    >
+      <SafeAreaView
+        edges={[]}
+        style={[
+          styles.stack,
+          landscape && [styles.stackBand, { width: landscapeBand(screen.width, safe), paddingBottom: safe.bottom + spacing.sm }],
+        ]}
+        pointerEvents="box-none"
+        onLayout={report}
+        testID="consultation-panel"
+      >
+        {state.screen === 'loop' && (
+          <Transcript
+            state={state}
+            maxHeight={landscape ? screen.vh(0.18, 64, 100) : screen.vh(0.3, 140, 320)}
+          />
+        )}
+
+        {state.screen === 'report' && state.report && <Report state={state} />}
+
+        {/* The card takes the tap too (26-09: "탭하여 계속하면 다음으로 안넘어감"). It sits ABOVE
+            the full-screen catcher, so a tap on the card — right where "tap to continue" is
+            written — never reached it; only taps on the empty scene did. */}
+        {/* Landscape: the name is a tab on top of the box, ZZZ's speech-box shape. */}
+        {landscape && !!state.line && state.screen !== 'loop' && !!state.speaker && (
+          <View style={styles.nameTab} pointerEvents="none">
+            <Text style={styles.speaker}>{counselorName || state.speaker}</Text>
+          </View>
+        )}
+        {!!state.line && state.screen !== 'loop' && (
+          <Pressable style={styles.card} onPress={state.canTap ? onTap : undefined} disabled={!state.canTap}>
+            {!landscape && !!state.speaker && (
+              <Text style={styles.speaker}>{counselorName || state.speaker}</Text>
+            )}
+            <ScrollView
+              style={[
+                styles.lineScroll,
+                { maxHeight: landscape ? screen.vh(0.2, 64, 110) : screen.vh(0.24, 110, 220) },
+              ]}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.line}>{state.line}</Text>
+            </ScrollView>
+            {state.screen === 'thinking' && <ThinkingDots />}
+            {state.canTap && (
+              <Text style={styles.hint}>{ui('tap.continue', lang)}</Text>
+            )}
+          </Pressable>
+        )}
+
+        {state.screen === 'notice' && state.notice && (
+          <View style={styles.card}>
+            <Text style={styles.line}>{state.notice.body}</Text>
+            <View style={[styles.noticeRow, landscape && styles.rowWrap]}>
+              <Pressable
+                style={[styles.pill, styles.pillPrimary]}
+                onPress={onRetry}
+              >
+                <Text style={styles.pillTextPrimary}>
+                  {state.notice.retryLabel}
+                </Text>
+              </Pressable>
+              <Pressable style={styles.pill} onPress={onLeave}>
+                <Text style={styles.pillText}>{state.notice.leaveLabel}</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {state.screen === 'choices' && (
+          <View style={styles.choices}>
+            {state.choices.map(c => (
+              <Pressable
+                key={c.choice.locKey || c.label}
+                style={styles.choice}
+                onPress={() => onChoose(c.choice)}
+              >
+                <Text style={styles.choiceText}>{c.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {/* The server's own follow-up question, offered rather than imposed. */}
+        {state.screen === 'loop' && !!state.suggestion && (
+          <Pressable
+            style={styles.suggestion}
+            onPress={() => onSubmit(state.suggestion)}
+          >
+            <Text style={styles.suggestionText} numberOfLines={2}>
+              {state.suggestion}
+            </Text>
+          </Pressable>
+        )}
+
+        {(state.screen === 'questionBox' || state.screen === 'loop') && (
+          <SafeAreaView edges={landscape ? [] : ['bottom']}>
+            {/* ⚡ 티키타카 | 깊은 풀이 — the same segment SAVIS puts above its input, carried to the
+                server as the same `chat_mode`. The whole point is that a player who knows one app
+                knows the other. */}
+            {/* At the question box too (26-09): the style decides how the FIRST question is
+                answered — a quick reply, or the staged reading — so it has to be pickable before it. */}
+            {(state.screen === 'loop' || state.screen === 'questionBox') && !!onChatMode && (
+              <View>
+                {leaveInBar ? (
+                  <View style={styles.modeBar}>
+                    {modeRow}
+                    {leaveLink}
+                  </View>
+                ) : (
+                  modeRow
+                )}
+                {!!modeHint && (
+                  <Text style={styles.modeHint}>
+                    {ui(modeHint === 'short' ? 'mode.short.hint' : modeHint === 'tiki' ? 'mode.tiki.hint' : 'mode.detail.hint', lang)}
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Why the take failed, in the player's own language. Unity sends a key, never a
+                sentence — the copy for every one of these is here. */}
+            {!!mic.error && (
+              <Text style={styles.micError}>
+                {micErrorText(mic.error, lang)}
+              </Text>
+            )}
+
+            {/* She is talking and the box is open: cutting in is allowed, so it is also SHOWN.
+                Without this the only way to learn it is to try, and a player who does not know
+                they may interrupt will sit through every answer to the end. */}
+            {state.speaking && state.screen === 'loop' && !recording && (
+              <Pressable style={styles.hush} onPress={onHush} hitSlop={8}>
+                <Icon name="stop" size={12} color={colors.textMuted} />
+                <Text style={styles.hushText}>
+                  {ui('loop.stopTalking', lang)}
+                </Text>
+              </Pressable>
+            )}
+
+            {recording ? (
+              <View style={styles.inputRow}>
+                {/* The level bar is not decoration. RN cannot see the waveform, and a listening
+                    state that never moves is indistinguishable from a microphone that never
+                    opened — which is exactly how a denied permission used to look. */}
+                <View style={styles.micLive}>
+                  <Text style={styles.micLabel}>
+                    {ui(MIC_LABEL[mic.state] ?? 'mic.listening', lang)}
+                  </Text>
+                  {mic.state === 'listening' && (
+                    <View style={styles.levelTrack}>
+                      <View
+                        style={[
+                          styles.levelFill,
+                          { width: `${Math.round(clamp(mic.level * 100))}%` },
+                        ]}
+                      />
+                    </View>
+                  )}
+                </View>
+                <RingButton
+                  icon="stop"
+                  size={RING_COMPACT}
+                  label={ui('mic.listening', lang)}
+                  onPress={mic.state === 'listening' ? onMicStop : onMicCancel}
+                />
+              </View>
+            ) : (
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    { maxHeight: screen.vh(0.12, 64, 110) },
+                  ]}
+                  value={input}
+                  editable={state.inputEnabled}
+                  onChangeText={setInput}
+                  placeholder={say(
+                    state.screen === 'loop'
+                      ? 'loop.placeholder'
+                      : 'question.placeholder',
+                  )}
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  onSubmitEditing={send}
+                />
+                {/* Mic OR send, never both: the button is the mic until there is something typed,
+                    and speaking is the only gesture that needs to be reachable one-handed. */}
+                {/* The HUD's ring (07-10, one system over the 3D): the same navy disk and gold
+                    hairline as the top bar's back, padded to a 44pt target. */}
+                {micAvailable && !input.trim() ? (
+                  <RingButton
+                    icon="mic"
+                    size={RING_COMPACT}
+                    label={ui('mic.listening', lang)}
+                    onPress={onMicStart}
+                    disabled={!state.inputEnabled}
+                  />
+                ) : (
+                  <RingButton
+                    icon="send"
+                    size={RING_COMPACT}
+                    label={ui('loop.send', lang)}
+                    onPress={send}
+                    disabled={!input.trim() || !state.inputEnabled}
+                  />
+                )}
+              </View>
+            )}
+            {/* Leaving is not a conversational move, so it does not sit in the
+                pill row next to the follow-up question. */}
+            {state.screen === 'loop' && !leaveInBar && leaveLink}
+          </SafeAreaView>
+        )}
+      </SafeAreaView>
+    </KeyboardAvoidingView>
+    </>
+  );
+};
+
+/** The free-chat transcript. A staged phase speaks one line through the card and
+ *  moves on; a conversation has to stay readable.
+ *
+ *  It follows the voice. The engine reveals an answer chunk by chunk as each is
+ *  spoken, so the newest bubble grows while the counselor talks — and every
+ *  growth spurt changes the content size, which is the cue to scroll to the
+ *  end. Without it the bubble grew below the fold and the player read the first
+ *  sentence while hearing the fourth. */
+const Transcript: React.FC<{ state: FlowState; maxHeight: number }> = ({
+  state,
+  maxHeight,
+}) => {
+  const scroll = useRef<ScrollView>(null);
+  return (
+    <ScrollView
+      ref={scroll}
+      style={[styles.transcript, { maxHeight }]}
+      contentContainerStyle={styles.transcriptBody}
+      onContentSizeChange={() =>
+        scroll.current?.scrollToEnd({ animated: true })
+      }
+    >
+      {state.transcript.map((m, i) => (
+        <View
+          key={`${i}-${m.role}`}
+          style={[
+            styles.bubble,
+            m.role === 'user' ? styles.bubbleUser : styles.bubbleCounselor,
+          ]}
+        >
+          <Text
+            style={
+              m.role === 'user' ? styles.bubbleTextUser : styles.bubbleText
+            }
+          >
+            {m.text}
+          </Text>
+        </View>
+      ))}
+    </ScrollView>
+  );
+};
+
+const Report: React.FC<{ state: FlowState }> = ({ state }) => {
+  const report = state.report!;
+  return (
+    <View style={styles.report}>
+      {report.rows.map(row => (
+        <View key={row.label} style={styles.reportRow}>
+          <Text style={styles.reportLabel}>{row.label}</Text>
+          <View style={styles.reportTrack}>
+            <View
+              style={[styles.reportFill, { width: `${clamp(row.score)}%` }]}
+            />
+          </View>
+          <Text style={styles.reportScore}>{row.score}</Text>
+        </View>
+      ))}
+      {!!report.keywords && (
+        <Text style={styles.reportKeywords}>{report.keywords}</Text>
+      )}
+      {!!report.period && (
+        <Text style={styles.reportPeriod}>{report.period}</Text>
+      )}
+    </View>
+  );
+};
+
+/** What the row says for each state the mic can be in while the take is live. */
+const MIC_LABEL = {
+  opening: 'mic.opening',
+  listening: 'mic.listening',
+  transcribing: 'mic.transcribing',
+  idle: 'mic.listening',
+} as const;
+
+const clamp = (n: number) => Math.max(0, Math.min(100, n));
+
+/** Unity reports WHY a take produced nothing as a key; the sentence is RN's, in all six languages.
+ *  Everything that is not the player's to fix collapses onto one line — "I could not make out the
+ *  words" is as much as a player can act on whether the route 404'd or the upload timed out. */
+function micErrorText(
+  error: NonNullable<FlowState['mic']['error']>,
+  lang: Parameters<typeof ui>[1],
+) {
+  switch (error) {
+    case 'permission':
+      return ui('mic.error.permission', lang);
+    case 'no_device':
+      return ui('mic.error.nodevice', lang);
+    case 'no_speech':
+    case 'too_short':
+      return ui('mic.error.nospeech', lang);
+    // Nothing the player did. Saying "I could not make out the words" here is a lie that reads as
+    // "you mumbled" — and the mic button is gone by now anyway, so the line has to explain that.
+    case 'unavailable':
+    case 'no_token':
+      return ui('mic.error.unavailable', lang);
+    default:
+      return ui('mic.error.failed', lang);
+  }
+}
+
+/** A hold of 5-30 s with a still card looked exactly like a crash. */
+const ThinkingDots: React.FC = () => {
+  const [n, setN] = useState(0);
+  React.useEffect(() => {
+    const timer = setInterval(() => setN(v => (v + 1) % 4), 420);
+    return () => clearInterval(timer);
+  }, []);
+  return <Text style={styles.dots}>{'.'.repeat(n)}</Text>;
+};
+
+/** The quieter hairline for rows of options, where a full-strength rim on each would be a fence. */
+const SOFT_HAIRLINE = 'rgba(233,196,106,0.35)';
+/** A word or glyph on a gold fill. */
+const ON_GOLD = '#1A1330';
+
+const styles = StyleSheet.create({
+  root: { ...absoluteFill, justifyContent: 'flex-end' },
+  // Landscape: the band is centred; the safe-area and top-bar padding come from the call site.
+  rootBand: { alignItems: 'center' },
+  stack: { paddingHorizontal: spacing.lg, gap: spacing.sm },
+  // The band's width is the box's (landscapeBand), so no side padding of its own. An open keyboard
+  // takes most of a landscape window: the transcript is what gives way.
+  stackBand: { paddingHorizontal: 0, flexShrink: 1 },
+  // Landscape rows break onto a second line rather than run past the band: the length chips in a
+  // longer language, or a narrow phone. Portrait keeps its single line.
+  rowWrap: { flexWrap: 'wrap' },
+  // ZZZ's name tab: a small dark tab centred on the top edge of the speech box, joined to it (the
+  // negative margin cancels the stack's gap).
+  nameTab: {
+    alignSelf: 'center',
+    backgroundColor: colors.scrim,
+    borderTopLeftRadius: radius.md,
+    borderTopRightRadius: radius.md,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xs,
+    marginBottom: -spacing.sm,
+  },
+
+  card: {
+    backgroundColor: colors.scrim,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    gap: spacing.xs,
+  },
+  speaker: { ...typography.caption, color: colors.gold },
+  // maxHeight is applied at the call site from useScreen; 220 is only its ceiling.
+  lineScroll: {},
+  line: { ...typography.body, color: colors.textPrimary, lineHeight: 23 },
+  hint: { ...typography.tiny, color: colors.textMuted, alignSelf: 'flex-end' },
+  dots: { ...typography.body, color: colors.gold },
+
+  noticeRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  // The in-world pair (the diary's and the world sheets'): a gold call to action, and the HUD's
+  // navy plate with a gold hairline for the other way.
+  pill: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: PLATE,
+    borderWidth: 1,
+    borderColor: HAIRLINE,
+  },
+  pillPrimary: { backgroundColor: colors.gold, borderColor: colors.gold },
+  pillText: { ...typography.caption, color: IVORY },
+  pillTextPrimary: { ...typography.caption, color: ON_GOLD, fontWeight: '700' },
+
+  choices: { gap: spacing.sm },
+  choice: {
+    backgroundColor: PLATE,
+    borderWidth: 1,
+    borderColor: SOFT_HAIRLINE,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  choiceText: { ...typography.bodyStrong, color: colors.textPrimary },
+
+  // Sits over the live Unity scene (gold sigils, glyphs), so a 16%-alpha violet pill with violet
+  // caption text was unreadable — near-opaque dark ground, the HUD's gold rim, white body text.
+  suggestion: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(18, 18, 26, 0.94)',
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: HAIRLINE,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    shadowColor: '#000',
+    shadowOpacity: 0.45,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  suggestionText: { ...typography.body, color: colors.textPrimary },
+
+  transcript: { flexShrink: 1 },
+  transcriptBody: { gap: spacing.sm, paddingBottom: spacing.sm },
+  bubble: { borderRadius: radius.md, padding: spacing.md, maxWidth: '86%' },
+  bubbleCounselor: { alignSelf: 'flex-start', backgroundColor: colors.scrim },
+  bubbleUser: { alignSelf: 'flex-end', backgroundColor: colors.violet },
+  bubbleText: { ...typography.body, color: colors.textPrimary },
+  bubbleTextUser: { ...typography.body, color: colors.textPrimary },
+
+  report: {
+    backgroundColor: colors.scrim,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  reportRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  reportLabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    width: 76,
+  },
+  reportTrack: {
+    flex: 1,
+    height: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.card,
+    overflow: 'hidden',
+  },
+  reportFill: { height: 6, backgroundColor: colors.gold },
+  reportScore: {
+    ...typography.tiny,
+    color: colors.textMuted,
+    width: 26,
+    textAlign: 'right',
+  },
+  reportKeywords: { ...typography.caption, color: colors.gold },
+  reportPeriod: { ...typography.tiny, color: colors.textMuted },
+
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+    backgroundColor: colors.scrim,
+    borderRadius: radius.xl,
+    padding: spacing.sm,
+  },
+  input: {
+    flex: 1,
+    ...typography.body,
+    color: colors.textPrimary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+
+  micError: {
+    ...typography.tiny,
+    color: colors.gold,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  micLive: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+  },
+  micLabel: { ...typography.caption, color: colors.textSecondary },
+  levelTrack: {
+    height: 4,
+    borderRadius: radius.pill,
+    backgroundColor: colors.card,
+    overflow: 'hidden',
+  },
+  levelFill: { height: 4, backgroundColor: colors.gold },
+
+  hush: {
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  hushText: { ...typography.tiny, color: colors.textMuted },
+
+  leave: { alignSelf: 'center', paddingVertical: spacing.sm },
+  leaveText: { ...typography.caption, color: colors.textMuted },
+
+  modeRow: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  modeRowSide: { alignSelf: 'stretch', flexShrink: 1, flexWrap: 'wrap', rowGap: spacing.xs },
+  // Landscape loop: the chips and "leave" share one row.
+  modeBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  modeSeg: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: SOFT_HAIRLINE,
+    backgroundColor: 'rgba(18, 18, 26, 0.94)',
+  },
+  // On reads as the HUD's run ring does: filled gold, dark word.
+  modeSegOn: { backgroundColor: colors.gold, borderColor: colors.gold },
+  modeLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  modeIcon: { width: 16, height: 16 },
+  modeText: { ...typography.caption, color: colors.textSecondary },
+  modeTextOn: { color: ON_GOLD, fontWeight: '700' },
+  modeHint: { ...typography.tiny, color: colors.textMuted, marginBottom: spacing.xs },
+});

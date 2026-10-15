@@ -1,0 +1,167 @@
+/**
+ * The room UI has to fit the phone it is on.
+ *
+ * Every panel in the consultation overlay used to be a constant measured on one device. Added up,
+ * the transcript (320), the dialogue card (220) and the input (110) claim 650pt — more than an
+ * iPhone SE has (667) before its keyboard takes ~300 of them, which is how the counselor ended up
+ * hidden behind her own subtitles. These tests pin the two ends of the range so the constants
+ * cannot come back: a share of the window, floored so a panel stays usable and capped so the
+ * original design is still the maximum.
+ */
+// No SafeAreaProvider in a test tree: the overlay's landscape panel reads the insets from here.
+jest.mock('react-native-safe-area-context', () => ({
+  ...jest.requireActual('react-native-safe-area-context'),
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
+import React from 'react';
+import { Dimensions } from 'react-native';
+import ReactTestRenderer from 'react-test-renderer';
+import { ConsultationOverlay } from '../src/features/counseling/components/ConsultationOverlay';
+import { Text, TextInput, MAX_FONT_SCALE } from '../src/shared/components/Text';
+import type { FlowState } from '../src/features/counseling/flow/engine';
+
+const SE = { width: 375, height: 667, scale: 2, fontScale: 1 };
+const PRO_MAX = { width: 440, height: 956, scale: 3, fontScale: 1 };
+// The same phones held sideways (01-10): the overlay is a band along the bottom there (02-10; a
+// right-hand panel before), under a ~48pt top bar.
+const IPHONE_17_SIDE = { width: 874, height: 402, scale: 3, fontScale: 1 };
+const SE_SIDE = { width: 667, height: 375, scale: 2, fontScale: 1 };
+
+const state: FlowState = {
+  phaseId: 'PLOOP',
+  screen: 'loop',
+  speaker: '상담사',
+  line: '',
+  choices: [],
+  canTap: false,
+  inputEnabled: true,
+  notice: null,
+  report: null,
+  tone: '',
+  emotion: 'neutral',
+  transcript: [
+    { role: 'counselor', text: '어서 오세요.' },
+    { role: 'user', text: '안녕하세요.' },
+  ],
+  suggestion: '',
+  topic: '',
+  finished: false,
+  pending: false,
+  speaking: false,
+  mic: { state: 'idle', level: 0, error: '', offered: true },
+};
+
+const noop = () => {};
+
+/** Every maxHeight the overlay puts on a node, in render order. */
+function maxHeights(window: typeof SE, flowState: FlowState = state): number[] {
+  const spy = jest
+    .spyOn(Dimensions, 'get')
+    .mockImplementation(() => window as never);
+  let tree!: ReactTestRenderer.ReactTestRenderer;
+  ReactTestRenderer.act(() => {
+    tree = ReactTestRenderer.create(
+      <ConsultationOverlay
+        state={flowState}
+        onTap={noop}
+        onChoose={noop}
+        onSubmit={noop}
+        onRetry={noop}
+        onLeave={noop}
+      />,
+    );
+  });
+  const found: number[] = [];
+  const walk = (node: any) => {
+    // The tap-to-continue catcher is a sibling of the panel, so a tappable beat renders two roots.
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (!node || typeof node !== 'object') return;
+    const style = node.props?.style;
+    const flat = Array.isArray(style) ? style : [style];
+    for (const s of flat)
+      if (s && typeof s.maxHeight === 'number') found.push(s.maxHeight);
+    (node.children ?? []).forEach(walk);
+  };
+  walk(tree.toJSON());
+  ReactTestRenderer.act(() => tree.unmount());
+  spy.mockRestore();
+  return found;
+}
+
+describe('consultation overlay heights follow the window', () => {
+  it('fits a small phone: the panels leave room for the counselor and the keyboard', () => {
+    const heights = maxHeights(SE);
+    expect(heights.length).toBeGreaterThan(0);
+    const total = heights.reduce((a, b) => a + b, 0);
+    // The old constants totalled 650 of 667. Half the screen is the budget now.
+    expect(total).toBeLessThanOrEqual(SE.height * 0.5);
+    // ...and no panel collapsed to something unreadable.
+    for (const h of heights) expect(h).toBeGreaterThanOrEqual(72);
+  });
+
+  it('does not grow past the measured design on a large phone', () => {
+    const heights = maxHeights(PRO_MAX);
+    for (const h of heights) expect(h).toBeLessThanOrEqual(320);
+    // A tall phone really does get more than a short one.
+    expect(Math.max(...heights)).toBeGreaterThan(Math.max(...maxHeights(SE)));
+  });
+});
+
+describe('consultation overlay heights held sideways', () => {
+  const TOP_BAR = 48;
+  const card: FlowState = { ...state, screen: 'dialogue' as FlowState['screen'], line: '어서 오세요.', canTap: true };
+
+  it.each([
+    ['iPhone 17', IPHONE_17_SIDE],
+    ['SE', SE_SIDE],
+  ])('%s: the free chat and the dialogue card fit the panel under the top bar', (_name, window) => {
+    for (const flowState of [state, card]) {
+      const heights = maxHeights(window, flowState);
+      expect(heights.length).toBeGreaterThan(0);
+      const total = heights.reduce((a, b) => a + b, 0);
+      // The panel has the window's height below the top bar, and needs room left for the input row
+      // and the mode segment (~110pt) that carry no maxHeight of their own.
+      expect(total + 110).toBeLessThanOrEqual(window.height - TOP_BAR);
+      // The input row never drops below its floor.
+      for (const h of heights) expect(h).toBeGreaterThanOrEqual(64);
+    }
+  });
+
+  it('the transcript stays a couple of lines, so the counsellor keeps the window above the band', () => {
+    // 02-10: landscape is a band along the bottom, not a column down the right — what it takes in
+    // height it takes from the counsellor. Stacked, 30% of 402 would be clamped up to the 140 floor.
+    expect(Math.max(...maxHeights(IPHONE_17_SIDE))).toBeLessThan(140);
+    expect(Math.max(...maxHeights(SE_SIDE))).toBeLessThan(140);
+  });
+});
+
+describe('OS text scaling is capped', () => {
+  it('Text and TextInput carry the cap by default', () => {
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    ReactTestRenderer.act(() => {
+      tree = ReactTestRenderer.create(
+        <>
+          <Text>hello</Text>
+          <TextInput value="" />
+        </>,
+      );
+    });
+    const json = JSON.stringify(tree.toJSON());
+    expect(json).toContain(`"maxFontSizeMultiplier":${MAX_FONT_SCALE}`);
+    expect(tree.toJSON()).toHaveLength(2);
+    ReactTestRenderer.act(() => tree.unmount());
+  });
+
+  it('a caller can still override it', () => {
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    ReactTestRenderer.act(() => {
+      tree = ReactTestRenderer.create(
+        <Text maxFontSizeMultiplier={2}>hello</Text>,
+      );
+    });
+    expect(JSON.stringify(tree.toJSON())).toContain(
+      '"maxFontSizeMultiplier":2',
+    );
+    ReactTestRenderer.act(() => tree.unmount());
+  });
+});

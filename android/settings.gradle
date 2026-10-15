@@ -1,0 +1,15 @@
+pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
+plugins { id("com.facebook.react.settings") }
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+rootProject.name = 'prayers'
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')
+
+// Embedded Unity player (UaaL). The Gradle project is produced by the Unity
+// export (Saju World/Export UaaL (Android) in saju_world_unity); the app still
+// builds without it — the JS side then falls back to the mock bridge.
+def unityLibraryDir = new File(rootDir, '../unity/builds/android/unityLibrary')
+if (unityLibraryDir.exists()) {
+    include ':unityLibrary'
+    project(':unityLibrary').projectDir = unityLibraryDir
+}

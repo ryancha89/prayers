@@ -1,0 +1,177 @@
+/**
+ * 저장한 여행 — a finished journey is kept whole and reopened from the archive, the way the saju
+ * app's 나의 리포트 keeps a purchased 신년운세. Pinned: one row per journey × guide (a replay
+ * refreshes, never duplicates); the newest ride lists first; opening a saved row puts the player
+ * at the terminus with the saved content and no audio.
+ */
+jest.mock('@react-native-async-storage/async-storage', () => {
+  const store = new Map<string, string>();
+  return {
+    __esModule: true,
+    default: {
+      getItem: async (k: string) => store.get(k) ?? null,
+      setItem: async (k: string, v: string) => {
+        store.set(k, v);
+      },
+      removeItem: async (k: string) => {
+        store.delete(k);
+      },
+    },
+  };
+});
+jest.mock('react-native-sound', () => null, { virtual: true });
+
+import { savedJourneyId, useSavedJourneys } from '../src/features/journey/store/savedJourneysStore';
+import { useJourneyPlayer } from '../src/features/journey/player/journeyPlayer';
+import { JOURNEYS } from '../src/features/journey/data/journeys';
+import type { JourneyContent } from '../src/features/journey/types';
+
+const content = (keyword: string): JourneyContent => ({
+  journey: 'newyear-2027',
+  year: 2027,
+  counselor: 'theo',
+  chapters: [{ id: 'intro', narration: 'hello', cards: [] }],
+  summary: { bestMonths: [3, 9], cautionMonths: [7], keywords: [keyword], months: [] },
+});
+
+beforeEach(() => useSavedJourneys.setState({ journeys: [] }));
+
+describe('saved journeys', () => {
+  it('keeps one row per journey × guide and refreshes it on a second ride', () => {
+    const s = useSavedJourneys.getState();
+    s.save({ journeyId: 'newyear-2027', counselorId: 'theo', tone: 'theo', lang: 'ko', year: 2027, content: content('a') });
+    s.save({ journeyId: 'newyear-2027', counselorId: 'theo', tone: 'theo', lang: 'ko', year: 2027, content: content('b') });
+    const rows = useSavedJourneys.getState().journeys;
+    expect(rows).toHaveLength(1);
+    expect(rows[0].id).toBe(savedJourneyId('newyear-2027', 'theo'));
+    expect(rows[0].content.summary.keywords).toEqual(['b']);
+  });
+
+  it('lists a different guide separately, newest first', () => {
+    const s = useSavedJourneys.getState();
+    s.save({ journeyId: 'newyear-2027', counselorId: 'theo', tone: 'theo', lang: 'ko', year: 2027, content: content('a') });
+    s.save({ journeyId: 'newyear-2027', counselorId: 'yunjung', tone: 'yunjung', lang: 'ko', year: 2027, content: content('b') });
+    const ids = useSavedJourneys.getState().list().map(j => j.counselorId);
+    expect(ids).toEqual(['yunjung', 'theo']);
+  });
+
+  it('opens a saved journey at the terminus with its content and no audio', () => {
+    const saved = useSavedJourneys
+      .getState()
+      .save({ journeyId: 'newyear-2027', counselorId: 'theo', tone: 'theo', lang: 'ko', year: 2027, content: content('a') });
+    useJourneyPlayer.getState().openSaved(saved);
+    const p = useJourneyPlayer.getState();
+    expect(p.status).toBe('done');
+    expect(p.journeyId).toBe('newyear-2027');
+    expect(p.counselorId).toBe('theo');
+    expect(p.content?.summary.keywords).toEqual(['a']);
+    expect(p.chapterIndex).toBe(JOURNEYS['newyear-2027'].chapters.length - 1);
+  });
+});
+
+describe('boarding with the player\'s own chart', () => {
+  const { journeyBirthOf } = require('../src/features/journey/api/journeyApi');
+  const { useSubjectsStore } = require('../src/features/subjects/store/subjectsStore');
+
+  it('shapes self birth data as base_info.first, hour absent when the time is unknown', () => {
+    expect(journeyBirthOf({ id: 'self', displayName: 'me', isUser: true, birthDate: '1989-12-05', birthTime: '00:20', gender: 'male' }))
+      .toEqual({ birth_year: 1989, birth_month: 12, birth_day: 5, birth_hour: 0, birth_minute: 20, gender: 'male', self: true });
+    const unknown = journeyBirthOf({ id: 'self', displayName: 'me', isUser: true, birthDate: '1995-04-12', gender: 'female' });
+    expect(unknown).toEqual({ birth_year: 1995, birth_month: 4, birth_day: 12, birth_minute: 0, gender: 'female', self: true });
+    expect('birth_hour' in unknown!).toBe(false);
+    expect(journeyBirthOf({ id: 'self', displayName: 'me', isUser: true })).toBeNull();
+  });
+
+  it('refuses to board without birth data and names the reason instead of retrying', async () => {
+    useSubjectsStore.setState({ self: { id: 'self', displayName: 'Myself', isUser: true } });
+    await useJourneyPlayer.getState().board('newyear-2027', 'theo', 'theo', 'ko');
+    const p = useJourneyPlayer.getState();
+    expect(p.status).toBe('error');
+    expect(p.error).toBe('no-chart');
+  });
+});
+
+describe('a journey per person (10-12)', () => {
+  const { journeyBirthOf, whoOf } = require('../src/features/journey/api/journeyApi');
+  const { useSubjectsStore } = require('../src/features/subjects/store/subjectsStore');
+  const { useJourneyProfile, journeySubject, journeyProfileKey, journeyWho } = require('../src/features/journey/store/journeyProfileStore');
+  const mom = { id: 'mom', displayName: '엄마', isUser: false, birthDate: '1962-03-04', birthTime: '07:30', gender: 'female' };
+
+  beforeEach(() => {
+    useSubjectsStore.setState({ self: { id: 'self', displayName: 'me', isUser: true, birthDate: '1989-12-05', gender: 'male' }, subjects: [mom] });
+    useJourneyProfile.setState({ subjectId: 'self' });
+    useSavedJourneys.setState({ journeys: [], unlocks: {}, heard: {} });
+  });
+
+  it('rides for the chosen person, and only the account holder is sent as self', () => {
+    expect(journeySubject().id).toBe('self');
+    useJourneyProfile.setState({ subjectId: 'mom' });
+    expect(journeySubject()).toBe(mom);
+    expect(whoOf('ko', journeyBirthOf(mom))).toEqual({
+      base_info: { lang: 'ko', first: { birth_year: 1962, birth_month: 3, birth_day: 4, birth_hour: 7, birth_minute: 30, gender: 'female' } },
+    });
+    // A profile deleted since: back to the account holder.
+    useJourneyProfile.setState({ subjectId: 'gone' });
+    expect(journeySubject().id).toBe('self');
+  });
+
+  it('keeps another person\'s ride apart from the player\'s own, under the old keys for the player', () => {
+    const store = useSavedJourneys.getState();
+    store.save({ journeyId: 'newyear-2027', counselorId: 'theo', tone: 'theo', lang: 'ko', year: 2027, content: content('me') });
+    useJourneyProfile.setState({ subjectId: 'mom' });
+    expect(journeyProfileKey()).toBe('1962-03-04 07:30 F');
+    store.save({ journeyId: 'newyear-2027', counselorId: 'theo', tone: 'theo', lang: 'ko', year: 2027, content: content('mom'), ...journeyWho() });
+    store.markHeard('newyear-2027', 'career');
+    const rows = useSavedJourneys.getState().journeys;
+    expect(rows.map(r => r.id).sort()).toEqual([savedJourneyId('newyear-2027', 'theo'), savedJourneyId('newyear-2027', 'theo', '1962-03-04 07:30 F')].sort());
+    expect(rows.find(r => r.profileKey)?.subjectName).toBe('엄마');
+    expect(useSavedJourneys.getState().heard).toEqual({ 'newyear-2027@1962-03-04 07:30 F': ['career'] });
+  });
+});
+
+describe('the station platform (3D cabin)', () => {
+  const api = require('../src/features/journey/api/journeyApi');
+  const { useSubjectsStore } = require('../src/features/subjects/store/subjectsStore');
+
+  it('waits on the platform once loaded, and only depart() starts the reading', async () => {
+    useSubjectsStore.setState({ self: { id: 'self', displayName: 'me', isUser: true, birthDate: '1990-01-01', gender: 'male' } });
+    const spy = jest.spyOn(api, 'fetchJourneyContent').mockResolvedValue({ content: content('p') });
+    await useJourneyPlayer.getState().board('newyear-2027', 'theo', 'theo', 'ko', { platform: true });
+    expect(useJourneyPlayer.getState().status).toBe('platform');
+    expect(useJourneyPlayer.getState().chapterIndex).toBe(0);
+
+    useJourneyPlayer.getState().depart();
+    // startChapter awaits the chapter's voice URL (none here: it runs silent) before it plays.
+    for (let i = 0; i < 20 && useJourneyPlayer.getState().status === 'platform'; i++)
+      await new Promise(r => setImmediate(r));
+    expect(useJourneyPlayer.getState().status).toBe('playing');
+    spy.mockRestore();
+    useJourneyPlayer.getState().stop();
+  });
+
+  it('is on the platform before the reading arrives; seated early, it departs as soon as it lands (10-07)', async () => {
+    useSubjectsStore.setState({ self: { id: 'self', displayName: 'me', isUser: true, birthDate: '1990-01-01', gender: 'male' } });
+    let land: (v: unknown) => void = () => {};
+    const spy = jest.spyOn(api, 'fetchJourneyContent').mockReturnValue(new Promise(r => { land = r; }));
+    const boarding = useJourneyPlayer.getState().board('newyear-2027', 'theo', 'theo', 'ko', { platform: true });
+    await new Promise(r => setImmediate(r));
+    expect(useJourneyPlayer.getState()).toMatchObject({ status: 'platform', content: null });
+
+    useJourneyPlayer.getState().depart();   // JOURNEY_SEATED before the reading is written
+    expect(useJourneyPlayer.getState().status).toBe('platform');
+
+    land({ content: content('p') });
+    await boarding;
+    for (let i = 0; i < 20 && useJourneyPlayer.getState().status === 'platform'; i++)
+      await new Promise(r => setImmediate(r));
+    expect(useJourneyPlayer.getState().status).toBe('playing');
+    spy.mockRestore();
+    useJourneyPlayer.getState().stop();
+  });
+
+  it('ignores depart() anywhere but the platform', () => {
+    useJourneyPlayer.setState({ status: 'paused' });
+    useJourneyPlayer.getState().depart();
+    expect(useJourneyPlayer.getState().status).toBe('paused');
+  });
+});
