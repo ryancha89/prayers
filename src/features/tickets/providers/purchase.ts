@@ -1,81 +1,40 @@
 import { Platform } from 'react-native';
 
 /**
- * The store, behind a guarded require — same shape as Apple Sign In, for the same reason.
+ * The store (react-native-iap 16 / OpenIAP: StoreKit 2 on iOS, Play Billing on Android), behind a
+ * guarded require so a build without the native module neither crashes on the import nor shows a buy
+ * button that always fails — `storeAvailable()` says so and callers fall back.
  *
- * `react-native-iap` is a pod, and the products have to exist in App Store Connect before any of
- * this returns anything. Neither is done. A bundle built before that must not CRASH on the import
- * and must not show a buy button that always fails: it says the purchase is not available in this
- * build, which is exactly what is true.
+ * Everything sold is a CONSUMABLE one-time product: the Prayer Coin packs (`prayer_coin_<base>`) and
+ * the journey pass. They must exist in App Store Connect / Play Console (or, for local runs from
+ * Xcode, in ios/prayers/PrayerCoins.storekit) for the store to return them.
  *
- * ⚠️ The receipt is NOT validated here, and must not be. The server re-checks it
- * (TicketSubscriptionService#activate keeps a transaction ledger so the same purchase cannot grant
- * twice); a client that decides for itself that a purchase happened is a client that can be told to
- * decide it for free.
+ * ⚠️ The receipt is NOT validated here, and must not be. The server verifies it (Apple JWS / Play
+ * Developer API) and keeps a per-transaction ledger so one purchase cannot credit twice; a client
+ * that decides for itself that a purchase happened is a client that can be told to decide it for free.
  */
-export interface PurchaseResult {
-  productId: string;
-  transactionId?: string;
-  originalTransactionId?: string;
-  expiresAt?: string;
-}
-
-type IapModule = {
-  initConnection(): Promise<unknown>;
-  requestSubscription(opts: { sku: string }): Promise<unknown>;
-  getAvailablePurchases?(): Promise<unknown[]>;
-};
-
-function load(): IapModule | null {
+function load(): unknown {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require('react-native-iap');
-    return (mod?.default ?? mod) as IapModule;
+    return mod?.default ?? mod;
   } catch {
     return null;
   }
 }
 
-/** 27-09: the pod is in now (for the journey), but the ticket SUBSCRIPTIONS are still not products
- *  in App Store Connect — a buy button for them would always fail, and review would see it fail. */
-const SUBSCRIPTIONS_IN_STORE = false;
-
-export function purchaseAvailable(): boolean {
-  return SUBSCRIPTIONS_IN_STORE && Platform.OS === 'ios' && load() != null;
-}
-
-export async function buySubscription(productId: string): Promise<PurchaseResult> {
-  const iap = load();
-  if (!iap) {
-    throw new Error(
-      'In-app purchase is not in this build — the react-native-iap pod is not installed and the ' +
-        'products are not configured in App Store Connect.',
-    );
-  }
-  await iap.initConnection();
-  const purchase = (await iap.requestSubscription({ sku: productId })) as
-    | {
-        transactionId?: string;
-        originalTransactionIdentifierIOS?: string;
-        transactionDate?: number;
-      }
-    | undefined;
-
-  return {
-    productId,
-    transactionId: purchase?.transactionId,
-    originalTransactionId: purchase?.originalTransactionIdentifierIOS,
-    // Left undefined rather than guessed: the server reads the real expiry from the store receipt,
-    // and a date invented here would be a date the ledger then trusts.
-    expiresAt: undefined,
-  };
-}
-
-// ── One-time products (27-09: the 2027 journey, 9,900원, iOS AND Android) ──────────────────────
+// ── One-time products: the journey pass (27-09) and the Prayer Coin packs (10-15), iOS and Android ──
 
 /** react-native-iap 16 (OpenIAP): purchases arrive through listeners, not as the return value. */
 type Sub = { remove(): void };
-type StorePurchase = { productId: string; purchaseToken?: string | null; transactionId?: string | null; id?: string };
+type StorePurchase = {
+  productId: string;
+  purchaseToken?: string | null;
+  transactionId?: string | null;
+  id?: string;
+  /** Android: 'pending' is a purchase the buyer has not paid yet (cash, slow card) — not yet ours. */
+  purchaseState?: 'pending' | 'purchased' | 'unknown';
+};
 type IapProductModule = {
   initConnection(): Promise<unknown>;
   fetchProducts(opts: { skus: string[]; type?: 'in-app' | 'subs' }): Promise<{ id: string; displayPrice?: string }[] | null>;
@@ -83,6 +42,7 @@ type IapProductModule = {
   purchaseUpdatedListener(cb: (p: StorePurchase) => void): Sub;
   purchaseErrorListener(cb: (e: { code?: string; message?: string }) => void): Sub;
   finishTransaction(opts: { purchase: unknown; isConsumable?: boolean }): Promise<unknown>;
+  getAvailablePurchases?(opts?: { onlyIncludeActiveItemsIOS?: boolean }): Promise<StorePurchase[] | null>;
 };
 
 /** What the server needs to verify a one-time purchase: iOS sends the StoreKit 2 signed
@@ -106,17 +66,36 @@ export function storeAvailable(): boolean {
   return (Platform.OS === 'ios' || Platform.OS === 'android') && productModule() != null;
 }
 
+/** initConnection once per process — every call after the first is a no-op for the store anyway,
+ *  but each one was a round trip on the way to a price or a buy. Reset when it fails. */
+let connecting: Promise<unknown> | null = null;
+function connect(iap: IapProductModule): Promise<unknown> {
+  if (!connecting) connecting = iap.initConnection().catch(e => { connecting = null; throw e; });
+  return connecting;
+}
+
+/**
+ * The store's own price strings ("₩3,300", "$2.49") for every product it actually sells, in ONE
+ * request. A product missing from the answer is not in the store (not created in App Store Connect /
+ * Play Console yet, or no StoreKit configuration in this run) — callers treat it as unbuyable there.
+ */
+export async function storePrices(productIds: string[]): Promise<Record<string, string>> {
+  const iap = productModule();
+  if (!iap || productIds.length === 0) return {};
+  try {
+    await connect(iap);
+    const list = (await iap.fetchProducts({ skus: productIds, type: 'in-app' })) ?? [];
+    const out: Record<string, string> = {};
+    list.forEach(p => { if (productIds.includes(p.id)) out[p.id] = p.displayPrice ?? ''; });
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 /** The store's own price string ("₩9,900", "$6.99"), or null to show ours. */
 export async function productPrice(productId: string): Promise<string | null> {
-  const iap = productModule();
-  if (!iap) return null;
-  try {
-    await iap.initConnection();
-    const list = await iap.fetchProducts({ skus: [productId], type: 'in-app' });
-    return list?.find(p => p.id === productId)?.displayPrice ?? null;
-  } catch {
-    return null;
-  }
+  return (await storePrices([productId]))[productId] || null;
 }
 
 export async function buyProduct(productId: string): Promise<ProductPurchase> {
@@ -124,7 +103,8 @@ export async function buyProduct(productId: string): Promise<ProductPurchase> {
   if (!iap) {
     throw new Error('In-app purchase is not in this build — react-native-iap is not installed.');
   }
-  await iap.initConnection();
+  await connect(iap);
+  inFlight.add(productId);
   const p = await new Promise<StorePurchase>((resolve, reject) => {
     const subs: Sub[] = [];
     const done = () => subs.forEach(x => x.remove());
@@ -145,16 +125,66 @@ export async function buyProduct(productId: string): Promise<ProductPurchase> {
         done();
         reject(e);
       });
-  });
-  if (!p.purchaseToken) throw new Error('The store returned no purchase token.');
+  }).finally(() => inFlight.delete(productId));
+  // Android: accepted but not paid yet. It is NOT credited and NOT finished here — the store
+  // delivers it again once it is paid, and the purchase listener (pendingPurchases) takes it then.
+  if (p.purchaseState === 'pending') throw new Error('pending');
+  const out = toProductPurchase(p);
+  if (!out) throw new Error('The store returned no purchase token.');
+  return out;
+}
+
+/** Products a buy flow is waiting on right now: the app-wide listener leaves those to the buy. */
+const inFlight = new Set<string>();
+export const buyingNow = (productId: string) => inFlight.has(productId);
+
+function toProductPurchase(p: StorePurchase): ProductPurchase | null {
+  if (!p.purchaseToken) return null;
   const transactionId = p.transactionId ?? p.id;
   return {
     platform: Platform.OS === 'ios' ? 'ios' : 'android',
-    productId,
+    productId: p.productId,
     purchaseToken: String(p.purchaseToken),
     transactionId: transactionId ? String(transactionId) : undefined,
     raw: p,
   };
+}
+
+/**
+ * Paid purchases the store says were never finished — the app died, or the server could not be
+ * reached, between the payment and `finishPurchase`. The store keeps them until they are finished
+ * and that is the whole recovery: hand each to the server again (idempotent per transaction), then
+ * finish it.
+ */
+export async function unfinishedPurchases(): Promise<ProductPurchase[]> {
+  const iap = productModule();
+  if (!iap?.getAvailablePurchases) return [];
+  try {
+    await connect(iap);
+    const list = (await iap.getAvailablePurchases({ onlyIncludeActiveItemsIOS: false })) ?? [];
+    return list
+      .filter(p => p.purchaseState !== 'pending')
+      .map(toProductPurchase)
+      .filter((p): p is ProductPurchase => p != null);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Purchases that arrive OUTSIDE a buy: an Android pending purchase that got paid, an Ask to Buy
+ * approval, a transaction StoreKit re-delivers on launch. Returns the unsubscribe.
+ */
+export function onStorePurchase(cb: (p: ProductPurchase) => void): () => void {
+  const iap = productModule();
+  if (!iap) return () => {};
+  const sub = iap.purchaseUpdatedListener(p => {
+    if (p.purchaseState === 'pending' || inFlight.has(p.productId)) return;
+    const out = toProductPurchase(p);
+    if (out) cb(out);
+  });
+  connect(iap).catch(() => {});
+  return () => sub.remove();
 }
 
 /**

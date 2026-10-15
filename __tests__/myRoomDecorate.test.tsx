@@ -624,7 +624,7 @@ describe('skins', () => {
     themed('modern');
     expect(skinCard('modern').props.accessibilityState).toEqual({ selected: true });
     expect(doneOff()).toBe(true);
-    expect(status()).toBe('이 스킨을 계속 쓰려면 구매하세요 · 500코인');
+    expect(status()).toBe('이 스킨을 계속 쓰려면 구매하세요 · 500 PC');
     expect(has('myroom-skin-buy')).toBe(true);
     // Back to an owned skin: the offer goes, Done comes back.
     await act(async () => { skinCard('basic').props.onPress(); });
@@ -730,7 +730,7 @@ describe('easy to understand', () => {
     changed(ROOM, false, 'overlap', 'l1');
     expect(status()).toBe('다른 가구와 겹쳐요 — 빈 곳으로 옮겨 주세요');
     changed({ ...ROOM, theme: 'modern' }, true);
-    expect(status()).toBe('이 스킨을 계속 쓰려면 구매하세요 · 500코인');
+    expect(status()).toBe('이 스킨을 계속 쓰려면 구매하세요 · 500 PC');
     // Two lines at most, and smaller rather than clipped.
     const line = tree!.root.findAll(n => n.props.testID === 'myroom-decorate-status' && typeof n.type === 'string')[0].props;
     expect(line.numberOfLines).toBe(2);

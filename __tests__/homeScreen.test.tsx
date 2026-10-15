@@ -6,7 +6,7 @@ import { useLanguageStore } from '../src/shared/i18n';
 import { CategoryTabs } from '../src/features/counselors/components/CategoryTabs';
 import { CounselorGrid } from '../src/features/counselors/components/CounselorGrid';
 import { HomeHeader } from '../src/features/counselors/components/HomeHeader';
-import { fetchTicketBalance } from '../src/features/counseling/api/tickets';
+import { useCoins } from '../src/features/coins/store/coinStore';
 
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
@@ -18,7 +18,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   default: { getItem: async () => null, setItem: async () => {}, removeItem: async () => {} },
 }));
 jest.mock('../src/shared/audio/sfx', () => ({ sfx: { tap: jest.fn(), select: jest.fn() } }));
-jest.mock('../src/features/counseling/api/tickets', () => ({ fetchTicketBalance: jest.fn() }));
+// The wallet is the coin store; the refresh is the server's and not this test's.
+jest.mock('../src/features/coins/api/coinsApi', () => ({ refreshCoins: async () => {} }));
 jest.mock('../src/features/conversations/syncConversations', () => ({
   syncConversationsFromServer: async () => null,
 }));
@@ -30,7 +31,7 @@ beforeEach(async () => {
   mockNavigate.mockClear();
   useLanguageStore.setState({ lang: 'ko' });
   useConversationsStore.setState({ order: [], byId: {} });
-  jest.mocked(fetchTicketBalance).mockResolvedValue({ tickets: 12, normal: 12, pro: 0 });
+  useCoins.setState({ balance: 1200 });
 });
 afterEach(() => { if (tree) act(() => tree.unmount()); });
 const render = async () => {
@@ -68,15 +69,15 @@ it('resumes a real conversation with its original subject, skipping empty or rem
   });
 });
 
-it('shows the real ticket balance and never invents minutes or a zero balance on failure', async () => {
+it('shows the Prayer Coins wallet and never invents a zero balance when it is unknown', async () => {
   await render();
-  expect(tree.root.findByType(HomeHeader).props.balanceLabel).toBe('Prayer Ticket 12장');
+  expect(tree.root.findByType(HomeHeader).props.balanceLabel).toBe('Prayer Coins 1,200개');
   act(() => tree.root.findByType(HomeHeader).props.onPressBalance());
   expect(mockNavigate).toHaveBeenCalledWith('Tickets');
   act(() => tree.unmount());
-  jest.mocked(fetchTicketBalance).mockResolvedValue(null);
+  useCoins.setState({ balance: null });
   await render();
-  expect(tree.root.findByType(HomeHeader).props.balanceLabel).not.toMatch(/0|12/);
+  expect(tree.root.findByType(HomeHeader).props.balanceLabel).not.toMatch(/\d/);
   expect(tree.root.findAll(p =>
     p.props.accessibilityLabel?.startsWith('이어서 이야기하기'),
   )).toHaveLength(0);

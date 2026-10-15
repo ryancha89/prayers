@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Image, Pressable, Share, StyleSheet, View } from 'react-native';
+import { Animated, Image, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -65,7 +65,7 @@ export { itemName } from '../names';
 
 /**
  * What of the room the screen's UI hides, for VIEW_INSETS: the top row (badge and icons) and the
- * bottom row (편집, the motto, share), in either orientation. The stick and the run button stand in
+ * bottom row (편집, the motto, exit), in either orientation. The stick and the run button stand in
  * the corners and are not counted — the player walks behind them, the camera does not frame around
  * them (the world's rule). In decorate mode `top` is DecorateBar and `bottom` the tray's dock
  * (selection bar included), both measured — Unity fits the edit camera into what is left, and the
@@ -91,7 +91,7 @@ const RUN = 54;
  * pinch, double-tap back behind the player.
  *
  * THE HUD (07-10 mockup): profile badge top-left; mail, gift, diary and menu as bare icons top-right;
- * the stick bottom-left over 편집, run over share bottom-right, the motto between them. What used to
+ * the stick bottom-left over 편집, run over exit bottom-right, the motto between them. What used to
  * be the top bar — back to the world, 2D, the coin pill — lives in the menu sheet now. Each piece is
  * backed by something real:
  *   badge  level + title derived from the player's own activity (myroom/level.ts); tap → profile
@@ -101,7 +101,7 @@ const RUN = 54;
  *   편집    the decorate sheet: owned pieces and the server's shop (coins). Arranging them is Unity's
  *          decorate mode, not built — the sheet says so
  *   run    MYROOM_RUN on/off (the room's own message; Unity's walker may not honour it yet)
- *   share  the system share sheet with a line of text.
+ *   exit   back to the world, from anywhere in the room (share removed 10-15).
  *
  * UNITY IS THE ROOM, RN IS EVERYTHING YOU TOUCH, as on the world: the stick sends WALK_INPUT (Unity
  * routes it to the room's walker while the room is up), the camera gestures are read on a layer over
@@ -297,7 +297,7 @@ export const MyRoomScreen: React.FC = () => {
     });
   }, [editing, navigation]);
   // The 편집 pill grew a longer word and an icon (꾸미기 / Trang trí phòng): the motto between it and
-  // share is sized from its measured width, not a constant.
+  // exit is sized from its measured width, not a constant.
   const [pillW, setPillW] = useState(76);
   const look = useMyRoomCamera(controlsOn, send, editing ? { onTap: decorate.tap, onDrag: decorate.drag } : null);
   const owned = useMyRoomStore(s => s.byUser[myRoomUserKey()]?.owned ?? null);
@@ -385,18 +385,10 @@ export const MyRoomScreen: React.FC = () => {
     setChecking(false);
     if (!r) return;
     setAttendance(a => (a ? {
-      ...a, checkedToday: true, freeBalance: r.freeBalance, freeCap: r.freeCap,
+      ...a, checkedToday: true, coinBalance: r.coinBalance ?? a.coinBalance,
       daysTotal: r.daysTotal ?? a.daysTotal + (r.ok ? 1 : 0),
     } : a));
-    say(r.granted > 0
-      ? t('home.attend.granted', { count: r.granted })
-      : r.capReached ? t('home.attend.full', { cap: r.freeCap }) : t('home.attend.done'));
-  };
-
-  // No share flow exists in the app: the system sheet with one line is all this is.
-  const share = () => {
-    sfx.tap();
-    Share.share({ message: t('myroom.shareText') }).catch(() => {});
+    say(r.granted > 0 ? t('home.attend.granted', { count: r.granted }) : t('home.attend.done'));
   };
 
   const openSheet = (which: 'menu' | 'profile' | 'inbox') => () => { sfx.tap(); setSheet(which); };
@@ -511,7 +503,7 @@ export const MyRoomScreen: React.FC = () => {
         <WorldJoystick visible={walkOn && !atBook} />
       </View>
 
-      {/* Run, over share: MYROOM_RUN, never WORLD_RUN (that would set the WORLD's run for the way
+      {/* Run, over exit: MYROOM_RUN, never WORLD_RUN (that would set the WORLD's run for the way
           back). Gold while on. */}
       {walkOn && !atBook && (
         <View pointerEvents="box-none" style={[styles.run, { right: safe.right + spacing.lg - (RUN - ROW - 4) / 2, bottom: bottomPad + ROW + spacing.lg }]}>
@@ -519,7 +511,7 @@ export const MyRoomScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Bottom row: 편집, the motto, share. Decorate mode's tray instead. */}
+      {/* Bottom row: 편집, the motto, the way out. Decorate mode's tray instead. */}
       {held && !editing ? null : editing ? (
         <DecorateTray
           owned={owned}
@@ -562,7 +554,8 @@ export const MyRoomScreen: React.FC = () => {
         <View style={styles.mottoBox} pointerEvents="none">
           <Motto text={t('myroom.motto')} width={Math.max(0, Math.min(260, screen.width - 2 * (spacing.lg + pillW + spacing.md) - safe.left - safe.right))} />
         </View>
-        <RingButton testID="myroom-share" icon="share" size={ROW + 4} label={t('myroom.share')} onPress={share} />
+        {/* Out to the world from anywhere in the room (10-15) — not only at the door or in ☰. */}
+        <RingButton testID="myroom-exit" icon="exit" size={ROW + 4} label={t('myroom.back')} onPress={toWorld} />
       </View>
       )}
 

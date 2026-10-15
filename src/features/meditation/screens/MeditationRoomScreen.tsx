@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLang, useT } from '../../../shared/i18n';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
 import { sfx } from '../../../shared/audio/sfx';
-import { backgroundMusic } from '../../../shared/audio/backgroundMusic';
+import { backgroundMusic, meditationBed } from '../../../shared/audio/backgroundMusic';
 import { holdScreenAwake } from '../../../shared/device/keepAwake';
 import { BREATH, CYCLE_MS, MeditationSession, SESSION_MS, breathSync, type Phase, type SessionState } from '../session';
 import { UnityHost } from '../../counseling/components/UnityHost';
@@ -310,7 +310,7 @@ export const MeditationRoomScreen: React.FC = () => {
     setState(session.read());
     startAnimation();
     tellRoom('breathing');
-    backgroundMusic.start('meditation');
+    backgroundMusic.start(meditationBed(lang));
     // The spoken guide (English only, for now — see guideVoice.ts). A fresh start lets the bell ring
     // out first; Carry on picks the voice up at once, where it stopped.
     clearGuideTimer();

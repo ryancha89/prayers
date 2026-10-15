@@ -16,6 +16,7 @@ import { CATEGORY_ICON, FIELDS, KIND_ICON, MOOD_ICON, isDiaryKind, type ArchiveM
 import { dropLocalPhotos } from '../../myroom/diary/photos';
 import { MemoryEditor } from '../components/MemoryEditor';
 import { chartFromFields, pillarsText } from '../../saju/chart';
+import { BirthPreview } from '../../saju/components/BirthPreview';
 import { column } from '../../../shared/device/screen';
 import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
@@ -170,6 +171,10 @@ export const ArchiveSectionScreen: React.FC = () => {
               <Text style={styles.linkedEdit}>{t('archive.editProfile')}</Text>
             </Pressable>
           </View>
+        )}
+        {/* The star sign, the animal and the pillars for the profile above (10-15, user: "이 화면에 표시"). */}
+        {category === 'profile' && !!self.birthDate && (
+          <BirthPreview birthDate={self.birthDate} birthTime={self.birthTime || undefined} />
         )}
 
         {adding && (

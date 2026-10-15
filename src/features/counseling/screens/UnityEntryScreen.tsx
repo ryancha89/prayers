@@ -15,7 +15,8 @@ import { getUnityBridge, isNativeUnity, unityApiBase } from '../bridge';
 import { isPixelCounselor } from '../pixel/pixelCounselors';
 import { getUserAuth } from '../../auth/store/authStore';
 import { CounselingTopic, UnityToRNEvent } from '../types';
-import { fetchTicketBalance } from '../api/tickets';
+import { CONSULT_COST, fetchCoins } from '../../coins/api/coinsApi';
+import { useCoins } from '../../coins/store/coinStore';
 import { useScreen } from '../../../shared/device/screen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -57,10 +58,11 @@ export const UnityEntryScreen: React.FC = () => {
 
   useEffect(() => {
     const ac = new AbortController();
-    fetchTicketBalance(ac.signal).then(balance => {
-      // An unknown balance is NOT zero — see fetchTicketBalance. Locking the player out because the
-      // server hiccuped would be a worse bug than the one this check exists to fix.
-      setBlocked(balance != null && balance.tickets <= 0);
+    fetchCoins(ac.signal).then(r => {
+      if (r) useCoins.getState().setWallet(r.balance, r.products);
+      // An unknown balance is NOT zero. Locking the player out because the server hiccuped would be
+      // a worse bug than the one this check exists to fix — the server still refuses an unpaid turn.
+      setBlocked(r != null && r.balance < CONSULT_COST);
     });
     return () => ac.abort();
   }, []);

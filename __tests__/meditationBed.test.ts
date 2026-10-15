@@ -71,7 +71,7 @@ jest.mock(
   { virtual: true },
 );
 
-import { backgroundMusic } from '../src/shared/audio/backgroundMusic';
+import { backgroundMusic, meditationBed } from '../src/shared/audio/backgroundMusic';
 
 /** Let the (deferred) load callback run — see the double's constructor. */
 const settle = () => new Promise(resolve => setImmediate(resolve));
@@ -94,6 +94,14 @@ describe('the two beds', () => {
     expect(loaded).toEqual(['prayers_ambient.m4a']);
   });
 
+  it('keeps the Korean-voiced bed for Korean only (10-15: no Korean under the English guide)', async () => {
+    expect(meditationBed('ko')).toBe('meditationKo');
+    for (const lang of ['en', 'ja', 'zh-CN', 'vi']) expect(meditationBed(lang)).toBe('meditation');
+    backgroundMusic.start(meditationBed('ko'));
+    await settle();
+    expect(loaded[loaded.length - 1]).toBe('meditation_bed.m4a');
+  });
+
   it('swaps to the meditation loop when that room asks for it', async () => {
     backgroundMusic.start();
     await settle();
@@ -102,7 +110,7 @@ describe('the two beds', () => {
 
     // One file per instance: the swap has to release the old one, not just turn it down.
     expect(released).toContain('prayers_ambient.m4a');
-    expect(loaded[loaded.length - 1]).toBe('meditation_bed.m4a');
+    expect(loaded[loaded.length - 1]).toBe('meditation_bed_music.m4a');
   });
 
   it('does not reload the file it is already playing', async () => {
@@ -111,7 +119,7 @@ describe('the two beds', () => {
     backgroundMusic.start('meditation');
     await settle();
 
-    expect(loaded).toEqual(['meditation_bed.m4a']);
+    expect(loaded).toEqual(['meditation_bed_music.m4a']);
     expect(released).toEqual([]);
   });
 
@@ -121,7 +129,7 @@ describe('the two beds', () => {
     backgroundMusic.start('app');
     await settle();
 
-    expect(released).toContain('meditation_bed.m4a');
+    expect(released).toContain('meditation_bed_music.m4a');
     expect(loaded[loaded.length - 1]).toBe('prayers_ambient.m4a');
   });
 });
@@ -152,8 +160,8 @@ describe('pausing the bed', () => {
     // The fade runs on a timer before the pause lands.
     await new Promise(resolve => setTimeout(resolve, 1200));
 
-    expect(events).toContain('pause:meditation_bed.m4a');
-    expect(events).not.toContain('stop:meditation_bed.m4a');
+    expect(events).toContain('pause:meditation_bed_music.m4a');
+    expect(events).not.toContain('stop:meditation_bed_music.m4a');
     expect(released).toEqual([]);
   });
 

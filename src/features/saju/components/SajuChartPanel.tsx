@@ -7,18 +7,18 @@ import { sayGlyphs } from '../../counseling/api/sajuGlyphs';
 import { chartFromFields, type Chart } from '../chart';
 import { currentDecadeIndex, fetchLuck, type Luck, type LuckItem } from '../luckApi';
 
-type Element = 'wood' | 'fire' | 'earth' | 'metal' | 'water';
+export type Element = 'wood' | 'fire' | 'earth' | 'metal' | 'water';
 
-const ELEMENTS: Element[] = ['wood', 'fire', 'earth', 'metal', 'water'];
+export const ELEMENTS: Element[] = ['wood', 'fire', 'earth', 'metal', 'water'];
 
-const ELEMENT_OF: Record<string, Element> = {
+export const ELEMENT_OF: Record<string, Element> = {
   甲: 'wood', 乙: 'wood', 丙: 'fire', 丁: 'fire', 戊: 'earth',
   己: 'earth', 庚: 'metal', 辛: 'metal', 壬: 'water', 癸: 'water',
   寅: 'wood', 卯: 'wood', 巳: 'fire', 午: 'fire', 辰: 'earth', 戌: 'earth',
   丑: 'earth', 未: 'earth', 申: 'metal', 酉: 'metal', 亥: 'water', 子: 'water',
 };
 
-const ELEMENT_COLOR: Record<Element, string> = {
+export const ELEMENT_COLOR: Record<Element, string> = {
   wood: '#4ADE80',
   fire: '#F87171',
   earth: '#E9C46A',

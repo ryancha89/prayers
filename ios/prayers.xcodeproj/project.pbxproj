@@ -16,6 +16,7 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13D9BB617D6A43ECB2CA6A85 /* ui_select.m4a in Resources */ = {isa = PBXBuildFile; fileRef = DDB7BFE7DC584CE480F4AB88 /* ui_select.m4a */; };
 		15F2145FDC3845E1A910AA5C /* ui_tap.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 36EF57491C8B427EAC73EC6C /* ui_tap.m4a */; };
+		2280F67F3BAD4970B69F4275 /* meditation_bed_music.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 95337B0193F24C44BB3CDA41 /* meditation_bed_music.m4a */; };
 		2D344DA3B1E140FDA729241A /* jsfx_maple.m4a in Resources */ = {isa = PBXBuildFile; fileRef = E63AE8D06B474C3091B66224 /* jsfx_maple.m4a */; };
 		2E0434C422CD4435918500C5 /* meditation_guide_ja.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 4A020D0517254B89BAAE5A4F /* meditation_guide_ja.m4a */; };
 		3255FA2646F9405C975C738A /* train_ambience.m4a in Resources */ = {isa = PBXBuildFile; fileRef = ACD4F8ADB0B54FCFB2EFF99F /* train_ambience.m4a */; };
@@ -58,6 +59,7 @@
 		FAC6A42E4FFE4A949772FE55 /* med_bell_in.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 29417F66B3DE49B5A150C6B6 /* med_bell_in.m4a */; };
 		FB7BA4B428DF4975881AEB7B /* jsfx_hologram.m4a in Resources */ = {isa = PBXBuildFile; fileRef = DCA842DB7E2447CDBD25A6DA /* jsfx_hologram.m4a */; };
 		FD7F93CE613A4EFC8535DD7E /* jsfx_card_flip.m4a in Resources */ = {isa = PBXBuildFile; fileRef = BE866B005D694A198CF58320 /* jsfx_card_flip.m4a */; };
+		FE27980B0C4F3E8110E1D448 /* DeviceKind.m in Sources */ = {isa = PBXBuildFile; fileRef = 310A2BEE462169CA4FBF247F /* DeviceKind.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +77,7 @@
 		25D64D234F6C48769DCB12BF /* ui_back.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = ui_back.m4a; path = ../src/shared/assets/sounds/ui_back.m4a; sourceTree = "<group>"; };
 		29417F66B3DE49B5A150C6B6 /* med_bell_in.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = med_bell_in.m4a; path = ../src/shared/assets/sounds/med_bell_in.m4a; sourceTree = "<group>"; };
 		30316843172F4D2EB0662448 /* jamb_evening_city.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jamb_evening_city.m4a; path = ../src/shared/assets/sounds/jamb_evening_city.m4a; sourceTree = "<group>"; };
+		310A2BEE462169CA4FBF247F /* DeviceKind.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = prayers/DeviceKind.m; sourceTree = "<group>"; };
 		336CF45A3F874F06BAAA7803 /* meditation_guide_zh.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = meditation_guide_zh.m4a; path = ../src/shared/assets/sounds/meditation_guide_zh.m4a; sourceTree = "<group>"; };
 		36EF57491C8B427EAC73EC6C /* ui_tap.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = ui_tap.m4a; path = ../src/shared/assets/sounds/ui_tap.m4a; sourceTree = "<group>"; };
 		3936F922653D4133851D2DD1 /* jtrav_departure.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jtrav_departure.m4a; path = ../src/shared/assets/sounds/jtrav_departure.m4a; sourceTree = "<group>"; };
@@ -99,6 +102,7 @@
 		8E9AB7E73CAD478E920E652E /* meditation_bed.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = meditation_bed.m4a; path = ../src/shared/assets/sounds/meditation_bed.m4a; sourceTree = "<group>"; };
 		8EB65E17D9864A95BF76CC1E /* jamb_meadow.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jamb_meadow.m4a; path = ../src/shared/assets/sounds/jamb_meadow.m4a; sourceTree = "<group>"; };
 		91DF6A4F32CF4DB98FF456B0 /* jamb_cosmic.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jamb_cosmic.m4a; path = ../src/shared/assets/sounds/jamb_cosmic.m4a; sourceTree = "<group>"; };
+		95337B0193F24C44BB3CDA41 /* meditation_bed_music.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = meditation_bed_music.m4a; path = ../src/shared/assets/sounds/meditation_bed_music.m4a; sourceTree = "<group>"; };
 		9BFD6335569D4CE8BFB56B3A /* jsfx_fireflies.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jsfx_fireflies.m4a; path = ../src/shared/assets/sounds/jsfx_fireflies.m4a; sourceTree = "<group>"; };
 		ACD4F8ADB0B54FCFB2EFF99F /* train_ambience.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = train_ambience.m4a; path = ../src/shared/assets/sounds/train_ambience.m4a; sourceTree = "<group>"; };
 		B22B5EC5DA624FBA80454F2B /* jsfx_card_deal.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jsfx_card_deal.m4a; path = ../src/shared/assets/sounds/jsfx_card_deal.m4a; sourceTree = "<group>"; };
@@ -141,6 +145,7 @@
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				B49997535B81B46293E2F292 /* UnityLifecycle.m */,
 				57E8BC846E233D7B1E0A031F /* FabricCommandGuard.mm */,
+				310A2BEE462169CA4FBF247F /* DeviceKind.m */,
 			);
 			name = prayers;
 			sourceTree = "<group>";
@@ -201,6 +206,7 @@
 				01DC2FF04B554B1686E8E719 /* jamb_summer.m4a */,
 				91DF6A4F32CF4DB98FF456B0 /* jamb_cosmic.m4a */,
 				8EB65E17D9864A95BF76CC1E /* jamb_meadow.m4a */,
+				95337B0193F24C44BB3CDA41 /* meditation_bed_music.m4a */,
 			);
 			name = Resources;
 			path = "";
@@ -352,6 +358,7 @@
 				E9A1A8C0997944F281BEB497 /* jamb_summer.m4a in Resources */,
 				5E3920F3C9FE4D7AAA5EFE93 /* jamb_cosmic.m4a in Resources */,
 				BA4AE2B9D176458CB77E9801 /* jamb_meadow.m4a in Resources */,
+				2280F67F3BAD4970B69F4275 /* meditation_bed_music.m4a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -440,6 +447,7 @@
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
 				D14E31D163966341A8A078D4 /* UnityLifecycle.m in Sources */,
 				96EBC7894F1FFCAD061CD216 /* FabricCommandGuard.mm in Sources */,
+				FE27980B0C4F3E8110E1D448 /* DeviceKind.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -139,7 +139,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
                 ) : (
                   <>
                     <Icon name="lock" size={14} color={colors.gold} />
-                    {price != null && <><CoinGlyph size={16} /><Text style={styles.quarterMeta}>{price}</Text></>}
+                    {!!price && <><CoinGlyph size={16} /><Text style={styles.quarterMeta}>{price}</Text></>}
                   </>
                 )}
               </Pressable>
@@ -168,7 +168,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
           accessibilityLabel={`${price ?? ''} ${t('journey.moment.unlock')}`}>
           {s.unlocking ? <ActivityIndicator color={INK} /> : (
             <>
-              {price != null && <><Icon name="coin" size={18} color={INK} /><Text style={styles.primaryText}>{price}</Text></>}
+              {!!price && <><Icon name="coin" size={18} color={INK} /><Text style={styles.primaryText}>{price}</Text></>}
               <Text style={styles.primaryText}>{t('journey.moment.unlock')}</Text>
             </>
           )}

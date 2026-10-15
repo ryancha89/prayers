@@ -56,7 +56,8 @@ export type StoreBuyResult<R> =
   | { ok: true; confirmed: R }
   /** The server answered and did not accept it: `confirmed` says why. Nothing was consumed. */
   | { ok: false; reason: 'refused'; confirmed: R }
-  | { ok: false; reason: 'cancelled' | 'unavailable' | 'failed' };
+  /** 'pending' (Android): accepted, not paid yet — it is credited when the store delivers it paid. */
+  | { ok: false; reason: 'cancelled' | 'pending' | 'unavailable' | 'failed' };
 
 export async function buyWithStore<R>(opts: {
   productId: string;
@@ -76,8 +77,9 @@ export async function buyWithStore<R>(opts: {
   try {
     purchase = await buyProduct(opts.productId);
   } catch (e) {
-    const cancelled = String((e as Error)?.message ?? '').toLowerCase().includes('cancel');
-    return { ok: false, reason: cancelled ? 'cancelled' : 'failed' };
+    const message = String((e as Error)?.message ?? '').toLowerCase();
+    if (message === 'pending') return { ok: false, reason: 'pending' };
+    return { ok: false, reason: message.includes('cancel') ? 'cancelled' : 'failed' };
   }
   const r = await opts.confirm({
     platform: purchase.platform,

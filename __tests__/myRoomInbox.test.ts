@@ -132,7 +132,7 @@ describe('the words and the links', () => {
     expect(link('checkin:2026-10-07')).toEqual({ to: 'checkin' });
     expect(link('moment:j:m')).toBeNull();
     const coins = items().find(i => i.kind === 'coins')!;
-    expect(inboxLine(coins, t, ctx('ko'))).toMatchObject({ title: '코인 100개가 충전됐어요', link: { to: 'coins' } });
+    expect(inboxLine(coins, t, ctx('ko'))).toMatchObject({ title: '100 PC가 충전됐어요', link: { to: 'coins' } });
     const sofa = items().find(i => i.kind === 'furniture')!;
     expect(inboxLine(sofa, t, ctx('ko'))).toMatchObject({ body: '소파 — 편집에서 볼 수 있어요', link: { to: 'decorate' } });
     expect(inboxLine(items().find(i => i.id === 'reflection:m1')!, t, ctx('ko')).title).toBe('Theo의 답장이 도착했어요');

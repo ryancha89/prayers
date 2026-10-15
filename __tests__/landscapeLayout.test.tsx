@@ -35,6 +35,7 @@ jest.mock('../src/shared/audio/sfx', () => ({
 }));
 jest.mock('../src/shared/audio/backgroundMusic', () => ({
   backgroundMusic: { start: jest.fn(), pause: jest.fn(), stop: jest.fn(), release: jest.fn(), duck: jest.fn() },
+  meditationBed: () => 'meditation',
 }));
 jest.mock('../src/features/meditation/guideVoice', () => ({ guideVoice: { play: jest.fn(), pause: jest.fn(), stop: jest.fn() } }));
 jest.mock('../src/shared/device/keepAwake', () => ({ holdScreenAwake: () => () => {} }));
