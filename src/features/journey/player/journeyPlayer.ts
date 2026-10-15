@@ -78,7 +78,7 @@ const CARD_HOLD_MS = 6500;
  *  train stopped at a locked part; `premium` — an unlocked paid part is playing. '' otherwise. */
 export type MomentPhase = '' | 'locked' | 'premium';
 
-export type UnlockError = UnlockFailure['reason'];
+export type UnlockError = UnlockFailure['kind'];
 
 /** The topic effect follows the unlock by this much, so it lands after the cabin's own unlock burst
  *  (Unity plays `reveal` on locked → premium) instead of on top of it. */
@@ -1016,9 +1016,8 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     if (!result.ok) {
       // Nothing was charged and nothing is recorded: the moment stays locked. From the quarter
       // list the lock was only ever the tap's; the list stays up.
-      if (result.reason === 'insufficient' && result.coinBalance != null) useCoins.getState().setBalance(result.coinBalance);
       if (get().momentId === id) {
-        set({ unlocking: false, unlockError: result.reason, ...(get().stage === 'quarters' ? { moment: '', momentId: null } : {}) });
+        set({ unlocking: false, unlockError: result.kind, ...(get().stage === 'quarters' ? { moment: '', momentId: null } : {}) });
       }
       return;
     }
@@ -1029,7 +1028,6 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     }
     result.parts.forEach(p => useSavedJourneys.getState().addUnlock(journeyId, counselorId, chapter.id, p, result.summary));
     noteMoment(journeyId, id, result.part.label);
-    if (result.coinBalance != null) useCoins.getState().setBalance(result.coinBalance);
     set({ unlocking: false });
     // The whole chapter opened: any clip cached for a part of it (a teaser) is stale now.
     partsOf(get().content, chapter.id).forEach((_, i) => urls.delete(clipKey(ci, i)));

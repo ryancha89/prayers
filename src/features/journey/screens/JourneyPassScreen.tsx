@@ -9,8 +9,9 @@ import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import type { RootStackParamList } from '../../../navigation/types';
-import { buyProduct, finishPurchase, productPrice, storeAvailable } from '../../tickets/providers/purchase';
-import { confirmJourneyPurchase, fetchJourneyAccess, type JourneyAccess } from '../api/journeyApi';
+import { productPrice, storeAvailable } from '../../tickets/providers/purchase';
+import { buyJourneyPass, fetchJourneyAccess, type JourneyAccess } from '../api/journeyApi';
+import { formatKrw } from '../../coins/format';
 import { JOURNEYS } from '../data/journeys';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
 import { column } from '../../../shared/device/screen';
@@ -52,7 +53,7 @@ export const JourneyPassScreen: React.FC = () => {
   }, [params.journeyId, navigation]);
 
   if (!journey) return null;
-  const price = storePrice ?? (access?.priceKrw ? t('journey.pass.krw', { price: access.priceKrw.toLocaleString('ko-KR') }) : '');
+  const price = storePrice ?? (access?.priceKrw ? formatKrw(t, access.priceKrw) : '');
   const canBuy = storeAvailable() || !!access?.devPurchase;
 
   const unlocked = () => {
@@ -65,27 +66,11 @@ export const JourneyPassScreen: React.FC = () => {
     sfx.tap();
     setBusy(true);
     try {
-      if (access.devPurchase) {
-        // Development only: the server refuses this anywhere else. Checked FIRST since the pod is
-        // in: a simulator has the store module but no App Store to take the money.
-        const r = await confirmJourneyPurchase(journey.id, { platform: 'dev' });
-        if (!r.owned) throw new Error(r.error ?? 'invalid');
-        unlocked();
-      } else if (storeAvailable()) {
-        const purchase = await buyProduct(access.productId);
-        const r = await confirmJourneyPurchase(journey.id, {
-          platform: purchase.platform,
-          productId: purchase.productId,
-          purchaseToken: purchase.purchaseToken,
-          transactionId: purchase.transactionId,
-        });
-        if (!r.owned) throw new Error(r.error ?? 'invalid');
-        await finishPurchase(purchase);
-        unlocked();
-      }
-    } catch (e) {
-      const cancelled = String((e as Error)?.message ?? '').toLowerCase().includes('cancel');
-      if (!cancelled) Alert.alert(t('journey.pass.failed'));
+      // Development only: the server refuses `dev` anywhere else (see buyJourneyPass).
+      const r = await buyJourneyPass(journey.id, access.productId, access.devPurchase);
+      if (r.ok) unlocked();
+      // Cancelled is the player's own choice, and with no store the button was never enabled.
+      else if (r.reason !== 'cancelled' && r.reason !== 'unavailable') Alert.alert(t('journey.pass.failed'));
     } finally {
       setBusy(false);
     }
@@ -108,7 +93,7 @@ export const JourneyPassScreen: React.FC = () => {
           <View style={styles.panel}>
             {INCLUDES.map(k => (
               <View key={k} style={styles.inc}>
-                <Text style={styles.incMark}>✦</Text>
+                <Icon name="sparkle" size={14} color={colors.gold} style={styles.incMark} />
                 <Text style={styles.incText}>{t(k)}</Text>
               </View>
             ))}
@@ -151,7 +136,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(26,20,52,0.9)', borderWidth: 1, borderColor: 'rgba(233,196,106,0.35)',
   },
   inc: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
-  incMark: { color: colors.gold, fontSize: 14, marginTop: 1 },
+  incMark: { marginTop: 2 },
   incText: { ...typography.body, color: colors.textPrimary, flex: 1 },
   once: { ...typography.caption, color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm },
   footer: { padding: spacing.xl, paddingTop: spacing.md, gap: spacing.sm },

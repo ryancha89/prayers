@@ -9,6 +9,8 @@ import { productPrice } from '../../tickets/providers/purchase';
 import { useCoins } from '../store/coinStore';
 import { buyCoins, refreshCoins, type CoinProduct } from '../api/coinsApi';
 import { useScreen } from '../../../shared/device/screen';
+import { CoinGlyph } from './CoinGlyph';
+import { formatCoins, formatKrw } from '../format';
 
 /** A Modal is portrait-only on iOS unless it says otherwise: opened over a landscape journey, the
  *  default would turn the whole app upright under the player for as long as the sheet was up. */
@@ -61,7 +63,7 @@ export const CoinShopSheet: React.FC = () => {
     setBusy(null);
     if (r.ok) {
       sfx.select();
-      setNote(t('coins.added', { coins: r.coinsAdded.toLocaleString() }));
+      setNote(t('coins.added', { coins: formatCoins(r.coinsAdded) }));
     } else if (r.reason !== 'cancelled') {
       setNote(t(r.reason === 'unavailable' ? 'coins.unavailable' : 'coins.failed'));
     }
@@ -77,12 +79,12 @@ export const CoinShopSheet: React.FC = () => {
         <View style={styles.head}>
           <Text style={styles.title}>{t('coins.title')}</Text>
           <Pressable hitSlop={12} onPress={() => { sfx.back(); close(); }} accessibilityRole="button" accessibilityLabel={t('coins.close')}>
-            <Text style={styles.close}>×</Text>
+            <Icon name="close" size={22} color={colors.textSecondary} />
           </Pressable>
         </View>
         <View style={styles.balanceRow}>
-          <Icon name="coin" size={18} color={colors.gold} />
-          <Text style={styles.balance}>{t('journey.moment.balance', { balance: (balance ?? 0).toLocaleString() })}</Text>
+          <CoinGlyph size={20} />
+          <Text style={styles.balance}>{t('journey.moment.balance', { balance: formatCoins(balance) })}</Text>
         </View>
         <ScrollView style={styles.rows} contentContainerStyle={styles.rowsInner} bounces={false}>
         {products.length === 0 ? (
@@ -90,8 +92,8 @@ export const CoinShopSheet: React.FC = () => {
         ) : (
           products.map(p => (
             <Pressable key={p.productId} style={styles.row} onPress={() => buy(p)} disabled={!!busy} accessibilityRole="button">
-              <Icon name="coin" size={22} color={colors.gold} />
-              <Text style={styles.coins}>{p.coins.toLocaleString()}</Text>
+              <CoinGlyph size={26} />
+              <Text style={styles.coins}>{formatCoins(p.coins)}</Text>
               {p.bonusPct > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{t('coins.bonus', { pct: p.bonusPct })}</Text>
@@ -102,7 +104,7 @@ export const CoinShopSheet: React.FC = () => {
                 <ActivityIndicator color={colors.gold} />
               ) : (
                 <Text style={styles.price}>
-                  {storePrices[p.productId] ?? t('journey.pass.krw', { price: p.priceKrw.toLocaleString('ko-KR') })}
+                  {storePrices[p.productId] ?? formatKrw(t, p.priceKrw)}
                 </Text>
               )}
             </Pressable>
@@ -126,7 +128,6 @@ const styles = StyleSheet.create({
   },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { ...typography.h3, color: colors.textPrimary },
-  close: { fontSize: 28, lineHeight: 30, color: colors.textSecondary },
   balanceRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   balance: { ...typography.caption, color: colors.textSecondary },
   rows: { flexGrow: 0, flexShrink: 1 },

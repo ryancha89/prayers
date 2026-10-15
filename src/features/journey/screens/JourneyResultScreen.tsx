@@ -133,7 +133,10 @@ export const JourneyResultScreen: React.FC = () => {
             <Row label={t('journey.result.best')} value={best} accent />
             <Row label={t('journey.result.keywords')} value={keywords} />
             <Row label={t('journey.result.caution')} value={caution} />
-            <Text style={styles.completed}>Journey Completed ✓</Text>
+            <View style={styles.completedRow}>
+              <Icon name="check" size={16} color={colors.new} />
+              <Text style={styles.completed}>{t('journey.result.completed')}</Text>
+            </View>
             <Text style={styles.kept}>{t('journey.result.kept')}</Text>
           </View>
 
@@ -210,6 +213,7 @@ const styles = StyleSheet.create({
   rowLabel: { ...typography.tiny, color: colors.textMuted, letterSpacing: 1 },
   rowValue: { ...typography.h2, color: colors.textPrimary },
   rowAccent: { color: colors.gold },
+  completedRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   completed: { ...typography.caption, color: colors.new, fontWeight: '700' },
   kept: { ...typography.tiny, color: colors.textMuted },
   actions: { flexDirection: 'row', gap: spacing.md },

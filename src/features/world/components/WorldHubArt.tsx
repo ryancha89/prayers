@@ -8,17 +8,21 @@ import { sfx } from '../../../shared/audio/sfx';
 import type { WorldZone } from '../../counseling/types';
 import { WORLD_ZONES } from '../data/zones';
 
-/** The Sanctuary's arrival arch with the crystal beyond it — the Blender world build's own render
- *  (prayers_world_build/renders/premium/Cam_SanctuaryArrival, 1280×800, JPEG). */
+/** The world hall from over its open front: the heart crystal, and the five doors round the court —
+ *  rendered from the built Unity scene (Saju ▸ Saju World ▸ Sanctuary ▸ Render World Loading Art,
+ *  1280×800, JPEG). It replaced the Blender island's arrival render on 12-10-2026 with the map. */
 const ARRIVAL = require('../assets/world_arrival.jpg');
 
-/** Where each door's label floats over the picture, as a share of the box (no-player mode only). */
+/** Where each door's label floats over the picture, as a share of the box (no-player mode only).
+ *  The hall's doors, left to right: shop, my room, counseling (centre, back), meditation, journey.
+ *  Not their exact projection — the picture is cover-cropped on a phone and loses the side doors —
+ *  but the same order, the back doors high and the side doors low. */
 const LABEL_AT: Record<WorldZone, { x: number; y: number }> = {
-  journey: { x: 0.5, y: 0.2 },
-  counseling: { x: 0.22, y: 0.34 },
-  meditation: { x: 0.78, y: 0.34 },
-  myroom: { x: 0.2, y: 0.56 },
-  shop: { x: 0.8, y: 0.56 },
+  counseling: { x: 0.5, y: 0.24 },
+  myroom: { x: 0.24, y: 0.38 },
+  meditation: { x: 0.76, y: 0.38 },
+  shop: { x: 0.2, y: 0.56 },
+  journey: { x: 0.8, y: 0.56 },
 };
 
 /**

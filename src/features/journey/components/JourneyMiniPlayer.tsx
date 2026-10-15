@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/Text';
@@ -11,6 +11,7 @@ import { sfx } from '../../../shared/audio/sfx';
 import { JOURNEYS } from '../data/journeys';
 import { JOURNEY_HERO_ART } from './JourneyTrainArt';
 import { useBottomDock } from '../../../shared/layout/bottomDock';
+import { useMiniPlayerInset } from '../../../shared/layout/miniPlayerInset';
 
 /**
  * The journey, kept alive while the player looks at something else: 🚂 title, the station and the
@@ -29,7 +30,11 @@ export const JourneyMiniPlayer: React.FC<{ aboveTabs: boolean; hidden: boolean; 
   const insets = useSafeAreaInsets();
   const s = useJourneyPlayer();
   const dock = useBottomDock(d => d.height);
-  if (hidden || !journeyActive(s) || !s.journeyId) return null;
+  const setInset = useMiniPlayerInset(i => i.set);
+  const shown = !hidden && journeyActive(s) && !!s.journeyId;
+  // Hidden: give the screens their bottom back. Shown: the height arrives from onLayout below.
+  useEffect(() => { if (!shown) setInset(0); }, [shown, setInset]);
+  if (!shown || !s.journeyId) return null;
   const journey = JOURNEYS[s.journeyId];
   const chapter = journey?.chapters[s.transitionTo ?? s.chapterIndex];
   const guide = s.counselorId ? getLocalizedCounselor(s.counselorId, lang) : undefined;
@@ -41,7 +46,8 @@ export const JourneyMiniPlayer: React.FC<{ aboveTabs: boolean; hidden: boolean; 
   const sides = { left: spacing.md + insets.left, right: spacing.md + insets.right };
 
   return (
-    <Pressable style={[styles.bar, { bottom, ...sides }]} onPress={() => { sfx.tap(); onOpen(); }} accessibilityRole="button">
+    <Pressable style={[styles.bar, { bottom, ...sides }]}
+      onLayout={e => setInset(e.nativeEvent.layout.height + spacing.sm * 2)} onPress={() => { sfx.tap(); onOpen(); }} accessibilityRole="button">
       <View style={styles.row}>
         {/* The key art, not 🚂: the emoji drew as a "?" box on the simulator's font set. */}
         <Image source={JOURNEY_HERO_ART} style={styles.thumb} />

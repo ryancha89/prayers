@@ -159,11 +159,11 @@ describe('reading the server (v2)', () => {
     });
     expect(fetchMock.mock.calls[0][0]).toMatch(/\/api\/v1\/prayers\/journeys\/newyear-2027\/unlock$/);
     fetchMock.mockResolvedValueOnce(reply(402, { error_code: 'INSUFFICIENT_COINS', price: 100, coin_balance: 30 }));
-    expect(await unlockMoment(req)).toEqual({ ok: false, reason: 'insufficient', price: 100, coinBalance: 30 });
+    expect(await unlockMoment(req)).toEqual({ ok: false, kind: 'insufficient', price: 100, balance: 30 });
     fetchMock.mockResolvedValueOnce(reply(404, { error_code: 'UNKNOWN_MOMENT' }));
-    expect(await unlockMoment(req)).toEqual({ ok: false, reason: 'unknown' });
+    expect(await unlockMoment(req)).toEqual({ ok: false, kind: 'unknown' });
     fetchMock.mockResolvedValueOnce(reply(503, { error: 'generation failed' }));
-    expect(await unlockMoment(req)).toEqual({ ok: false, reason: 'failed' });
+    expect(await unlockMoment(req)).toEqual({ ok: false, kind: 'failed' });
   });
 });
 

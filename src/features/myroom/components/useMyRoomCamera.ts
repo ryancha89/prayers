@@ -1,6 +1,6 @@
 import type { PanResponderInstance } from 'react-native';
 import type { MyRoomCamera } from '../../counseling/types';
-import { useFollowCamera } from '../../world/components/useWorldCamera';
+import { useFollowCamera, type FollowCameraOptions } from '../../world/components/useWorldCamera';
 
 /** The zoom Unity opens the room at (MyRoomBuilder.DefaultCameraZoom — keep the two equal): the
  *  follow camera a few steps behind the player, about where the old overview stood. */
@@ -25,6 +25,14 @@ export const MYROOM_HOME: MyRoomCamera = { zoom: MYROOM_START_ZOOM, yaw: 0, pitc
 export function useMyRoomCamera(
   enabled: boolean,
   send: (camera: MyRoomCamera) => void,
+  /** Decorate mode: a tap selects (MYROOM_TAP), one finger drags the piece (MYROOM_DRAG); two
+   *  fingers stay the camera. No double-tap home — two quick taps are two selections. */
+  edit?: Pick<FollowCameraOptions, 'onTap' | 'onDrag'> | null,
 ): PanResponderInstance['panHandlers'] {
-  return useFollowCamera({ enabled, home: MYROOM_HOME, send, doubleTapHome: true });
+  return useFollowCamera({
+    enabled, home: MYROOM_HOME, send,
+    doubleTapHome: !edit,
+    onTap: edit?.onTap,
+    onDrag: edit?.onDrag,
+  });
 }

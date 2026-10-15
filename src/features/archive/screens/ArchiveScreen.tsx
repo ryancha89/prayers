@@ -20,6 +20,8 @@ import { JOURNEYS } from '../../journey/data/journeys';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { useLang } from '../../../shared/i18n';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
+import { Icon } from '../../../shared/components/Icon';
 
 /**
  * 아카이브 — the tab.
@@ -98,7 +100,10 @@ export const ArchiveScreen: React.FC = () => {
         {/* What a counsellor heard, waiting for a verdict. */}
         {discoveries.length > 0 && (
           <View style={styles.discoverCard}>
-            <Text style={styles.discoverTitle}>✨ {t('archive.discovered.title')}</Text>
+            <View style={styles.iconRow}>
+              <Icon name="sparkle" size={20} color={colors.violetSoft} />
+              <Text style={[styles.discoverTitle, styles.grow]}>{t('archive.discovered.title')}</Text>
+            </View>
             {discoveries.map(d =>
               editing === d.id ? (
                 <MemoryEditor
@@ -114,9 +119,10 @@ export const ArchiveScreen: React.FC = () => {
                 />
               ) : (
                 <View key={d.id} style={styles.discoverRow}>
-                  <Text style={styles.discoverText}>
-                    {CATEGORY_ICON[d.category]} {d.content}
-                  </Text>
+                  <View style={styles.iconRow}>
+                    <Icon name={CATEGORY_ICON[d.category]} size={18} color={colors.textSecondary} />
+                    <Text style={[styles.discoverText, styles.grow]}>{d.content}</Text>
+                  </View>
                   <View style={styles.discoverActions}>
                     <Pressable
                       style={[styles.smallBtn, styles.smallBtnPrimary]}
@@ -207,7 +213,7 @@ export const ArchiveScreen: React.FC = () => {
                     openSaved(j);
                     navigation.navigate('JourneyResult');
                   }}>
-                  <Text style={styles.diaryMood}>🚂</Text>
+                  <Icon name="train" size={22} color={colors.textSecondary} style={styles.diaryIcon} />
                   <View style={styles.diaryBody}>
                     <Text style={styles.diaryDate}>
                       {t('archive.journeys.with', { name: guide?.name ?? '', date })}
@@ -217,7 +223,10 @@ export const ArchiveScreen: React.FC = () => {
                       {j.subjectName ? ` · ${j.subjectName}` : ''}
                     </Text>
                   </View>
-                  <Text style={styles.journeyOpen}>{t('archive.journeys.open')} ›</Text>
+                  <View style={styles.journeyOpenRow}>
+                    <Text style={styles.journeyOpen}>{t('archive.journeys.open')}</Text>
+                    <Icon name="chevronRight" size={12} color={colors.violetSoft} />
+                  </View>
                 </Pressable>
               );
             })}
@@ -234,7 +243,7 @@ export const ArchiveScreen: React.FC = () => {
                 sfx.tap();
                 navigation.navigate('ArchiveSection', { category: c });
               }}>
-              <Text style={styles.cellIcon}>{CATEGORY_ICON[c]}</Text>
+              <Icon name={CATEGORY_ICON[c]} size={26} color={colors.violetSoft} testID={`archive-cell-icon-${c}`} />
               <Text style={styles.cellTitle} numberOfLines={2}>
                 {t(`archive.cat.${c}` as TranslationKey)}
               </Text>
@@ -251,7 +260,7 @@ export const ArchiveScreen: React.FC = () => {
                 key={d.id}
                 style={styles.diaryRow}
                 onPress={() => navigation.navigate('ArchiveSection', { category: 'diary' })}>
-                <Text style={styles.diaryMood}>{MOOD_ICON[d.details.mood] ?? '📔'}</Text>
+                <Icon name={MOOD_ICON[d.details.mood] ?? CATEGORY_ICON.diary} size={22} color={colors.textSecondary} style={styles.diaryIcon} />
                 <View style={styles.diaryBody}>
                   <Text style={styles.diaryDate}>{d.details.date}</Text>
                   <Text style={styles.diaryText} numberOfLines={2}>
@@ -262,6 +271,7 @@ export const ArchiveScreen: React.FC = () => {
             ))}
           </View>
         )}
+        <MiniPlayerSpacer />
       </ScrollView>
     </SafeAreaView>
   );
@@ -316,14 +326,16 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   cellPressed: { backgroundColor: colors.cardPressed },
-  cellIcon: { fontSize: 24 },
   cellTitle: { ...typography.bodyStrong, color: colors.textPrimary },
   cellCount: { ...typography.caption, color: colors.textMuted },
   recent: { gap: spacing.md },
   diaryRow: { flexDirection: 'row', gap: spacing.md, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md },
-  diaryMood: { fontSize: 22 },
+  diaryIcon: { marginTop: 2 },
+  iconRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  grow: { flex: 1 },
   diaryBody: { flex: 1, gap: 2 },
   diaryDate: { ...typography.tiny, color: colors.textMuted },
   diaryText: { ...typography.body, color: colors.textPrimary },
-  journeyOpen: { ...typography.tiny, color: colors.violetSoft, alignSelf: 'center' },
+  journeyOpenRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', gap: 2 },
+  journeyOpen: { ...typography.tiny, color: colors.violetSoft },
 });

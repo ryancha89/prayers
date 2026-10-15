@@ -1,6 +1,7 @@
 import type { IconName } from '../../../shared/components/Icon';
 import type { TranslationKey } from '../../../shared/i18n';
 import type { InboxItem } from './inboxStore';
+import { formatCoins } from '../../coins/format';
 
 /** Where a row leads. Every one stays inside the room: any other route would tear it down. */
 export type InboxLink =
@@ -47,8 +48,8 @@ export function inboxLine(
     case 'coins':
       return {
         icon: 'coin',
-        title: t('inbox.coins.title', { count: Number(d.coins ?? 0) }),
-        body: t('inbox.coins.body', { balance: Number(d.balance ?? 0) }),
+        title: t('inbox.coins.title', { count: formatCoins(Number(d.coins ?? 0)) }),
+        body: t('inbox.coins.body', { balance: formatCoins(Number(d.balance ?? 0)) }),
         link: { to: 'coins' },
       };
     case 'moment':

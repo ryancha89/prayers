@@ -77,8 +77,9 @@ const Cta: React.FC<{ label: string; onPress: () => void }> = ({ label, onPress 
     accessibilityRole="button"
     accessibilityLabel={label}
     onPress={() => { sfx.select(); onPress(); }}
-    style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
+    style={({ pressed }) => [styles.cta, styles.ctaRow, pressed && styles.pressed]}>
     <Text style={styles.ctaText}>{label}</Text>
+    <Icon name="arrowRight" size={16} color={CTA_INK} />
   </Pressable>
 );
 
@@ -306,6 +307,9 @@ export const MenuSheet: React.FC<{
   );
 };
 
+/** The gold CTA's ink, for its word and its arrow alike. */
+const CTA_INK = '#1A1330';
+
 const styles = StyleSheet.create({
   backdrop: { ...absoluteFill, backgroundColor: 'rgba(5,4,20,0.25)' },
   // No left/right here: Fabric's style merge drops an `undefined`, so `left: undefined` in the side
@@ -349,7 +353,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.md, paddingVertical: spacing.md, borderRadius: radius.pill,
     backgroundColor: colors.gold, alignItems: 'center',
   },
-  ctaText: { ...typography.bodyStrong, color: '#1A1330' },
+  ctaRow: { flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  ctaText: { ...typography.bodyStrong, color: CTA_INK },
   secondary: {
     marginTop: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.pill,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center',

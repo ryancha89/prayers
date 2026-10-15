@@ -529,7 +529,7 @@ export const JourneyScreen: React.FC = () => {
             {storyShowing ? t(`journey.beat.${beatLine}` as 'journey.beat.1') : line}
           </Text>
         </View>
-        {s.status === 'playing' && <Text style={styles.more}>››</Text>}
+        {s.status === 'playing' && <Icon name="chevronRight" size={18} color={colors.gold} style={styles.more} />}
       </Pressable>
 
       <View style={[styles.progress, storyShowing && styles.dimmed]} pointerEvents={storyShowing ? 'none' : 'auto'}>
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
   lineBoxSide: { minHeight: 0, marginTop: spacing.xs },
   lineSide: { fontSize: 16, lineHeight: 24 },
   controlsSide: { paddingHorizontal: spacing.lg, marginVertical: spacing.sm },
-  more: { position: 'absolute', right: spacing.lg, bottom: spacing.xs, ...typography.bodyStrong, color: colors.gold },
+  more: { position: 'absolute', right: spacing.lg, bottom: spacing.xs },
   lineBox: { minHeight: 76, justifyContent: 'center', paddingHorizontal: spacing.xl, marginTop: spacing.sm },
   line: { fontSize: 18, lineHeight: 27, fontWeight: '600', color: colors.textPrimary },
   progress: { paddingHorizontal: spacing.xl, marginTop: spacing.sm },

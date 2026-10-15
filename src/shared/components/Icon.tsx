@@ -55,12 +55,64 @@ export type IconName =
   | 'pen'
   | 'mail'
   | 'gift'
-  | 'share';
+  | 'share'
+  // The Archive (14-10): categories, moods, possession kinds — drawn, replacing emoji that came
+  // out as "?" boxes (two for a variation-selector emoji like 🗺️) through the app's Text.
+  | 'idCard'
+  | 'target'
+  | 'people'
+  | 'briefcase'
+  | 'flag'
+  | 'shootingStar'
+  | 'calendar'
+  | 'heartBroken'
+  | 'notebook'
+  | 'faceGreat'
+  | 'faceGood'
+  | 'faceOkay'
+  | 'faceDown'
+  | 'faceTired'
+  | 'car'
+  | 'laptop'
+  | 'music'
+  | 'books'
+  | 'box'
+  | 'square'
+  | 'checkSquare'
+  // Decorate mode's controls (14-10: "VẼ LẠI CÁC ICON NÀY LUÔN ĐI") — drawn, replacing the text
+  // glyphs ? ↶ ↺ ↻ ⇄ that sat off the baseline and matched nothing around them.
+  | 'help'
+  | 'undo'
+  | 'rotateLeft'
+  | 'rotateRight'
+  | 'swap'
+  | 'storeAway'
+  | 'check'
+  // The last text glyphs (14-10: "vẽ luôn các icon còn thiếu"): star ratings and the "next" chevron.
+  | 'star'
+  | 'starFilled'
+  | 'chevronRight';
 
 type Draw = (color: string) => React.ReactNode;
 
+const STAR_POINTS = '12 3 14.35 9.26 21.04 9.56 15.8 13.74 17.58 20.19 12 16.5 6.42 20.19 8.2 13.74 2.96 9.56 9.65 9.26';
+
 const HEART_PATH =
   'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z';
+
+/** A face's outline and two dot eyes; the five moods differ by eyes and mouth only. */
+const face = (c: string, mouth: React.ReactNode, eyes?: React.ReactNode) => (
+  <>
+    <Circle cx="12" cy="12" r="9.5" stroke={c} />
+    {eyes ?? (
+      <>
+        <Circle cx="9" cy="10" r="0.9" stroke={c} fill={c} />
+        <Circle cx="15" cy="10" r="0.9" stroke={c} fill={c} />
+      </>
+    )}
+    {mouth}
+  </>
+);
 
 const ICONS: Record<IconName, Draw> = {
   // Three petals and a waterline, in the same 24×24 stroke language as the rest. Drawn rather than
@@ -347,6 +399,196 @@ const ICONS: Record<IconName, Draw> = {
       <Line x1="3" y1="16" x2="9" y2="16" stroke={c} />
     </>
   ),
+  // ---- The Archive's categories (14-10) ----
+  idCard: c => (
+    <>
+      <Rect x="2.5" y="5" width="19" height="14" rx="2" stroke={c} />
+      <Circle cx="8.5" cy="10.5" r="2" stroke={c} />
+      <Path d="M5.5 16c.6-1.5 1.7-2.2 3-2.2s2.4.7 3 2.2" stroke={c} />
+      <Line x1="14.5" y1="10" x2="18.5" y2="10" stroke={c} />
+      <Line x1="14.5" y1="13.5" x2="18.5" y2="13.5" stroke={c} />
+    </>
+  ),
+  target: c => (
+    <>
+      <Circle cx="12" cy="12" r="9.5" stroke={c} />
+      <Circle cx="12" cy="12" r="5.5" stroke={c} />
+      <Circle cx="12" cy="12" r="1.5" stroke={c} fill={c} />
+    </>
+  ),
+  people: c => (
+    <>
+      <Path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={c} />
+      <Circle cx="8.5" cy="7" r="4" stroke={c} />
+      <Path d="M22.5 21v-2a4 4 0 0 0-3-3.87" stroke={c} />
+      <Path d="M15.5 3.13a4 4 0 0 1 0 7.75" stroke={c} />
+    </>
+  ),
+  briefcase: c => (
+    <>
+      <Rect x="2.5" y="7" width="19" height="13.5" rx="2" stroke={c} />
+      <Path d="M9 7V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v2" stroke={c} />
+      <Line x1="2.5" y1="12.5" x2="21.5" y2="12.5" stroke={c} />
+    </>
+  ),
+  flag: c => (
+    <>
+      <Path d="M4.5 15s1-1 4-1 5 2 8 2 3.5-1 3.5-1V3.5s-.5 1-3.5 1-5-2-8-2-4 1-4 1Z" stroke={c} />
+      <Line x1="4.5" y1="21.5" x2="4.5" y2="15" stroke={c} />
+    </>
+  ),
+  // A star with three trails falling away to the lower left.
+  shootingStar: c => (
+    <>
+      <Polygon
+        points="15.5 3.5 16.79 6.72 20.26 6.96 17.59 9.18 18.44 12.55 15.5 10.7 12.56 12.55 13.41 9.18 10.74 6.96 14.21 6.72"
+        stroke={c}
+      />
+      <Line x1="3" y1="21" x2="10" y2="14" stroke={c} />
+      <Line x1="3.5" y1="15.5" x2="7.5" y2="11.5" stroke={c} />
+      <Line x1="8.5" y1="20.5" x2="12.5" y2="16.5" stroke={c} />
+    </>
+  ),
+  calendar: c => (
+    <>
+      <Rect x="3.5" y="5" width="17" height="16" rx="2" stroke={c} />
+      <Line x1="16" y1="3" x2="16" y2="7" stroke={c} />
+      <Line x1="8" y1="3" x2="8" y2="7" stroke={c} />
+      <Line x1="3.5" y1="10.5" x2="20.5" y2="10.5" stroke={c} />
+      <Circle cx="8.5" cy="15" r="0.6" stroke={c} fill={c} />
+      <Circle cx="12" cy="15" r="0.6" stroke={c} fill={c} />
+      <Circle cx="15.5" cy="15" r="0.6" stroke={c} fill={c} />
+    </>
+  ),
+  heartBroken: c => (
+    <>
+      <Path d={HEART_PATH} stroke={c} />
+      <Polyline points="12 5.7 10.2 10 13.5 12.5 11.3 17" stroke={c} />
+    </>
+  ),
+  // A closed notebook with a spine and two ruled lines — the diary (the open `book` is the manual).
+  notebook: c => (
+    <>
+      <Rect x="5" y="3" width="14" height="18" rx="1.5" stroke={c} />
+      <Line x1="9" y1="3" x2="9" y2="21" stroke={c} />
+      <Line x1="12" y1="8" x2="16" y2="8" stroke={c} />
+      <Line x1="12" y1="11.5" x2="16" y2="11.5" stroke={c} />
+    </>
+  ),
+  // ---- Moods: one face, five expressions, readable at 20 px ----
+  faceGreat: c => face(
+    c,
+    <Path d="M7.5 13.5a4.5 4.5 0 0 0 9 0Z" stroke={c} />,
+    <>
+      <Path d="M7.5 10.5a1.6 1.6 0 0 1 3 0" stroke={c} />
+      <Path d="M13.5 10.5a1.6 1.6 0 0 1 3 0" stroke={c} />
+    </>,
+  ),
+  faceGood: c => face(c, <Path d="M8.5 14.5a4 4 0 0 0 7 0" stroke={c} />),
+  faceOkay: c => face(c, <Line x1="9" y1="15" x2="15" y2="15" stroke={c} />),
+  faceDown: c => face(c, <Path d="M8.5 16.5a4 4 0 0 1 7 0" stroke={c} />),
+  faceTired: c => face(
+    c,
+    <Circle cx="12" cy="15.5" r="1.3" stroke={c} />,
+    <>
+      <Path d="M7.5 10a1.6 1.6 0 0 0 3 0" stroke={c} />
+      <Path d="M13.5 10a1.6 1.6 0 0 0 3 0" stroke={c} />
+    </>,
+  ),
+  // ---- Possession kinds ----
+  car: c => (
+    <>
+      <Path d="M5 11l1.8-4.4A1.5 1.5 0 0 1 8.2 5.5h7.6a1.5 1.5 0 0 1 1.4 1.1L19 11" stroke={c} />
+      <Rect x="3" y="11" width="18" height="6" rx="1.5" stroke={c} />
+      <Circle cx="7.5" cy="17.5" r="1.8" stroke={c} />
+      <Circle cx="16.5" cy="17.5" r="1.8" stroke={c} />
+    </>
+  ),
+  laptop: c => (
+    <>
+      <Rect x="4.5" y="5" width="15" height="10" rx="1.2" stroke={c} />
+      <Path d="M4.5 15 2.5 19h19l-2-4" stroke={c} />
+    </>
+  ),
+  music: c => (
+    <>
+      <Path d="M9 18V5l12-2v13" stroke={c} />
+      <Circle cx="6" cy="18" r="3" stroke={c} />
+      <Circle cx="18" cy="16" r="3" stroke={c} />
+    </>
+  ),
+  books: c => (
+    <>
+      <Rect x="3.5" y="4" width="4" height="16" rx="0.8" stroke={c} />
+      <Rect x="8.5" y="6" width="4" height="14" rx="0.8" stroke={c} />
+      <Path d="M14.2 7.6l3.8-1 3.4 12.6-3.8 1Z" stroke={c} />
+      <Line x1="2" y1="21" x2="22" y2="21" stroke={c} />
+    </>
+  ),
+  box: c => (
+    <>
+      <Path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" stroke={c} />
+      <Polyline points="3.27 6.96 12 12.01 20.73 6.96" stroke={c} />
+      <Line x1="12" y1="22.08" x2="12" y2="12" stroke={c} />
+    </>
+  ),
+  // A goal's box, open or done (the ☐ / ☑ text glyphs they replace are not in every font).
+  square: c => <Rect x="4" y="4" width="16" height="16" rx="2.5" stroke={c} />,
+  checkSquare: c => (
+    <>
+      <Rect x="4" y="4" width="16" height="16" rx="2.5" stroke={c} />
+      <Polyline points="8.5 12 11 14.5 15.5 9.5" stroke={c} />
+    </>
+  ),
+  // ---- Decorate mode ----
+  // The question mark alone: it sits in a round button, which is its circle.
+  help: c => (
+    <>
+      <Path d="M7.8 8.2a4.3 4.3 0 0 1 8.4 1.2c0 2.9-4.2 3.4-4.2 6" stroke={c} />
+      <Circle cx="12" cy="19.6" r="1" stroke={c} fill={c} />
+    </>
+  ),
+  // A hook turning back to the left: go back one step.
+  undo: c => (
+    <>
+      <Polyline points="9 14 4 9 9 4" stroke={c} />
+      <Path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" stroke={c} />
+    </>
+  ),
+  // About 270° of arc with its head: turn the selected piece a step.
+  rotateLeft: c => (
+    <>
+      <Polyline points="3 4.5 3 10 8.5 10" stroke={c} />
+      <Path d="M4.6 15a8 8 0 1 0 1.9-8.3L3 10" stroke={c} />
+    </>
+  ),
+  rotateRight: c => (
+    <>
+      <Polyline points="21 4.5 21 10 15.5 10" stroke={c} />
+      <Path d="M19.4 15a8 8 0 1 1-1.9-8.3L21 10" stroke={c} />
+    </>
+  ),
+  // Two opposing arrows: this piece for another.
+  swap: c => (
+    <>
+      <Line x1="4" y1="8" x2="19" y2="8" stroke={c} />
+      <Polyline points="15 4 19 8 15 12" stroke={c} />
+      <Line x1="20" y1="16" x2="5" y2="16" stroke={c} />
+      <Polyline points="9 12 5 16 9 20" stroke={c} />
+    </>
+  ),
+  // Down into a tray: put the piece away in storage.
+  storeAway: c => (
+    <>
+      <Path d="M3.5 14v4.5A1.5 1.5 0 0 0 5 20h14a1.5 1.5 0 0 0 1.5-1.5V14" stroke={c} />
+      <Line x1="12" y1="3.5" x2="12" y2="14" stroke={c} />
+      <Polyline points="8 10 12 14 16 10" stroke={c} />
+    </>
+  ),
+  check: c => <Polyline points="4.5 12.5 9.5 17.5 19.5 6.5" stroke={c} />,
+  star: c => <Polygon points={STAR_POINTS} stroke={c} />,
+  starFilled: c => <Polygon points={STAR_POINTS} stroke={c} fill={c} />,
+  chevronRight: c => <Polyline points="9 5 16 12 9 19" stroke={c} />,
   // A closed book with a bookmark — the 아카이브 tab.
   archive: c => (
     <>
@@ -357,12 +599,16 @@ const ICONS: Record<IconName, Draw> = {
   ),
 };
 
+/** Every drawn name, for tests and guards. */
+export const ICON_NAMES = Object.keys(ICONS) as IconName[];
+
 export const Icon: React.FC<{
   name: IconName;
   size?: number;
   color?: string;
   style?: StyleProp<ViewStyle>;
-}> = ({ name, size = 22, color = '#FFFFFF', style }) => (
+  testID?: string;
+}> = ({ name, size = 22, color = '#FFFFFF', style, testID }) => (
   <Svg
     width={size}
     height={size}
@@ -371,7 +617,8 @@ export const Icon: React.FC<{
     strokeWidth={1.8}
     strokeLinecap="round"
     strokeLinejoin="round"
-    style={style}>
+    style={style}
+    testID={testID}>
     {ICONS[name](color)}
   </Svg>
 );

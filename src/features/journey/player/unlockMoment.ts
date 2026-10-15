@@ -5,6 +5,8 @@ import type { Lang } from '../../../shared/i18n';
 import { journeyBirthOf, mapPart, mapSummary, whoOf } from '../api/journeyApi';
 import { journeySubject } from '../store/journeyProfileStore';
 import type { JourneyPart, JourneySummary } from '../types';
+import { readInsufficient, type InsufficientCoins } from '../../coins/api/insufficient';
+import { useCoins } from '../../coins/store/coinStore';
 
 /**
  * The ONE place a Journey paid moment is charged.
@@ -29,13 +31,13 @@ export interface UnlockRequest {
 }
 
 export type UnlockFailure =
-  /** Nothing was charged. `coinBalance` is what the account has. */
-  | { ok: false; reason: 'insufficient'; price: number | null; coinBalance: number | null }
+  /** Nothing was charged. `balance` is what the account has (the wallet is already set). */
+  | ({ ok: false } & InsufficientCoins)
   /** The journey pass is not owned: the pass screen, not the coin wallet, is the way on. */
-  | { ok: false; reason: 'purchase' }
-  | { ok: false; reason: 'unknown' }
+  | { ok: false; kind: 'purchase' }
+  | { ok: false; kind: 'unknown' }
   /** Network, 5xx, or an answer that could not be read: try again. */
-  | { ok: false; reason: 'failed' };
+  | { ok: false; kind: 'failed' };
 
 export type UnlockResult =
   | {
@@ -65,27 +67,23 @@ export async function unlockMoment(req: UnlockRequest): Promise<UnlockResult> {
         ...whoOf(req.lang, journeyBirthOf(journeySubject())),
       }),
     });
-    if (!res) return { ok: false, reason: 'failed' };
+    if (!res) return { ok: false, kind: 'failed' };
     const b = await res.json().catch(() => null);
     if (res.status === 402) {
-      if (b?.error_code === 'INSUFFICIENT_COINS') {
-        return {
-          ok: false,
-          reason: 'insufficient',
-          price: b.price != null ? Number(b.price) : null,
-          coinBalance: b.coin_balance != null ? Number(b.coin_balance) : null,
-        };
-      }
-      return { ok: false, reason: 'purchase' };
+      if (b?.error_code === 'INSUFFICIENT_COINS') return { ok: false, ...readInsufficient(b) };
+      return { ok: false, kind: 'purchase' };
     }
-    if (res.status === 404) return { ok: false, reason: 'unknown' };
+    if (res.status === 404) return { ok: false, kind: 'unknown' };
     if (!res.ok || !b?.success || !b.part) {
       devlog(`[journey] unlock ${req.momentId} refused: HTTP ${res.status} ${b?.error_code ?? b?.error ?? ''}`);
-      return { ok: false, reason: 'failed' };
+      return { ok: false, kind: 'failed' };
     }
     const part = mapPart(b.part);
     // A 200 that does not carry the text is not an unlock this phone can play.
-    if (!part.unlocked || part.text == null) return { ok: false, reason: 'failed' };
+    if (!part.unlocked || part.text == null) return { ok: false, kind: 'failed' };
+    const coinBalance = b.coin_balance != null ? Number(b.coin_balance) : null;
+    // The wallet is written in this layer, as every coin spend does (coins/api/insufficient.ts).
+    if (coinBalance != null) useCoins.getState().setBalance(coinBalance);
     const asked = { ...part, momentId: part.momentId ?? req.momentId };
     const others: JourneyPart[] = Array.isArray(b.parts)
       ? b.parts.map(mapPart).filter((p: JourneyPart) => p.momentId && p.momentId !== asked.momentId && p.unlocked && p.text != null)
@@ -93,13 +91,13 @@ export async function unlockMoment(req: UnlockRequest): Promise<UnlockResult> {
     return {
       ok: true,
       charged: Number(b.charged ?? 0),
-      coinBalance: b.coin_balance != null ? Number(b.coin_balance) : null,
+      coinBalance,
       part: asked,
       parts: [asked, ...others],
       summary: b.summary ? mapSummary(b.summary) : null,
     };
   } catch (e) {
     devlog(`[journey] unlock ${req.momentId} failed: ${String(e)}`);
-    return { ok: false, reason: 'failed' };
+    return { ok: false, kind: 'failed' };
   }
 }

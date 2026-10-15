@@ -13,6 +13,7 @@ import { chartFromFields } from '../../saju/chart';
 import type { RootStackParamList } from '../../../navigation/types';
 import type { CounselingSubject } from '../../counseling/types';
 import { column } from '../../../shared/device/screen';
+import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 
 /**
  * The birth-data form, for a new person OR for one that already exists — including `self`, the
@@ -135,6 +136,7 @@ export const AddSubjectScreen: React.FC = () => {
             </Pressable>
           ))}
         </View>
+        <MiniPlayerSpacer />
       </ScrollView>
 
       <View style={styles.footer}>

@@ -170,17 +170,24 @@ export const RingButton: React.FC<{
   </Pressable>
 );
 
-/** The dark pill of the bottom-left corner (편집). */
-export const PillButton: React.FC<{ label: string; onPress: () => void; muted?: boolean; testID?: string }> = ({
-  label, onPress, muted, testID,
-}) => (
+/** The dark pill of the bottom-left corner (편집): its word, and an icon before it when given. */
+export const PillButton: React.FC<{
+  label: string;
+  onPress: () => void;
+  muted?: boolean;
+  testID?: string;
+  icon?: IconName;
+  onLayout?: (e: LayoutChangeEvent) => void;
+}> = ({ label, onPress, muted, testID, icon, onLayout }) => (
   <Pressable
     testID={testID}
     onPress={onPress}
+    onLayout={onLayout}
     accessibilityRole="button"
     accessibilityLabel={label}
     accessibilityState={muted ? { disabled: true } : undefined}
-    style={({ pressed }) => [styles.pill, muted && styles.muted, pressed && styles.pressed]}>
+    style={({ pressed }) => [styles.pill, !!icon && styles.pillWithIcon, muted && styles.muted, pressed && styles.pressed]}>
+    {icon && <Icon name={icon} size={16} color={IVORY} />}
     <Text style={styles.pillText} numberOfLines={1}>{label}</Text>
   </Pressable>
 );
@@ -232,6 +239,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: PLATE, borderWidth: 1, borderColor: HAIRLINE,
   },
+  pillWithIcon: { flexDirection: 'row', gap: 6, paddingHorizontal: spacing.md },
   pillText: { fontFamily: SERIF, fontSize: 15, fontWeight: '600', color: IVORY, letterSpacing: 1 },
   motto: { alignItems: 'center', gap: 2 },
   mottoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
