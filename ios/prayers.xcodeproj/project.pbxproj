@@ -60,6 +60,9 @@
 		FB7BA4B428DF4975881AEB7B /* jsfx_hologram.m4a in Resources */ = {isa = PBXBuildFile; fileRef = DCA842DB7E2447CDBD25A6DA /* jsfx_hologram.m4a */; };
 		FD7F93CE613A4EFC8535DD7E /* jsfx_card_flip.m4a in Resources */ = {isa = PBXBuildFile; fileRef = BE866B005D694A198CF58320 /* jsfx_card_flip.m4a */; };
 		FE27980B0C4F3E8110E1D448 /* DeviceKind.m in Sources */ = {isa = PBXBuildFile; fileRef = 310A2BEE462169CA4FBF247F /* DeviceKind.m */; };
+		79DE6EF2891B490F9787225C /* sleep_bed.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CF274ED48D254D7AA923964D /* sleep_bed.m4a */; };
+		44B35CBA2CF248AB85C632FA /* sleep_voice_ko.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 2C25123D9E824AE0AEA3DA96 /* sleep_voice_ko.m4a */; };
+		0D2FDEF816A642D1A47010CB /* sleep_voice_en.m4a in Resources */ = {isa = PBXBuildFile; fileRef = C9D0BB2F9E7048169984127C /* sleep_voice_en.m4a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -121,6 +124,9 @@
 		EBD1CE96811B45C48A972A52 /* jsfx_leaves.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jsfx_leaves.m4a; path = ../src/shared/assets/sounds/jsfx_leaves.m4a; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		EECA0A8DA262489794738FD6 /* jsfx_stars.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jsfx_stars.m4a; path = ../src/shared/assets/sounds/jsfx_stars.m4a; sourceTree = "<group>"; };
+		CF274ED48D254D7AA923964D /* sleep_bed.m4a */ = {isa = PBXFileReference; name = "sleep_bed.m4a"; path = "../src/shared/assets/sounds/sleep_bed.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		2C25123D9E824AE0AEA3DA96 /* sleep_voice_ko.m4a */ = {isa = PBXFileReference; name = "sleep_voice_ko.m4a"; path = "../src/shared/assets/sounds/sleep_voice_ko.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		C9D0BB2F9E7048169984127C /* sleep_voice_en.m4a */ = {isa = PBXFileReference; name = "sleep_voice_en.m4a"; path = "../src/shared/assets/sounds/sleep_voice_en.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -207,6 +213,9 @@
 				91DF6A4F32CF4DB98FF456B0 /* jamb_cosmic.m4a */,
 				8EB65E17D9864A95BF76CC1E /* jamb_meadow.m4a */,
 				95337B0193F24C44BB3CDA41 /* meditation_bed_music.m4a */,
+				CF274ED48D254D7AA923964D /* sleep_bed.m4a */,
+				2C25123D9E824AE0AEA3DA96 /* sleep_voice_ko.m4a */,
+				C9D0BB2F9E7048169984127C /* sleep_voice_en.m4a */,
 			);
 			name = Resources;
 			path = "";
@@ -359,6 +368,9 @@
 				5E3920F3C9FE4D7AAA5EFE93 /* jamb_cosmic.m4a in Resources */,
 				BA4AE2B9D176458CB77E9801 /* jamb_meadow.m4a in Resources */,
 				2280F67F3BAD4970B69F4275 /* meditation_bed_music.m4a in Resources */,
+				79DE6EF2891B490F9787225C /* sleep_bed.m4a in Resources */,
+				44B35CBA2CF248AB85C632FA /* sleep_voice_ko.m4a in Resources */,
+				0D2FDEF816A642D1A47010CB /* sleep_voice_en.m4a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

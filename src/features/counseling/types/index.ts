@@ -387,6 +387,40 @@ export type RNToUnityEvent =
   | { type: 'MYROOM_THEME'; payload: { theme: string } }
   /** Leaving My Room. */
   | { type: 'MYROOM_END' }
+  /** Open the coffee shop (the world's sixth door, zone `cafe`). Repeated until CAFE_READY, like
+   *  MYROOM_INIT. Carries the host and the account as SESSION_INIT does: the cafe's guest talks to
+   *  the server, and the cafe can be the first scene of a run. */
+  | { type: 'CAFE_INIT'; payload: CafeInitPayload }
+  /** The cafe's follow camera, MYROOM_CAMERA's numbers: zoom 0..1 (0 = close; 0.5 = where the scene
+   *  starts), yaw -1..1 (= ±180°), pitch -1..1 (+ = higher). Absolute, many a second. */
+  | { type: 'CAFE_CAMERA'; payload: MyRoomCamera }
+  /** Sit with the guest at a spot id from CAFE_READY. Unity answers CAFE_PHASE seating → talking (or
+   *  back to exploring with a reason). */
+  | { type: 'CAFE_SIT'; payload: { spot: string } }
+  /** One message to the guest. Always answered by exactly one CAFE_REPLY. */
+  | { type: 'CAFE_SAY'; payload: { text: string } }
+  /** The next camera angle while seated. */
+  | { type: 'CAFE_SHOT' }
+  /** Stand up from the table, or cancel the walk to it. */
+  | { type: 'CAFE_STAND' }
+  /** Leaving the cafe. */
+  | { type: 'CAFE_END' }
+  /* Spec 007 (table service): tarot with an AI reader, coffee with a fortune cookie. RN owns every
+     word and every charge; these only stage the room. specs/007-cafe-tarot-coffee/contract.md. */
+  /** The reader walks to the player's table and sits. Answered by CAFE_CONSULTANT_SEATED. */
+  | { type: 'CAFE_TAROT_START'; payload: CafeTarotStart }
+  /** Paid: spread the 78 cards face down and let the player pick. Answered by CAFE_DECK_READY. */
+  | { type: 'CAFE_TAROT_SPREAD' }
+  /** The server's reading is in: flip the seven, with the names for the faces. */
+  | { type: 'CAFE_TAROT_REVEAL'; payload: { cards: CafeRevealCard[] } }
+  /** The reader says a line (TTS + lip sync); `slot` highlights the card being explained. */
+  | { type: 'CAFE_TAROT_SPEAK'; payload: CafeTarotSpeak }
+  /** The reader stands and walks away; the table is cleared. */
+  | { type: 'CAFE_TAROT_END' }
+  /** Paid: the barista brings coffee and a fortune cookie. Answered by CAFE_COFFEE_SERVED. */
+  | { type: 'CAFE_COFFEE_ORDER' }
+  /** The paper strip inside the cookie (optional for Unity). */
+  | { type: 'CAFE_COOKIE_FORTUNE'; payload: { text: string } }
   /** A held direction key. x = right, y = forward, each in [-1, 1].
    *
    *  ONE MESSAGE PER PRESS: Unity keeps the last direction until told otherwise, so the press
@@ -488,8 +522,9 @@ export interface JourneyVoicePayload {
   startAt: number;
 }
 
-/** The world's doors (spec 004). Mirrored by name on the Unity side; a rename is a dead door. */
-export type WorldZone = 'counseling' | 'meditation' | 'journey' | 'shop' | 'myroom';
+/** The world's doors (spec 004; `cafe` since 16-10). Mirrored by name on the Unity side (WorldPlan's
+ *  Destination ids); a rename is a dead door. */
+export type WorldZone = 'counseling' | 'meditation' | 'journey' | 'shop' | 'myroom' | 'cafe';
 
 /** A spot in the world: ground-plane position and facing, in Unity's world units and degrees. */
 export interface WorldSpot {
@@ -516,6 +551,47 @@ export interface MyRoomInitPayload {
   layout?: MyRoomLayout | null;
   /** What the account owns. null/absent = not known yet (Unity treats it as the starter set). */
   owned?: MyRoomOwned | null;
+}
+
+/** CAFE_INIT. Mirrored by name in Unity's RNCafeInit. */
+export interface CafeInitPayload {
+  lang: string;
+  /** The Rails host the cafe's guest talks to (SESSION_INIT's apiBase). */
+  apiBase?: string;
+  /** The account → User-Auth (SESSION_INIT's auth). */
+  auth?: string;
+}
+
+/** Where the cafe visit is: on foot, walking to a table, or seated in conversation. */
+export type CafePhase = 'exploring' | 'seating' | 'talking';
+
+/** Why a CAFE_SAY got no answer from the guest — a key RN words ('' = it did). `busy` = not seated,
+ *  or the last message is still being answered. */
+export type CafeReplyError = '' | 'no_session' | 'no_chart' | 'ticket' | 'rate_limited' | 'upstream' | 'connection' | 'busy';
+
+/** A tarot card as Unity dealt it: the `Tarot::*` id the server knows, and which way up it landed. */
+export interface CafeCard {
+  id: string;
+  orientation: 'upright' | 'reversed';
+}
+
+/** CAFE_TAROT_REVEAL's card: the dealt card plus the name the server gave it, for the card face. */
+export interface CafeRevealCard extends CafeCard {
+  name: string;
+}
+
+/** CAFE_TAROT_START. `portraitKey` = Unity's Resources/CounselorPortraits/<key>. */
+export interface CafeTarotStart {
+  consultantId: string;
+  portraitKey: string;
+  voice: string;
+}
+
+/** CAFE_TAROT_SPEAK. `slot` 0–6 = the card being explained; absent for anything else. */
+export interface CafeTarotSpeak {
+  slot?: number;
+  text: string;
+  mood?: string;
 }
 
 export type MyRoomDragPhase = 'begin' | 'move' | 'end';
@@ -701,6 +777,34 @@ export type UnityToRNEvent =
   /** Edit mode's working layout changed, and whether it may be saved. */
   | { type: 'MYROOM_LAYOUT_CHANGED'; payload: MyRoomLayoutChanged }
   | { type: 'MYROOM_LAYOUT_APPLIED'; payload: { theme: string; placed: number; skipped: { uid: string; item: string; reason: string }[] } }
+  /** The cafe is on screen. `guest` is the persona at the counter (named from this app's roster),
+   *  `spots` the seat ids CAFE_SIT takes, in the order to offer them. */
+  | { type: 'CAFE_READY'; payload: { guest: string; spots: string[] } }
+  /** The player came within reach of the guest (or left it) while on foot. Sent on a change only. */
+  | { type: 'CAFE_NEAR'; payload: { near: boolean } }
+  /** The visit's phase changed. `reason` says why a seating fell back to exploring: '' · unreachable ·
+   *  blocked · busy. */
+  | { type: 'CAFE_PHASE'; payload: { phase: CafePhase; spot: string; reason: string } }
+  /** The answer to one CAFE_SAY. With an `error`, `text` is Unity's English fallback — not shown. */
+  | { type: 'CAFE_REPLY'; payload: { ok: boolean; text: string; error: CafeReplyError } }
+  /** Spec 007: the player sat at a table → RN shows the table menu (coffee / tarot). */
+  | { type: 'CAFE_SEATED'; payload: { spot: string } }
+  /** The tarot reader arrived at the table and sat → RN shows the greeting and the question box. */
+  | { type: 'CAFE_CONSULTANT_SEATED'; payload: { consultantId: string } }
+  /** The 78 are spread face down; picking is live (RN lets touches through until CAFE_CARDS_CHOSEN). */
+  | { type: 'CAFE_DECK_READY'; payload?: Record<string, never> }
+  /** One card moved to its slot (0–6); `count` = picked so far. */
+  | { type: 'CAFE_CARD_PICKED'; payload: { slot: number; count: number } }
+  /** All seven picked — Unity owns the shuffle and the orientations → RN asks the server to read. */
+  | { type: 'CAFE_CARDS_CHOSEN'; payload: { cards: CafeCard[] } }
+  /** A card finished flipping (narration sync). */
+  | { type: 'CAFE_CARD_REVEALED'; payload: { slot: number } }
+  /** The barista set down coffee and cookie → RN asks for a tap on the cookie. */
+  | { type: 'CAFE_COFFEE_SERVED'; payload?: Record<string, never> }
+  /** The cookie was tapped and cracked → RN shows the fortune. */
+  | { type: 'CAFE_COOKIE_OPENED'; payload?: Record<string, never> }
+  /** The reader has walked away. */
+  | { type: 'CAFE_CONSULTANT_LEFT'; payload?: Record<string, never> }
   /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
@@ -765,6 +869,25 @@ export interface MyRoomBridge {
   sendMyRoomAdd(item: string): void;
   sendMyRoomRemove(): void;
   sendMyRoomTheme(theme: string): void;
+  onEvent(handler: (event: UnityToRNEvent) => void): () => void;
+}
+
+/** The coffee shop's half of the bridge — its own interface for the reason WorldBridge gives. */
+export interface CafeBridge {
+  openCafe(init: CafeInitPayload): void;
+  closeCafe(): void;
+  sendCafeCamera(camera: MyRoomCamera): void;
+  sendCafeSit(spot: string): void;
+  sendCafeSay(text: string): void;
+  sendCafeShot(): void;
+  sendCafeStand(): void;
+  sendCafeTarotStart(start: CafeTarotStart): void;
+  sendCafeTarotSpread(): void;
+  sendCafeTarotReveal(cards: CafeRevealCard[]): void;
+  sendCafeTarotSpeak(speak: CafeTarotSpeak): void;
+  sendCafeTarotEnd(): void;
+  sendCafeCoffeeOrder(): void;
+  sendCafeCookieFortune(text: string): void;
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
 }
 

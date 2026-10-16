@@ -659,7 +659,7 @@ describe('the World screen', () => {
     await act(async () => { await new Promise(r => setTimeout(r, 30)); });
     worldTiming.enterFallbackMs = was;
     expect(overlayOpen('myroom')).toBe(true);
-    expect(tree!.root.findAll(n => n.props.children === '개인실 · My Room').length).toBeGreaterThan(0);
+    expect(tree!.root.findAll(n => n.props.children === '개인실 · Personal Room').length).toBeGreaterThan(0);
     press('들어가기');
     expect(mockNav.calls.map(c => c.args)).toEqual([['MyRoom']]);
     expect(mockNav.calls[0].hostUnmounts).toBe(1);

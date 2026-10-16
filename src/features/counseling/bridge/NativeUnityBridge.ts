@@ -1,5 +1,10 @@
 import { devlog } from '../../../shared/devlog';
 import {
+  CafeBridge,
+  CafeInitPayload,
+  CafeRevealCard,
+  CafeTarotSpeak,
+  CafeTarotStart,
   MeditationStatePayload,
   JourneyInitPayload,
   JourneyStatePayload,
@@ -61,11 +66,11 @@ const MEDITATION_RETRY_MS = 1500;
 const MEDITATION_MAX_TRIES = 4;
 
 /** Absolute-state messages sent while a finger moves: coalesced (see NativeUnityBridge.postStream). */
-const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
+const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'CAFE_CAMERA', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
 /** ~30 a second per type: smooth under Unity's own easing, a quarter of what a thumb produced. */
 const STREAM_MS = 33;
 
-export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge {
+export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, CafeBridge {
   private handlers = new Set<(e: UnityToRNEvent) => void>();
   private view: UnityViewLike | null = null;
   private ready = false;
@@ -122,6 +127,13 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   private myRoomBookLate = false;
   /** A layout set while the room was still loading, owed to it on MYROOM_READY (as the book). */
   private myRoomLayoutLate = false;
+  /** The coffee shop (the world's sixth door): the same open-until-answered rule as My Room. */
+  private cafeInit?: CafeInitPayload;
+  private cafePending = false;
+  private cafeRetry: ReturnType<typeof setTimeout> | null = null;
+  private cafeTries = 0;
+  /** The player's last orbit, replayed on CAFE_READY. null = never touched: the scene's framing. */
+  private cafeCamera: MyRoomCamera | null = null;
   private outbox: RNToUnityEvent[] = [];
   /** The latest VIEW_INSETS any Unity-hosting screen reported, and the JSON of the last one that
    *  actually went out (the dedupe key). */
@@ -610,6 +622,113 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.ready = false;
   }
 
+  /**
+   * Open the coffee shop. Posts directly and repeats until CAFE_READY, for the reasons openMeditationRoom
+   * gives — the cafe never sends UNITY_READY either. A new visit starts on the scene's own framing.
+   */
+  openCafe(init: CafeInitPayload): void {
+    this.cafeInit = init;
+    this.cafePending = true;
+    this.cafeTries = 0;
+    this.cafeCamera = null;
+    devlog(`[unity-bridge] CAFE_INIT ${init.lang}`);
+    this.post({ type: 'CAFE_INIT', payload: init });
+    this.armCafeRetry();
+  }
+
+  private armCafeRetry(): void {
+    this.clearCafeRetry();
+    this.cafeRetry = setTimeout(() => {
+      this.cafeRetry = null;
+      if (!this.cafePending || !this.view || !this.cafeInit) return;
+      if (this.cafeTries >= MEDITATION_MAX_TRIES) {
+        devlog(`[unity-bridge] no CAFE_READY after ${this.cafeTries} retries — staying on the picture`);
+        return;
+      }
+      this.cafeTries += 1;
+      devlog(`[unity-bridge] CAFE_INIT (retry ${this.cafeTries})`);
+      this.post({ type: 'CAFE_INIT', payload: this.cafeInit });
+      this.armCafeRetry();
+    }, MEDITATION_RETRY_MS);
+  }
+
+  private clearCafeRetry(): void {
+    if (this.cafeRetry !== null) {
+      clearTimeout(this.cafeRetry);
+      this.cafeRetry = null;
+    }
+  }
+
+  /** Orbit / pinch, as sendMyRoomCamera: posted straight through, clamped, remembered for CAFE_READY. */
+  sendCafeCamera(camera: MyRoomCamera): void {
+    const clamp = (v: number, lo: number, hi: number) => (Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : 0);
+    this.cafeCamera = { zoom: clamp(camera.zoom, 0, 1), yaw: clamp(camera.yaw, -1, 1), pitch: clamp(camera.pitch, -1, 1) };
+    if (this.view) this.postLive({ type: 'CAFE_CAMERA', payload: this.cafeCamera });
+  }
+
+  /** Taps, not streams: posted at once (the buttons only show once the cafe is up). */
+  sendCafeSit(spot: string): void {
+    devlog(`[unity-bridge] CAFE_SIT ${spot}`);
+    this.post({ type: 'CAFE_SIT', payload: { spot } });
+  }
+
+  sendCafeSay(text: string): void {
+    devlog(`[unity-bridge] CAFE_SAY (${text.length} chars)`);
+    this.post({ type: 'CAFE_SAY', payload: { text } });
+  }
+
+  sendCafeShot(): void {
+    this.post({ type: 'CAFE_SHOT' });
+  }
+
+  sendCafeStand(): void {
+    this.post({ type: 'CAFE_STAND' });
+  }
+
+  /* Spec 007's table service: one-off commands, posted at once like CAFE_SIT. Every charge has
+     already been made by the server by the time the paid ones (SPREAD, COFFEE_ORDER) go out. */
+
+  sendCafeTarotStart(start: CafeTarotStart): void {
+    this.post({ type: 'CAFE_TAROT_START', payload: start });
+  }
+
+  sendCafeTarotSpread(): void {
+    this.post({ type: 'CAFE_TAROT_SPREAD' });
+  }
+
+  sendCafeTarotReveal(cards: CafeRevealCard[]): void {
+    this.post({ type: 'CAFE_TAROT_REVEAL', payload: { cards } });
+  }
+
+  sendCafeTarotSpeak(speak: CafeTarotSpeak): void {
+    this.post({ type: 'CAFE_TAROT_SPEAK', payload: speak });
+  }
+
+  sendCafeTarotEnd(): void {
+    this.post({ type: 'CAFE_TAROT_END' });
+  }
+
+  sendCafeCoffeeOrder(): void {
+    this.post({ type: 'CAFE_COFFEE_ORDER' });
+  }
+
+  sendCafeCookieFortune(text: string): void {
+    this.post({ type: 'CAFE_COOKIE_FORTUNE', payload: { text } });
+  }
+
+  /** Leaving the cafe. Idempotent, and safe when Unity never booted. */
+  closeCafe(): void {
+    const wasOpen = this.cafePending || this.cafeInit != null;
+    this.cafePending = false;
+    this.cafeInit = undefined;
+    this.cafeCamera = null;
+    this.clearCafeRetry();
+    try {
+      if (this.view && wasOpen) this.post({ type: 'CAFE_END' });
+    } catch {}
+    this.ready = false;
+  }
+
   /** Leaving the journey. Idempotent, and safe when Unity never booted. */
   closeJourneyRoom(): void {
     this.journeyPending = false;
@@ -692,6 +811,11 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       devlog('[unity-bridge] MYROOM_INIT (view registered)');
       this.post({ type: 'MYROOM_INIT', payload: this.myRoomInit });
       this.armMyRoomRetry();
+    }
+    if (this.cafePending && this.cafeInit) {
+      devlog('[unity-bridge] CAFE_INIT (view registered)');
+      this.post({ type: 'CAFE_INIT', payload: this.cafeInit });
+      this.armCafeRetry();
     }
   }
 
@@ -792,6 +916,10 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
         devlog('[unity-bridge] MYROOM_INIT (bridge ready)');
         this.post({ type: 'MYROOM_INIT', payload: this.myRoomInit });
       }
+      if (this.cafePending && this.cafeInit) {
+        devlog('[unity-bridge] CAFE_INIT (bridge ready)');
+        this.post({ type: 'CAFE_INIT', payload: this.cafeInit });
+      }
     }
 
     // The meditation room's equivalent of UNITY_READY for TRANSPORT purposes only: it proves the
@@ -859,6 +987,19 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       }
       // The room is walked now: a stick queued while it loaded is a thumb long gone (as on the world),
       // and left in the outbox it would walk whatever scene says UNITY_READY next.
+      this.outbox = this.outbox.filter(e => e.type !== 'WALK_INPUT');
+      this.ready = true;
+      this.everReady = true;
+      this.clearInitRetry();
+    }
+
+    if (event.type === 'CAFE_READY') {
+      this.cafePending = false;
+      this.clearCafeRetry();
+      // Insets first, then the player's orbit — My Room's order.
+      this.replayViewInsets();
+      if (this.cafeCamera) this.post({ type: 'CAFE_CAMERA', payload: this.cafeCamera });
+      // A stick queued while the cafe loaded is a thumb long gone (as on the world and in My Room).
       this.outbox = this.outbox.filter(e => e.type !== 'WALK_INPUT');
       this.ready = true;
       this.everReady = true;

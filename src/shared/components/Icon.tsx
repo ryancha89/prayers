@@ -44,6 +44,8 @@ export type IconName =
   | 'run'
   | 'train'
   | 'bag'
+  // The World's coffee shop door (16-10).
+  | 'coffee'
   | 'close'
   | 'moon'
   | 'bolt'
@@ -323,6 +325,15 @@ const ICONS: Record<IconName, Draw> = {
     <>
       <Path d="M5 8h14l-1 13H6Z" stroke={c} />
       <Path d="M9 8V6.5a3 3 0 0 1 6 0V8" stroke={c} />
+    </>
+  ),
+  // A cup on its saucer with two wisps of steam — Feather's "coffee", in this set's weight.
+  coffee: c => (
+    <>
+      <Path d="M17 9h1a3 3 0 0 1 0 6h-1" stroke={c} />
+      <Path d="M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5Z" stroke={c} />
+      <Line x1="3" y1="22" x2="18" y2="22" stroke={c} />
+      <Path d="M8 2.5c-.8 1 .8 2 0 3M12 2.5c-.8 1 .8 2 0 3" stroke={c} />
     </>
   ),
   close: c => (

@@ -14,6 +14,7 @@ import { AccountScreen } from '../features/profile/screens/AccountScreen';
 import { LibraryScreen } from '../features/profile/screens/LibraryScreen';
 import { MyInfoScreen } from '../features/profile/screens/MyInfoScreen';
 import { MeditationRoomScreen } from '../features/meditation/screens/MeditationRoomScreen';
+import { SleepGuideScreen } from '../features/meditation/screens/SleepGuideScreen';
 import { TicketsScreen } from '../features/tickets/screens/TicketsScreen';
 import { AttendanceScreen } from '../features/tickets/screens/AttendanceScreen';
 import { JourneyCounselorScreen } from '../features/journey/screens/JourneyCounselorScreen';
@@ -28,6 +29,7 @@ import { ArchiveSectionScreen } from '../features/archive/screens/ArchiveSection
 import { LegalScreen } from '../features/profile/screens/LegalScreen';
 import { WorldScreen } from '../features/world/screens/WorldScreen';
 import { MyRoomScreen } from '../features/myroom/screens/MyRoomScreen';
+import { CafeScreen } from '../features/cafe/screens/CafeScreen';
 import { useAuthStore } from '../features/auth/store/authStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -89,12 +91,16 @@ export const RootNavigator: React.FC = () => {
     {/* Fade, like My Room: from the World the UnityView must mount into a settled screen. Pushed with
         the default slide (02-10) the room never answered MEDITATION_INIT while My Room, fading, did. */}
     <Stack.Screen name="MeditationRoom" component={MeditationRoomScreen} options={{ animation: 'fade' }} />
+    <Stack.Screen name="SleepGuide" component={SleepGuideScreen} options={{ animation: 'fade' }} />
     {/* No swipe-back: the walk keys sit at the left edge, and a thumb on ◀ read as iOS's pop
         gesture (the cabin's lesson). The top bar's 2D button is the way out. */}
     <Stack.Screen name="World" component={WorldScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     {/* No swipe-back: the stick sits at the left edge and a one-finger drag looks round the room
         (useMyRoomCamera) — the cabin's lesson. The top bar's back button returns to the world. */}
     <Stack.Screen name="MyRoom" component={MyRoomScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+    {/* My Room's rules: fade (the UnityView mounts into a settled screen), no swipe-back (the stick
+        sits at the left edge and a one-finger drag looks round). The top bar's back is the way out. */}
+    <Stack.Screen name="Cafe" component={CafeScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     <Stack.Screen name="Legal" component={LegalScreen} />
     <Stack.Screen name="CounselorDetail" component={CounselorDetailScreen} />
     <Stack.Screen name="CounselingSubject" component={CounselingSubjectScreen} />

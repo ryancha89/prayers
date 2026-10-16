@@ -1,0 +1,458 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Text, TextInput } from '../../../shared/components/Text';
+import { Icon } from '../../../shared/components/Icon';
+import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
+import { useLang, useT, type TranslationKey } from '../../../shared/i18n';
+import type { Lang } from '../../../shared/i18n/store';
+import { sfx } from '../../../shared/audio/sfx';
+import { useScreen } from '../../../shared/device/screen';
+import { HAIRLINE, IVORY, PLATE, RING_COMPACT, RingButton, SERIF } from '../../../shared/components/hud/Hud';
+import type { RootStackParamList } from '../../../navigation/types';
+import { UnityHost } from '../../counseling/components/UnityHost';
+import { getCafeBridge, isNativeUnity, nativeUnityBridge, unityApiBase } from '../../counseling/bridge';
+import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
+import type { CafePhase, CafeReplyError, MyRoomCamera } from '../../counseling/types';
+import { getUserAuth } from '../../auth/store/authStore';
+import { WorldJoystick } from '../../world/components/WorldJoystick';
+import { PROMPT_LIFT } from '../../world/components/PromptButton';
+import { useFollowCamera } from '../../world/components/useWorldCamera';
+import { koWith } from '../../world/data/zones';
+import { counselorRegistry } from '../../counselors/data/registry';
+import { localizeCounselors } from '../../counselors/data/mockCounselors';
+import { CoinPill } from '../../coins/components/CoinPill';
+import { useCafeTable } from '../table/useCafeTable';
+import { TablePanel } from '../components/TablePanel';
+import { ConfirmSheet } from '../components/ConfirmSheet';
+import { FortuneCard } from '../components/FortuneCard';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+/** How long the loading veil may say "Loading" before it offers a retry: past the bridge's last INIT retry. */
+export const CAFE_STALL_MS = 9000;
+
+/** Where every visit starts, and what a double-tap returns to: CafeEntry maps 0.5 / 0 / 0 onto the
+ *  scene's own framing, so this side needs no copy of the scene's numbers. */
+export const CAFE_HOME: MyRoomCamera = { zoom: 0.5, yaw: 0, pitch: 0 };
+
+/** The seat ids Unity's cafe has (CAFE_READY.spots) that this app has words for. Any other id is
+ *  offered as "sit together" rather than as its raw id. */
+const SPOT_LABEL: Record<string, TranslationKey> = { bar: 'cafe.spot.bar', lounge: 'cafe.spot.lounge', tarot: 'cafe.spot.tarot' };
+export const spotLabel = (spot: string): TranslationKey => SPOT_LABEL[spot] ?? 'cafe.spot.any';
+
+const SEAT_REASONS = new Set(['unreachable', 'blocked', 'busy']);
+const REPLY_ERRORS = new Set<CafeReplyError>(['no_session', 'no_chart', 'ticket', 'rate_limited', 'upstream', 'connection', 'busy']);
+
+/** CAFE_REPLY's error key → its copy; an unknown key (a newer player) reads as the service being down. */
+export const replyErrorKey = (error: string): TranslationKey =>
+  `cafe.err.${REPLY_ERRORS.has(error as CafeReplyError) ? error : 'upstream'}` as TranslationKey;
+
+/** The guest's persona (CAFE_READY.guest) → the name this app shows for that counselor, through the
+ *  registry (persona → characterId) and the localized roster. Falls back to the persona id. */
+export function guestName(persona: string, lang: Lang): string {
+  const characterId = counselorRegistry.find(c => c.personaId === persona && c.characterId)?.characterId;
+  const card = characterId ? localizeCounselors(lang).find(c => c.characterId === characterId) : undefined;
+  return card?.name ?? persona;
+}
+
+/**
+ * What of the cafe the screen's UI hides, for VIEW_INSETS: the top row, and the conversation panel
+ * while seated — from the bottom in portrait, down the right in landscape. Exported for the tests.
+ */
+export function cafeCoveredPx(r: MeasuredRects, landscape: boolean) {
+  const { host, top, panel } = r;
+  if (!host) return null;
+  const covered = { top: top ? top.y + top.height : 0 };
+  if (!panel) return covered;
+  return landscape ? { ...covered, right: host.width - panel.x } : { ...covered, bottom: host.height - panel.y };
+}
+
+/**
+ * The coffee shop (Afterglow) — the world's sixth door (16-10): walk in, sit down with the counselor
+ * at the counter, talk.
+ *
+ * UNITY IS THE CAFE, RN IS EVERYTHING YOU TOUCH, as in My Room. The scene was built standalone with
+ * its own English IMGUI; while this screen hosts it, Unity's CafeEntry turns that off and this draws
+ * the controls instead: the world's stick (WALK_INPUT), the follow camera's fingers (CAFE_CAMERA),
+ * the seat buttons when the guest is in reach (CAFE_NEAR → CAFE_SIT), and once seated a conversation
+ * panel (CAFE_SAY → CAFE_REPLY, CAFE_SHOT, CAFE_STAND). The words are this app's, in six languages;
+ * the guest's answers come from the server the consultation rooms use, through Unity.
+ *
+ * ONE UNITYVIEW AT A TIME: the world unmounts its host before navigating here (WorldScreen.leaveTo)
+ * and mounts it again at the cafe's door (returnZone 'cafe') once this screen has gone.
+ *
+ * AT A TABLE (spec 007, CAFE_SEATED): the table service takes over the bottom of the screen — coffee
+ * with a fortune cookie, or a tarot reading with an AI reader — see table/useCafeTable.ts. The stick,
+ * the look layer and the guest's panel stay down until the player stands again (CAFE_PHASE exploring),
+ * so nothing of this screen sits between a finger and the cards on the table.
+ *
+ * WITHOUT THE PLAYER (jest, a build with no Unity framework) nothing answers CAFE_INIT: the screen
+ * stays on its veil with the way back, which is the whole no-Unity experience.
+ */
+export const CafeScreen: React.FC = () => {
+  const navigation = useNavigation<Nav>();
+  const t = useT();
+  const lang = useLang();
+  const screen = useScreen();
+  const landscape = screen.landscape;
+  const safe = useSafeAreaInsets();
+  const unity = isNativeUnity();
+  const bridge = getCafeBridge();
+
+  const [up, setUp] = useState(false);
+  const [guest, setGuest] = useState('');
+  const [spots, setSpots] = useState<string[]>([]);
+  const [near, setNear] = useState(false);
+  const [phase, setPhase] = useState<CafePhase>('exploring');
+  /** The player's last message and the guest's answer (or what went wrong) — the panel's two lines. */
+  const [said, setSaid] = useState('');
+  const [reply, setReply] = useState<{ text: string; error: boolean } | null>(null);
+  const [waiting, setWaiting] = useState(false);
+  const [draft, setDraft] = useState('');
+
+  // No CAFE_READY after the bridge's retries: say so and offer another try (My Room's rule).
+  const [stalled, setStalled] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!unity || up) { setStalled(false); return undefined; }
+    const timer = setTimeout(() => setStalled(true), CAFE_STALL_MS);
+    return () => clearTimeout(timer);
+  }, [unity, up, attempt]);
+
+  // A seat that could not be reached, said for a moment over the cafe.
+  const [note, setNote] = useState<string | null>(null);
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const say = useCallback((line: string) => {
+    if (noteTimer.current) clearTimeout(noteTimer.current);
+    setNote(line);
+    noteTimer.current = setTimeout(() => setNote(null), NOTE_MS);
+  }, []);
+  useEffect(() => () => { if (noteTimer.current) clearTimeout(noteTimer.current); }, []);
+
+  const insets = useViewInsets({
+    send: unity ? i => nativeUnityBridge.sendViewInsets(i) : undefined,
+    landscape,
+    compute: r => cafeCoveredPx(r, landscape),
+  });
+
+  const initFor = useCallback(
+    () => ({ lang, apiBase: unityApiBase, auth: getUserAuth() ?? '' }),
+    [lang],
+  );
+  const retry = () => {
+    sfx.tap();
+    setStalled(false);
+    setAttempt(a => a + 1);
+    bridge.openCafe(initFor());
+  };
+
+  // Ask for the cafe on the way in; close it on the way out. `lang` is read once, as in My Room.
+  const tRef = useRef(t);
+  tRef.current = t;
+  useEffect(() => {
+    const off = bridge.onEvent(e => {
+      switch (e.type) {
+        case 'CAFE_READY':
+          setUp(true);
+          setGuest(e.payload?.guest ?? '');
+          setSpots(Array.isArray(e.payload?.spots) ? e.payload.spots : []);
+          break;
+        case 'CAFE_NEAR':
+          setNear(e.payload?.near === true);
+          break;
+        case 'CAFE_PHASE': {
+          const p = e.payload;
+          if (!p) break;
+          setPhase(p.phase);
+          // Seated or on the way: the seat buttons go. Back on foot, Unity says CAFE_NEAR afresh.
+          if (p.phase !== 'exploring') setNear(false);
+          if (p.phase === 'talking') {
+            setSaid('');
+            setReply(null);
+            setWaiting(false);
+          }
+          if (p.phase === 'exploring') {
+            setWaiting(false);
+            if (SEAT_REASONS.has(p.reason)) say(tRef.current(`cafe.seat.${p.reason}` as TranslationKey));
+          }
+          break;
+        }
+        case 'CAFE_REPLY': {
+          const p = e.payload;
+          setWaiting(false);
+          if (!p) break;
+          if (p.ok && p.text) setReply({ text: p.text, error: false });
+          else setReply({ text: tRef.current(replyErrorKey(p.error)), error: true });
+          break;
+        }
+      }
+    });
+    bridge.openCafe(initFor());
+    return () => {
+      off();
+      bridge.closeCafe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bridge]);
+
+  const table = useCafeTable(bridge, lang, t);
+  const atTable = table.state.seated;
+  // Standing up from the table takes its panel's cover with it (the guest's panel reports its own).
+  useEffect(() => {
+    if (!atTable) insets.put('panel', null);
+  }, [atTable, insets]);
+
+  const exploring = phase === 'exploring' && !atTable;
+  const talking = phase === 'talking' && !atTable;
+  const controlsOn = !unity || up;
+  const look = useFollowCamera({
+    enabled: controlsOn && exploring,
+    home: CAFE_HOME,
+    send: c => bridge.sendCafeCamera(c),
+    doubleTapHome: true,
+  });
+
+  const name = useMemo(() => (guest ? guestName(guest, lang) : ''), [guest, lang]);
+  const toWorld = () => {
+    sfx.back();
+    navigation.goBack();
+  };
+  const sit = (spot: string) => {
+    sfx.select();
+    bridge.sendCafeSit(spot);
+  };
+  const stand = () => {
+    sfx.tap();
+    bridge.sendCafeStand();
+  };
+  const send = () => {
+    const text = draft.trim();
+    if (!text || waiting) return;
+    sfx.send();
+    setSaid(text);
+    setReply(null);
+    setWaiting(true);
+    setDraft('');
+    bridge.sendCafeSay(text);
+  };
+
+  const panelH = screen.vh(0.42, 240, 380);
+  const bottomPad = safe.bottom + spacing.sm;
+
+  return (
+    <View style={styles.stage} onLayout={insets.track('host')}>
+      {/* Never hidden or faded, and never inside a transparent parent: an embedded UnityView in one
+          stops drawing (meditation room, measured on device). The veil sits OVER it until READY. */}
+      {unity && <UnityHost style={styles.unity} />}
+      {(!unity || !up) && (
+        <View style={[styles.unity, styles.veil]} testID="cafe-veil">
+          <Icon name="coffee" size={40} color={colors.gold} />
+          {unity && (
+            <>
+              <Text style={styles.veilText}>{t(stalled ? 'cafe.stalled' : 'cafe.loading')}</Text>
+              {stalled && (
+                <Pressable style={styles.retry} onPress={retry} accessibilityRole="button" testID="cafe-retry">
+                  <Text style={styles.retryText}>{t('myroom.retry')}</Text>
+                </Pressable>
+              )}
+            </>
+          )}
+        </View>
+      )}
+
+      {/* The look-around layer: transparent, over the Unity view, under every control. */}
+      {controlsOn && exploring && <View style={StyleSheet.absoluteFill} testID="cafe-look" {...look} />}
+
+      {/* Top row: the way back to the world on the left, the place's name beside it. */}
+      <View
+        testID="cafe-top"
+        pointerEvents="box-none"
+        style={[styles.top, { paddingTop: safe.top + spacing.sm, paddingLeft: safe.left + spacing.md, paddingRight: safe.right + spacing.md }]}
+        onLayout={insets.track('top')}>
+        <RingButton testID="cafe-back" icon="back" size={RING_COMPACT} label={t('myroom.back')} onPress={toWorld} />
+        <View style={styles.titlePlate}>
+          <Text style={styles.title} numberOfLines={1}>{t('world.zone.cafe')}</Text>
+        </View>
+        {atTable && (
+          <>
+            <View style={styles.grow} pointerEvents="none" />
+            <CoinPill />
+          </>
+        )}
+      </View>
+
+      {/* On foot: the world's stick, bottom-left. */}
+      <View pointerEvents="box-none" style={[styles.stick, { left: safe.left + spacing.xs, bottom: bottomPad }]}>
+        <WorldJoystick visible={controlsOn && exploring} />
+      </View>
+
+      {/* By the guest: where to sit with them. */}
+      {up && exploring && near && spots.length > 0 && (
+        <View pointerEvents="box-none" style={[styles.promptWrap, { bottom: safe.bottom + (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait) }]} testID="cafe-near">
+          <View style={styles.card}>
+            <Text style={styles.cardLine} numberOfLines={2}>
+              {t('cafe.near', { name: lang === 'ko' ? koWith(name) : name })}
+            </Text>
+            {spots.map(spot => (
+              <Pressable key={spot} testID={`cafe-sit-${spot}`} onPress={() => sit(spot)} accessibilityRole="button"
+                accessibilityLabel={t(spotLabel(spot))} style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
+                <Text style={styles.ctaText} numberOfLines={1}>{t(spotLabel(spot))}</Text>
+                <Icon name="arrowRight" size={14} color={INK} />
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* On the way to the table. */}
+      {phase === 'seating' && !atTable && (
+        <View pointerEvents="box-none" style={[styles.promptWrap, { bottom: safe.bottom + (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait) }]} testID="cafe-seating">
+          <View style={[styles.card, styles.row]}>
+            <Text style={[styles.cardLine, styles.grow]}>{t('cafe.seating')}</Text>
+            <Pressable testID="cafe-cancel" onPress={stand} accessibilityRole="button" accessibilityLabel={t('cafe.cancel')}
+              style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}>
+              <Text style={styles.ghostText}>{t('cafe.cancel')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Seated: the conversation. Bottom panel upright, right-hand panel sideways. */}
+      {talking && (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          pointerEvents="box-none"
+          style={landscape ? [styles.sideDock, { top: 0, width: screen.sidePanel }] : styles.bottomDock}>
+          <View
+            testID="cafe-panel"
+            onLayout={insets.track('panel')}
+            style={[
+              styles.panel,
+              landscape
+                ? [styles.panelSide, { paddingTop: safe.top + spacing.md, paddingRight: safe.right + spacing.md, paddingBottom: bottomPad }]
+                : { height: panelH + safe.bottom, paddingBottom: bottomPad, paddingLeft: safe.left + spacing.md, paddingRight: safe.right + spacing.md },
+            ]}>
+            <View style={styles.panelHead}>
+              <Text style={styles.guest} numberOfLines={1}>{name}</Text>
+              <RingButton testID="cafe-angle" icon="image" size={RING_COMPACT} label={t('cafe.angle')} onPress={() => { sfx.tap(); bridge.sendCafeShot(); }} />
+              <RingButton testID="cafe-leave" icon="exit" size={RING_COMPACT} label={t('cafe.leave')} onPress={stand} />
+            </View>
+            <ScrollView style={styles.lines} contentContainerStyle={styles.linesBody}>
+              {said ? <Text style={styles.said}>{`${t('cafe.you')} · ${said}`}</Text> : null}
+              <Text testID="cafe-reply" style={[styles.reply, reply?.error && styles.replyError]}>
+                {waiting ? t('cafe.thinking') : reply ? reply.text : t('cafe.opening')}
+              </Text>
+            </ScrollView>
+            <View style={styles.inputRow}>
+              <TextInput
+                testID="cafe-input"
+                style={[styles.input, { maxHeight: screen.vh(0.12, 64, 110) }]}
+                value={draft}
+                onChangeText={setDraft}
+                placeholder={t('cafe.placeholder')}
+                placeholderTextColor={colors.textMuted}
+                multiline
+                maxLength={2000}
+              />
+              <Pressable testID="cafe-send" onPress={send} disabled={waiting || !draft.trim()} accessibilityRole="button"
+                accessibilityLabel={t('cafe.send')} accessibilityState={{ disabled: waiting || !draft.trim() }}
+                style={({ pressed }) => [styles.send, (waiting || !draft.trim()) && styles.muted, pressed && styles.pressed]}>
+                <Icon name="send" size={18} color={INK} />
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      )}
+
+      {/* At a table: the menu, the reading, the coffee — then what asks before a coin is spent, and the
+          fortune from the cookie, over everything. */}
+      <TablePanel table={table} safe={safe} onLayout={insets.track('panel')} />
+      {table.state.stage === 'fortune' && table.state.fortune ? (
+        <FortuneCard text={table.state.fortune} onClose={table.closeFortune} />
+      ) : null}
+      {table.state.confirm && (
+        <ConfirmSheet paid={table.state.confirm} onPay={table.confirm} onCancel={table.cancelConfirm} onGetCoins={table.getCoins} />
+      )}
+
+      {note && (
+        <View pointerEvents="none" style={[styles.noteWrap, { top: safe.top + RING_COMPACT + spacing.xl }]} testID="cafe-note">
+          <Text style={styles.note}>{note}</Text>
+        </View>
+      )}
+    </View>
+  );
+};
+
+const INK = '#1A1330';
+const NOTE_MS = 2600;
+
+const styles = StyleSheet.create({
+  stage: { flex: 1, backgroundColor: '#0B0A26' },
+  unity: { ...absoluteFill },
+  veil: { backgroundColor: '#0B0A26', alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+  veilText: { ...typography.caption, color: colors.textPrimary },
+  retry: {
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.xs, borderRadius: radius.pill,
+    backgroundColor: 'rgba(18,14,40,0.8)', borderWidth: 1, borderColor: 'rgba(167,139,250,0.6)',
+  },
+  retryText: { ...typography.caption, color: colors.textPrimary },
+  top: {
+    position: 'absolute', left: 0, right: 0, top: 0,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingBottom: spacing.sm,
+  },
+  titlePlate: {
+    paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill,
+    backgroundColor: PLATE, borderWidth: 1, borderColor: HAIRLINE, maxWidth: '70%',
+  },
+  title: { fontFamily: SERIF, fontSize: 16, color: IVORY, letterSpacing: 0.4 },
+  stick: { position: 'absolute' },
+  promptWrap: { position: 'absolute', left: spacing.md, right: spacing.md, alignItems: 'center' },
+  card: {
+    width: '100%', maxWidth: 380, padding: spacing.md, gap: spacing.sm, borderRadius: radius.lg,
+    backgroundColor: 'rgba(18,14,40,0.88)', borderWidth: 1, borderColor: 'rgba(233,196,106,0.35)',
+  },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  grow: { flex: 1 },
+  cardLine: { ...typography.body, color: colors.textPrimary },
+  cta: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs,
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.gold,
+  },
+  ctaText: { ...typography.bodyStrong, color: INK, flexShrink: 1 },
+  ghost: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill, borderWidth: 1, borderColor: HAIRLINE },
+  ghostText: { ...typography.caption, color: IVORY },
+  bottomDock: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  sideDock: { position: 'absolute', right: 0, bottom: 0 },
+  panel: {
+    backgroundColor: 'rgba(14,12,40,0.92)', borderColor: 'rgba(233,196,106,0.35)', borderTopWidth: 1,
+    paddingTop: spacing.md, paddingHorizontal: spacing.md, gap: spacing.sm,
+    borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg,
+  },
+  // Sideways: a full-height column down the right, its edge on the left.
+  panelSide: { flex: 1, borderLeftWidth: 1, borderTopRightRadius: 0 },
+  panelHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  guest: { flex: 1, fontFamily: SERIF, fontSize: 18, color: IVORY },
+  lines: { flex: 1 },
+  linesBody: { gap: spacing.sm, paddingBottom: spacing.xs },
+  said: { ...typography.caption, color: colors.textSecondary },
+  reply: { ...typography.body, color: colors.textPrimary, lineHeight: 22 },
+  replyError: { color: colors.textSecondary, fontStyle: 'italic' },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
+  input: {
+    flex: 1, ...typography.body, color: colors.textPrimary, minHeight: 44,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md,
+    backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(233,196,106,0.25)',
+  },
+  send: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.gold },
+  muted: { opacity: 0.45 },
+  pressed: { opacity: 0.75 },
+  noteWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center', paddingHorizontal: spacing.xl },
+  note: {
+    ...typography.caption, color: IVORY, textAlign: 'center', overflow: 'hidden',
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.pill,
+    backgroundColor: 'rgba(14,12,40,0.86)', borderWidth: 1, borderColor: 'rgba(233,196,106,0.6)',
+  },
+});

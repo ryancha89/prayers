@@ -23,6 +23,9 @@ jest.mock('../src/features/coins/api/coinsApi', () => ({ refreshCoins: async () 
 jest.mock('../src/features/conversations/syncConversations', () => ({
   syncConversationsFromServer: async () => null,
 }));
+// The sleep card shows only where the sound module is linked.
+let mockSleepAvailable = true;
+jest.mock('../src/features/meditation/sleepAudio', () => ({ sleepAudio: { available: () => mockSleepAvailable } }));
 
 let tree: ReactTestRenderer.ReactTestRenderer;
 beforeEach(async () => {
@@ -34,6 +37,8 @@ beforeEach(async () => {
   useCoins.setState({ balance: 1200 });
 });
 afterEach(() => { if (tree) act(() => tree.unmount()); });
+const footerCards = () =>
+  [].concat(tree.root.findByType(CounselorGrid).props.ListFooterComponent.props.children).filter(Boolean) as any[];
 const render = async () => {
   await act(async () => { tree = ReactTestRenderer.create(<HomeScreen />); });
 };
@@ -47,8 +52,20 @@ it('keeps meditation reachable outside the filtered counselor list', async () =>
   expect(tree.root.findByType(CounselorGrid).props.counselors.every(
     (c: { category: string }) => c.category === category.key,
   )).toBe(true);
-  act(() => tree.root.findByType(CounselorGrid).props.ListFooterComponent.props.onPress());
+  const [meditation, sleep] = footerCards();
+  act(() => meditation.props.onPress());
   expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
+  // The sleep guide sits directly under it, in the same card.
+  expect(sleep.props.style({ pressed: false })).toEqual(meditation.props.style({ pressed: false }));
+  act(() => sleep.props.onPress());
+  expect(mockNavigate).toHaveBeenLastCalledWith('SleepGuide');
+});
+
+it('hides the sleep card on a build without the sound module', async () => {
+  mockSleepAvailable = false;
+  await render();
+  expect(footerCards()).toHaveLength(1);
+  mockSleepAvailable = true;
 });
 
 it('resumes a real conversation with its original subject, skipping empty or removed counselors', async () => {

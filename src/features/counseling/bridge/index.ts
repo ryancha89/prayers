@@ -1,7 +1,7 @@
 import { NativeModules, UIManager } from 'react-native';
 import { devlog } from '../../../shared/devlog';
 import { apiBase } from '../../../shared/config/api';
-import { MyRoomBridge, UnityBridge, WorldBridge } from '../types';
+import { CafeBridge, MyRoomBridge, UnityBridge, WorldBridge } from '../types';
 import { MockUnityBridge } from './MockUnityBridge';
 import { NativeUnityBridge } from './NativeUnityBridge';
 import { useSoundStore } from '../../../shared/audio/store';
@@ -148,6 +148,13 @@ export function getMyRoomBridge(): MyRoomBridge {
   return mockBridge;
 }
 
+/** The coffee shop's bridge, decided when asked — the same instance rule as getWorldBridge. */
+export function getCafeBridge(): CafeBridge {
+  if (isNativeUnity()) return nativeUnityBridge;
+  mockBridge ??= new MockUnityBridge();
+  return mockBridge;
+}
+
 export { MockUnityBridge } from './MockUnityBridge';
 export { NativeUnityBridge } from './NativeUnityBridge';
-export type { MyRoomBridge, UnityBridge, WorldBridge } from '../types';
+export type { CafeBridge, MyRoomBridge, UnityBridge, WorldBridge } from '../types';

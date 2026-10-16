@@ -303,6 +303,7 @@ export const WorldScreen: React.FC = () => {
     // The shop sheet floats over every screen (App.tsx): the world stays where it is under it.
     coins: () => useCoins.getState().openShop(),
     myroom: () => leaveTo('myroom', () => navigation.navigate('MyRoom')),
+    cafe: () => leaveTo('cafe', () => navigation.navigate('Cafe')),
   };
 
   /**
@@ -334,6 +335,7 @@ export const WorldScreen: React.FC = () => {
     journey: actions.journey,
     shop: () => leaveTo('shop', () => navigation.navigate('Tickets')),
     myroom: actions.myroom,
+    cafe: actions.cafe,
   };
   door.current = {
     wait: zone => {

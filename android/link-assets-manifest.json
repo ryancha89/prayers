@@ -158,6 +158,18 @@
       "sha1": "72857b9a2d197c0c1502ac22718c9f4b45424a84"
     },
     {
+      "path": "src/shared/assets/sounds/sleep_bed.m4a",
+      "sha1": "b2d886d6cb8bb1797c0ee8877538b3348d87bcd2"
+    },
+    {
+      "path": "src/shared/assets/sounds/sleep_voice_en.m4a",
+      "sha1": "4cabc06fa4f3899657ac5bbc1563a9e0263b3d22"
+    },
+    {
+      "path": "src/shared/assets/sounds/sleep_voice_ko.m4a",
+      "sha1": "d0bcfe76d004b07a60b9c7eab3cdd66b7c012cb3"
+    },
+    {
       "path": "src/shared/assets/sounds/splash_sound.m4a",
       "sha1": "6ed3bec66f3a9e875ac313a31866b61053f8ebaa"
     },

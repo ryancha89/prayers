@@ -24,6 +24,10 @@ import { PRAYER_COIN_ART } from '../../tickets/assets/art';
 import { JourneyHeroCard } from '../../journey/components/JourneyHeroCard';
 import { NEWYEAR_2027, journeyEntryRoute } from '../../journey/data/journeys';
 import { journeyActive, useJourneyPlayer } from '../../journey/player/journeyPlayer';
+import { sleepAudio } from '../../meditation/sleepAudio';
+
+/** The sleep guide's card art: the breathing card's girl, asleep in the same room at night. */
+const SLEEP_CARD_ART = require('../../meditation/assets/sleep_card.jpg');
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -177,21 +181,41 @@ export const HomeScreen: React.FC = () => {
             </View>
           </View>
         }
-        ListFooterComponent={meditationGuide ? (
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.meditation, pressed && styles.pressed]}
-            onPress={() => { sfx.tap(); navigation.navigate('MeditationRoom'); }}>
-            {meditationGuide.cardImage ? (
-              <Image source={meditationGuide.cardImage} style={styles.meditationPortrait} resizeMode="cover" />
-            ) : <View style={styles.lotus}><Icon name="lotus" size={30} color={colors.gold} /></View>}
-            <View style={styles.cardBody}>
-              <Text style={styles.name}>{t('home.breathe')}</Text>
-              <Text style={styles.preview}>{t('home.meditation')}</Text>
-            </View>
-            <Icon name="play" size={20} color={colors.gold} />
-          </Pressable>
-        ) : undefined}
+        ListFooterComponent={
+          <View>
+            {meditationGuide && (
+              <Pressable
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.meditation, pressed && styles.pressed]}
+                onPress={() => { sfx.tap(); navigation.navigate('MeditationRoom'); }}>
+                {meditationGuide.cardImage ? (
+                  <Image source={meditationGuide.cardImage} style={styles.meditationPortrait} resizeMode="cover" />
+                ) : <View style={styles.lotus}><Icon name="lotus" size={30} color={colors.gold} /></View>}
+                <View style={styles.cardBody}>
+                  <Text style={styles.name}>{t('home.breathe')}</Text>
+                  <Text style={styles.preview}>{t('home.meditation')}</Text>
+                </View>
+                <Icon name="play" size={20} color={colors.gold} />
+              </Pressable>
+            )}
+            {/* The sleep guide, directly under the breathing card and in its exact shape. Hidden on a
+                build without the sound module: a card that opens onto silence is worse than none. */}
+            {sleepAudio.available() && (
+              <Pressable
+                accessibilityRole="button"
+                testID="home-sleep"
+                style={({ pressed }) => [styles.meditation, pressed && styles.pressed]}
+                onPress={() => { sfx.tap(); navigation.navigate('SleepGuide'); }}>
+                <Image source={SLEEP_CARD_ART} style={styles.meditationPortrait} resizeMode="cover" />
+                <View style={styles.cardBody}>
+                  <Text style={styles.name}>{t('home.sleep')}</Text>
+                  <Text style={styles.preview}>{t('home.sleepHint')}</Text>
+                </View>
+                <Icon name="play" size={20} color={colors.gold} />
+              </Pressable>
+            )}
+          </View>
+        }
       />
     </SafeAreaView>
   );
