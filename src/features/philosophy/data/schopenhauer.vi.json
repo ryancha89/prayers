@@ -1,0 +1,995 @@
+{
+ "id": "schopenhauer",
+ "lang": "vi",
+ "chapters": [
+  {
+   "no": 1,
+   "title": "Schopenhauer là ai?",
+   "staging": "Bước vào phòng giảng, nhìn khán giả rồi bắt đầu chậm rãi.",
+   "lines": [
+    {
+     "text": "Chào mừng bạn.",
+     "file": "schop_vi_c01_00.m4a",
+     "ms": 2260
+    },
+    {
+     "text": "Tôi là Arthur Schopenhauer, sinh năm 1788 tại Danzig.",
+     "file": "schop_vi_c01_01.m4a",
+     "ms": 6300
+    },
+    {
+     "text": "Suốt cuộc đời mình, tôi luôn trở lại với một câu hỏi: Vì sao con người phải chịu nhiều đau khổ đến thế?",
+     "file": "schop_vi_c01_02.m4a",
+     "ms": 8300
+    },
+    {
+     "text": "Người ta tin rằng có tiền sẽ hạnh phúc, có tình yêu sẽ trọn vẹn, có danh vọng và thành công sẽ được mãn nguyện.",
+     "file": "schop_vi_c01_03.m4a",
+     "ms": 9800
+    },
+    {
+     "text": "Thế nhưng, ngay cả khi đạt được tất cả những điều ấy, con người vẫn tiếp tục khao khát điều khác.",
+     "file": "schop_vi_c01_04.m4a",
+     "ms": 7300
+    },
+    {
+     "text": "Tôi gọi sức mạnh đứng sau sự thôi thúc không ngừng ấy là “ý chí”.",
+     "file": "schop_vi_c01_05.m4a",
+     "ms": 6000
+    },
+    {
+     "text": "Đó không chỉ là quyết tâm có ý thức, mà là một thôi thúc sâu xa, mù quáng, luôn muốn tồn tại và vươn tới.",
+     "file": "schop_vi_c01_06.m4a",
+     "ms": 8100
+    },
+    {
+     "text": "Triết học của tôi không nhằm tô hồng cuộc sống, nhưng cũng không phải để ca ngợi tuyệt vọng.",
+     "file": "schop_vi_c01_07.m4a",
+     "ms": 6500
+    },
+    {
+     "text": "Chỉ khi hiểu nguồn gốc khổ đau, ta mới có cơ hội giảm bớt sự chi phối của nó.",
+     "file": "schop_vi_c01_08.m4a",
+     "ms": 6000
+    },
+    {
+     "text": "Trong những buổi học này, chúng ta sẽ tìm hiểu thế giới mà ta nhận biết, những ham muốn điều khiển con người, và những khoảnh khắc hiếm hoi ta có thể thoát khỏi chúng.",
+     "file": "schop_vi_c01_09.m4a",
+     "ms": 10900
+    },
+    {
+     "text": "Nào, hãy cùng nhìn thẳng vào đời sống con người, không tự ru ngủ mình bằng những ảo tưởng dễ chịu.",
+     "file": "schop_vi_c01_10.m4a",
+     "ms": 7200
+    }
+   ],
+   "question": {
+    "text": "Hiện giờ, bạn nghĩ mình phải có được điều gì thì mới hạnh phúc?",
+    "file": "schop_vi_c01_q.m4a",
+    "ms": 5400
+   }
+  },
+  {
+   "no": 2,
+   "title": "Thế giới là biểu tượng của tôi",
+   "staging": "Phong cảnh hiện ra và thay đổi theo góc nhìn.",
+   "lines": [
+    {
+     "text": "Hãy tự hỏi: Thế giới trước mắt bạn có đúng là thế giới tự thân hay không?",
+     "file": "schop_vi_c02_00.m4a",
+     "ms": 5900
+    },
+    {
+     "text": "Bạn nhìn thấy cây cối, cảm nhận ánh nắng và nghe tiếng mưa.",
+     "file": "schop_vi_c02_01.m4a",
+     "ms": 6300
+    },
+    {
+     "text": "Nhưng mọi điều bạn biết về thế giới đều xuất hiện trong mối quan hệ với một chủ thể nhận thức.",
+     "file": "schop_vi_c02_02.m4a",
+     "ms": 7800
+    },
+    {
+     "text": "Đó là ý tôi khi nói: “Thế giới là biểu tượng của tôi”.",
+     "file": "schop_vi_c02_03.m4a",
+     "ms": 5200
+    },
+    {
+     "text": "Tôi không nói rằng bạn tưởng tượng ra cây cối, hay thế giới chỉ là giấc mơ riêng của bạn.",
+     "file": "schop_vi_c02_04.m4a",
+     "ms": 5300
+    },
+    {
+     "text": "Tôi muốn nói rằng mọi đối tượng mà ta nhận biết đều hiện ra qua các hình thức của kinh nghiệm, như không gian, thời gian và quan hệ nhân quả.",
+     "file": "schop_vi_c02_05.m4a",
+     "ms": 11000
+    },
+    {
+     "text": "Cùng một cơn mưa, có người vui mừng, có người buồn bã.",
+     "file": "schop_vi_c02_06.m4a",
+     "ms": 4600
+    },
+    {
+     "text": "Nhưng lập luận của tôi còn sâu hơn sự khác biệt về cảm xúc: thế giới như một đối tượng không thể tách khỏi chủ thể đang nhận biết nó.",
+     "file": "schop_vi_c02_07.m4a",
+     "ms": 11600
+    },
+    {
+     "text": "Vậy phía sau thế giới như biểu tượng còn điều gì?",
+     "file": "schop_vi_c02_08.m4a",
+     "ms": 4800
+    },
+    {
+     "text": "Tôi tìm thấy một manh mối trong chính trải nghiệm về sự thôi thúc bên trong bản thân.",
+     "file": "schop_vi_c02_09.m4a",
+     "ms": 6300
+    },
+    {
+     "text": "Tôi gọi thực tại sâu xa ấy là “ý chí”.",
+     "file": "schop_vi_c02_10.m4a",
+     "ms": 4000
+    },
+    {
+     "text": "Chúng ta sẽ tiếp tục từ đây.",
+     "file": "schop_vi_c02_11.m4a",
+     "ms": 2979
+    }
+   ],
+   "question": {
+    "text": "Bạn đã bao giờ nhầm cách nhìn của chính mình với bản thân sự thật chưa?",
+    "file": "schop_vi_c02_q.m4a",
+    "ms": 5500
+   }
+  },
+  {
+   "no": 3,
+   "title": "Ý chí và ham muốn chi phối con người",
+   "staging": "Nhân vật đi chậm, các hình ảnh tượng trưng cho khát vọng xuất hiện.",
+   "lines": [
+    {
+     "text": "Bạn có chắc lý trí luôn dẫn dắt mọi quyết định của mình không?",
+     "file": "schop_vi_c03_00.m4a",
+     "ms": 4900
+    },
+    {
+     "text": "Đói thì tìm thức ăn, cô đơn thì tìm người bầu bạn, có được một thứ thì lại muốn thứ tốt hơn.",
+     "file": "schop_vi_c03_01.m4a",
+     "ms": 8800
+    },
+    {
+     "text": "Chúng ta thường đưa ra những lý do rất hợp lý, nhưng đôi khi lý trí chỉ đến sau để biện hộ cho một ham muốn đã có sẵn.",
+     "file": "schop_vi_c03_02.m4a",
+     "ms": 9200
+    },
+    {
+     "text": "Tôi gọi sức mạnh bên dưới những thôi thúc ấy là “ý chí”.",
+     "file": "schop_vi_c03_03.m4a",
+     "ms": 5000
+    },
+    {
+     "text": "Nó không đơn thuần là nghị lực hay quyết tâm, mà là sự thôi thúc mù quáng, không ngừng biểu hiện trong đời sống.",
+     "file": "schop_vi_c03_04.m4a",
+     "ms": 7900
+    },
+    {
+     "text": "Bạn muốn một ngôi nhà đẹp hơn.",
+     "file": "schop_vi_c03_05.m4a",
+     "ms": 3700
+    },
+    {
+     "text": "Có phải vì cần chỗ ở, hay vì mong được người khác ngưỡng mộ?",
+     "file": "schop_vi_c03_06.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "Bạn yêu một ai đó.",
+     "file": "schop_vi_c03_07.m4a",
+     "ms": 3600
+    },
+    {
+     "text": "Có chắc sự phán đoán tỉnh táo xuất hiện trước cảm xúc ấy?",
+     "file": "schop_vi_c03_08.m4a",
+     "ms": 4100
+    },
+    {
+     "text": "Con người không phải lúc nào cũng hiểu rõ động cơ của chính mình.",
+     "file": "schop_vi_c03_09.m4a",
+     "ms": 5200
+    },
+    {
+     "text": "Tôi không bảo bạn phải căm ghét mọi ham muốn.",
+     "file": "schop_vi_c03_10.m4a",
+     "ms": 3800
+    },
+    {
+     "text": "Trước tiên, hãy quan sát chúng.",
+     "file": "schop_vi_c03_11.m4a",
+     "ms": 3100
+    },
+    {
+     "text": "Bạn đang theo đuổi điều gì?",
+     "file": "schop_vi_c03_12.m4a",
+     "ms": 2613
+    },
+    {
+     "text": "Sợ mất điều gì?",
+     "file": "schop_vi_c03_13.m4a",
+     "ms": 2308
+    },
+    {
+     "text": "Vì sao nó có sức mạnh lớn đến thế?",
+     "file": "schop_vi_c03_14.m4a",
+     "ms": 3500
+    },
+    {
+     "text": "Nếu không nhận ra ham muốn đang vận hành ra sao, bạn rất dễ bị nó kéo đi mà không hề hay biết.",
+     "file": "schop_vi_c03_15.m4a",
+     "ms": 7400
+    }
+   ],
+   "question": {
+    "text": "Điều bạn khao khát nhất lúc này có thực sự là lựa chọn của chính bạn không?",
+    "file": "schop_vi_c03_q.m4a",
+    "ms": 5600
+   }
+  },
+  {
+   "no": 4,
+   "title": "Vì sao đời người đầy đau khổ?",
+   "staging": "Ánh đèn dịu xuống; Schopenhauer ngồi vào ghế.",
+   "lines": [
+    {
+     "text": "Tại sao đời sống lại đau khổ?",
+     "file": "schop_vi_c04_00.m4a",
+     "ms": 3800
+    },
+    {
+     "text": "Bạn có thể nói: vì thiếu tiền, thiếu tình yêu, không đạt được mục tiêu.",
+     "file": "schop_vi_c04_01.m4a",
+     "ms": 6000
+    },
+    {
+     "text": "Đó đều là những nỗi khổ có thật.",
+     "file": "schop_vi_c04_02.m4a",
+     "ms": 3900
+    },
+    {
+     "text": "Nhưng tôi muốn đi sâu hơn.",
+     "file": "schop_vi_c04_03.m4a",
+     "ms": 2303
+    },
+    {
+     "text": "Khi muốn điều gì, ta cảm thấy mình đang thiếu điều ấy.",
+     "file": "schop_vi_c04_04.m4a",
+     "ms": 5000
+    },
+    {
+     "text": "Sự thiếu hụt gây đau khổ.",
+     "file": "schop_vi_c04_05.m4a",
+     "ms": 3700
+    },
+    {
+     "text": "Giả sử bạn có được công việc từng mơ ước.",
+     "file": "schop_vi_c04_06.m4a",
+     "ms": 4500
+    },
+    {
+     "text": "Niềm vui rồi sẽ qua, và bạn lại mong được thăng chức, tăng lương hay được công nhận.",
+     "file": "schop_vi_c04_07.m4a",
+     "ms": 7700
+    },
+    {
+     "text": "Nếu không còn điều gì để mong muốn, chuyện gì xảy ra?",
+     "file": "schop_vi_c04_08.m4a",
+     "ms": 4300
+    },
+    {
+     "text": "Nhiều khi sự chán chường lại xuất hiện.",
+     "file": "schop_vi_c04_09.m4a",
+     "ms": 4300
+    },
+    {
+     "text": "Khi không còn mục tiêu cấp thiết, cuộc sống bỗng trở nên trống rỗng.",
+     "file": "schop_vi_c04_10.m4a",
+     "ms": 5300
+    },
+    {
+     "text": "Bởi vậy, tôi ví đời người như con lắc dao động giữa đau khổ và buồn chán.",
+     "file": "schop_vi_c04_11.m4a",
+     "ms": 7900
+    },
+    {
+     "text": "Tôi không nói rằng chúng ta phải đầu hàng cuộc đời.",
+     "file": "schop_vi_c04_12.m4a",
+     "ms": 3800
+    },
+    {
+     "text": "Tôi chỉ muốn bạn từ bỏ ảo tưởng rằng mình phải hạnh phúc trong mọi khoảnh khắc.",
+     "file": "schop_vi_c04_13.m4a",
+     "ms": 5800
+    },
+    {
+     "text": "Một ngày buồn không có nghĩa là cả cuộc đời bạn thất bại.",
+     "file": "schop_vi_c04_14.m4a",
+     "ms": 5000
+    },
+    {
+     "text": "Hiểu được cấu trúc của khổ đau là bước đầu để nhìn nó sáng suốt hơn, và bớt bị nó điều khiển.",
+     "file": "schop_vi_c04_15.m4a",
+     "ms": 8100
+    }
+   ],
+   "question": {
+    "text": "Bạn mong có một đời không đau khổ, hay một đời không còn bị đau khổ chi phối quá nhiều?",
+    "file": "schop_vi_c04_q.m4a",
+    "ms": 8300
+   }
+  },
+  {
+   "no": 5,
+   "title": "Vì sao hạnh phúc không kéo dài?",
+   "staging": "Rương báu bừng sáng rồi ánh sáng dần tắt.",
+   "lines": [
+    {
+     "text": "Hãy nhớ lại lần gần nhất bạn thật sự hạnh phúc.",
+     "file": "schop_vi_c05_00.m4a",
+     "ms": 5600
+    },
+    {
+     "text": "Khi thi đỗ?",
+     "file": "schop_vi_c05_01.m4a",
+     "ms": 2037
+    },
+    {
+     "text": "Khi được đáp lại tình cảm?",
+     "file": "schop_vi_c05_02.m4a",
+     "ms": 2720
+    },
+    {
+     "text": "Hay khi mua được món đồ mình mong ước từ lâu?",
+     "file": "schop_vi_c05_03.m4a",
+     "ms": 3500
+    },
+    {
+     "text": "Cảm giác ấy tồn tại được bao lâu?",
+     "file": "schop_vi_c05_04.m4a",
+     "ms": 3900
+    },
+    {
+     "text": "Khi khát, ta thấy khó chịu; uống nước thì dễ chịu ngay.",
+     "file": "schop_vi_c05_05.m4a",
+     "ms": 5500
+    },
+    {
+     "text": "Nhưng sau khi hết khát, thêm một cốc nước không còn mang lại niềm vui tương tự.",
+     "file": "schop_vi_c05_06.m4a",
+     "ms": 5900
+    },
+    {
+     "text": "Bởi sự thiếu hụt đã được xóa bỏ.",
+     "file": "schop_vi_c05_07.m4a",
+     "ms": 2782
+    },
+    {
+     "text": "Theo tôi, phần lớn điều ta gọi là hạnh phúc chính là sự lắng xuống tạm thời của đau khổ hoặc thiếu thốn.",
+     "file": "schop_vi_c05_08.m4a",
+     "ms": 7700
+    },
+    {
+     "text": "Một mong muốn được thỏa mãn thì mong muốn khác lại xuất hiện.",
+     "file": "schop_vi_c05_09.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "Vì thế, thay vì cố tăng khoái lạc mãi mãi, ta nên học cách giảm những đau khổ không cần thiết.",
+     "file": "schop_vi_c05_10.m4a",
+     "ms": 7700
+    },
+    {
+     "text": "Sức khỏe tốt, tâm trí yên ổn, một ngày không có nỗi lo cấp bách: những điều ấy quý giá hơn ta thường nghĩ.",
+     "file": "schop_vi_c05_11.m4a",
+     "ms": 8800
+    },
+    {
+     "text": "Con người hay chỉ nhận ra giá trị của chúng sau khi đã đánh mất.",
+     "file": "schop_vi_c05_12.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "Đừng đo hạnh phúc bằng việc bạn sở hữu nhiều hơn người khác bao nhiêu.",
+     "file": "schop_vi_c05_13.m4a",
+     "ms": 4900
+    },
+    {
+     "text": "Hãy học cách nhận ra những giờ phút bình yên, ngay khi chúng đang có mặt.",
+     "file": "schop_vi_c05_14.m4a",
+     "ms": 6100
+    }
+   ],
+   "question": {
+    "text": "Có điều bình yên nào trong cuộc sống mà bạn đã coi là hiển nhiên?",
+    "file": "schop_vi_c05_q.m4a",
+    "ms": 5100
+   }
+  },
+  {
+   "no": 6,
+   "title": "Giá trị của sự cô độc",
+   "staging": "Thư phòng yên tĩnh; nhân vật khép sách bên cửa sổ.",
+   "lines": [
+    {
+     "text": "Bạn có sợ ở một mình không?",
+     "file": "schop_vi_c06_00.m4a",
+     "ms": 2920
+    },
+    {
+     "text": "Nhiều người không chịu nổi im lặng.",
+     "file": "schop_vi_c06_01.m4a",
+     "ms": 3100
+    },
+    {
+     "text": "Họ luôn tìm tiếng nói, tin nhắn, đám đông, như thể chỉ cần một mình là phải đối diện với điều đáng sợ.",
+     "file": "schop_vi_c06_02.m4a",
+     "ms": 9200
+    },
+    {
+     "text": "Nhưng ở giữa rất nhiều người, ta vẫn có thể cô đơn.",
+     "file": "schop_vi_c06_03.m4a",
+     "ms": 5600
+    },
+    {
+     "text": "Ở một mình cũng có một thứ tự do đặc biệt.",
+     "file": "schop_vi_c06_04.m4a",
+     "ms": 4200
+    },
+    {
+     "text": "Bạn không cần liên tục làm vừa lòng người khác, không cần đo giá trị của bản thân qua ánh mắt họ.",
+     "file": "schop_vi_c06_05.m4a",
+     "ms": 6600
+    },
+    {
+     "text": "Bạn có thể đọc sách, suy ngẫm, thưởng thức âm nhạc và nuôi dưỡng đời sống tinh thần.",
+     "file": "schop_vi_c06_06.m4a",
+     "ms": 7600
+    },
+    {
+     "text": "Tôi cho rằng người có nội tâm phong phú thường biết tận dụng sự tĩnh lặng ấy.",
+     "file": "schop_vi_c06_07.m4a",
+     "ms": 6100
+    },
+    {
+     "text": "Điều này không có nghĩa là phải từ chối tình bạn hay sống lạnh lùng.",
+     "file": "schop_vi_c06_08.m4a",
+     "ms": 4600
+    },
+    {
+     "text": "Sự quan tâm giữa người với người vẫn rất đáng quý.",
+     "file": "schop_vi_c06_09.m4a",
+     "ms": 5000
+    },
+    {
+     "text": "Nhưng nếu không thể chịu nổi một buổi tối một mình, bạn dễ lệ thuộc cả vào những mối quan hệ không phù hợp.",
+     "file": "schop_vi_c06_10.m4a",
+     "ms": 7900
+    },
+    {
+     "text": "Điều quan trọng không phải là có bao nhiêu người bên cạnh, mà là bạn có thể chung sống bình an với chính mình hay không.",
+     "file": "schop_vi_c06_11.m4a",
+     "ms": 9600
+    },
+    {
+     "text": "Hôm nay, hãy thử dành một khoảng lặng cho bản thân.",
+     "file": "schop_vi_c06_12.m4a",
+     "ms": 4000
+    }
+   ],
+   "question": {
+    "text": "Khi không ai nhìn hay đánh giá, bạn muốn trở thành người như thế nào?",
+    "file": "schop_vi_c06_q.m4a",
+    "ms": 5200
+   }
+  },
+  {
+   "no": 7,
+   "title": "Các mối quan hệ và kỳ vọng",
+   "staging": "Những con nhím co cụm rồi tách nhau ra giữa mùa đông.",
+   "lines": [
+    {
+     "text": "Hãy hình dung vài con nhím trong một ngày đông rét buốt.",
+     "file": "schop_vi_c07_00.m4a",
+     "ms": 4700
+    },
+    {
+     "text": "Chúng tìm đến gần nhau để sưởi ấm, nhưng những chiếc gai lại đâm vào nhau.",
+     "file": "schop_vi_c07_01.m4a",
+     "ms": 6700
+    },
+    {
+     "text": "Chúng lùi ra, rồi thấy lạnh nên lại tiến gần.",
+     "file": "schop_vi_c07_02.m4a",
+     "ms": 4600
+    },
+    {
+     "text": "Cuối cùng, chúng phải tìm một khoảng cách vừa đủ.",
+     "file": "schop_vi_c07_03.m4a",
+     "ms": 4100
+    },
+    {
+     "text": "Tôi dùng hình ảnh ấy để nói về quan hệ giữa con người.",
+     "file": "schop_vi_c07_04.m4a",
+     "ms": 4600
+    },
+    {
+     "text": "Chúng ta cần người khác, muốn được yêu thương, thấu hiểu và trân trọng.",
+     "file": "schop_vi_c07_05.m4a",
+     "ms": 6100
+    },
+    {
+     "text": "Nhưng càng gần nhau, ta càng thấy rõ thói quen, khuyết điểm và những mong muốn không giống mình.",
+     "file": "schop_vi_c07_06.m4a",
+     "ms": 7000
+    },
+    {
+     "text": "Bạn có đòi hỏi bạn bè lúc nào cũng đứng về phía mình?",
+     "file": "schop_vi_c07_07.m4a",
+     "ms": 4500
+    },
+    {
+     "text": "Mong người yêu hiểu hết suy nghĩ mà chẳng cần nói ra?",
+     "file": "schop_vi_c07_08.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "Tin rằng gia đình nhất định phải đồng tình với mọi lựa chọn?",
+     "file": "schop_vi_c07_09.m4a",
+     "ms": 4400
+    },
+    {
+     "text": "Người khác cũng mang theo sợ hãi, giới hạn và đau khổ của họ.",
+     "file": "schop_vi_c07_10.m4a",
+     "ms": 6500
+    },
+    {
+     "text": "Họ không sinh ra để thực hiện mọi kỳ vọng của bạn.",
+     "file": "schop_vi_c07_11.m4a",
+     "ms": 4500
+    },
+    {
+     "text": "Giữ khoảng cách phù hợp không có nghĩa là vô tâm.",
+     "file": "schop_vi_c07_12.m4a",
+     "ms": 4400
+    },
+    {
+     "text": "Đôi khi chính việc tôn trọng sự độc lập của nhau giúp một mối quan hệ bền lâu.",
+     "file": "schop_vi_c07_13.m4a",
+     "ms": 5700
+    },
+    {
+     "text": "Hãy nhớ những con nhím: muốn chia sẻ hơi ấm, ta phải học cách không làm tổn thương nhau.",
+     "file": "schop_vi_c07_14.m4a",
+     "ms": 7500
+    }
+   ],
+   "question": {
+    "text": "Trong mối quan hệ nào, một khoảng cách phù hợp có thể mang lại nhiều sự tôn trọng hơn?",
+    "file": "schop_vi_c07_q.m4a",
+    "ms": 6900
+   }
+  },
+  {
+   "no": 8,
+   "title": "Bản chất của tình yêu và hôn nhân",
+   "staging": "Bóng hai người chuyển dần thành cảnh sinh hoạt đời thường.",
+   "lines": [
+    {
+     "text": "Ít có cảm xúc nào vừa đẹp đẽ vừa khiến con người dễ ảo tưởng như tình yêu.",
+     "file": "schop_vi_c08_00.m4a",
+     "ms": 6900
+    },
+    {
+     "text": "Khi yêu, ta tin rằng mình đã tìm được người dành riêng cho mình.",
+     "file": "schop_vi_c08_01.m4a",
+     "ms": 4900
+    },
+    {
+     "text": "Tôi nhìn đam mê tình ái từ một góc độ khác.",
+     "file": "schop_vi_c08_02.m4a",
+     "ms": 3800
+    },
+    {
+     "text": "Theo tôi, đằng sau sức hút mãnh liệt ấy còn có ý chí duy trì sự sống và tiếp nối giống loài.",
+     "file": "schop_vi_c08_03.m4a",
+     "ms": 8000
+    },
+    {
+     "text": "Hai người tưởng chỉ tìm kiếm hạnh phúc của riêng mình, nhưng tự nhiên có thể đang theo đuổi một mục đích khác.",
+     "file": "schop_vi_c08_04.m4a",
+     "ms": 9100
+    },
+    {
+     "text": "Điều đó không có nghĩa tình cảm của họ là giả.",
+     "file": "schop_vi_c08_05.m4a",
+     "ms": 4400
+    },
+    {
+     "text": "Nó chỉ có nghĩa rằng cảm xúc mãnh liệt không bảo đảm cho phán đoán đúng đắn.",
+     "file": "schop_vi_c08_06.m4a",
+     "ms": 5600
+    },
+    {
+     "text": "Người khiến bạn say mê chưa chắc đã là người có thể cùng bạn sống hòa hợp mỗi ngày.",
+     "file": "schop_vi_c08_07.m4a",
+     "ms": 6500
+    },
+    {
+     "text": "Hôn nhân rồi sẽ phải đối diện với tiền bạc, thói quen, mệt mỏi và những kỳ vọng khác nhau.",
+     "file": "schop_vi_c08_08.m4a",
+     "ms": 8800
+    },
+    {
+     "text": "Đam mê có thể đưa hai người đến gần nhau; tự nó không giải quyết được đời sống chung.",
+     "file": "schop_vi_c08_09.m4a",
+     "ms": 7900
+    },
+    {
+     "text": "Cách nhìn của tôi về tình yêu có thể khắc nghiệt.",
+     "file": "schop_vi_c08_10.m4a",
+     "ms": 3900
+    },
+    {
+     "text": "Nhưng hãy tự hỏi: trong điều bạn gọi là lựa chọn tự do, có bao nhiêu phần đến từ những thôi thúc mà bạn chưa thật sự hiểu?",
+     "file": "schop_vi_c08_11.m4a",
+     "ms": 8500
+    },
+    {
+     "text": "Trước lời hứa trọn đời, hãy nhìn xa hơn cơn say mê hiện tại.",
+     "file": "schop_vi_c08_12.m4a",
+     "ms": 5200
+    }
+   ],
+   "question": {
+    "text": "Bạn yêu con người ấy, hay yêu hạnh phúc mà bạn tin họ sẽ mang đến?",
+    "file": "schop_vi_c08_q.m4a",
+    "ms": 6900
+   }
+  },
+  {
+   "no": 9,
+   "title": "Tiền bạc, danh vọng và thành công",
+   "staging": "Tiền vàng và vương miện biến mất, chỉ còn chiếc bàn.",
+   "lines": [
+    {
+     "text": "Con người chạy theo điều gì suốt đời?",
+     "file": "schop_vi_c09_00.m4a",
+     "ms": 3700
+    },
+    {
+     "text": "Tiền bạc, địa vị, thành tựu và sự ngưỡng mộ của người khác.",
+     "file": "schop_vi_c09_01.m4a",
+     "ms": 5900
+    },
+    {
+     "text": "Khi bàn về số phận một người, tôi phân biệt ba điều: người ấy là ai, người ấy có gì, và người khác nghĩ gì về người ấy.",
+     "file": "schop_vi_c09_02.m4a",
+     "ms": 10300
+    },
+    {
+     "text": "Phần lớn chúng ta dồn sức cho hai điều sau; tôi cho rằng điều đầu tiên quan trọng hơn cả.",
+     "file": "schop_vi_c09_03.m4a",
+     "ms": 8000
+    },
+    {
+     "text": "Sức khỏe, một tâm trí phong phú, khả năng tìm thấy niềm vui khi ở một mình: tiền không thể tự động mua được chúng.",
+     "file": "schop_vi_c09_04.m4a",
+     "ms": 10100
+    },
+    {
+     "text": "Dĩ nhiên tiền rất cần thiết.",
+     "file": "schop_vi_c09_05.m4a",
+     "ms": 3700
+    },
+    {
+     "text": "Nghèo túng đem lại khổ sở, còn điều kiện vật chất đầy đủ có thể giảm nhiều lo âu.",
+     "file": "schop_vi_c09_06.m4a",
+     "ms": 7100
+    },
+    {
+     "text": "Nhưng của cải không nhất thiết lấp đầy được sự trống rỗng bên trong.",
+     "file": "schop_vi_c09_07.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "Danh tiếng lại càng bấp bênh, bởi nó tồn tại trong suy nghĩ của người khác.",
+     "file": "schop_vi_c09_08.m4a",
+     "ms": 6200
+    },
+    {
+     "text": "Bạn không thể kiểm soát hoàn toàn những suy nghĩ ấy.",
+     "file": "schop_vi_c09_09.m4a",
+     "ms": 4200
+    },
+    {
+     "text": "Có một trăm lại muốn một nghìn; có một nghìn lại ghen tị với người có mười nghìn.",
+     "file": "schop_vi_c09_10.m4a",
+     "ms": 5800
+    },
+    {
+     "text": "So sánh không có điểm kết thúc tự nhiên.",
+     "file": "schop_vi_c09_11.m4a",
+     "ms": 3600
+    },
+    {
+     "text": "Hãy chăm lo đời sống vật chất, nhưng đừng nhầm việc sống tốt hơn với việc trông có vẻ thành công hơn.",
+     "file": "schop_vi_c09_12.m4a",
+     "ms": 7400
+    }
+   ],
+   "question": {
+    "text": "Nếu không ai biết đến thành công của bạn, bạn còn muốn theo đuổi nó không?",
+    "file": "schop_vi_c09_q.m4a",
+    "ms": 5800
+   }
+  },
+  {
+   "no": 10,
+   "title": "Vì sao nghệ thuật và âm nhạc xoa dịu khổ đau",
+   "staging": "Đàn piano xuất hiện; không gian đổi màu theo âm nhạc.",
+   "lines": [
+    {
+     "text": "Bạn đã từng nghe một bản nhạc mà quên hết phiền muộn chưa?",
+     "file": "schop_vi_c10_00.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "Hay ngắm một bức tranh đến mức không biết thời gian đã trôi qua bao lâu?",
+     "file": "schop_vi_c10_01.m4a",
+     "ms": 7500
+    },
+    {
+     "text": "Phần lớn thời gian, chúng ta sống trong ham muốn: muốn đạt được, sợ đánh mất, tính toán tương lai.",
+     "file": "schop_vi_c10_02.m4a",
+     "ms": 9900
+    },
+    {
+     "text": "Nhưng khi thật sự chiêm ngưỡng cái đẹp, ta có thể tạm ngừng nhìn mọi thứ bằng câu hỏi: “Nó có lợi gì cho tôi?”.",
+     "file": "schop_vi_c10_03.m4a",
+     "ms": 8100
+    },
+    {
+     "text": "Tôi xem đó là khoảnh khắc tạm giải thoát khỏi sự phục dịch cho ý chí.",
+     "file": "schop_vi_c10_04.m4a",
+     "ms": 5100
+    },
+    {
+     "text": "Ta chú tâm vào đối tượng, thay vì vào lợi ích của bản thân.",
+     "file": "schop_vi_c10_05.m4a",
+     "ms": 4900
+    },
+    {
+     "text": "Âm nhạc có vị trí đặc biệt trong triết học của tôi.",
+     "file": "schop_vi_c10_06.m4a",
+     "ms": 4100
+    },
+    {
+     "text": "Trong khi các nghệ thuật khác biểu hiện những Ý niệm qua hình thức, tôi coi âm nhạc là sự biểu hiện trực tiếp của chính ý chí.",
+     "file": "schop_vi_c10_07.m4a",
+     "ms": 11900
+    },
+    {
+     "text": "Âm nhạc chạm đến ta mà không cần kể một câu chuyện cụ thể.",
+     "file": "schop_vi_c10_08.m4a",
+     "ms": 5100
+    },
+    {
+     "text": "Một bản nhạc không xóa sạch đau khổ mãi mãi.",
+     "file": "schop_vi_c10_09.m4a",
+     "ms": 4000
+    },
+    {
+     "text": "Khi âm thanh dừng lại, lo âu có thể quay về.",
+     "file": "schop_vi_c10_10.m4a",
+     "ms": 4900
+    },
+    {
+     "text": "Nhưng khoảng lặng khỏi ham muốn ấy rất đáng quý.",
+     "file": "schop_vi_c10_11.m4a",
+     "ms": 4100
+    },
+    {
+     "text": "Thỉnh thoảng, hãy nghe nhạc mà không vì năng suất hay thành tích.",
+     "file": "schop_vi_c10_12.m4a",
+     "ms": 5300
+    },
+    {
+     "text": "Chỉ nghe thôi cũng đủ.",
+     "file": "schop_vi_c10_13.m4a",
+     "ms": 2915
+    }
+   ],
+   "question": {
+    "text": "Loại hình nghệ thuật nào khiến bạn quên mình và hoàn toàn tập trung?",
+    "file": "schop_vi_c10_q.m4a",
+    "ms": 5700
+   }
+  },
+  {
+   "no": 11,
+   "title": "Làm thế nào để buông bớt ham muốn?",
+   "staging": "Phòng thiền yên tĩnh; giọng nói chậm và có khoảng ngừng.",
+   "lines": [
+    {
+     "text": "Chúng ta đã thấy ham muốn có thể đem đến khổ đau.",
+     "file": "schop_vi_c11_00.m4a",
+     "ms": 4300
+    },
+    {
+     "text": "Vậy làm sao giảm bớt sự chi phối của nó?",
+     "file": "schop_vi_c11_01.m4a",
+     "ms": 4100
+    },
+    {
+     "text": "Bạn có thể nghĩ rằng chỉ cần quyết tâm mạnh mẽ.",
+     "file": "schop_vi_c11_02.m4a",
+     "ms": 4100
+    },
+    {
+     "text": "Nhưng ngay cả khát vọng trở thành một người không còn ham muốn cũng có thể biến thành một ham muốn mới.",
+     "file": "schop_vi_c11_03.m4a",
+     "ms": 7600
+    },
+    {
+     "text": "Trước hết, hãy nhìn rõ động cơ của mình.",
+     "file": "schop_vi_c11_04.m4a",
+     "ms": 3700
+    },
+    {
+     "text": "Bạn đang muốn được công nhận?",
+     "file": "schop_vi_c11_05.m4a",
+     "ms": 2457
+    },
+    {
+     "text": "Sợ mất thứ mình có?",
+     "file": "schop_vi_c11_06.m4a",
+     "ms": 3100
+    },
+    {
+     "text": "Hay chỉ muốn một món đồ vì người khác đang sở hữu nó?",
+     "file": "schop_vi_c11_07.m4a",
+     "ms": 3900
+    },
+    {
+     "text": "Hiểu rõ ham muốn là bước đầu để không tự động chạy theo nó.",
+     "file": "schop_vi_c11_08.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "Tiếp đó, hãy nhận ra khổ đau của người khác.",
+     "file": "schop_vi_c11_09.m4a",
+     "ms": 3900
+    },
+    {
+     "text": "Ngay cả người bạn ghen tị hay không ưa cũng đang mang những vết thương của riêng họ.",
+     "file": "schop_vi_c11_10.m4a",
+     "ms": 5800
+    },
+    {
+     "text": "Tôi xem lòng trắc ẩn là nền tảng của đạo đức, vì nó giúp ta vượt khỏi cái tôi ích kỷ.",
+     "file": "schop_vi_c11_11.m4a",
+     "ms": 7500
+    },
+    {
+     "text": "Sau cùng, hãy suy nghĩ về khả năng từ bỏ chính sự thôi thúc phải luôn luôn có thêm.",
+     "file": "schop_vi_c11_12.m4a",
+     "ms": 6800
+    },
+    {
+     "text": "Trong những thực hành khổ hạnh và tư tưởng Ấn Độ, tôi tìm thấy gợi ý sâu sắc về sự phủ định ý chí.",
+     "file": "schop_vi_c11_13.m4a",
+     "ms": 7900
+    },
+    {
+     "text": "Nhưng đừng tự hào vì mình ít ham muốn hơn người khác: lòng kiêu hãnh cũng là một hình thức ràng buộc.",
+     "file": "schop_vi_c11_14.m4a",
+     "ms": 7700
+    },
+    {
+     "text": "Tự do không phải có mọi thứ, mà có thể bắt đầu khi điều ta thiếu không còn thống trị đời mình.",
+     "file": "schop_vi_c11_15.m4a",
+     "ms": 8800
+    }
+   ],
+   "question": {
+    "text": "Hôm nay, bạn có thể bắt đầu nới lỏng sự bám víu nào?",
+    "file": "schop_vi_c11_q.m4a",
+    "ms": 4400
+   }
+  },
+  {
+   "no": 12,
+   "title": "Nên sống như thế nào? — Triết lý sống của Schopenhauer",
+   "staging": "Các hình ảnh từ những bài học trở lại; nhân vật đứng trước hoàng hôn.",
+   "lines": [
+    {
+     "text": "Vậy là chúng ta đã đến buổi học cuối cùng.",
+     "file": "schop_vi_c12_00.m4a",
+     "ms": 3900
+    },
+    {
+     "text": "Chúng ta đã nói về ý chí và biểu tượng, đau khổ và hạnh phúc, cô độc và tình yêu, tiền bạc, lòng trắc ẩn và nghệ thuật.",
+     "file": "schop_vi_c12_01.m4a",
+     "ms": 11400
+    },
+    {
+     "text": "Có lẽ giờ đây bạn muốn hỏi tôi: “Rốt cuộc, tôi nên sống thế nào?”.",
+     "file": "schop_vi_c12_02.m4a",
+     "ms": 6100
+    },
+    {
+     "text": "Tôi sẽ không hứa rằng thế giới luôn công bằng, rằng cố gắng nhất định được đền đáp, hay rằng người tốt chắc chắn sẽ hạnh phúc.",
+     "file": "schop_vi_c12_03.m4a",
+     "ms": 9000
+    },
+    {
+     "text": "Cuộc đời không vận hành để chiều theo mong muốn của chúng ta.",
+     "file": "schop_vi_c12_04.m4a",
+     "ms": 4200
+    },
+    {
+     "text": "Nhưng ta vẫn có thể học được nhiều điều: biết quý sức khỏe, đời sống tinh thần và những giờ phút bình yên; bớt đặt giá trị của mình vào ánh mắt người khác; biết ở một mình mà không đánh mất lòng trắc ẩn.",
+     "file": "schop_vi_c12_05.m4a",
+     "ms": 17800
+    },
+    {
+     "text": "Đừng quay lưng trước đau khổ của người khác.",
+     "file": "schop_vi_c12_06.m4a",
+     "ms": 3800
+    },
+    {
+     "text": "Mỗi người tuy khác nhau nhưng đều chịu tác động của khát vọng và mất mát.",
+     "file": "schop_vi_c12_07.m4a",
+     "ms": 7000
+    },
+    {
+     "text": "Lòng trắc ẩn giúp ta bước ra khỏi sự khép kín của cái tôi.",
+     "file": "schop_vi_c12_08.m4a",
+     "ms": 5000
+    },
+    {
+     "text": "Hãy đọc, suy nghĩ, nghe nhạc và quan sát thế giới kỹ hơn.",
+     "file": "schop_vi_c12_09.m4a",
+     "ms": 6000
+    },
+    {
+     "text": "Mỗi khi một ham muốn nói rằng bạn phải có thêm thứ gì đó mới có thể yên ổn, hãy dừng lại và chất vấn nó.",
+     "file": "schop_vi_c12_10.m4a",
+     "ms": 8000
+    },
+    {
+     "text": "Tôi không đến để trao cho bạn một đáp án dễ chịu.",
+     "file": "schop_vi_c12_11.m4a",
+     "ms": 4200
+    },
+    {
+     "text": "Tôi chỉ mong bạn tự suy nghĩ sâu sắc hơn về đời mình.",
+     "file": "schop_vi_c12_12.m4a",
+     "ms": 4700
+    },
+    {
+     "text": "Trước khi hỏi mình cần sở hữu thêm gì, hãy hỏi mình có thể tự do khỏi điều gì.",
+     "file": "schop_vi_c12_13.m4a",
+     "ms": 7200
+    },
+    {
+     "text": "Tạm biệt bạn.",
+     "file": "schop_vi_c12_14.m4a",
+     "ms": 1753
+    }
+   ],
+   "question": {
+    "text": "Có mục tiêu hạnh phúc nào mà giờ đây bạn không cần tiếp tục đuổi theo nữa?",
+    "file": "schop_vi_c12_q.m4a",
+    "ms": 5300
+   }
+  }
+ ]
+}

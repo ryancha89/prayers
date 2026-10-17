@@ -12,4 +12,6 @@ def unityLibraryDir = new File(rootDir, '../unity/builds/android/unityLibrary')
 if (unityLibraryDir.exists()) {
     include ':unityLibrary'
     project(':unityLibrary').projectDir = unityLibraryDir
+    // Unity's data, as an install-time asset pack (android/unityAssets/build.gradle).
+    include ':unityAssets'
 }

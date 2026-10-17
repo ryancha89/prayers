@@ -55,7 +55,7 @@ test('deletes, signs out, and takes the local copy with it', async () => {
 
   expect(await deleteAccount()).toBe(true);
 
-  expect(spy.mock.calls[0][0]).toContain('/api/v1/users/delete_account');
+  expect(spy.mock.calls[0][0]).toContain('/api/v1/prayers/account');
   expect(spy.mock.calls[0][1]?.method).toBe('DELETE');
   expect(getUserAuth()).toBeNull();
   // Not just the storage row — the live store too, or the next person to sign in on this phone
@@ -72,10 +72,16 @@ test('deletes, signs out, and takes the local copy with it', async () => {
   expect(await AsyncStorage.getItem('prayers.lang.v1')).not.toBeNull();
 });
 
-test('a refusal leaves the account alone — the server answers 200 with deleted:false', async () => {
-  // users_controller#delete_account returns 200 {deleted:false} when a foreign key blocks the
-  // destroy. Signing out on `res.ok` would strand the player outside an account that still exists.
+test('a refusal leaves the account alone — only deleted:true counts, not a bare 200', async () => {
+  // Signing out on `res.ok` would strand the player outside an account that may still exist.
   stubFetch({ deleted: false });
+
+  expect(await deleteAccount()).toBe(false);
+  expect(getUserAuth()).toBe('dev-doomed');
+});
+
+test('a 401 (account already gone / token dead) is not a deletion either', async () => {
+  stubFetch({ success: false, error_code: 'USER_NOT_FOUND' }, 401);
 
   expect(await deleteAccount()).toBe(false);
   expect(getUserAuth()).toBe('dev-doomed');

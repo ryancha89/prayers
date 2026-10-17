@@ -41,14 +41,24 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { spacing } from '../../../shared/theme';
-import { useT } from '../../../shared/i18n';
+import { useLang, useT } from '../../../shared/i18n';
+import { koWith } from '../../world/data/zones';
+import { COUNSELOR_AVATAR_ART } from '../../counselors/assets';
 import { WorldJoystick } from '../../world/components/WorldJoystick';
 import { PromptButton } from '../../world/components/PromptButton';
 import { getUnityBridge } from '../bridge';
 import type { UnityToRNEvent } from '../types';
 
-export const WalkControls: React.FC<{ visible: boolean }> = ({ visible }) => {
+export const WalkControls: React.FC<{
+  visible: boolean;
+  /** Who is in the room: her face and name go on the Talk prompt ("유나와 대화하기"). */
+  counselor?: { id: string; name: string };
+}> = ({ visible, counselor }) => {
   const t = useT();
+  const lang = useLang();
+  const talkLabel = counselor?.name
+    ? t('room.talkWith', { name: lang === 'ko' ? koWith(counselor.name) : counselor.name })
+    : t('room.talk');
   // Placed as the world places it: bottom-left, clear of the island and the home indicator.
   const safe = useSafeAreaInsets();
   const [canTalk, setCanTalk] = useState(false);
@@ -71,7 +81,8 @@ export const WalkControls: React.FC<{ visible: boolean }> = ({ visible }) => {
       {visible && canTalk && (
         <PromptButton
           testID="walk-talk"
-          label={t('room.talk')}
+          label={talkLabel}
+          avatar={counselor ? COUNSELOR_AVATAR_ART[counselor.id] : undefined}
           onPress={() => getUnityBridge().sendEvent({ type: 'WALK_TALK' })}
         />
       )}

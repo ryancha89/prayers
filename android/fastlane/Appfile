@@ -1,0 +1,4 @@
+# Google Play service account key — kept out of git (android/.gitignore).
+# Put it at android/fastlane/google-play-key.json, or point PRAYERS_PLAY_JSON_KEY at it.
+json_key_file(ENV["PRAYERS_PLAY_JSON_KEY"] || "./fastlane/google-play-key.json")
+package_name("com.fortunetorch.prayers")

@@ -8,6 +8,7 @@ import { Badge } from '../../../shared/components/Badge';
 import { CounselorSummary } from '../types';
 import { GradientScrim } from '../../../shared/components/GradientScrim';
 import { sfx } from '../../../shared/audio/sfx';
+import { useCounselorStats } from '../store/counselorStatsStore';
 
 /**
  * Character-first discovery card (spec §6). Emphasises the portrait; feels like
@@ -19,6 +20,9 @@ export const CounselorCard: React.FC<{
   onPress: () => void;
 }> = ({ counselor, onPress }) => {
   const t = useT();
+  // The real count from the server (Prayers::CounselorStats); absent until it answers, and for a
+  // counselor nobody has consulted yet — either way the line is not drawn.
+  const consultations = useCounselorStats(s => s.counts?.[counselor.id]);
   // Coming-soon wins over NEW/TRENDING: those sell a counselor, and this one is not for sale
   // yet. A card badged NEW that opens nothing is the promise the badge should have withdrawn.
   const badge = counselor.comingSoon
@@ -74,9 +78,9 @@ export const CounselorCard: React.FC<{
           ))}
         </View>
 
-        {!!counselor.conversationCount && (
+        {!!consultations && (
           <Text style={styles.meta}>
-            {t('card.conversations', { count: compactNumber(counselor.conversationCount) })}
+            {t('card.conversations', { count: compactNumber(consultations) })}
           </Text>
         )}
       </View>

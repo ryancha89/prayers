@@ -7,7 +7,7 @@
  * voice while nothing is coming from the server: the waiting lines, the thinking caption, the input
  * placeholders, and the two scripted beats where the reading opens. Those were written once, in the
  * mystical register every counselor shared — "Let me examine your Four Pillars", "이 흐름을 다시
- * 읽어볼게요" — and out of Go Yunjung's mouth, whose card promises a straight answer about work and
+ * 읽어볼게요" — and out of YunJeong's mouth, whose card promises a straight answer about work and
  * money, they are somebody else talking.
  *
  * KEYED BY SPECIALTY, NOT BY NAME. `voiceFor` asks the registry what this counselor reads; a second

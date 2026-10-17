@@ -40,6 +40,11 @@ target 'prayers' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # GoogleSignIn (via @react-native-google-signin) pulls in AppCheckCore, a Swift pod whose two
+  # ObjC dependencies ship no module maps — without these, `pod install` refuses to integrate it.
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'RecaptchaInterop', :modular_headers => true
+
   post_install do |installer|
     react_native_post_install(
       installer,

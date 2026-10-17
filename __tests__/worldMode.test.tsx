@@ -53,9 +53,12 @@ const mockNav = {
   listeners: {} as Record<string, Set<(e?: unknown) => void>>,
 };
 const mockNavigate = jest.fn((...args: unknown[]) => mockNav.calls.push({ args, hostUnmounts: mockHost.unmounts }));
+// Back to 2D pops to the Tabs under the world (React Navigation 7's navigate would push a second one).
+const mockPopTo = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     navigate: mockNavigate,
+    popTo: mockPopTo,
     goBack: jest.fn(),
     addListener: (event: string, fn: (e?: unknown) => void) => {
       (mockNav.listeners[event] ??= new Set()).add(fn);
@@ -669,9 +672,10 @@ describe('the World screen', () => {
     await render();
     await cardOf('counseling');
     press('상담사 둘러보기');
-    expect(mockNavigate).toHaveBeenLastCalledWith('Tabs', { screen: 'Home' });
+    expect(mockPopTo).toHaveBeenLastCalledWith('Tabs', { screen: 'Home' });
+    mockPopTo.mockClear();
     press('홈으로');
-    expect(mockNavigate).toHaveBeenLastCalledWith('Tabs', { screen: 'Home' });
+    expect(mockPopTo).toHaveBeenLastCalledWith('Tabs', { screen: 'Home' });
   });
 
   it('Map lists the five doors and walks to one (WORLD_GOTO); Quest says soon; Menu goes to 2D', async () => {
@@ -693,7 +697,7 @@ describe('the World screen', () => {
     press('닫기');
     press('Menu');
     press('2D 화면으로 돌아가기');
-    expect(mockNavigate).toHaveBeenLastCalledWith('Tabs', { screen: 'Home' });
+    expect(mockPopTo).toHaveBeenLastCalledWith('Tabs', { screen: 'Home' });
   });
 
   it('a Map pick before the world is up opens the door at once instead of dropping it', async () => {

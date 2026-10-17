@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { absoluteFill, spacing } from '../../../shared/theme';
-import { HUD_ICON, HudIcon, ProfileBadge, RingButton, badgeMaxWidth } from '../../../shared/components/hud/Hud';
+import { HUD_ICON, ProfileBadge, RING_COMPACT, RingButton, badgeMaxWidth } from '../../../shared/components/hud/Hud';
 import { useLang, useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import { useScreen } from '../../../shared/device/screen';
@@ -288,12 +288,14 @@ export const WorldScreen: React.FC = () => {
 
   const to2D = useCallback(() => {
     sfx.back();
-    navigation.navigate('Tabs', { screen: 'Home' });
+    // popTo, not navigate: since React Navigation 7 navigate pushes a second Tabs over this screen
+    // and leaves it mounted underneath (16-10: the consultation room then exited into the World).
+    navigation.popTo('Tabs', { screen: 'Home' });
   }, [navigation]);
 
   const actions: ZoneActions = {
     counsel: c => leaveTo('counseling', () => openCounselor(navigation, c)),
-    browse: () => navigation.navigate('Tabs', { screen: 'Home' }),
+    browse: () => navigation.popTo('Tabs', { screen: 'Home' }),
     meditate: () => leaveTo('meditation', () => navigation.navigate('MeditationRoom')),
     journey: () =>
       leaveTo('journey', () => {
@@ -417,7 +419,11 @@ export const WorldScreen: React.FC = () => {
         />
         <View style={styles.topRight}>
           <CoinPill />
-          <HudIcon testID="world-home" icon="home" label={t('world.toHome')} onPress={to2D} />
+          {/* 16-10 (user: "위쪽 오른쪽 메인화면 돌아가는 아이콘 개선"): it was a bare outline floating on the
+              sky — the one control up here with no plate, easy to miss against a bright scene. Now the
+              HUD's own ring (navy disk, gold hairline, ivory glyph), the height of the coin pill beside it,
+              like the back ring of every in-world top bar. */}
+          <RingButton testID="world-home" icon="home" size={RING_COMPACT} label={t('world.toHome')} onPress={to2D} />
         </View>
       </View>
 

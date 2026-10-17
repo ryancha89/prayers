@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet } from 'react-native';
+import { Animated, Image, ImageSourcePropType, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
@@ -23,6 +23,11 @@ export const PROMPT_LIFT = { portrait: 250, landscape: 20 };
  * door). It is centred between the safe-area edges, never at a corner: a corner is where the
  * Dynamic Island sits in landscape and the home indicator in portrait, and the room's old
  * bottom-right Talk ended up under the island (02-10 screenshot).
+ *
+ * 16-10 (user: "이 버튼도 개선"): a flat mustard slab with a gold glow that muddied into the floor.
+ * Now it has depth — a pale top rim and a dark drop shadow, so it holds against a bright room —
+ * a slow halo that breathes around it (it is the one thing to do here), and, when it leads to
+ * someone, their face: the room's Talk shows the counsellor's avatar and says whom you will talk to.
  */
 export const PromptButton: React.FC<{
   label: string;
@@ -31,7 +36,9 @@ export const PromptButton: React.FC<{
   testID?: string;
   /** Points above the usual spot — a second prompt shown at once (the room's Leave over Talk). */
   raise?: number;
-}> = ({ label, onPress, popKey, testID, raise = 0 }) => {
+  /** Whom the prompt leads to: a round face on its left (the room's Talk). */
+  avatar?: ImageSourcePropType;
+}> = ({ label, onPress, popKey, testID, raise = 0, avatar }) => {
   const safe = useSafeAreaInsets();
   const landscape = useScreen().landscape;
   const pop = useRef(new Animated.Value(0)).current;
@@ -39,6 +46,14 @@ export const PromptButton: React.FC<{
     pop.setValue(0);
     Animated.spring(pop, { toValue: 1, friction: 6, tension: 90, useNativeDriver: true }).start();
   }, [popKey, pop]);
+  const halo = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(halo, { toValue: 1, duration: 1800, useNativeDriver: true }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [halo]);
 
   return (
     <Animated.View
@@ -53,15 +68,33 @@ export const PromptButton: React.FC<{
           transform: [{ scale: pop }],
         },
       ]}>
-      <Pressable
-        testID={testID}
-        onPress={() => { sfx.select(); onPress(); }}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        style={({ pressed }) => [styles.pill, pressed && styles.pressed]}>
-        <Text style={styles.text}>{label}</Text>
-        <Icon name="arrowRight" size={16} color="#1A1330" />
-      </Pressable>
+      <View>
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.halo,
+            {
+              opacity: halo.interpolate({ inputRange: [0, 1], outputRange: [0.55, 0] }),
+              transform: [
+                { scaleX: halo.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) },
+                { scaleY: halo.interpolate({ inputRange: [0, 1], outputRange: [1, 1.35] }) },
+              ],
+            },
+          ]}
+        />
+        <Pressable
+          testID={testID}
+          onPress={() => { sfx.select(); onPress(); }}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          style={({ pressed }) => [styles.pill, avatar != null && styles.pillWithAvatar, pressed && styles.pressed]}>
+          {avatar != null && <Image source={avatar} style={styles.avatar} />}
+          <Text style={styles.text} numberOfLines={1}>{label}</Text>
+          <View style={styles.arrow}>
+            <Icon name="arrowRight" size={14} color={colors.gold} />
+          </View>
+        </Pressable>
+      </View>
     </Animated.View>
   );
 };
@@ -69,11 +102,28 @@ export const PromptButton: React.FC<{
 const styles = StyleSheet.create({
   wrap: { position: 'absolute', alignItems: 'center' },
   pill: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    paddingHorizontal: spacing.xxl, paddingVertical: spacing.md, borderRadius: radius.pill,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    paddingLeft: spacing.xl, paddingRight: spacing.sm, paddingVertical: spacing.sm, borderRadius: radius.pill,
     backgroundColor: colors.gold,
-    shadowColor: colors.gold, shadowOpacity: 0.6, shadowRadius: 14, shadowOffset: { width: 0, height: 0 },
+    borderWidth: 1.5, borderColor: 'rgba(255, 244, 214, 0.95)',
+    shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
+  pillWithAvatar: { paddingLeft: spacing.xs },
+  // The breathing ring: the pill's own shape, in gold, growing and fading behind it.
+  halo: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: colors.gold,
+  },
+  avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: '#1A1330' },
   text: { ...typography.h3, color: '#1A1330' },
-  pressed: { opacity: 0.75 },
+  // The way forward, as a dark coin with a gold arrow — the HUD's ring, small.
+  arrow: {
+    width: 30, height: 30, borderRadius: 15,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#1A1330',
+  },
+  pressed: { opacity: 0.8, transform: [{ scale: 0.97 }] },
 });

@@ -47,7 +47,7 @@ const navigationRef = createNavigationContainerRef<RootStackParamList>();
 // World (spec 004) since 02-10: the hub is a Unity scene like the rooms — same speaker rule, no mini
 // player over it, and above all no SESSION_END posted into it on arrival.
 // Cafe (16-10): the world's sixth door, a Unity scene like My Room.
-export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom', 'World', 'MyRoom', 'Cafe']);
+export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom', 'World', 'MyRoom', 'Cafe', 'Lecture']);
 /** Screens that host the Unity player but NOT as a room that owns the sound: the train journey
  *  (spec 003) draws its cabin in Unity while its own narration keeps playing. They must not tear
  *  Unity down (stopAllAudio → SESSION_END), and must not pause the journey either — which is why
@@ -64,7 +64,7 @@ const UNITY_SCENERY_SCREENS = new Set(['Journey']);
  * someone still deciding whether they have ten minutes.
  */
 // The sleep guide is the same kind of room: its voice and music are the content (sleepAudio.ts).
-const SELF_SCORED_SCREENS = new Set(['MeditationRoom', 'SleepGuide']);
+const SELF_SCORED_SCREENS = new Set(['MeditationRoom', 'SleepGuide', 'Lecture']);
 
 /** Whether the app's own music may play. The splash has a cue of its own and the two would
  *  overlap, so nothing starts until it is done. */

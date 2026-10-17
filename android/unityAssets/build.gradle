@@ -1,0 +1,20 @@
+// Install-time asset pack for the embedded Unity player's data (16-10).
+//
+// The Unity export puts its whole player data — bin/Data (scenes, meshes, textures, IL2CPP
+// metadata) and the Addressables bundles under aa/ — in unityLibrary's assets. In the base module
+// that came to ~540 MB compressed, and Google Play refuses a base module over 200 MB. An
+// install-time pack is delivered with the app at install (no download step, nothing for the code
+// to request) and its assets are merged into the same AssetManager, so Unity finds bin/Data and
+// aa/ exactly where it looked before. The pack's own limit is 1 GB.
+//
+// The assets are taken straight from the export: src/main/assets is a symlink to
+// unity/builds/android/unityLibrary/src/main/assets, and unityLibrary is told to leave them out
+// (android/build.gradle), so they ship once.
+apply plugin: 'com.android.asset-pack'
+
+assetPack {
+    packName = "unity_assets"
+    dynamicDelivery {
+        deliveryType = "install-time"
+    }
+}

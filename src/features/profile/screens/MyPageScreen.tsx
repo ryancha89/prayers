@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../../../navigation/types';
@@ -21,6 +21,106 @@ import { sfx } from '../../../shared/audio/sfx';
 import { useAuthStore } from '../../auth/store/authStore';
 import { column } from '../../../shared/device/screen';
 import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
+import { useAvatarStore } from '../avatar/avatarStore';
+import {
+  avatarAvailable,
+  cameraAvailable,
+  changeAvatar,
+  currentAvatarUri,
+  removeAvatar,
+  syncAvatar,
+  type AvatarPickResult,
+} from '../avatar/avatar';
+
+/**
+ * The profile photo, and the way to change it. Tapping opens Library / Camera / Remove; the camera
+ * badge is there so the circle reads as something you can tap, not a decoration.
+ *
+ * Shows the phone's own copy first (instant, offline), the account's CDN copy when there is no
+ * local one (set on another device), and the person glyph when neither loads.
+ */
+const Avatar: React.FC = () => {
+  const t = useT();
+  const localUri = useAvatarStore(s => s.localUri);
+  const remoteUrl = useAvatarStore(s => s.remoteUrl);
+  // A uri that failed to load is skipped for the next one down — a local copy iOS cleared falls back
+  // to the CDN copy rather than to an empty circle.
+  const [broken, setBroken] = React.useState<string | null>(null);
+  const local = currentAvatarUri(localUri);
+  const candidates = [local, remoteUrl].filter((u): u is string => !!u);
+  const uri = candidates.find(u => u !== broken) ?? null;
+  const hasPhoto = candidates.length > 0;
+
+  React.useEffect(() => { void syncAvatar(); }, []);
+
+  const explain = (r: AvatarPickResult) => {
+    if (r.status === 'denied') {
+      Alert.alert(t('my.avatar.denied'), undefined, [
+        { text: t('account.cancel'), style: 'cancel' },
+        { text: t('my.avatar.settings'), onPress: () => { Linking.openSettings().catch(() => {}); } },
+      ]);
+    } else if (r.status === 'noCamera') Alert.alert(t('my.avatar.noCamera'));
+    else if (r.status === 'unavailable') Alert.alert(t('my.avatar.unavailable'));
+    else if (r.status === 'error') Alert.alert(t('my.avatar.failed'));
+    else if (r.status === 'ok') setBroken(null);
+  };
+  const pick = (source: 'library' | 'camera') => { void changeAvatar(source).then(explain); };
+
+  const open = () => {
+    sfx.tap();
+    if (!avatarAvailable()) { Alert.alert(t('my.avatar.unavailable')); return; }
+    const withCamera = cameraAvailable();
+    if (Platform.OS === 'ios') {
+      const items: { label: string; run: () => void }[] = [{ label: t('my.avatar.library'), run: () => pick('library') }];
+      if (withCamera) items.push({ label: t('my.avatar.camera'), run: () => pick('camera') });
+      if (hasPhoto) items.push({ label: t('my.avatar.remove'), run: () => { void removeAvatar(); } });
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: t('my.avatar.change'),
+          options: [...items.map(x => x.label), t('account.cancel')],
+          cancelButtonIndex: items.length,
+          destructiveButtonIndex: hasPhoto ? items.length - 1 : undefined,
+        },
+        i => items[i]?.run(),
+      );
+      return;
+    }
+    // Android's Alert holds three buttons at most, so Cancel is the tap outside (`cancelable`) once
+    // Remove needs the slot.
+    const buttons: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [];
+    if (hasPhoto) buttons.push({ text: t('my.avatar.remove'), style: 'destructive', onPress: () => { void removeAvatar(); } });
+    else buttons.push({ text: t('account.cancel'), style: 'cancel' });
+    if (withCamera) buttons.push({ text: t('my.avatar.camera'), onPress: () => pick('camera') });
+    buttons.push({ text: t('my.avatar.library'), onPress: () => pick('library') });
+    Alert.alert(t('my.avatar.change'), undefined, buttons, { cancelable: true });
+  };
+
+  return (
+    <Pressable
+      onPress={open}
+      accessibilityRole="button"
+      accessibilityLabel={t('my.avatar.change')}
+      testID="profile-avatar"
+      style={({ pressed }) => [styles.avatarWrap, pressed && styles.avatarPressed]}>
+      <View style={styles.avatar}>
+        {uri ? (
+          <Image
+            key={uri}
+            source={{ uri }}
+            style={styles.avatarImage}
+            onError={() => setBroken(uri)}
+            testID="profile-avatar-image"
+          />
+        ) : (
+          <Icon name="person" size={30} />
+        )}
+      </View>
+      <View style={styles.avatarBadge}>
+        <Icon name="camera" size={14} />
+      </View>
+    </Pressable>
+  );
+};
 
 /** Simple profile page mirroring the reference structure (spec §33). */
 export const MyPageScreen: React.FC = () => {
@@ -48,9 +148,7 @@ export const MyPageScreen: React.FC = () => {
         <Text style={styles.header}>{t('my.title')}</Text>
 
         <View style={styles.profile}>
-          <View style={styles.avatar}>
-            <Icon name="person" size={30} />
-          </View>
+          <Avatar />
           {/* The account's own name. Was hard-coded to "Jeongmin", which shipped a stranger's
               name to every player; there is a real one to show now. */}
           <Text style={styles.name}>{displayName || t('account.noName')}</Text>
@@ -269,11 +367,29 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: spacing.xxl },
   header: { ...typography.hero, color: colors.textPrimary, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
   profile: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xl },
+  avatarWrap: { width: 88, height: 88 },
+  avatarPressed: { opacity: 0.8 },
   avatar: {
     width: 88,
     height: 88,
     borderRadius: 44,
     backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: { width: 88, height: 88 },
+  // Sits on the rim, ringed in the page colour so it reads as a separate chip, not a dent.
+  avatarBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.violet,
+    borderWidth: 2,
+    borderColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },

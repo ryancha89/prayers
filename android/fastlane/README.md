@@ -15,6 +15,30 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## Android
 
+### android beta
+
+```sh
+[bundle exec] fastlane android beta
+```
+
+versionCode 증가 → 빌드 → 내부 테스트 트랙 업로드
+
+### android release
+
+```sh
+[bundle exec] fastlane android release
+```
+
+versionCode 증가 → 빌드 → 프로덕션 트랙 업로드
+
+### android promote
+
+```sh
+[bundle exec] fastlane android promote
+```
+
+내부 테스트 빌드를 프로덕션으로 승격
+
 ### android upload_internal
 
 ```sh

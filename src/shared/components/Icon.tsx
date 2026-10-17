@@ -51,6 +51,7 @@ export type IconName =
   | 'bolt'
   | 'shirt'
   | 'image'
+  | 'camera'
   | 'wind'
   | 'armchair'
   | 'bed'
@@ -417,6 +418,12 @@ const ICONS: Record<IconName, Draw> = {
       <Rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke={c} />
       <Circle cx="9" cy="9" r="1.5" stroke={c} />
       <Polyline points="20.5 15 15 10 4 20.5" stroke={c} />
+    </>
+  ),
+  camera: c => (
+    <>
+      <Path d="M21 18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l2-3h4l2 3h3a2 2 0 0 1 2 2Z" stroke={c} />
+      <Circle cx="12" cy="13" r="3.5" stroke={c} />
     </>
   ),
   // Breath: three gusts, for 호흡 명상.

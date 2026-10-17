@@ -96,6 +96,10 @@ export type RootStackParamList = {
    *  above reachable too. */
   Legal: { doc: 'terms' | 'privacy' };
   ProfileSetup: undefined;
+  /** A recorded lecture series (the Schopenhauer 12강), opened at a chapter and line. Not a
+   *  consultation: free, pre-recorded, nothing sent. The NAME is load-bearing — App.tsx silences the
+   *  app's bed on it (`SELF_SCORED_SCREENS`), as for the meditation room. */
+  Lecture: { chapter: number; line?: number };
   /** Loading screen that boots the (mock) Unity room, spec §17. */
   UnityEntry: {
     counselorId: string;

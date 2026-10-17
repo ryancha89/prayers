@@ -7,14 +7,15 @@ import { ensureGameToken } from './session';
  * The headers every saju_server call carries — one place, because there are now two ways in and
  * picking the wrong one is a 401 that reads as "the server is down".
  *
- *   1. `Game-Token` — a 24h credential issued for this account. The path a RELEASE build takes:
- *      nothing secret is compiled into the bundle, and a stolen token is one user for one day.
- *   2. `Saju-Authorization: Bearer-<SAJU_ACCESS_TOKEN>` — the app-wide shared secret. Dev only,
- *      and only as a fallback, because a secret that ships in a bundle is a secret everyone has.
+ *   1. `Game-Token: pgt_…` — a 24h credential for this Prayers account, minted at
+ *      `/api/v1/prayers/game/token`. The path a RELEASE build takes: nothing secret is compiled into
+ *      the bundle, and a stolen token is one user for one day.
+ *   2. `Saju-Authorization: Bearer-<SAJU_ACCESS_TOKEN>` + `User-Auth: pr_…` — the app-wide shared
+ *      secret. The server honours it in development/test only, and the app sends it only as a dev
+ *      fallback, because a secret that ships in a bundle is a secret everyone has.
  *
- * `User-Auth` rides along with both. Path 1 resolves the user from the token itself, but several
- * controllers (game_controller, saju_controller#tickets) read the uid header directly, and sending
- * it costs nothing.
+ * `User-Auth` (the `pr_` uid; `dev-…` in a dev build) rides along with both. The server ignores it
+ * when a `pgt_` token is present, but the contract asks clients to keep sending it.
  *
  * Returns null when the app has no way to authenticate at all — callers must treat that as "do not
  * send the request", not as an error to retry.

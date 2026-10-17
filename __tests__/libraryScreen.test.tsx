@@ -61,7 +61,7 @@ it('lists the favourited counselors, and only those', () => {
   useFavoritesStore.setState({ ids: ['yunjung'] });
 
   const text = textOf({ list: 'favorites' }).join(' ');
-  expect(text).toContain('Go Yunjung');
+  expect(text).toContain('YunJeong');
   expect(text).not.toContain('Yuna');
 });
 
@@ -76,7 +76,7 @@ it('drops a favourite whose counselor has left the roster', () => {
   useFavoritesStore.setState({ ids: ['yunjung', 'someone_removed'] });
 
   const text = textOf({ list: 'favorites' }).join(' ');
-  expect(text).toContain('Go Yunjung');
+  expect(text).toContain('YunJeong');
   // No blank card, and no crash on the id that resolves to nothing.
   expect(text).not.toContain('someone_removed');
 });

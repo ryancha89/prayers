@@ -5,6 +5,8 @@ import {
   CafeRevealCard,
   CafeTarotSpeak,
   CafeTarotStart,
+  LectureInitPayload,
+  LectureStatePayload,
   MeditationStatePayload,
   JourneyInitPayload,
   JourneyStatePayload,
@@ -90,6 +92,12 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   /** The last session state sent to the room, re-sent when the room answers: Begin can be pressed
    *  while the scene is still loading, and that message reaches a room that is not there yet. */
   private meditationState?: MeditationStatePayload;
+  /** The lecture room: the same open-until-answered rule as the meditation room. */
+  private lectureInit?: LectureInitPayload;
+  private lecturePending = false;
+  private lectureRetry: ReturnType<typeof setTimeout> | null = null;
+  private lectureTries = 0;
+  private lectureState?: LectureStatePayload;
   /** The train journey cabin: the same open-until-answered rule as the meditation room. */
   private journeyInit?: JourneyInitPayload;
   private journeyPending = false;
@@ -274,6 +282,65 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   sendMeditationState(payload: MeditationStatePayload): void {
     this.meditationState = payload;
     if (this.view) this.post({ type: 'MEDITATION_STATE', payload });
+  }
+
+  /**
+   * Open the lecture room (the Schopenhauer series). Posts directly and repeats until LECTURE_READY,
+   * for exactly the reasons openMeditationRoom gives — this room never sends UNITY_READY either.
+   */
+  openLectureRoom(init: LectureInitPayload): void {
+    this.lectureInit = init;
+    this.lecturePending = true;
+    this.lectureTries = 0;
+    this.lectureState = undefined;
+    devlog('[unity-bridge] LECTURE_INIT');
+    this.post({ type: 'LECTURE_INIT', payload: init });
+    this.armLectureRetry();
+  }
+
+  private armLectureRetry(): void {
+    this.clearLectureRetry();
+    this.lectureRetry = setTimeout(() => {
+      this.lectureRetry = null;
+      if (!this.lecturePending || !this.view || !this.lectureInit) return;
+      if (this.lectureTries >= MEDITATION_MAX_TRIES) {
+        devlog(`[unity-bridge] no LECTURE_READY after ${this.lectureTries} retries — staying on the portrait`);
+        return;
+      }
+      this.lectureTries += 1;
+      devlog(`[unity-bridge] LECTURE_INIT (retry ${this.lectureTries})`);
+      this.post({ type: 'LECTURE_INIT', payload: this.lectureInit });
+      this.armLectureRetry();
+    }, MEDITATION_RETRY_MS);
+  }
+
+  private clearLectureRetry(): void {
+    if (this.lectureRetry !== null) {
+      clearTimeout(this.lectureRetry);
+      this.lectureRetry = null;
+    }
+  }
+
+  /** What the lecture is doing. Posted at once when there is a view, remembered for LECTURE_READY. */
+  sendLectureState(payload: LectureStatePayload): void {
+    this.lectureState = payload;
+    if (this.view) this.post({ type: 'LECTURE_STATE', payload });
+  }
+
+  /** The listener's camera round him. Straight through; only the latest matters. */
+  sendLectureCamera(camera: { zoom: number; yaw: number; pitch: number }): void {
+    if (this.view) this.post({ type: 'LECTURE_CAMERA', payload: camera });
+  }
+
+  /** Leaving the lecture room. Idempotent, and safe when Unity never booted. */
+  closeLectureRoom(): void {
+    this.lecturePending = false;
+    this.lectureState = undefined;
+    this.clearLectureRetry();
+    try {
+      if (this.view) this.post({ type: 'LECTURE_END' });
+    } catch {}
+    this.ready = false;
   }
 
   /**
@@ -797,6 +864,11 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       this.post({ type: 'MEDITATION_INIT' });
       this.armMeditationRetry();
     }
+    if (this.lecturePending && this.lectureInit) {
+      devlog('[unity-bridge] LECTURE_INIT (view registered)');
+      this.post({ type: 'LECTURE_INIT', payload: this.lectureInit });
+      this.armLectureRetry();
+    }
     if (this.journeyPending && this.journeyInit) {
       devlog('[unity-bridge] JOURNEY_INIT (view registered)');
       this.post({ type: 'JOURNEY_INIT', payload: this.journeyInit });
@@ -904,6 +976,10 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
         devlog('[unity-bridge] MEDITATION_INIT (bridge ready)');
         this.post({ type: 'MEDITATION_INIT' });
       }
+      if (this.lecturePending && this.lectureInit) {
+        devlog('[unity-bridge] LECTURE_INIT (bridge ready)');
+        this.post({ type: 'LECTURE_INIT', payload: this.lectureInit });
+      }
       if (this.journeyPending && this.journeyInit) {
         devlog('[unity-bridge] JOURNEY_INIT (bridge ready)');
         this.post({ type: 'JOURNEY_INIT', payload: this.journeyInit });
@@ -925,6 +1001,16 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     // The meditation room's equivalent of UNITY_READY for TRANSPORT purposes only: it proves the
     // player is listening, so nothing after it needs queueing. It does NOT start anything — the
     // screen decides what to do with it.
+    if (event.type === 'LECTURE_READY') {
+      this.lecturePending = false;
+      this.clearLectureRetry();
+      if (this.lectureState) this.post({ type: 'LECTURE_STATE', payload: this.lectureState });
+      this.replayViewInsets();
+      this.ready = true;
+      this.everReady = true;
+      this.clearInitRetry();
+    }
+
     if (event.type === 'MEDITATION_READY') {
       this.meditationPending = false;
       this.clearMeditationRetry();

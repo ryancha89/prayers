@@ -58,12 +58,12 @@ function serverRejecting(deadToken: string) {
   return { calls, fn };
 }
 
-/** `GET /api/v1/game/token` is a bare fetch inside ensureGameToken, not an authedFetch. */
+/** `GET /api/v1/prayers/game/token` is a bare fetch inside ensureGameToken, not an authedFetch. */
 function mintsTokenThen(freshToken: string, rest: (url: string, init: RequestInit) => Promise<Response>) {
   const calls: Call[] = [];
   const fn = jest.fn((url: string, init: RequestInit = {}) => {
     calls.push({ url, init });
-    if (url.endsWith('/api/v1/game/token')) {
+    if (url.endsWith('/api/v1/prayers/game/token')) {
       return Promise.resolve({
         ok: true,
         status: 200,
@@ -90,11 +90,11 @@ beforeEach(() => {
 describe('authedFetch, when the server has forgotten the token', () => {
   it('throws the dead token away, mints a new one and retries once', async () => {
     signInAsDeveloper('dev-stale');
-    storeGameToken('dead-token', Date.now() + 20 * 3600_000); // client still believes in it
+    storeGameToken('pgt_dead', Date.now() + 20 * 3600_000); // client still believes in it
 
-    const { calls } = mintsTokenThen('fresh-token', (_url, init) => {
+    const { calls } = mintsTokenThen('pgt_fresh', (_url, init) => {
       const sent = (init.headers as Record<string, string>)?.['Game-Token'];
-      const status = sent === 'dead-token' ? 401 : 200;
+      const status = sent === 'pgt_dead' ? 401 : 200;
       return Promise.resolve({ ok: status === 200, status, json: async () => ({}) } as Response);
     });
 
@@ -103,17 +103,17 @@ describe('authedFetch, when the server has forgotten the token', () => {
     expect(res?.status).toBe(200);
 
     const recalls = calls.filter(c => c.url.includes('/recall'));
-    expect(recalls.map(tokenOf)).toEqual(['dead-token', 'fresh-token']);
+    expect(recalls.map(tokenOf)).toEqual(['pgt_dead', 'pgt_fresh']);
     // The new token replaced the dead one in the store, so the NEXT call starts out valid.
-    expect(useAuthStore.getState().gameToken).toBe('fresh-token');
+    expect(useAuthStore.getState().gameToken).toBe('pgt_fresh');
   });
 
   it('retries at most once — a second 401 is about the account, not the credential', async () => {
     signInAsDeveloper('dev-gone');
-    storeGameToken('dead-token', Date.now() + 20 * 3600_000);
+    storeGameToken('pgt_dead', Date.now() + 20 * 3600_000);
 
     // Every token is refused, including the freshly minted one.
-    const { calls } = mintsTokenThen('fresh-token', () =>
+    const { calls } = mintsTokenThen('pgt_fresh', () =>
       Promise.resolve({ ok: false, status: 401, json: async () => ({}) } as Response),
     );
 
@@ -132,7 +132,7 @@ describe('authedFetch, when the server has forgotten the token', () => {
     (globalThis as unknown as { fetch: jest.Mock }).fetch = jest.fn(
       (url: string, init: RequestInit) => {
         calls.push({ url, init });
-        if (url.endsWith('/api/v1/game/token')) {
+        if (url.endsWith('/api/v1/prayers/game/token')) {
           return Promise.resolve({ ok: false, status: 404, json: async () => ({}) } as Response);
         }
         return Promise.resolve({ ok: false, status: 401, json: async () => ({}) } as Response);
@@ -147,9 +147,9 @@ describe('authedFetch, when the server has forgotten the token', () => {
 
   it('does not retry a call that succeeded', async () => {
     signInAsDeveloper('dev-fine');
-    storeGameToken('good-token', Date.now() + 20 * 3600_000);
+    storeGameToken('pgt_good', Date.now() + 20 * 3600_000);
 
-    const { calls } = serverRejecting('some-other-token');
+    const { calls } = serverRejecting('pgt_other');
 
     const res = await authedFetch('http://localhost:4000/api/v1/prayers/topics');
 
@@ -159,7 +159,7 @@ describe('authedFetch, when the server has forgotten the token', () => {
 
   it('still returns null when nobody is signed in, so callers do not send', async () => {
     const { calls } = serverRejecting('anything');
-    expect(await authedFetch('http://localhost:4000/api/v1/saju/me')).toBeNull();
+    expect(await authedFetch('http://localhost:4000/api/v1/prayers/saju/me')).toBeNull();
     expect(calls).toHaveLength(0);
   });
 });

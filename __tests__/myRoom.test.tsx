@@ -58,10 +58,12 @@ const mockNav = {
 };
 const mockNavigate = jest.fn((...args: unknown[]) => mockNav.calls.push({ args, hostUnmounts: mockHost.unmounts }));
 const mockGoBack = jest.fn();
+const mockPopTo = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     navigate: mockNavigate,
     goBack: mockGoBack,
+    popTo: mockPopTo,
     addListener: (event: string, fn: (e?: unknown) => void) => {
       (mockNav.listeners[event] ??= new Set()).add(fn);
       return () => mockNav.listeners[event].delete(fn);
@@ -605,7 +607,7 @@ describe('the My Room screen', () => {
     expect(has('myroom-sheet-menu')).toBe(false);
     await tap('myroom-menu');
     press('2D 화면으로 돌아가기');
-    expect(mockNavigate).toHaveBeenLastCalledWith('Tabs', { screen: 'Home' });
+    expect(mockPopTo).toHaveBeenLastCalledWith('Tabs', { screen: 'Home' });
     act(() => tree!.unmount());
     tree = null;
     expect(posts('MYROOM_END')).toHaveLength(1);

@@ -6,6 +6,7 @@ import { BottomTabNavigator } from './BottomTabNavigator';
 import { CounselorDetailScreen } from '../features/counselors/screens/CounselorDetailScreen';
 import { CounselingSubjectScreen } from '../features/counseling/screens/CounselingSubjectScreen';
 import { UnityEntryScreen } from '../features/counseling/screens/UnityEntryScreen';
+import { LectureScreen } from '../features/philosophy/screens/LectureScreen';
 import { CounselingRoomScreen } from '../features/counseling/screens/CounselingRoomScreen';
 import { AddSubjectScreen } from '../features/subjects/screens/AddSubjectScreen';
 import { hasBirthData, useSubjectsStore } from '../features/subjects/store/subjectsStore';
@@ -48,7 +49,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  */
 export const RootNavigator: React.FC = () => {
   // SIGN-IN COMES BEFORE THE BIRTH DETAILS, and the order is not cosmetic: the chart is saved
-  // against an account (`/api/v1/saju/save` keys on User-Auth), so asking for a birth date first
+  // against an account (`/api/v1/prayers/saju/save` keys on the account), so asking for a birth date first
   // would file the answer under whoever the app happened to be at the time — which used to be a
   // per-device `dev-` id the server only accepts in development.
   const userAuth = useAuthStore(s => s.userAuth);
@@ -68,6 +69,10 @@ export const RootNavigator: React.FC = () => {
     {userAuth == null ? (
       <Stack.Screen name="Login" component={LoginScreen} options={{ animation: 'fade' }} />
     ) : null}
+    {/* Keyed on being signed in: signing out (or deleting the account) from Account must drop every
+        signed-in screen, not just slide Login in UNDER the one on top — without the key the stack
+        kept Account showing, with no account behind it and no way back. */}
+    <Stack.Group navigationKey={userAuth != null ? 'signed-in' : 'signed-out'}>
     {userAuth != null && needsProfile ? (
       <Stack.Screen name="ProfileSetup" component={AddSubjectScreen} options={{ animation: 'fade' }} />
     ) : null}
@@ -101,6 +106,7 @@ export const RootNavigator: React.FC = () => {
     {/* My Room's rules: fade (the UnityView mounts into a settled screen), no swipe-back (the stick
         sits at the left edge and a one-finger drag looks round). The top bar's back is the way out. */}
     <Stack.Screen name="Cafe" component={CafeScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+    <Stack.Screen name="Lecture" component={LectureScreen} options={{ animation: 'fade' }} />
     <Stack.Screen name="Legal" component={LegalScreen} />
     <Stack.Screen name="CounselorDetail" component={CounselorDetailScreen} />
     <Stack.Screen name="CounselingSubject" component={CounselingSubjectScreen} />
@@ -122,6 +128,7 @@ export const RootNavigator: React.FC = () => {
       component={CounselingRoomScreen}
       options={{ animation: 'fade', gestureEnabled: false }}
     />
+    </Stack.Group>
   </Stack.Navigator>
   );
 };
