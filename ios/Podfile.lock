@@ -2571,7 +2571,7 @@ SPEC CHECKSUMS:
   GoogleUtilities: 4e0c2ad9fa0d0d18b5c4df8bf57b461cba35b0bb
   GTMAppAuth: 217a876b249c3c585a54fd6f73e6b58c4f5c4238
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
-  hermes-engine: 418babf4b0d5a4bc415fe8503f3634170a789067
+  hermes-engine: 36db7f611b0381e55437fb2eb6648f2764f8c8a0
   kakao-login: 5feac69c76f8c1f2886606bdb6a408a8d91ad0dc
   KakaoSDKAuth: 45204252ff7c379c0f86c5573f97ec36885afca0
   KakaoSDKCommon: 132164a6bac8bcd3a4346d3bf777f34f8f39fdca
@@ -2621,7 +2621,7 @@ SPEC CHECKSUMS:
   react-native-image-picker: 23540feacc79c63c60857f318fdfa8477c26e70a
   react-native-keep-awake: 33963ef637f3e90a56974379fba6c4a1e0519129
   react-native-safe-area-context: 8368d1052ccc8fe8725adfb6a83498c8bdb48250
-  react-native-unity: 902e26546c36bd2d7a2f0f19e2a32c708308d25e
+  react-native-unity: 540216364eb15f7550a5a5039d47101a957625c3
   React-NativeModulesApple: a092d89b58f635ebfab88048b0eda9fb516819fd
   React-networking: 968bbbe73590149feb1e72b2af4f6a68e4796ece
   React-oscompat: 0b72a7e926954a0415ccd83e0748b6561fe45367

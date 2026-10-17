@@ -64,6 +64,7 @@
 		0CF23323A76F47568053B94D /* schop_c07_02.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5C1284174C044995930D1898 /* schop_c07_02.m4a */; };
 		0D0B2E69A749425D8DF9E8FA /* schop_c04_09.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 04D4B79A04ED4C48A5A40463 /* schop_c04_09.m4a */; };
 		0D18578A16754654B50F5128 /* schop_c12_10.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 3837496C3FFE4A7291AD8261 /* schop_c12_10.m4a */; };
+		0D2FDEF816A642D1A47010CB /* sleep_voice_en.m4a in Resources */ = {isa = PBXBuildFile; fileRef = C9D0BB2F9E7048169984127C /* sleep_voice_en.m4a */; };
 		0D5D569FE83E4C8C92EB4B3C /* schop_vi_c09_q.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 77778AF33C014BB5846099B6 /* schop_vi_c09_q.m4a */; };
 		0D705827504B4937853C3712 /* schop_ja_c05_12.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CCB5574C9A3F4FA28451D544 /* schop_ja_c05_12.m4a */; };
 		0E15E7D791554911BE47EBC8 /* schop_c10_10.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AC931E2197334482BA12184F /* schop_c10_10.m4a */; };
@@ -304,6 +305,7 @@
 		43F7ECABD6B84378B4A1FB86 /* schop_ja_c02_00.m4a in Resources */ = {isa = PBXBuildFile; fileRef = FDE8885607A04964AF34A8C3 /* schop_ja_c02_00.m4a */; };
 		446DE06C0EFC4551809CE954 /* schop_en_c08_10.m4a in Resources */ = {isa = PBXBuildFile; fileRef = EB51BEF0D3EA4C20BA6116F7 /* schop_en_c08_10.m4a */; };
 		44AB5493B3544972AA612AB4 /* schop_zh_c08_01.m4a in Resources */ = {isa = PBXBuildFile; fileRef = C05A46A3E4F84365B5D5F456 /* schop_zh_c08_01.m4a */; };
+		44B35CBA2CF248AB85C632FA /* sleep_voice_ko.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 2C25123D9E824AE0AEA3DA96 /* sleep_voice_ko.m4a */; };
 		45336C19D8F44278892DE353 /* schop_vi_c11_02.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5A573B3D1CA14EB0B1207812 /* schop_vi_c11_02.m4a */; };
 		454B031B88F04DB6BED4D852 /* schop_vi_c09_01.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 7906038EA3CC4C52ACA8497A /* schop_vi_c09_01.m4a */; };
 		4561B00ECEB4494092CB893E /* schop_zh_c01_04.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 25FCC87BE4184539B769AEF4 /* schop_zh_c01_04.m4a */; };
@@ -527,6 +529,7 @@
 		78D5BDB329A84388865DFAE8 /* schop_zh_c03_06.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 4D3BD5C431834C63A23C9340 /* schop_zh_c03_06.m4a */; };
 		79380E9DD03B4CEBBE18E9F2 /* schop_ja_c07_14.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 6315A0E6E59348589B9A0D4A /* schop_ja_c07_14.m4a */; };
 		79564A6A7FAE429C9028232A /* schop_c04_12.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 1A145B544FCE42C0A493913D /* schop_c04_12.m4a */; };
+		79DE6EF2891B490F9787225C /* sleep_bed.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CF274ED48D254D7AA923964D /* sleep_bed.m4a */; };
 		79ECAC08843C4802A2DDD4A8 /* schop_c07_09.m4a in Resources */ = {isa = PBXBuildFile; fileRef = E3CACD04B24E44048D28FCB4 /* schop_c07_09.m4a */; };
 		7A5D2E69A2A64EB49AC74A2E /* schop_en_c05_02.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 25D48880BA8042C8A06AF68C /* schop_en_c05_02.m4a */; };
 		7A91D90F35CC4E178B4B5C2B /* schop_en_c07_08.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 54B016BE73CC4E5EAC1494F4 /* schop_en_c07_08.m4a */; };
@@ -1092,9 +1095,6 @@
 		FD7F93CE613A4EFC8535DD7E /* jsfx_card_flip.m4a in Resources */ = {isa = PBXBuildFile; fileRef = BE866B005D694A198CF58320 /* jsfx_card_flip.m4a */; };
 		FDF032DCA67C4B54BB10F690 /* schop_c02_02.m4a in Resources */ = {isa = PBXBuildFile; fileRef = D758827B4F9047D099AE6EAA /* schop_c02_02.m4a */; };
 		FE27980B0C4F3E8110E1D448 /* DeviceKind.m in Sources */ = {isa = PBXBuildFile; fileRef = 310A2BEE462169CA4FBF247F /* DeviceKind.m */; };
-		79DE6EF2891B490F9787225C /* sleep_bed.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CF274ED48D254D7AA923964D /* sleep_bed.m4a */; };
-		44B35CBA2CF248AB85C632FA /* sleep_voice_ko.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 2C25123D9E824AE0AEA3DA96 /* sleep_voice_ko.m4a */; };
-		0D2FDEF816A642D1A47010CB /* sleep_voice_en.m4a in Resources */ = {isa = PBXBuildFile; fileRef = C9D0BB2F9E7048169984127C /* sleep_voice_en.m4a */; };
 		FE5F5E3BFF974834A1A59932 /* schop_c01_13.m4a in Resources */ = {isa = PBXBuildFile; fileRef = D53D322F9F8A410FA4B0CF67 /* schop_c01_13.m4a */; };
 		FE624F5D5A364B35BF240589 /* schop_en_c04_q.m4a in Resources */ = {isa = PBXBuildFile; fileRef = E5085C74A51842FF928D92EB /* schop_en_c04_q.m4a */; };
 		FEB0FCB6C96C40ED9DF14DDE /* schop_en_c05_03.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 8DB5E471E8B84EBB8B47930A /* schop_en_c05_03.m4a */; };
@@ -1291,6 +1291,7 @@
 		2BD5D16304B84928BD52EDB0 /* schop_c04_19.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c04_19.m4a; path = ../src/shared/assets/sounds/schop_c04_19.m4a; sourceTree = "<group>"; };
 		2BDFFF0521AD41E69A2AA37F /* schop_ja_c10_08.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c10_08.m4a; path = ../src/shared/assets/sounds/schop_ja_c10_08.m4a; sourceTree = "<group>"; };
 		2BE09CBE6E6B43159B079A5C /* schop_ja_c09_13.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c09_13.m4a; path = ../src/shared/assets/sounds/schop_ja_c09_13.m4a; sourceTree = "<group>"; };
+		2C25123D9E824AE0AEA3DA96 /* sleep_voice_ko.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = sleep_voice_ko.m4a; path = ../src/shared/assets/sounds/sleep_voice_ko.m4a; sourceTree = "<group>"; };
 		2CBCC8F506C14BD983BAA120 /* schop_c02_00.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c02_00.m4a; path = ../src/shared/assets/sounds/schop_c02_00.m4a; sourceTree = "<group>"; };
 		2CC608D90E8B498CB7B3F2A1 /* schop_c12_18.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c12_18.m4a; path = ../src/shared/assets/sounds/schop_c12_18.m4a; sourceTree = "<group>"; };
 		2CF917D52F194889B8CDCC59 /* schop_en_c11_15.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_en_c11_15.m4a; path = ../src/shared/assets/sounds/schop_en_c11_15.m4a; sourceTree = "<group>"; };
@@ -1973,6 +1974,7 @@
 		C8A748FAC4D840F0B92A6C26 /* schop_ja_c07_q.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c07_q.m4a; path = ../src/shared/assets/sounds/schop_ja_c07_q.m4a; sourceTree = "<group>"; };
 		C93C1F315C60411C86329CBB /* schop_c04_18.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c04_18.m4a; path = ../src/shared/assets/sounds/schop_c04_18.m4a; sourceTree = "<group>"; };
 		C9CAE4FB7F4441568C05DD83 /* schop_en_c01_13.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_en_c01_13.m4a; path = ../src/shared/assets/sounds/schop_en_c01_13.m4a; sourceTree = "<group>"; };
+		C9D0BB2F9E7048169984127C /* sleep_voice_en.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = sleep_voice_en.m4a; path = ../src/shared/assets/sounds/sleep_voice_en.m4a; sourceTree = "<group>"; };
 		C9FA6C8843AA4FC4B58F48BF /* schop_c12_38.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c12_38.m4a; path = ../src/shared/assets/sounds/schop_c12_38.m4a; sourceTree = "<group>"; };
 		C9FC19BA327949F5941F12FD /* schop_zh_c11_11.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c11_11.m4a; path = ../src/shared/assets/sounds/schop_zh_c11_11.m4a; sourceTree = "<group>"; };
 		CA30613663A749FC9DDF0589 /* schop_c06_11.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c06_11.m4a; path = ../src/shared/assets/sounds/schop_c06_11.m4a; sourceTree = "<group>"; };
@@ -1998,6 +2000,7 @@
 		CED469B9B61B441686CB5B6C /* schop_zh_c07_02.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c07_02.m4a; path = ../src/shared/assets/sounds/schop_zh_c07_02.m4a; sourceTree = "<group>"; };
 		CED54387FCCE4510AA3AE916 /* schop_ja_c05_03.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c05_03.m4a; path = ../src/shared/assets/sounds/schop_ja_c05_03.m4a; sourceTree = "<group>"; };
 		CEF0623FD3FC47949054DEE5 /* schop_vi_c04_13.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c04_13.m4a; path = ../src/shared/assets/sounds/schop_vi_c04_13.m4a; sourceTree = "<group>"; };
+		CF274ED48D254D7AA923964D /* sleep_bed.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = sleep_bed.m4a; path = ../src/shared/assets/sounds/sleep_bed.m4a; sourceTree = "<group>"; };
 		CF2F243DA06F4A84873472FB /* schop_en_c11_07.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_en_c11_07.m4a; path = ../src/shared/assets/sounds/schop_en_c11_07.m4a; sourceTree = "<group>"; };
 		CF33C64C7C6649B1BB5D1EA8 /* schop_ja_c03_13.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c03_13.m4a; path = ../src/shared/assets/sounds/schop_ja_c03_13.m4a; sourceTree = "<group>"; };
 		CF71E067C6954F759A9F0C18 /* schop_en_c05_13.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_en_c05_13.m4a; path = ../src/shared/assets/sounds/schop_en_c05_13.m4a; sourceTree = "<group>"; };
@@ -2137,9 +2140,6 @@
 		EE8AE94624044DBC8AB73DE4 /* schop_zh_c05_05.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c05_05.m4a; path = ../src/shared/assets/sounds/schop_zh_c05_05.m4a; sourceTree = "<group>"; };
 		EEBCAC2BA6A649A78FAFF723 /* schop_vi_c02_04.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c02_04.m4a; path = ../src/shared/assets/sounds/schop_vi_c02_04.m4a; sourceTree = "<group>"; };
 		EECA0A8DA262489794738FD6 /* jsfx_stars.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jsfx_stars.m4a; path = ../src/shared/assets/sounds/jsfx_stars.m4a; sourceTree = "<group>"; };
-		CF274ED48D254D7AA923964D /* sleep_bed.m4a */ = {isa = PBXFileReference; name = "sleep_bed.m4a"; path = "../src/shared/assets/sounds/sleep_bed.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
-		2C25123D9E824AE0AEA3DA96 /* sleep_voice_ko.m4a */ = {isa = PBXFileReference; name = "sleep_voice_ko.m4a"; path = "../src/shared/assets/sounds/sleep_voice_ko.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
-		C9D0BB2F9E7048169984127C /* sleep_voice_en.m4a */ = {isa = PBXFileReference; name = "sleep_voice_en.m4a"; path = "../src/shared/assets/sounds/sleep_voice_en.m4a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		EEEF5B200743462B9C7A5133 /* schop_zh_c12_10.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c12_10.m4a; path = ../src/shared/assets/sounds/schop_zh_c12_10.m4a; sourceTree = "<group>"; };
 		EF3C37B584C74998B0D2E2F7 /* schop_vi_c09_02.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c09_02.m4a; path = ../src/shared/assets/sounds/schop_vi_c09_02.m4a; sourceTree = "<group>"; };
 		F024C6FE07E8449ABE6FF697 /* schop_ja_c12_16.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c12_16.m4a; path = ../src/shared/assets/sounds/schop_ja_c12_16.m4a; sourceTree = "<group>"; };
