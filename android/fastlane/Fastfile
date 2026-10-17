@@ -1,12 +1,95 @@
 default_platform(:android)
 
+# Modelled on saju_front/android/fastlane: bump versionCode → bundleRelease → upload to Play.
 platform :android do
+
+  GRADLE_PATH = "../app/build.gradle"
+  AAB_PATH = "app/build/outputs/bundle/release/app-release.aab"
+
+  def ensure_node_path
+    node_bin = "/Users/namaste/.nvm/versions/node/v22.19.0/bin"
+    if File.directory?(node_bin)
+      ENV["PATH"] = "#{node_bin}:#{ENV["PATH"]}"
+      UI.message("Using Node from #{node_bin}")
+    end
+  end
+
+  # The app builds without either of these and says nothing: release falls back to the debug key
+  # (app/build.gradle) and the Unity room to the mock bridge (settings.gradle). Neither belongs on Play.
+  def ensure_release_inputs
+    gradle_props = File.expand_path("~/.gradle/gradle.properties")
+    unless File.exist?(gradle_props) && File.read(gradle_props).include?("PRAYERS_UPLOAD_STORE_FILE")
+      UI.user_error!("PRAYERS_UPLOAD_* 가 ~/.gradle/gradle.properties 에 없습니다 — debug 키로 서명된 빌드가 올라갑니다")
+    end
+    unless File.directory?("../../unity/builds/android/unityLibrary")
+      UI.user_error!("unity/builds/android/unityLibrary 가 없습니다 — Unity(Android) export 후 다시 실행하세요")
+    end
+  end
+
+  # versionCode를 build.gradle에서 직접 증가
+  def bump_version_code
+    content = File.read(GRADLE_PATH)
+    current = content.match(/versionCode\s+(\d+)/)[1].to_i
+    new_code = current + 1
+    File.write(GRADLE_PATH, content.sub(/versionCode\s+\d+/, "versionCode #{new_code}"))
+    UI.message("versionCode: #{current} → #{new_code}")
+    new_code
+  end
+
+  def build_and_upload(track)
+    ensure_node_path
+    ensure_release_inputs
+    build_code = bump_version_code
+
+    gradle(task: "bundleRelease", project_dir: "./")
+
+    upload_to_play_store(
+      track: track,
+      aab: AAB_PATH,
+      # metadata/android/<locale>/changelogs/<versionCode>.txt 가 있으면 그 버전의 변경사항으로 올라간다
+      skip_upload_metadata: true,
+      skip_upload_changelogs: !Dir.glob("metadata/android/*/changelogs/#{build_code}.txt").any?,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+    build_code
+  end
+
+  # ─── beta: 빌드 → 내부 테스트 트랙 업로드 ─────────────
+  desc "versionCode 증가 → 빌드 → 내부 테스트 트랙 업로드"
+  lane :beta do
+    code = build_and_upload("internal")
+    UI.success("내부 테스트 트랙 업로드 완료! (versionCode: #{code})")
+  end
+
+  # ─── release: 빌드 → 프로덕션 트랙 업로드 ─────────────
+  desc "versionCode 증가 → 빌드 → 프로덕션 트랙 업로드"
+  lane :release do
+    code = build_and_upload("production")
+    UI.success("프로덕션 업로드 완료! (versionCode: #{code})")
+  end
+
+  # ─── promote: 내부 테스트 → 프로덕션 승격 ──────────────
+  desc "내부 테스트 빌드를 프로덕션으로 승격"
+  lane :promote do
+    upload_to_play_store(
+      track: "internal",
+      track_promote_to: "production",
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+    UI.success("프로덕션 승격 완료!")
+  end
+
   # Upload an AAB that is already built (versionCode is bumped by hand in app/build.gradle).
   desc "이미 빌드된 AAB를 내부 테스트 트랙에 업로드"
   lane :upload_internal do |options|
     upload_to_play_store(
       track: "internal",
-      aab: options[:aab] || "app/build/outputs/bundle/release/app-release.aab",
+      aab: options[:aab] || AAB_PATH,
       release_status: options[:status] || "completed",
       skip_upload_metadata: true,
       skip_upload_changelogs: true,

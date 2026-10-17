@@ -5,7 +5,7 @@ import type { Lang } from '../../../shared/i18n';
 
 /**
  * Who can be picked to read a diary entry (spec 006 Q2): the consultable counsellors — the
- * registry's speaking, playable cards (4 today: Yuna, Go Yunjung, Jiho, Theo). The entry stores the
+ * registry's speaking, playable cards (4 today: Yuna, YunJeong, Jiho, Theo). The entry stores the
  * card's server TONE (`details.counselor`), which is what the server writes the reflection in; the
  * card is looked up back from it for the portrait and for "Talk to Counselor".
  */

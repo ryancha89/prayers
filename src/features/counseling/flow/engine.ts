@@ -34,7 +34,7 @@ import { topicFromQuestion } from '../topicFromQuestion';
 import { ui } from './strings';
 import { CounselorVoice, voiced } from './voice';
 import type { Lang } from '../../../shared/i18n';
-import { sayGlyphs } from '../api/sajuGlyphs';
+import { replyLangFor, sayGlyphs } from '../api/sajuGlyphs';
 import type {
   ChatMode,
   CounselorEmotion,
@@ -474,6 +474,9 @@ export class ConsultationEngine {
   private loopPending = false;
   /** Which "one moment" line was used last, so two turns in a row never repeat it. */
   private lastWait = -1;
+  /** The language this turn's answer comes back in when it is not the app's — the player asked in
+   *  another script (`replyLangFor`). Null = the app's language. */
+  private replyLang: Lang | null = null;
   /** The transcript row the wait line is written into, so later tiers can replace it in place. */
   private waitRow = -1;
   private waitTimer: number | null = null;
@@ -651,6 +654,7 @@ export class ConsultationEngine {
     this.inLoop = false;
     this.loopTurns = 0;
     this.loopPending = false;
+    this.replyLang = null;
     this.answerWalk = null;
     this.running = true;
     this.index = -1;
@@ -1407,7 +1411,11 @@ export class ConsultationEngine {
   }
 
   private said(text: string): string {
-    return sayGlyphs(stripScoreLines(text), this.lang);
+    const lang = this.replyLang ?? this.lang;
+    // Asked in another language: her answer is in it, and its hanja stay hanja — readings in the
+    // APP's language would be Korean inside English ("Mu-jin/무진(戊辰)"). Into Korean, as usual.
+    if (lang !== this.lang && lang !== 'ko') return stripScoreLines(text);
+    return sayGlyphs(stripScoreLines(text), lang);
   }
 
   onOracleResult(payload: OracleResultPayload) {
@@ -1496,7 +1504,11 @@ export class ConsultationEngine {
     let i = Math.floor(Math.random() * WAIT_LINES);
     if (i === this.lastWait) i = (i + 1) % WAIT_LINES;
     this.lastWait = i;
-    return { text: this.uiV(`loop.wait.${i}` as UiKey), key: `loop_wait_${i}` };
+    // In the language she is about to answer in, not a Korean "잠깐만요" before an English answer.
+    const lang = this.replyLang ?? this.lang;
+    const key = `loop.wait.${i}` as UiKey;
+    if (lang === this.lang) return { text: this.uiV(key), key: `loop_wait_${i}` };
+    return { text: voiced(this.voice, key, lang) ?? ui(key, lang), key: `loop_wait_${i}_${lang}` };
   }
 
   private askLoop(text: string) {
@@ -1505,6 +1517,8 @@ export class ConsultationEngine {
     const heard = this.interruptAnswer();
     this.loopTurns += 1;
     this.loopPending = true;
+    const reply = replyLangFor(text, this.lang);
+    this.replyLang = reply === this.lang ? null : reply;
     this.appendTranscript('user', text);
     this.opts.onUserLine?.(text);
     this.patch({ inputEnabled: false, suggestion: '', pending: true });

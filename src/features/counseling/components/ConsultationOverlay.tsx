@@ -61,7 +61,8 @@ export interface ConsultationOverlayProps {
   state: FlowState;
   onTap(): void;
   onChoose(choice: PhaseChoice): void;
-  onSubmit(text: string): void;
+  /** `false` = not asked (no coins for it): the text stays in the box. */
+  onSubmit(text: string): boolean | void;
   onRetry(): void;
   onLeave(): void;
   /** Press the mic. Cuts the counselor off and starts recording. */
@@ -149,9 +150,9 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   const send = () => {
     const text = input.trim();
     if (!text) return;
+    if (onSubmit(text) === false) return;
     setInput('');
     sfx.send();
-    onSubmit(text);
   };
 
   // `none` is the doc's "minimal UI; prioritize environmental immersion" — the
@@ -327,6 +328,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
             style={styles.suggestion}
             onPress={() => onSubmit(state.suggestion)}
           >
+            <Icon name="sparkle" size={14} color={colors.violetSoft} />
             <Text style={styles.suggestionText} numberOfLines={2}>
               {state.suggestion}
             </Text>
@@ -371,7 +373,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                 they may interrupt will sit through every answer to the end. */}
             {state.speaking && state.screen === 'loop' && !recording && (
               <Pressable style={styles.hush} onPress={onHush} hitSlop={8}>
-                <Icon name="stop" size={12} color={colors.textMuted} />
+                <Icon name="stop" size={12} color={colors.textSecondary} />
                 <Text style={styles.hushText}>
                   {ui('loop.stopTalking', lang)}
                 </Text>
@@ -420,7 +422,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                       ? 'loop.placeholder'
                       : 'question.placeholder',
                   )}
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.textSecondary}
                   multiline
                   onSubmitEditing={send}
                 />
@@ -640,12 +642,19 @@ const styles = StyleSheet.create({
 
   // Sits over the live Unity scene (gold sigils, glyphs), so a 16%-alpha violet pill with violet
   // caption text was unreadable — near-opaque dark ground, the HUD's gold rim, white body text.
+  // 16-10 (user: "다음 예상 질문나온느것도 좀 다른 색으로"): on the dark plate and gold rim it looked
+  // like one more of her bubbles. Its own colour now — the app's violet, deep enough for white text
+  // over the scene — and a sparkle in front: a question offered to the player, not something said.
   suggestion: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(18, 18, 26, 0.94)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    maxWidth: '92%',
+    backgroundColor: 'rgba(52, 36, 120, 0.94)',
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: HAIRLINE,
+    borderColor: 'rgba(167, 139, 250, 0.7)',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     shadowColor: '#000',
@@ -654,15 +663,34 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,
   },
-  suggestionText: { ...typography.body, color: colors.textPrimary },
+  suggestionText: { ...typography.body, color: colors.textPrimary, flexShrink: 1 },
 
   transcript: { flexShrink: 1 },
   transcriptBody: { gap: spacing.sm, paddingBottom: spacing.sm },
-  bubble: { borderRadius: radius.md, padding: spacing.md, maxWidth: '86%' },
-  bubbleCounselor: { alignSelf: 'flex-start', backgroundColor: colors.scrim },
-  bubbleUser: { alignSelf: 'flex-end', backgroundColor: colors.violet },
-  bubbleText: { ...typography.body, color: colors.textPrimary },
-  bubbleTextUser: { ...typography.body, color: colors.textPrimary },
+  // Chat bubbles over the live room (16-10, user: "유저 채팅부분 UI개선해줘"). The player's used to be
+  // a flat #8B5CF6 slab as wide as hers — the loudest thing on screen, in a colour nothing else in
+  // the room uses. Now it is narrower than hers, and each bubble has a "tail" corner on its speaker's side. No shadow: under a translucent bubble
+  // iOS drew it as a square-cornered grey box around the rounded one.
+  bubble: {
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    maxWidth: '86%',
+  },
+  bubbleCounselor: { alignSelf: 'flex-start', backgroundColor: colors.scrim, borderBottomLeftRadius: 6 },
+  // Light against her dark (16-10, user: "유저색 상담사랑 다르게"): the deep violet still read as one
+  // more dark bubble. A champagne ground in the room's gold family — paler than the gold of a chosen
+  // mode chip, so it is not mistaken for a button — with the dark word that sits on gold.
+  bubbleUser: {
+    alignSelf: 'flex-end',
+    maxWidth: '78%',
+    backgroundColor: 'rgba(244, 231, 200, 0.96)',
+    borderWidth: 1,
+    borderColor: 'rgba(233, 196, 106, 0.9)',
+    borderBottomRightRadius: 6,
+  },
+  bubbleText: { ...typography.body, color: colors.textPrimary, lineHeight: 23 },
+  bubbleTextUser: { ...typography.body, color: ON_GOLD, lineHeight: 23 },
 
   report: {
     backgroundColor: colors.scrim,
@@ -693,12 +721,16 @@ const styles = StyleSheet.create({
   reportKeywords: { ...typography.caption, color: colors.gold },
   reportPeriod: { ...typography.tiny, color: colors.textMuted },
 
+  // The HUD's quieter gold rim, so the box reads as part of the room's one system (the mode chips
+  // and the mic ring already wear it) instead of a black hole at the bottom of the scene.
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: spacing.sm,
-    backgroundColor: colors.scrim,
+    backgroundColor: 'rgba(18, 18, 26, 0.94)',
     borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: SOFT_HAIRLINE,
     padding: spacing.sm,
   },
   input: {
@@ -730,18 +762,29 @@ const styles = StyleSheet.create({
   },
   levelFill: { height: 4, backgroundColor: colors.gold },
 
+  // Grey-on-floor text vanished into the room's lit stone; both ways out get a ground or a shadow.
   hush: {
     alignSelf: 'flex-end',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: SOFT_HAIRLINE,
+    backgroundColor: PLATE,
   },
-  hushText: { ...typography.tiny, color: colors.textMuted },
+  hushText: { ...typography.tiny, color: colors.textSecondary },
 
   leave: { alignSelf: 'center', paddingVertical: spacing.sm },
-  leaveText: { ...typography.caption, color: colors.textMuted },
+  leaveText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowRadius: 4,
+    textShadowOffset: { width: 0, height: 1 },
+  },
 
   modeRow: {
     alignSelf: 'flex-start',

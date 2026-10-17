@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Prayers</string>
     <string name="game_view_content_description">Game view</string>
+    <string name="kakao_app_key">594f68ff944e2730a1d7e6c04656d6ac</string>
 </resources>

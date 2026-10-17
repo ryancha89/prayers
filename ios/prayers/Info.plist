@@ -31,8 +31,34 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kakao594f68ff944e2730a1d7e6c04656d6ac</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.1012229674984-fi6v2188t29ievf46v9kg95b06rheia5</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>KAKAO_APP_KEY</key>
+	<string>594f68ff944e2730a1d7e6c04656d6ac</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>kakaokompassauth</string>
+		<string>kakaolink</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -42,10 +68,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Prayers lets you add photos from your library to your diary pages. Only the photos you pick are used.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Prayers uses the camera only when you choose to take a new profile photo.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Prayers uses the microphone so you can ask the counselor your question out loud instead of typing it.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Prayers lets you add photos from your library to your diary pages and your profile. Only the photos you pick are used.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

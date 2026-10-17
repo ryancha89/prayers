@@ -18,7 +18,7 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => mockSafe,
 }));
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: jest.fn(), getState: () => ({ routes: [] }), addListener: () => () => {} }),
+  useNavigation: () => ({ navigate: jest.fn(), pop: jest.fn(), popTo: jest.fn(), getState: () => ({ routes: [] }), addListener: () => () => {} }),
   useRoute: () => ({ params: { counselorId: 'yuna', subjectId: 'self', sessionId: 's1' } }),
 }));
 jest.mock('../src/features/counseling/api/prayersServer', () => ({ fetchRecall: async () => null }));

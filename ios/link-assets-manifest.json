@@ -158,6 +158,4158 @@
       "sha1": "72857b9a2d197c0c1502ac22718c9f4b45424a84"
     },
     {
+      "path": "src/shared/assets/sounds/schop_c01_00.m4a",
+      "sha1": "5be935bdede40e27b085ad9383ba29c50dc0779e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_01.m4a",
+      "sha1": "5d7098227bc28cb16c0cf96e1e8b4a48b462c7c0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_02.m4a",
+      "sha1": "c01e088908eee83e13c9d076f00d429e41f34086"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_03.m4a",
+      "sha1": "85604a1857e14b48d6e296fca65294ad00528317"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_04.m4a",
+      "sha1": "fbf429085042bbb2e2a5b1b5ad67ef7adf95d196"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_05.m4a",
+      "sha1": "2a83528e14580349338bc572c64ad9edc68c0588"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_06.m4a",
+      "sha1": "006fc124eeb8891703f316785b40d42e6c00de36"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_07.m4a",
+      "sha1": "17529e41b41b6a5791c53a6bfcf3ca38fbb2bd7e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_08.m4a",
+      "sha1": "af0736b8b334351216460c80f405409194f4969e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_09.m4a",
+      "sha1": "8b4623ec669bcabc2a9de6e6fbdee3c2185b769b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_10.m4a",
+      "sha1": "d46ee234ecb2a6cbd56145365a21e4a0279e327e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_11.m4a",
+      "sha1": "81f35f1625cbfa67706bbf0ef1f456b2e235d7eb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_12.m4a",
+      "sha1": "dc9035d95cb4ff962f38bfde1452dabeaa2633bf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_13.m4a",
+      "sha1": "4b6a39ab725f3f83eff07bd81396286bba6e6ef3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_14.m4a",
+      "sha1": "3fe040cd9a4def798d94b20f9cfa09e83dc349ea"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_15.m4a",
+      "sha1": "30619bbec5d6e953bd60cb70c438b698a9be8e27"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_16.m4a",
+      "sha1": "87ed6e556ca7ee3c6017361562200bd0c50f1699"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_17.m4a",
+      "sha1": "f799b0418ccde20edc97ba40c607a84472254a42"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c01_q.m4a",
+      "sha1": "4d1fbd0bf2989337133695096e4e37c7a8c2fce0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_00.m4a",
+      "sha1": "1357c422137d89f34c07dc361d5685e9c4dfe544"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_01.m4a",
+      "sha1": "39286526a747d2d83edd6b89a1dd71f08ba98753"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_02.m4a",
+      "sha1": "b52aa8fe30824813c9743abda31fdbde4f61cb4f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_03.m4a",
+      "sha1": "e01f1778d774c6e553dc4b70b732b4b2ccfea412"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_04.m4a",
+      "sha1": "e328946ff36d67b38ae7a9b661e38ef66b031669"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_05.m4a",
+      "sha1": "cd15fc79e428065822a5a14e79c42bdf9e862ea7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_06.m4a",
+      "sha1": "04c6115f028b6f34540f222695c36650c49190e3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_07.m4a",
+      "sha1": "9edcac371d9bfde72e9fb714c9de9198b4a34287"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_08.m4a",
+      "sha1": "c0dda91c9e98b138d5a04f09605a6317d52d4e19"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_09.m4a",
+      "sha1": "af002535505e6e77003a7a7910c68e99829e6a71"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_10.m4a",
+      "sha1": "1d89caaebfd2c945f443e618079e056c182d088e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_11.m4a",
+      "sha1": "3d065fc28de6cdc3e7f99c34c9a00e8306a9ca26"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_12.m4a",
+      "sha1": "cf4f6d8c1d19717a7991186f3ca419d0219048a3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_13.m4a",
+      "sha1": "88c3d013667342517f552a01e4a317efabb74b46"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_14.m4a",
+      "sha1": "0b68edb0982b91f0527e1907113bb6bf697104ab"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c02_q.m4a",
+      "sha1": "dfbf62f191addfa0568ee4de245e8cdfa0270595"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_00.m4a",
+      "sha1": "96be028790ac6e0ddace20516d5330714c8c3d26"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_01.m4a",
+      "sha1": "40863b00bab2a23ded52d90bf86d70c1639a28dd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_02.m4a",
+      "sha1": "0d61b60b77269064fef93bb77ec7847d50f3b02e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_03.m4a",
+      "sha1": "03c371df4c6bf96b326a1db743b3f1b9339aedd1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_04.m4a",
+      "sha1": "efd9ca729306cd76c63aae799da824c6f71a59ca"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_05.m4a",
+      "sha1": "f132a7432ecd6c0dbbca9563a8c8061bf27ae68f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_06.m4a",
+      "sha1": "19ccb0faf2aaf9ca09de7e505810f2f2f0c67cc1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_07.m4a",
+      "sha1": "1d3be26babe7c773d2395ce40edfdc0f962b1491"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_08.m4a",
+      "sha1": "298b73fd382eef2455c29b877a72330e6ef4aad5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_09.m4a",
+      "sha1": "72e767ebcb69c7532a978a6e5110b41b77c7fdd6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_10.m4a",
+      "sha1": "155b93500137d5943198bf7d705e51f0c5c277f9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_11.m4a",
+      "sha1": "f6bf01cd2ad69d7a2948393ca002448a3bac281b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_12.m4a",
+      "sha1": "559b2e0a466bef8ce4f2fed85c258bdfbb9712cb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_13.m4a",
+      "sha1": "c115ec6fe60de96cff610e049484f9c948a9f04d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_14.m4a",
+      "sha1": "e5c4aae971d706767fd85366d7f655339de3a104"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_15.m4a",
+      "sha1": "106b249da197c351d300d5b1fae7e00890a8e285"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_16.m4a",
+      "sha1": "80cf748114c7590b8de4cae3a744c0bd71faf53a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_17.m4a",
+      "sha1": "0ce41c4e4639d99ca22d5c2664b9246851a8f5b0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c03_q.m4a",
+      "sha1": "ba7c190ad5af4bb0d5fd62ef538334f93e617bf5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_00.m4a",
+      "sha1": "5f0d971bfa9567d31bd06a984e9fbd88846a4d04"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_01.m4a",
+      "sha1": "1b54f42a8e7c80d78ec93fa378fa7aad95b042b0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_02.m4a",
+      "sha1": "1a15045bc36360faf8d9a4ae1c1544b277b55083"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_03.m4a",
+      "sha1": "384ef09c943b30ce30661ec7255d8ad32cb6621d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_04.m4a",
+      "sha1": "f22c850e281ab88521fae8a3449ef21b982edb88"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_05.m4a",
+      "sha1": "d35303a03ec599608e7003f6ae2501e0fdc4764e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_06.m4a",
+      "sha1": "700e0c2545d5505fa249bfc458c9c5eb16852ab3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_07.m4a",
+      "sha1": "aef33f8b99196a8734ebfd1de9715a6710d8415b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_08.m4a",
+      "sha1": "aadb92feea7bcff2a74f8aa041d46ca80d5dae1d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_09.m4a",
+      "sha1": "4127ee600932d34540fe4d7d9aa8d9e46d6e2740"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_10.m4a",
+      "sha1": "a85b7629a92884dec26c12f26eff527f13839542"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_11.m4a",
+      "sha1": "eac459535439f528a9be8605b951bfea035eb580"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_12.m4a",
+      "sha1": "e7a2ff543373c8d79afb52b0d28c7d10e067e594"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_13.m4a",
+      "sha1": "b7fa79489db83497d13bf88b261c599554f8e366"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_14.m4a",
+      "sha1": "12599240ee8b0f372624b36f831188caa74cf9d6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_15.m4a",
+      "sha1": "ec8e11ddba359ae132f6c4feb2daf2e8a4890281"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_16.m4a",
+      "sha1": "4a89aadaa6487fbea0bbe64309532d7f097f6430"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_17.m4a",
+      "sha1": "1edca8016dc526da725cf43a25d1c52626754814"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_18.m4a",
+      "sha1": "4eb969dd4258928b5b4ac45fe639f872b41a9263"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_19.m4a",
+      "sha1": "12fb2b0c25212633a71639d9d052e75e41445940"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_20.m4a",
+      "sha1": "25aedf07710209a9110e0b5db9dc4ae18f8be609"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c04_q.m4a",
+      "sha1": "7ebc6197ed5b8a7fa04c7ab652d38dad7fb906cd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_00.m4a",
+      "sha1": "42205c01062535073f19b1fc32fe90205127a995"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_01.m4a",
+      "sha1": "d53ab931d02cc720a748fde9260b1689369860e7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_02.m4a",
+      "sha1": "44504e3b57f165cb10ec8426a8b5bbb572079b05"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_03.m4a",
+      "sha1": "90069fb90915ab3f5d7b6c30fa11b467e9e2a26f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_04.m4a",
+      "sha1": "4d3efe01e97134492d3b4c2038577201bd1131c3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_05.m4a",
+      "sha1": "78f9c6499febf180843aaec3a865d0d1c619a9d9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_06.m4a",
+      "sha1": "9fab37b3a44922a37bc98741ee444ccee3275227"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_07.m4a",
+      "sha1": "8b6e6152c8c1223cbf40e43849a8282cfadb3ce6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_08.m4a",
+      "sha1": "8dc8109816648d7492f293b9a001329de08b6968"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_09.m4a",
+      "sha1": "093c284e180544556763bee33c5f941531ef5f59"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_10.m4a",
+      "sha1": "2cbfe3a6bd097084bc0c44bf816c511b898fa6ff"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_11.m4a",
+      "sha1": "62e989def1954b2ad08bc053325a8639ad8ec4bb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_12.m4a",
+      "sha1": "a25dee01cff4dc632ec4778f3e7454643f5346ad"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_13.m4a",
+      "sha1": "b9b0a2d07964fb1bd1ae1a5f1917dd2c1c700a8b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_14.m4a",
+      "sha1": "1283878f9de6d8a431c012b46a337f05543c429e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_15.m4a",
+      "sha1": "1e183a1607a760623a17afa435138a1b4e4c2d72"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_16.m4a",
+      "sha1": "46bc55e63269ec3227637e250817996532cf0b30"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_17.m4a",
+      "sha1": "c3ca40830be3fe2c9271a18aef27bd5f5b9f7c7e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_18.m4a",
+      "sha1": "d614d722dd38c788edf039e3f951a9020b39bd36"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c05_q.m4a",
+      "sha1": "9802e4ab8e605eca173a7ae1fddaa94253fd66a6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_00.m4a",
+      "sha1": "d3f0302330a2046940165d0c70e513dfed71bac0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_01.m4a",
+      "sha1": "ca152cc8e30487e7dda477c954a8b96bb6f9fb0d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_02.m4a",
+      "sha1": "0d495134485fd69e4b4f5d0d48fba4b2205839c5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_03.m4a",
+      "sha1": "d565a74ec34cac004d3de7b1dc14ba90c143bc40"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_04.m4a",
+      "sha1": "880b6898e9689db46a461415ebd0c41cce4aaae9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_05.m4a",
+      "sha1": "ed0a55ea0f99a80599266f6e6fcaa728021f91ff"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_06.m4a",
+      "sha1": "b9bdfd5a5442027a033602906dff98e1a29c117e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_07.m4a",
+      "sha1": "261a36cccf9053693f1879fe72358e88189d7238"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_08.m4a",
+      "sha1": "2fcd12c93fde1f5b1313a3d270a4de0139bb8901"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_09.m4a",
+      "sha1": "29d9a85644e870cd52e429400f1eb999fabfd993"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_10.m4a",
+      "sha1": "7e02d81ffb678e5683b3e1bbe6a46b0a4bbd6590"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_11.m4a",
+      "sha1": "5b58e8d821f4503d5c900fa4e1e6dbbe3bb4933a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_12.m4a",
+      "sha1": "6f6365fab0df1eb00fd2477fca7796b6e836d582"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_13.m4a",
+      "sha1": "bd70bd87ada7b84b831aa718d0132a64d5b93153"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_14.m4a",
+      "sha1": "45b093740098c03eeb4a508a47986c5ecc6f4d5c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_15.m4a",
+      "sha1": "66341cee32bc791dfcb7ae69219d0b8e9d646378"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_16.m4a",
+      "sha1": "0803c4d780802628e35ffec5426458cf29872e11"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_17.m4a",
+      "sha1": "7059d7b5e6494c6a49711b802b2ba7cd64692d1c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_18.m4a",
+      "sha1": "302ce876e864644aef449ac7a886bee3df8d62c5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c06_q.m4a",
+      "sha1": "dc6181d58996b1c95fd4d6f53da59315fbc18ab5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_00.m4a",
+      "sha1": "538e3729d2e3f28a8109a5352f619cfe9103a95e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_01.m4a",
+      "sha1": "4c617a41937f3bd1115dc864ac8bb24ed1fbcf00"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_02.m4a",
+      "sha1": "2fe06b3cd17a4bbe7cc0bdbfec9a0bc822a9fb50"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_03.m4a",
+      "sha1": "7ec7aa9f5a7f0bc318ff9e914877cea1e1316e19"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_04.m4a",
+      "sha1": "b4569f0fa345943e007012019674dd447cc6237e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_05.m4a",
+      "sha1": "7002092fb74a6309a7ba24f6faa86353d3eb2bab"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_06.m4a",
+      "sha1": "2fc7fff3e3d6aee5190842771d2ff730918efabc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_07.m4a",
+      "sha1": "e70a962427f1cc041293b58a26bd2fd731023260"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_08.m4a",
+      "sha1": "699ea21f44a888ccbd67dc036860131b63d582ca"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_09.m4a",
+      "sha1": "105ac6bcdd011a19efaf444b762fb4817e5da894"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_10.m4a",
+      "sha1": "4bc82088e593eec9b3d016f0798582e354ae82ad"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_11.m4a",
+      "sha1": "f56650ad2f76e9d1a610c761a3180789da196887"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_12.m4a",
+      "sha1": "28ee1f6a5339a072dbfee5f2ca39c7940f13333f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_13.m4a",
+      "sha1": "d18adf6266fc7312174d2d539b714dae09b3ee2e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_14.m4a",
+      "sha1": "90eb57ea208b317c95f51a23bec6b508ef280701"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_15.m4a",
+      "sha1": "7073255ad98a79053e692b0c07ac02442c4fa5cf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_16.m4a",
+      "sha1": "8df393b7559deae8d7b4fd78907c2d1a32ee3cd2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_17.m4a",
+      "sha1": "fd7803775692c12dae8448f5daf808e049b96f13"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_18.m4a",
+      "sha1": "713a09d2943727a74cbd4eb7cc938c05e6129f04"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_19.m4a",
+      "sha1": "f606e97dc473b6608b8250d41710be314eb6317d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_20.m4a",
+      "sha1": "618ba2ed4013819b08085d583e6c83d51dea51c2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_21.m4a",
+      "sha1": "cd1d09c1a8792557a371b810a9df24729570b12e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c07_q.m4a",
+      "sha1": "4df0f41514331802d34ef8d82fa5446fbf801da7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_00.m4a",
+      "sha1": "55a9eb8c6c5e53dad017abb1f6736fd41cb7c982"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_01.m4a",
+      "sha1": "024388ce5a2a3c8e184e22714e34a24f7a216261"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_02.m4a",
+      "sha1": "375dccab478dd03b75f9f313314e1d1cb4ba4d27"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_03.m4a",
+      "sha1": "87ebf68afcb9c2f5a28018104f62d5c22776bbb0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_04.m4a",
+      "sha1": "3d27133fe17422845d4abecee0b875ef26ef3f56"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_05.m4a",
+      "sha1": "a6f8e1e682bc8e5bb2b545bd7c46a7f2f5ae515b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_06.m4a",
+      "sha1": "f43cbb07c21a7ff5e366e2e239ae23da0e9514d4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_07.m4a",
+      "sha1": "25328b7c936e5dcc98772214d1542e33fe55b583"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_08.m4a",
+      "sha1": "d4638058b4357b24e92e2e752b169206e8c4a144"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_09.m4a",
+      "sha1": "d04a21d696a32560071ee302512eb89657ad32ba"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_10.m4a",
+      "sha1": "e0f13e4762d09b95e1d9e3865dd68ec279e10b37"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_11.m4a",
+      "sha1": "40cc0c8deacf3077bd7ace42308a3e7eb6b34102"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_12.m4a",
+      "sha1": "a0ed80c943dfc720ee9e7cc36e5bfceb21a46f10"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_13.m4a",
+      "sha1": "b22c82fede0bf49a8a625fa5b44d99369acee663"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_14.m4a",
+      "sha1": "33777869d40a3ef9cbdc33c032de5580614ba0f0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_15.m4a",
+      "sha1": "a954b6c78f8d501fc3ed424f031676abe8467683"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_16.m4a",
+      "sha1": "66f60f15a3733bb12532d926fc1ef787ff2d36e6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_17.m4a",
+      "sha1": "ac293370aa9185b6286ee2cc17a9800af73dbe2e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_18.m4a",
+      "sha1": "a19e3c68731f94415dd1938ba42e96b0db8a93a2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_19.m4a",
+      "sha1": "caa8e031b899225bbf82a2146e7d977293e21820"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c08_q.m4a",
+      "sha1": "cee96cc2d1b6c76b50a259fdb2e27e49077f711b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_00.m4a",
+      "sha1": "3c0ff8b1024d3c4fda53fa9fc6c2d7d636e16871"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_01.m4a",
+      "sha1": "f98a53f331ee0a18ce908e4c26462d716c51d13f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_02.m4a",
+      "sha1": "79277159f88fae00c96a9a71c746165c4250efde"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_03.m4a",
+      "sha1": "6b356ecb28f27274b6e4c3a11cbc7c2add1558bf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_04.m4a",
+      "sha1": "2effd9cf11722f4ad4613b75ec940cac689dcdf5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_05.m4a",
+      "sha1": "d0569c7f9d18e113fdeed42b9250e2c59420110a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_06.m4a",
+      "sha1": "3c192706b15fd569d2fcb424f543d64d8e8bc717"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_07.m4a",
+      "sha1": "eddf78fd821f2c3c76f1f3282e9fdda835d7c743"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_08.m4a",
+      "sha1": "de2787d448eb6378124a129b6712320194d13712"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_09.m4a",
+      "sha1": "480f1f72e6d4207eafd21b370a76039479ab7f71"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_10.m4a",
+      "sha1": "1735ef920dbcadca1875baa913a62f440d46d0b6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_11.m4a",
+      "sha1": "e27a949aa460115535b26dddf8b20477d1a0b30e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_12.m4a",
+      "sha1": "47f874d409ee5fb7e9920b08c155f268955959fe"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_13.m4a",
+      "sha1": "060eadfaf21edbdfa7a650c1e5392185f07440dc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_14.m4a",
+      "sha1": "324dd1ae38c1ad85ed6b1a39ece47274b423e35c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_15.m4a",
+      "sha1": "9577f485a3f41b99f1e825c291c95a1e9d704c36"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_16.m4a",
+      "sha1": "389b05f525dec7edf05e9c37ce15e485ecebbb2c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_17.m4a",
+      "sha1": "aa7b10bac5164a2bac6d817bca60443218a4a918"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_18.m4a",
+      "sha1": "247ca583a90c6ed1263db0f5bf7fd4ee0f8f8376"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_19.m4a",
+      "sha1": "385dc31dab99c0b3bb6e65b671c46c32872240af"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_20.m4a",
+      "sha1": "c3c5e8fa9554aab1a7412e51d07b47b2be87b29e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_21.m4a",
+      "sha1": "6d2f75f4c046cbfd1572c9c603d14740c5f02cae"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_22.m4a",
+      "sha1": "949356a6b6c5afef1c9aec72ba0f080f99ca5698"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_23.m4a",
+      "sha1": "0c51049a87d5586ea459991615b61b9cedbab70f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_24.m4a",
+      "sha1": "3a4971abfba99cc0dde1af624b8ed7582e440bb0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c09_q.m4a",
+      "sha1": "7394d9066f37e3e38ceb6d9a935d6163a29d640c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_00.m4a",
+      "sha1": "2315c386f0f0d55257fc85f878a9f2ea08ce4fa9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_01.m4a",
+      "sha1": "d98c5a6a360c2d179c59cf9416d97004bcece869"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_02.m4a",
+      "sha1": "e9481a3978cf111bdb59a1ba9a51fab81850c3e2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_03.m4a",
+      "sha1": "38a2c76b4fd71b32cd5042d5ae8e0ee0ee0cc682"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_04.m4a",
+      "sha1": "dfdbdbec179c8054ad0f2065b73e316500199f46"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_05.m4a",
+      "sha1": "3d8d41c6860edb480632dc8d22fe23dd921513e6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_06.m4a",
+      "sha1": "58627b72d4c2c83ab7255f50efda62ba9940040a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_07.m4a",
+      "sha1": "93292c93f34c6eae8673099e9b8bdaa3f037e89c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_08.m4a",
+      "sha1": "c58a2a516f175a67b4e9751582f8c928fe763688"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_09.m4a",
+      "sha1": "aea11ee654decccaab65cfc45c567692908b1800"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_10.m4a",
+      "sha1": "be2b7323a0679925f867920f677843f671ba6897"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_11.m4a",
+      "sha1": "279608faa7558f8bc1f80c9c5bd44fe225113822"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_12.m4a",
+      "sha1": "b2d1161b0191ed4d45818942ec9d9f809cf498aa"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_13.m4a",
+      "sha1": "f477accfcb0e3ee93a39007dc9fdeb952a6548c5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_14.m4a",
+      "sha1": "877927da5cf34268790b9b3ae04b6994e39ec8d5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_15.m4a",
+      "sha1": "86b6056a18ade0ed95f96c0c93fc441516925b64"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_16.m4a",
+      "sha1": "0fbb5610910e25c2d34b88151d4732fe3821754a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_17.m4a",
+      "sha1": "dcb17e09a9190b8811c7fa8a4b021306afda885b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_18.m4a",
+      "sha1": "f08cf3d505303ae51020ecbed736ca72a497a6f3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_19.m4a",
+      "sha1": "8841451e65766c53e63952c3d932394d12e78324"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_20.m4a",
+      "sha1": "d70a94f4b9c868bce9ef0cd1745c175ecb08454c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_21.m4a",
+      "sha1": "842bec0151869cac58eaab6510d98d5ce6dd3c98"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_22.m4a",
+      "sha1": "93fbae3944c16b69f7402ddb18dd102531bc3b1e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_23.m4a",
+      "sha1": "ff66a55ca2e5a8e1eaaf196671683fd8da48606d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c10_q.m4a",
+      "sha1": "c102dbf09723a0391994c0933d0d5235035876b6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_00.m4a",
+      "sha1": "f991ce6539bbfcba02eaf4314b4d4ad941b7125c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_01.m4a",
+      "sha1": "8df950f580611d97de913a930d99a004d56d922d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_02.m4a",
+      "sha1": "cf07e96976b9ca133d1350a6a55e6d75045d09d9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_03.m4a",
+      "sha1": "d8ea52f0b0e4d97e9156987c44f10eaa4ddc751b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_04.m4a",
+      "sha1": "fde229f72c08089d73e56f9642bb593f05c687be"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_05.m4a",
+      "sha1": "4274fbe11f91f4163b2656459fcb655b019314d9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_06.m4a",
+      "sha1": "b76c2d4216a778ac7d1697dc13cfc12ce08e5266"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_07.m4a",
+      "sha1": "0f01a45c00978bf06f5396f48c5810eac4125a67"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_08.m4a",
+      "sha1": "e07ab04ed408af6e7b3b488b51b4408352c0f249"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_09.m4a",
+      "sha1": "d7da502bbff8bb774facbbc13af199cacb63e1b4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_10.m4a",
+      "sha1": "1976f6c33ed8c3fbcdbe535f92533a9401413466"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_11.m4a",
+      "sha1": "c62a1e1c51759e2ec533b41704b6508d2b5ac7a9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_12.m4a",
+      "sha1": "71ef4ad4a2052e4f934644b297d144e94ef4eaba"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_13.m4a",
+      "sha1": "9c24278df8badffb7f8330e561616587b16b0279"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_14.m4a",
+      "sha1": "ff1c46605e4ea6d699e8c3f3a02bba94f97a9525"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_15.m4a",
+      "sha1": "7b9086c625b936c64ec06293d6fe5ae69ffc7cda"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_16.m4a",
+      "sha1": "b5b754da153912fd2f497920a97dae46792ad115"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_17.m4a",
+      "sha1": "3913b65aafc069192372ee2be05964b842ba0eb6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_18.m4a",
+      "sha1": "0b810809059a443469b1ac1e5a6ae9fd9d422ac6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_19.m4a",
+      "sha1": "01d0a1e51569c57e29ee002bcf1f1db66c27405e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_20.m4a",
+      "sha1": "4b2431fb231d81802e2b31b8fbeee713f811ebbf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_21.m4a",
+      "sha1": "e34cda21d40904b1866b689636c3878e239807b9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_22.m4a",
+      "sha1": "80656af9d0931dbbb55b603720d9afe3010aa7aa"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_23.m4a",
+      "sha1": "178fa21d227faf5116ed20543728b1236e71a48e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_24.m4a",
+      "sha1": "8dad3db906752e6d320c1b8b3bcc22faf29d5d66"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_25.m4a",
+      "sha1": "4f1bcf864e64f0ce4f7f9400e615635a818e2fdb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_26.m4a",
+      "sha1": "4ea202417a529076ef280959335845e2129d61fd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c11_q.m4a",
+      "sha1": "e117ef91bc96b7b94b5ab8a2ecab7e9ff1e75675"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_00.m4a",
+      "sha1": "cb84e728852f4934a142670776ac628ea746615f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_01.m4a",
+      "sha1": "5b6ab5790ed3e3f101301a68ffe94f12cdecd7f1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_02.m4a",
+      "sha1": "573c98a50b6127349548b0b6d60a77de23e34a53"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_03.m4a",
+      "sha1": "be53bf9db567bd0ca35c9e65d9d5c49c8e308140"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_04.m4a",
+      "sha1": "e2f78a726ee38b633756d5632108461b1d5c85ea"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_05.m4a",
+      "sha1": "b26ef9fde51960def97feedb77abfe27e49e3d43"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_06.m4a",
+      "sha1": "7b1dd83520a6f1e4e73f9a05e183324b7293d999"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_07.m4a",
+      "sha1": "513e5b2f0ae03b22e3d5da4e6462e638776aea05"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_08.m4a",
+      "sha1": "fb208782b72370906574b5a881ea866ff7f56c22"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_09.m4a",
+      "sha1": "14902046ec7237765568159f440c897e07e06149"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_10.m4a",
+      "sha1": "3f594eb0ab60cf4571e48c5d1c773cb0ac36947a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_11.m4a",
+      "sha1": "c61b9cf4b2543df3cedde9a84e6764de1019aad9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_12.m4a",
+      "sha1": "92bf23bbfb3c4ec479a8ec97cb1dfe7456bc8d70"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_13.m4a",
+      "sha1": "764b1b5e90d7cfddd3f34a0e7e66a2a001d162a1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_14.m4a",
+      "sha1": "9248753bd2eb2be08e72d735a91e56c453a63895"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_15.m4a",
+      "sha1": "527116874da9f4948646d5126d8b13f29eeb8126"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_16.m4a",
+      "sha1": "f434573fe3cc17fdadb2d3ec5dad7270d455750e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_17.m4a",
+      "sha1": "473f64b8bb86be25c5bf0ef49cdb0c5a6104fba6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_18.m4a",
+      "sha1": "1574d2e5e1b027434393a67e5395d174da0403b1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_19.m4a",
+      "sha1": "aebe82a9e1b137d8f0163b3945c83189ca975781"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_20.m4a",
+      "sha1": "af52dbd26eb4ea153769aa1a9ee81b6ecc81ab03"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_21.m4a",
+      "sha1": "8ff95b9ed99f8cf66f20a6d87eaefec2fa55db6b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_22.m4a",
+      "sha1": "146e4a071733c01466fe53176998e9d6be2fbe06"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_23.m4a",
+      "sha1": "d3d24dc060454dbb2cee51cdf09d575847703e87"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_24.m4a",
+      "sha1": "32f4ddaf97f80de583d2de0e45510b2c8817bc7e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_25.m4a",
+      "sha1": "91e2c5363f8751149d4eb509a737a6642f4465a0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_26.m4a",
+      "sha1": "38b253862370cde1cac272847d054025a0bc44fe"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_27.m4a",
+      "sha1": "bce5a952f334c323ce83606834a4d68675103484"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_28.m4a",
+      "sha1": "1df6df4a986d2bab1a89231c019f5364810ffcaf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_29.m4a",
+      "sha1": "bfb63efa5a14089610e3717c24f90137b209650b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_30.m4a",
+      "sha1": "c612307ca60b828edaa91c202612f34d7b4ce647"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_31.m4a",
+      "sha1": "50483e542a085999b5989a549cfd9ec0f464dbe9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_32.m4a",
+      "sha1": "dddd4ce75f986b8dfb80e78f303d44c0ff99aba7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_33.m4a",
+      "sha1": "f26e52181fcc8b6bedbcc7952092fbe4aa47b477"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_34.m4a",
+      "sha1": "a23577606f9df9fd375893954ee8aec59c00dd95"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_35.m4a",
+      "sha1": "776f0d21fcac3c36a74aa3cf4bebaecf751e000a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_36.m4a",
+      "sha1": "3920cece109151868ffaaad3011407df143f046b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_37.m4a",
+      "sha1": "f117d2160957914965e2b1010bdeb557b6bbca15"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_38.m4a",
+      "sha1": "ac946df731ea920786e49411ca2c1b2e9cdf7e7c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_39.m4a",
+      "sha1": "c8e2d4c93c3fd9c4c0f2cbd0b1cb67c241963c79"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_40.m4a",
+      "sha1": "e90e75d402444236dce4ce3adf056216b2707533"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_41.m4a",
+      "sha1": "0ed7edcffe3390c869698ec995468a5bd34c6b36"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_42.m4a",
+      "sha1": "6b9e38b5d83a8a3a080d3c00b6cb7cc481c5c4cd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_c12_q.m4a",
+      "sha1": "1f559df412baf430c57448fab8f79b381da6bb7c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_00.m4a",
+      "sha1": "ac63c1e09a2ca61f9aeae149fa87a3bd96641a10"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_01.m4a",
+      "sha1": "8be48de6d3e3bffb7445398c01ce2c07a648c5de"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_02.m4a",
+      "sha1": "d60a42762389fbd1d3cfdd28ae37c5d251a913b2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_03.m4a",
+      "sha1": "344cea637da29bdd5e1c5e118124ba2850cd0b43"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_04.m4a",
+      "sha1": "8f5be51253dc9cd0dfdbd4393f70ea6b18dcb742"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_05.m4a",
+      "sha1": "85753eafe1eac417f0b5fb58a550994499ba4daa"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_06.m4a",
+      "sha1": "bc71512d837f0499c9b9308aa37079edc9d6d83f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_07.m4a",
+      "sha1": "61afeaa12a7c8407ba8fe0b146fda43114b7690d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_08.m4a",
+      "sha1": "dd78fb88365ca5cfc69fb28ea0eec779272aaefb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_09.m4a",
+      "sha1": "314181f44355e98f0bbcf9464dd2ac0eb5c3cbcd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_10.m4a",
+      "sha1": "85898f28647da4950e36868f4fe73a8377f37c82"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_11.m4a",
+      "sha1": "11aa31675bada58d278710a233996f58d71ecc15"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_12.m4a",
+      "sha1": "69b62eb54501851d05ba2407037f8ddd9d91b3d1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_13.m4a",
+      "sha1": "8aa30dd5c3269d97bee74302db591a0140ae4041"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c01_q.m4a",
+      "sha1": "ff086b04b4a3f5ded57cf34e74a449bf95555921"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_00.m4a",
+      "sha1": "aacf6e83f86c269713d5342eb00e7efbeae12cdd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_01.m4a",
+      "sha1": "a955d8981152b1c82c009e2415a49f47b4b8a548"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_02.m4a",
+      "sha1": "2b4ee62ce9cb4535b9518bc12aa9a84628a22686"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_03.m4a",
+      "sha1": "cf8dbccdc5c372a11b07c5cb3d16982f435c6652"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_04.m4a",
+      "sha1": "aec5a0c9c32677ceca0241f3dd8b51812a216cba"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_05.m4a",
+      "sha1": "523f27a4855e8e495e8fa688d1b37d2797c8e009"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_06.m4a",
+      "sha1": "8e33bab4da32af9ff0305a8eb41c7b72ff320bd1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_07.m4a",
+      "sha1": "8a83b9068676ed5bad39fc9dc53574a7bbd8bc71"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_08.m4a",
+      "sha1": "b54d705ff41ee26c79b3fb9f4277a6dbff51b792"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_09.m4a",
+      "sha1": "bff35037a5052cd665e6b258c8641462447ff532"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_10.m4a",
+      "sha1": "96694d3e66d0f010502b649ea59eb1e30b5add25"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_11.m4a",
+      "sha1": "e72d13a9eeb84813833bf61ac6858db0e7d9963a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_12.m4a",
+      "sha1": "af250a1aea2d912b77764fdab65dae4c042ac758"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c02_q.m4a",
+      "sha1": "ccbacb6e404c2d0785fa1961e9573a68f0c6921c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_00.m4a",
+      "sha1": "af2ae1573064f0ad51d5169ab63a60198e424018"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_01.m4a",
+      "sha1": "af23f44c3985dccd82c76f832f493abc05953e0d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_02.m4a",
+      "sha1": "b1042a339c644c9f99be8d0025b542bbf0ce3092"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_03.m4a",
+      "sha1": "317ec03cabaf35226506568b2f7e4a5f8e648235"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_04.m4a",
+      "sha1": "d40e14d20168657edc5986f6417b1c4d3f0d145f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_05.m4a",
+      "sha1": "46859257358db1f167ae2298069be6301429371c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_06.m4a",
+      "sha1": "79d543c451bf14a84792b691d6994e2365fe5808"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_07.m4a",
+      "sha1": "d31849abce79f1c4c33db748c8063f160da8f5ad"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_08.m4a",
+      "sha1": "365871ed4b72bf6b8828f2fbba026e8aafc9f0b3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_09.m4a",
+      "sha1": "eaeb9c6b7a00b8d2c0b78d5bc68f1ec08ade9ad5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_10.m4a",
+      "sha1": "c064f78843cd908b4183cd0a690b908280a24311"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_11.m4a",
+      "sha1": "e117a469c1b45fa992268f8093cf97892af7f7a6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_12.m4a",
+      "sha1": "5b65bae80b52d2f564a2f838eed7541ed3e0a62b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_13.m4a",
+      "sha1": "7a4c9524c0724f3b088155e1e8b98421adfb2240"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_14.m4a",
+      "sha1": "acbc412975a67cfc1f259d46a43e49891508507d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_15.m4a",
+      "sha1": "7892cf4d425516bd0b5f3ba49a2203a3a500f9cf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_16.m4a",
+      "sha1": "dc77fed40420f195606400da113e4c269e2e9624"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c03_q.m4a",
+      "sha1": "d0d7225e6de55ac15b69229de9989b443a528464"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_00.m4a",
+      "sha1": "306c8cf7e6bfa62ee11fe8ebb4e9d1da6618972f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_01.m4a",
+      "sha1": "cea413b757f0c84d1995a1dd4a4a8eefffea2148"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_02.m4a",
+      "sha1": "8cb33812b2a3920cee13b2239b2fb3540023a5d7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_03.m4a",
+      "sha1": "6df97d166600af6a6dfd937a3e7b45b2e027c5ad"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_04.m4a",
+      "sha1": "03d5c1eb0fc8533014d1ddf6e0142fb4e66acfc7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_05.m4a",
+      "sha1": "fcc31ca8370bfee05e3acc42f4d779d7b6cd9572"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_06.m4a",
+      "sha1": "f1dfdda392d82775c99dcb21b64a96dc728cad47"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_07.m4a",
+      "sha1": "85c1fc2350fafa9f4e76db59793ea73aaf5e7d5e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_08.m4a",
+      "sha1": "2ab10a3399ab413d3d096c42acecc0ec226ae20b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_09.m4a",
+      "sha1": "3ddfa24b92a0a661c35606a5441f3c9462633eb9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_10.m4a",
+      "sha1": "543f048408fb246efa3e97dac988147b03a07d9b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_11.m4a",
+      "sha1": "5c924390ad6d79776391968076dfd4437b7c8a4f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_12.m4a",
+      "sha1": "95c7ac15ce5b3033256036fbc2ef24392af73c72"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_13.m4a",
+      "sha1": "c078b5f4ad77a36e880d3ec91d72b72af18fc88b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_14.m4a",
+      "sha1": "e15abb4e082f6d2e317828745636eebc3f0a3411"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_15.m4a",
+      "sha1": "af28990d6680b443e9acc77aa852b77b9af0123d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_16.m4a",
+      "sha1": "69e7377723b1db4052545fd7f8c7d62db40b9bfe"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_17.m4a",
+      "sha1": "151d03d0afb0b207b81cea7bf7d2bc7f85e90ec5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c04_q.m4a",
+      "sha1": "f80f14e2074ed2f4f504f7a5ba0c0d370c799c40"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_00.m4a",
+      "sha1": "a4cae1e6f77d9a468c9f9981f06f5d802a65dad3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_01.m4a",
+      "sha1": "3c9f79470826185aa21c8d5f2281eec3ef9b631b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_02.m4a",
+      "sha1": "268d36da15429d84b7c24c949554f34ed23ed0e9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_03.m4a",
+      "sha1": "bd6fc24c11155124b87d68bc123c8564108b0aa0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_04.m4a",
+      "sha1": "f0e5746d07b8fe2b5f0a7a41350e0a4c30cd9d30"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_05.m4a",
+      "sha1": "f92b47a79bf3b5dc5e0313935fd1c0ff79d8a8bb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_06.m4a",
+      "sha1": "c9c75590fa80a73423bec92368ebe77a499235de"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_07.m4a",
+      "sha1": "1cea3191f65e06c78adfac17b6448c6e6ec2e977"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_08.m4a",
+      "sha1": "4ee2c326c7c0729cb21968b8017344f477068067"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_09.m4a",
+      "sha1": "a0ac2dedd616d68fe79246d8326f7b8d29801bdf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_10.m4a",
+      "sha1": "33e2e589d8d89982d89bb2925121358b6b8e870a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_11.m4a",
+      "sha1": "c63f72a1b1603c52172d4d2ca4d293b48e39ddb9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_12.m4a",
+      "sha1": "05109ac424a5e286b027ed3f6d29bad797bbbaed"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_13.m4a",
+      "sha1": "ef703478fd595b43f5fa2fa41727ea29974edf15"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_14.m4a",
+      "sha1": "07b97440baf8a604e23b579a9f6cca2c0bc8d1f1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c05_q.m4a",
+      "sha1": "03ee6bb2e7447916554ac4edef5c24bf8b081107"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_00.m4a",
+      "sha1": "7a00abe5c44ab09f3edb6583e23a9991d2fd1c75"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_01.m4a",
+      "sha1": "3f1592108bce2affcc979b53e5eb9c122d0a0d54"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_02.m4a",
+      "sha1": "8bf0c9142df7ac42574baea01681b02b6a573f88"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_03.m4a",
+      "sha1": "21a59dc45dc458e3fbb60226eff606dd366b99b7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_04.m4a",
+      "sha1": "00d013fc0f4484f88a602bd28949a9af8b87a3b7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_05.m4a",
+      "sha1": "23df24f572321e8f9106378af7733a68b5accb7a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_06.m4a",
+      "sha1": "0636b11ef04534d290c939ed990aec6566b78fe1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_07.m4a",
+      "sha1": "16457c67f99db272d36c910842cbf648af0b0f06"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_08.m4a",
+      "sha1": "657eec9337ae90e9adde7984d9008c1fd8d2d209"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_09.m4a",
+      "sha1": "bf8d3ab07e9c7c12736fd3f002b207294a0e383f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_10.m4a",
+      "sha1": "6a174516c4d2396470b99d2557ac1455a7ca7289"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_11.m4a",
+      "sha1": "c8d91c42452f9ba3223e866160ab5fadd8a5230a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_12.m4a",
+      "sha1": "90fabaa1bf7b59f7c55b75e1093776b70931792c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_13.m4a",
+      "sha1": "bd8c5b8a04adbf493601c1103f1ba9fa1902ca5a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_14.m4a",
+      "sha1": "e8c1356b0a2dc1a9c1464c3615906e406ec9d44e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_15.m4a",
+      "sha1": "f5f8b6438258e178ac91339981f781fe671e43fc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_16.m4a",
+      "sha1": "938e0121032b0a0d55b3db640201ad8dc8d82518"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c06_q.m4a",
+      "sha1": "9364e578c72a59de89684ec6f8ae74f623b4f881"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_00.m4a",
+      "sha1": "9018286a30f5216611222766c2b9e80947f7ece9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_01.m4a",
+      "sha1": "6f068476c73e2cc288f808ed16d5023ecce03f1b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_02.m4a",
+      "sha1": "a9e640dde7520203292e9bd5c973441fb1424c8c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_03.m4a",
+      "sha1": "3ff699e0c4066b87b492d07547d5ed3ee92c096e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_04.m4a",
+      "sha1": "0459c33a115357c8c4c812f8d72d91d7cb6038be"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_05.m4a",
+      "sha1": "f129387b936d9114c53e953fd120b65e782f03ed"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_06.m4a",
+      "sha1": "b12094e8c4d7da9cfdf3caead57b02c5f0e1483f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_07.m4a",
+      "sha1": "81187074e330a9a3588e0d52777cffb5ca6a5ee6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_08.m4a",
+      "sha1": "8adeae6ec1c176354cb0cceba97ab210fc905b3f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_09.m4a",
+      "sha1": "5ed08c86e4c85910d7fd8e3b00bed3f1ca102471"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_10.m4a",
+      "sha1": "d2265b048d685ba9d79e5ae63b3879516c224ddf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_11.m4a",
+      "sha1": "9bedb1cf6c26bc567948d56512c35e1257bc9b3a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_12.m4a",
+      "sha1": "c0fea85ffc518c11030b5a9b932cbd2ee8af2419"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_13.m4a",
+      "sha1": "863310aa549ab1a46f0d6a57eda8428a2ba96770"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_14.m4a",
+      "sha1": "fb48a27fd89de4905a6f03d7047d2baf1ceb1fd9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_15.m4a",
+      "sha1": "81533ab3396457c89aa6f04cf0007bfae0a73aec"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_16.m4a",
+      "sha1": "8a5e9acab837e34f9986c7a69719853d7c148a2a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c07_q.m4a",
+      "sha1": "61dce6696e2bcca6dd2be9e462820f478ab2273a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_00.m4a",
+      "sha1": "2cbab6633db51a63d7691731763df6ace5d9a079"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_01.m4a",
+      "sha1": "7c2294d64a0d8d8d64ad829034559bd76d373eec"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_02.m4a",
+      "sha1": "e57ff411121006e21048de4ec1c59ea96ee7675a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_03.m4a",
+      "sha1": "74bc70c8359d80a73aa7d50a987d6bf84e5860d4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_04.m4a",
+      "sha1": "deeb1ae43090179c55af36313d4ff99632a86fad"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_05.m4a",
+      "sha1": "0c5f0c8ff3eeb0909c0a9684b2b75b28899179c3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_06.m4a",
+      "sha1": "9c3d1f04525c38fb39853dc7033c24b00b36a49b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_07.m4a",
+      "sha1": "2ca67ab929046d26798a6e85fc290e29c3a6d330"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_08.m4a",
+      "sha1": "a55d3cbb7e73180646431075249a9a919c22367d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_09.m4a",
+      "sha1": "d2d3418885f5e24b797cf6e8ee724144741a3b3e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_10.m4a",
+      "sha1": "1d1646d275f33b20f919d182ab62073e8bb5a73c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_11.m4a",
+      "sha1": "75fe29e77b521c2a26f3e516c823d9d30923e127"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_12.m4a",
+      "sha1": "c89c59bbc9acf54afeabb551cb0d939b45a51d0e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c08_q.m4a",
+      "sha1": "e9bed2669e34353329810db5e4a08e262e753926"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_00.m4a",
+      "sha1": "98a143df57d4353b6b5afc43c3ca3af39fbb6572"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_01.m4a",
+      "sha1": "df526e4c60bf630aa091b9e7d3c74b999827f117"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_02.m4a",
+      "sha1": "5168ae98cd4da1e741166ae811f8731fb0edfe4f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_03.m4a",
+      "sha1": "8ebd2f198fb6ae978741997650a839d736f75037"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_04.m4a",
+      "sha1": "8dd53c449924e6af2f9d567381959c8b17c54ee3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_05.m4a",
+      "sha1": "94617f6d3edf5ea8d2bab9924fccd63137c26fca"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_06.m4a",
+      "sha1": "a4db09d6420fe95228312106081d44fee8ce546c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_07.m4a",
+      "sha1": "e27d626bd31e653653e094ce4c0451921f6cab50"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_08.m4a",
+      "sha1": "b755b87c79941b0413bd4b665565894f188c63b8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_09.m4a",
+      "sha1": "89ff7ce83a644f362a34d0b7a4506e908231b10f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_10.m4a",
+      "sha1": "a22d3449f85680ae7da6aafed10c7017d343ee36"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_11.m4a",
+      "sha1": "d8305340be12fd6ca8d435cac6852814311a526a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_12.m4a",
+      "sha1": "feb6eeff2a2b07a4b56fff7960054125e8c3ae52"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_13.m4a",
+      "sha1": "7a003a2d3284561954dbb1c59368a9ebb14379c7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_14.m4a",
+      "sha1": "4afae3da73881a670278b1650e67f6a9bae4ead7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c09_q.m4a",
+      "sha1": "a9387946ec0c3eba12630ece34586c9d2ab6160a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_00.m4a",
+      "sha1": "73ec651b7e2867c06f148fd0c12cf6d930e906cd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_01.m4a",
+      "sha1": "60cfcde58fff2c598a226b93fe75f77265b98617"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_02.m4a",
+      "sha1": "6b3e9667466437ed22af4360a1e83337bee67133"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_03.m4a",
+      "sha1": "9bfa6c08a8163f7c4390f68cfd5aa40200b77f68"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_04.m4a",
+      "sha1": "d5b67858f140f83b54425ea88158be9c2e76beb6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_05.m4a",
+      "sha1": "975ca77a9415fcc94c9edf59c7f3cdd4f373fa75"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_06.m4a",
+      "sha1": "d091d2a4bf7cbb586f22a63052ff1d1683621f29"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_07.m4a",
+      "sha1": "c9c741d55c52c44064957acfa7f3e35fa2a74b95"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_08.m4a",
+      "sha1": "a8a70662cae1f90488caab14e876937e4647d8ef"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_09.m4a",
+      "sha1": "7b6eebbe92728f247cacbbb321f53fbba0368325"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_10.m4a",
+      "sha1": "8b47c0b82931f0a8f469f65e5724ec7fc485110b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_11.m4a",
+      "sha1": "f1f2a95df72afc32fafab79b52027f7024d93504"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_12.m4a",
+      "sha1": "633dadd722e2f21a1d4177cb1ee569010f744029"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_13.m4a",
+      "sha1": "7b8cc0253a4ac4d3f5fc6b66b322e0d5af997138"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_14.m4a",
+      "sha1": "13a0fb7bc01c025371eb214d42b665652ed0af27"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_15.m4a",
+      "sha1": "402655b7d49ef12b5629f3260b3e641d498a4cc4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_16.m4a",
+      "sha1": "90ebab2c3d10c5d7026bcaf516ace5565c14cf6c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c10_q.m4a",
+      "sha1": "5b5c11269203c7b3af712c4ad2dde6d797907ba4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_00.m4a",
+      "sha1": "c9b6d39407b0231ab4bbde5b95d419dbe36b33cc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_01.m4a",
+      "sha1": "fd014cd6c84ae2848a4afc944d8437a0d2c9eca7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_02.m4a",
+      "sha1": "a0a35379e194a981273c4a286f9587ae1fe86b1a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_03.m4a",
+      "sha1": "8310ce5063bbe92471b0fa4f7ee2f3dbb38f3e97"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_04.m4a",
+      "sha1": "c3ad596e940c3091079d00ccce6d66bd52c1a307"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_05.m4a",
+      "sha1": "e21873a4f561a1f8fd00082fc6f8efbfb1f69790"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_06.m4a",
+      "sha1": "57048e1bea1595402c5e16385996a010928c72e0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_07.m4a",
+      "sha1": "813dbe945b4f9552240a22297fe9c84ccc62bf78"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_08.m4a",
+      "sha1": "43fbac800aaf50587c066828b32d1d9c29203355"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_09.m4a",
+      "sha1": "01282af3d5f6d7018249dcbdc87533c39b76486b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_10.m4a",
+      "sha1": "1fb852c53f8cf8701d1eaab6b349e1393be2969d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_11.m4a",
+      "sha1": "4c580f8d8f98fec07bed71a2f5ca83e3e90bdd0a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_12.m4a",
+      "sha1": "5b97ca8294fd5800db3d6ed7377a7fc4a244ea22"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_13.m4a",
+      "sha1": "a0e489fe5e35227b1ecf9acb3e4fefb1de40f552"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_14.m4a",
+      "sha1": "be7e39652777d2173021d43709dd755ff61bcdea"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_15.m4a",
+      "sha1": "062a69e8b7e5966104ab38b3029a4a8a53474d9f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_16.m4a",
+      "sha1": "8e5f52a8c6aba131c6c3ee4669202ce5c3ad4119"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_17.m4a",
+      "sha1": "db54361aca26642ee83b4498f3f1512301d44e2d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_18.m4a",
+      "sha1": "c5211010803619f202d454621504562f9900011f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_19.m4a",
+      "sha1": "78004cdf8c8020f97429ec933f8b70462874eb01"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c11_q.m4a",
+      "sha1": "2baac7e73e7be740f06f1637bb4ee05f79306286"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_00.m4a",
+      "sha1": "482603a464f8114008c364a6bc46a0d579c0884d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_01.m4a",
+      "sha1": "93d1fbb6d7624273c71c959550c9caa67f9c00b7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_02.m4a",
+      "sha1": "7e5897cb2e8b2fe84e6de2d7f0ddc520907f1baf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_03.m4a",
+      "sha1": "e6bac04c72a79f9fa02e4c083b96965f33ce76cb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_04.m4a",
+      "sha1": "d822af706bceb385631f7c5b7327e45a298ede6f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_05.m4a",
+      "sha1": "a21f3832720e6cdee41c9b7814209eac45988013"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_06.m4a",
+      "sha1": "f600d220b22ac339c879242744ce190106441e6c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_07.m4a",
+      "sha1": "c328d8fd979abdba5d4be887e1ca2c784f60ea0b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_08.m4a",
+      "sha1": "b8aa42d2998d68e879f3b495b8e4fa8c11752963"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_09.m4a",
+      "sha1": "f483de0be17b5ead0ef0b03bbb1d0d2975f1e3e5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_10.m4a",
+      "sha1": "55cd7b239f4c4f77479b86353a1b7e8d92fee805"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_11.m4a",
+      "sha1": "7947fb3baa4c7eb48b9ce875b1788238cd93231b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_12.m4a",
+      "sha1": "15205d68a5636c3caea9753dc6a554547d984c1b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_13.m4a",
+      "sha1": "eef39e81af1c4af071bfb961097fdba8dee3c57c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_14.m4a",
+      "sha1": "46bf879741fd42419d0cc98a6d51a844687ec1e7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_15.m4a",
+      "sha1": "07f45365516134a5973240bab6181d1fb1ca3175"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_16.m4a",
+      "sha1": "45b8eed8fd96c15fe576d001e7dc3f14616912d2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_17.m4a",
+      "sha1": "3174e83cd608db42571c85ee4bc1e5d4a9f94805"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_18.m4a",
+      "sha1": "2d5eb5fc26d233246e432f544a0c9d613fdcccb0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_19.m4a",
+      "sha1": "432de2fa34323d9649bdb3607495ec8b7718acc1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_en_c12_q.m4a",
+      "sha1": "a88c65559ebcdc7327ca04a9148db2c7966c3c4c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_00.m4a",
+      "sha1": "eb31c729f5c51595e2fb99344b4cd358393a0c64"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_01.m4a",
+      "sha1": "dae5ab48ae5a987fb062a1bd0928be25854d542b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_02.m4a",
+      "sha1": "a35ce0e2a1eac3f48aae58052a61cb5b959f70e8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_03.m4a",
+      "sha1": "87297b02a293bd1f492f67bb23d238df17b681dd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_04.m4a",
+      "sha1": "66b2258ac4c1a183d3f13ae422be03403d2e1e41"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_05.m4a",
+      "sha1": "0a97fb1ab9d3ef86c92f94566eb829c8a8b858f1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_06.m4a",
+      "sha1": "78a077176974993d9c0ecdd14da24943ebf5c740"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_07.m4a",
+      "sha1": "057081d5443e3f2aee2ab12ffecfd53e4b0c252d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_08.m4a",
+      "sha1": "1eb5677989d27ae85b4e6189a98abf1619a8d50a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_09.m4a",
+      "sha1": "0938dd7e3360ff27a462ff76987d116bf66f0dd8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_10.m4a",
+      "sha1": "46fe2485e12e9715cd71a1ccd36c0308ba75041e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_11.m4a",
+      "sha1": "fcc866612605acb1a21ad22b04652e65dd7cc821"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_12.m4a",
+      "sha1": "2877081976c749a293c7106c6cd8ce0091aa43a9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_13.m4a",
+      "sha1": "654046071d6506c2884720268a12f249e0aa2d25"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_14.m4a",
+      "sha1": "2b3058ac307cc5a39a0fd9ede84cb843505ad74b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_15.m4a",
+      "sha1": "9e50e647575c7aa23b61b11468f42a46d8ef896d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_16.m4a",
+      "sha1": "9cf9d27e4b9f6447a7bc2ed549569e8eebf640a0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c01_q.m4a",
+      "sha1": "459166284aacb53635913577db3caec2febc4d33"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_00.m4a",
+      "sha1": "62ce6eda7ef209f2e31130faf9ea2cd78554e5d3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_01.m4a",
+      "sha1": "5077819adbd7f502bde88f70ea566a896df3973e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_02.m4a",
+      "sha1": "4fac778d59c2f0fbf13b0efc3528423ec079c54c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_03.m4a",
+      "sha1": "9e6c802be66316318af860939b72ecafc5ee285a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_04.m4a",
+      "sha1": "e2ea7bb504fc01383803926878ca074ca1e6d1db"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_05.m4a",
+      "sha1": "b0ee619e94ac208fdc453480f00d4ef4b0afe9e4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_06.m4a",
+      "sha1": "e88124fbefddc54f343afad6a7565157c4181107"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_07.m4a",
+      "sha1": "2abb73658f0111f5357aa1c9f7b2221b73458096"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_08.m4a",
+      "sha1": "75b3f6fab2476c3486cc76272afe0c8d387ab17b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_09.m4a",
+      "sha1": "667ebd4db241ececc8ecdbfc6e39f4ea1cd1d17c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_10.m4a",
+      "sha1": "75335b1544cf81d3220e31aef4bd38c9bf7c6109"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_11.m4a",
+      "sha1": "a4e3f5c2230d4a772b3ceb79ace65555864764ce"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_12.m4a",
+      "sha1": "ebcc5f9d8ce86798c41404186d6c5f3c9bc7aada"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c02_q.m4a",
+      "sha1": "77c17959d6df83a0bf8a7f0d85c35797eb1b6f23"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_00.m4a",
+      "sha1": "d6f8c21d49c810cc4dde126520049ca22cc99f40"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_01.m4a",
+      "sha1": "9aeabf372d34d84134fa7c5e98147f1dbae21709"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_02.m4a",
+      "sha1": "3f6913bb668917b4decb732c20e5316ea5d1992d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_03.m4a",
+      "sha1": "048881fc24955253a768e580187554dee3b1fd1e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_04.m4a",
+      "sha1": "802c70765d81666750613ca59a8cfe414867f0eb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_05.m4a",
+      "sha1": "c8e8b34a0784b40f30d69e78524082c33bb33ded"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_06.m4a",
+      "sha1": "58db479ddd91368f058328c82759728e39681be3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_07.m4a",
+      "sha1": "df77b1cd207f5995b4195a888d8d266a99c73d25"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_08.m4a",
+      "sha1": "09b8726cca839021d8affc218ebc76f77c7afbc6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_09.m4a",
+      "sha1": "79d549c762c545db12c908315b13602396629a7d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_10.m4a",
+      "sha1": "3f328118e1ee754794da330f21c18c29cdac1c97"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_11.m4a",
+      "sha1": "864db34348cc61790f7e83024b1fc1a83db32478"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_12.m4a",
+      "sha1": "3f9a6dc7dbc5fc45b68866dede92efa5ea53e0c9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_13.m4a",
+      "sha1": "6c713dfc58904f07dd3b0fadd079f15793ee7265"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_14.m4a",
+      "sha1": "50f27457eed388817ff2238964055e9d245bc1ee"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c03_q.m4a",
+      "sha1": "6c8413717173b0f0055e2a62d144e62e99394ef1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_00.m4a",
+      "sha1": "5bd500996fef5fbb1792782c2d3c366003a4aeb2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_01.m4a",
+      "sha1": "fb71dadd92d3e0e8deb86a07fadaac0666964603"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_02.m4a",
+      "sha1": "92378689cd2fc2647c6a98d888f840ffa42be351"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_03.m4a",
+      "sha1": "d26229142b94656c297602d455bbf2fa0426acee"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_04.m4a",
+      "sha1": "0a55a221ddc0faa528671afaa3224f6c4fab89ff"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_05.m4a",
+      "sha1": "c8d81d6139f804c7ec31d6499f08e07cdd37259f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_06.m4a",
+      "sha1": "66ae9d80a987969bb8c2d7ca34235909058bad12"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_07.m4a",
+      "sha1": "a69176ed2cb39884958fd43d020fca33a5c51f0f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_08.m4a",
+      "sha1": "a0feab94eda3ed19b73657e6e77b9a44a61f747c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_09.m4a",
+      "sha1": "eaa7317e09c3a6453f6418719831d2431e523e7f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_10.m4a",
+      "sha1": "14d903cdf40d220ac5c4f266b12f501878cdba70"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_11.m4a",
+      "sha1": "8cce9ba861092e2f9e37b1d60c932a781ad6039e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_12.m4a",
+      "sha1": "3dbc4632b9fd6d294a2e8d061855f1c38bf4fdb7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_13.m4a",
+      "sha1": "86a25caa08434124005fae8d66368743d3ff10f6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_14.m4a",
+      "sha1": "249485f78571eda85addede2f05c31bd13f90758"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c04_q.m4a",
+      "sha1": "64d3aa10cf8e95c03f840750798fafb386ce8d0c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_00.m4a",
+      "sha1": "6a5bfacbee4bdf947d644b66dcd54cbde68c6560"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_01.m4a",
+      "sha1": "a7b8eb03adaa4802471c5a70d9a585204ca8bbb4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_02.m4a",
+      "sha1": "0db635610efdf90bc4f79d6615ebedfb1105a80c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_03.m4a",
+      "sha1": "019228de662f0f71e3c1f5fd0a0767dcfbae6884"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_04.m4a",
+      "sha1": "8813f021178ab03b8ff2b15795085d6937612e20"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_05.m4a",
+      "sha1": "7302fa4f8e28cf5f5e4edf8f50eddd48a6977209"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_06.m4a",
+      "sha1": "f0f297b26daba0a2cabbd133179cbb43a9f23c17"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_07.m4a",
+      "sha1": "ba365f1be7b35fa0a652a1e13debf8ee67b8a908"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_08.m4a",
+      "sha1": "08dfe9628559b53e2dc431f75b9cd64b14942295"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_09.m4a",
+      "sha1": "09e79a0eeddced0408a79c7b47d746c3846312e9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_10.m4a",
+      "sha1": "ecccf99fc32a488667952cee4bc41a1fd26a51c5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_11.m4a",
+      "sha1": "95e2a09f8bb89c045fdef21fceeac94a429d9349"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_12.m4a",
+      "sha1": "b5f7dee4621dfbb0a6b773a4b8cfeedfdb3fc68c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_13.m4a",
+      "sha1": "c7fb951222981273d57832fcb0d8b0f5d7904030"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_14.m4a",
+      "sha1": "c296b1401705e73f331f71534624c0da6549b124"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c05_q.m4a",
+      "sha1": "56c472c6aa26f9025a87adabb8cfa59ff5e7e9d8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_00.m4a",
+      "sha1": "bea213cc10d8e98d056b5ada428d29f846790dcd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_01.m4a",
+      "sha1": "492a35300baed16716cf67e729fb695176323c76"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_02.m4a",
+      "sha1": "35c4a6231d4ead8be90ff4cd8b7227976922437d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_03.m4a",
+      "sha1": "da7915260316a28a016872ca1aef2eb90091f4ee"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_04.m4a",
+      "sha1": "1bf4ef836f557f8d046dacd681e2562480177c05"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_05.m4a",
+      "sha1": "902f0c133b25c8ff2ae59d6bc5ba77f2d20eee11"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_06.m4a",
+      "sha1": "b869d784c810ea0b94b7f72ea2419b3e5f00aa2c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_07.m4a",
+      "sha1": "0305a9f1f8da4ce2ddc4ea0d8f49d2d2477b48de"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_08.m4a",
+      "sha1": "7ccc1eca05a7287b5cfa8cb13aff6b678fad3387"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_09.m4a",
+      "sha1": "d469fb805783884ed50e6498d1cfd46dbe86012d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_10.m4a",
+      "sha1": "86c2a2e858847f2118fb49d26cd94ce1d9244ba3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_11.m4a",
+      "sha1": "cc154b0dda6a4a4be73d620244399fa8f9e65ab3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_12.m4a",
+      "sha1": "c7ff1c0e50bc625ecda74a6c6ef2306c1432dc0c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_13.m4a",
+      "sha1": "b5e7ac847a04eacc6b17a21136e16c634b2aa929"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c06_q.m4a",
+      "sha1": "86fc6fde5585fabaa4ee3cfb84e14666520533f1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_00.m4a",
+      "sha1": "e781d024804a1553ccf3396eed9fc9d50a513734"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_01.m4a",
+      "sha1": "729f815270375940de88a1edb90d5192f1b83ceb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_02.m4a",
+      "sha1": "abd8913dbf7fa02550a03982e2896328b1c153b6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_03.m4a",
+      "sha1": "db2629a726a2bc2eb6f5eb044db3ca7c4eb3a748"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_04.m4a",
+      "sha1": "e9046c335873e4168ce4ccf95d8f96eaf6ee11c7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_05.m4a",
+      "sha1": "b4f7278af348b63fae191f1604b53379e5a12e64"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_06.m4a",
+      "sha1": "37658f5ebc63bc6ddf105583bfbc42ce0059df0b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_07.m4a",
+      "sha1": "003c2807e0bec73800aa4eee006d7717782b85d7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_08.m4a",
+      "sha1": "9edfba96ac1b3529b0e35f548c79396862ddc7e4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_09.m4a",
+      "sha1": "ab2ef9bc0ae75f702fc804974687895f1918ff38"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_10.m4a",
+      "sha1": "86f73309a090dfb56a81cac8cda32d59561a503f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_11.m4a",
+      "sha1": "b1c119afe6dd00bc2f9832a347c823bdb5b1d52e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_12.m4a",
+      "sha1": "622875d3bf564863f606d06ae2c41b75b9a656a5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_13.m4a",
+      "sha1": "8911e58914ea5a9a42eb3892a598385aa3755430"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_14.m4a",
+      "sha1": "f1cf82d4d88f35e72258af8f2744a48499f2aad2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_15.m4a",
+      "sha1": "06db20cbf8f52ee0d949acf8f07951c9010f9905"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_16.m4a",
+      "sha1": "c07245dca6d65d3875f4f51d8a20886d8bd2cdb6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c07_q.m4a",
+      "sha1": "7907f989ceaad8adb820fa177c137e4a4c9c38a3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_00.m4a",
+      "sha1": "c32924c5de11250390d0d132b78bc5dff8a13d53"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_01.m4a",
+      "sha1": "0a8af38ba2524b6227965bb327d01c932665b0f5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_02.m4a",
+      "sha1": "1e0871d4d85c97647ab39a88c617a22b6cd23e04"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_03.m4a",
+      "sha1": "efbcf439e3643213293aefae99d5fa8c329d6825"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_04.m4a",
+      "sha1": "8c47eb440d81d8fc5b5b9c830dae52b67f9b23a0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_05.m4a",
+      "sha1": "4f5d5fae1492a2ebc0c4a74152748fecb9f298b2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_06.m4a",
+      "sha1": "63128c8a59fc4acfe1012bd8fba375234f989b94"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_07.m4a",
+      "sha1": "965a314b123cec93dd5d97d2e7ab49dff620bde9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_08.m4a",
+      "sha1": "82daed9dd1f419ceacac92533bc99e24dcc9e0c1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_09.m4a",
+      "sha1": "3273b11680c204e26fa123166aa9e035bd41c4a1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_10.m4a",
+      "sha1": "4d8a7fa9bd2c06558de67776f39a17536cf19e3c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_11.m4a",
+      "sha1": "0ab14dab17992142a3ae7515099645f46ba4d102"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c08_q.m4a",
+      "sha1": "68977dc9bb35cfe40e1c9f3da00078ea57b534bf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_00.m4a",
+      "sha1": "5aff1b0ff0723eb9b0624782cac33cd575bcfe3b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_01.m4a",
+      "sha1": "d6d138048b8695f7bd41c68f7d3876bd3c1606b5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_02.m4a",
+      "sha1": "7bc2fda0c0dd8c7f5c36384bb77b3b4fcffb93bb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_03.m4a",
+      "sha1": "8dbc901a30c17067ccdc37aa837714406f7ef860"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_04.m4a",
+      "sha1": "5dcd43f576da9cd2bef41f03d129dec792da1c57"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_05.m4a",
+      "sha1": "8607bd43cd1550628be78b27042ffdd194ba5e39"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_06.m4a",
+      "sha1": "6a9d162001d5dd85cd6c7fd9368979366815ae77"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_07.m4a",
+      "sha1": "4bdba5bd22f388b236f1c5c6b1b925b863db64ee"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_08.m4a",
+      "sha1": "17591c89422526f8c9789637dcda23a1af329cae"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_09.m4a",
+      "sha1": "9ffa282aa93ba7790d91e4b69ad7ad7d09fe364a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_10.m4a",
+      "sha1": "ca4fa934c56b19f9e2ef870cad63b9789ebf1bb8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_11.m4a",
+      "sha1": "000a800e0c52f51a6a347bfad5740e6598ff4dc7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_12.m4a",
+      "sha1": "edb0861ac8b847252b148c8f10a046451b2ce191"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_13.m4a",
+      "sha1": "93cbe52a07203abb950f0fcdeca259cd57841e43"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_14.m4a",
+      "sha1": "9bf846a98f21044d8854c14e21d25149c0839d77"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_15.m4a",
+      "sha1": "d41f1de1dc1a12422b7697d6e5edb7a067cacd94"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c09_q.m4a",
+      "sha1": "6c2c225a593adcb8d31f2398bffc482feb3bbf4c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_00.m4a",
+      "sha1": "2edaac805ae6b8c1988d31c11d5ad1c125fdaba2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_01.m4a",
+      "sha1": "6cf8260d931b1cd9eb5c98148d9288ba783abdc5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_02.m4a",
+      "sha1": "545835785513029de2cba7b887098e2eb4016222"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_03.m4a",
+      "sha1": "9f8f079afd452fc4d7207408a532c1f6db3720b7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_04.m4a",
+      "sha1": "0c44e2922def31d0d7f613cb5b932e3b7f699d99"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_05.m4a",
+      "sha1": "77cfe20e3d06490faaa3a30d0e1c6f5fc6a7c3a8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_06.m4a",
+      "sha1": "9bc7b1e0f08bac055106347172aeacbbd9c9bdad"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_07.m4a",
+      "sha1": "71b314fb5fd0dd38a5c4780a582849d4f2b441d0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_08.m4a",
+      "sha1": "df9edb9639444c4ee7398b17c3184c99d8ecc6ab"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_09.m4a",
+      "sha1": "f31696954559af74c91762c777f359385720ba3d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_10.m4a",
+      "sha1": "31202f719650784ccc290c7355c2e4f9f47eb54c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_11.m4a",
+      "sha1": "2150b646b93a1e1ae3ef13b2f3034a66ab325ea0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_12.m4a",
+      "sha1": "ef9e1069cc06ea396478faf6f2c7cae3b62022dd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_13.m4a",
+      "sha1": "dd20ef8e7aac86ce7e2699f261f57a420162a628"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c10_q.m4a",
+      "sha1": "ae0abe00830023d40f2b19aba61b324e824137d6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_00.m4a",
+      "sha1": "df114933b76448c77ccc9eb699590c3e181bad6a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_01.m4a",
+      "sha1": "ef149cd3486b8da4931b317c64cd04126a32c326"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_02.m4a",
+      "sha1": "f7d61dfb60253284a58c05b7e13fb07a2c0a396f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_03.m4a",
+      "sha1": "9bc9a3a1382c22e8cd3d4ec412aab74d58c9bb3c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_04.m4a",
+      "sha1": "275b61e88822da24b5d78bfa0435c60be5219741"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_05.m4a",
+      "sha1": "4dffe5cfbc76a90ff73c22e6bbecfac762c28dc0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_06.m4a",
+      "sha1": "9c8cfc01580840749621cf860acf405fb9bf82db"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_07.m4a",
+      "sha1": "c2344ac9310159d2cf635f83a7b6e92aec306958"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_08.m4a",
+      "sha1": "f9a0a71423de6044300c8207dbec55e4788fa5ee"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_09.m4a",
+      "sha1": "5e56479fa132e8646263e5c92dc271a27ea61fe8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_10.m4a",
+      "sha1": "9fbef3aeddcd6190fe688a86de28f6e445fddf0e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_11.m4a",
+      "sha1": "0d07727d2c81d7b6e16f907202a64fbdf625d640"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_12.m4a",
+      "sha1": "0f00ad99701340ac1defe8c07299b70caa0caf59"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_13.m4a",
+      "sha1": "b6ef1a0bb9b6333ac3375e61d2d0ef9ca289767e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_14.m4a",
+      "sha1": "98efff440d760cb482f290a231c91ae64f854b71"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_15.m4a",
+      "sha1": "7891366562ffda2a50d4dd3717c9deb67b8304a7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_16.m4a",
+      "sha1": "75f31fd0585f3d37bff683b22e890555f25d5c32"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c11_q.m4a",
+      "sha1": "6d65984e8710504a0e260bb171bc2b7e4b71b48c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_00.m4a",
+      "sha1": "22bfb082fec7eb96a52fa8c8c4b67e45fc348941"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_01.m4a",
+      "sha1": "2d2fe913ee5567c8aaa2b164febc7e9023ee63b8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_02.m4a",
+      "sha1": "d26a255928434b98d8517921badeb6913796dcfa"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_03.m4a",
+      "sha1": "82dfa15d72fbad5b9d65ee03c0487a47502aba9f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_04.m4a",
+      "sha1": "a99c47dd471b13bf605d8c3352fb91516d2c762b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_05.m4a",
+      "sha1": "7482eb95861af374e2f57f621a8d0277fb441ff9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_06.m4a",
+      "sha1": "88fa8c8d4afe2596ca58205e634fb3e1824c8f66"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_07.m4a",
+      "sha1": "235420a95bfd8c5053acb589ebf90871011a61c1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_08.m4a",
+      "sha1": "0fa359b96692f454fdc0416cc6793483f0ec80fe"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_09.m4a",
+      "sha1": "06d3f9448ff9c6cd3cd3495b5fc0ad73810c8cd6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_10.m4a",
+      "sha1": "92f32ccac652356ead6b5349ecc9a869f3c960d1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_11.m4a",
+      "sha1": "fb7c6c6955019be22dd1c1d953686b015cf2cd3e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_12.m4a",
+      "sha1": "0f44b48faf0448b9aa8746b74233cf695bcca5c0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_13.m4a",
+      "sha1": "2f3395c5d31112be7b1f974a3c8ee1fcbaae9d74"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_14.m4a",
+      "sha1": "4f49681423669b65c55f7b6cbbdc8bd34e9b6a0d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_15.m4a",
+      "sha1": "ae996efa6144837858e8663ff80b9a46741f4a3f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_16.m4a",
+      "sha1": "ce1faf78b661fa3caf1c7731fe0589d3c087a7ee"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_ja_c12_q.m4a",
+      "sha1": "0e4ff454759367aa3c7cda1dd510ad2eb24f6833"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_00.m4a",
+      "sha1": "f4c5eff2e44f5ce8ce9f10b13f1a4f5377444c5e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_01.m4a",
+      "sha1": "02150bd7e5d062de5d3c8b569715bb524868cd11"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_02.m4a",
+      "sha1": "bb1e0d7031b0f0cbc5c83e1c33d3f7994d8b1909"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_03.m4a",
+      "sha1": "9df3f6ccc4b7ea6f1409ff0c4951ef8783928a4b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_04.m4a",
+      "sha1": "4c6cbf6f7d693021fd22c08634a1e6f46a47f175"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_05.m4a",
+      "sha1": "35dde8adac0823f0ecc5ea3c7c9ba187e92ddb8c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_06.m4a",
+      "sha1": "e3583f9c2e3347e7196eeb9b8bed10f69e2d26e0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_07.m4a",
+      "sha1": "f7f8554020c9f25fe01b9e2c292a7e11f4391686"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_08.m4a",
+      "sha1": "50c20c2be76048d924dc38e3882c9be556e48789"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_09.m4a",
+      "sha1": "3a53529961275bb02405fb21574fde1a8ccb5b23"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_10.m4a",
+      "sha1": "13e2c7cfa0ca3f37d339a5f46f01ff7fa5e58c51"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c01_q.m4a",
+      "sha1": "a1e400e4235a76add6d12a29207a417013ec17df"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_00.m4a",
+      "sha1": "557bd5aaca653bf571f1e33e583887db8371aa05"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_01.m4a",
+      "sha1": "86b71a7eed3e75756854c2662b4a2a6556e74101"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_02.m4a",
+      "sha1": "75bf3db82675266348f60c1951ac1059c15991c8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_03.m4a",
+      "sha1": "42c965be3676e829df67b8057e2a82eaf1449223"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_04.m4a",
+      "sha1": "92cf99f8489747ae13d1d33b942a24a27cba6a1d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_05.m4a",
+      "sha1": "da67f4badc841fa35904a2f61a968722103550ca"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_06.m4a",
+      "sha1": "9265f2a4cdbf2d05ce12e999ff149eb92fc8f25e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_07.m4a",
+      "sha1": "d1d87a9f9dbe7d897b1ba21b214a36c4fe25aee0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_08.m4a",
+      "sha1": "b9c31771886cce0163f124de9172a21ae15c48da"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_09.m4a",
+      "sha1": "6dd58cfacef6d5aa0daaa0e3a94ed9ab5b5c95ed"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_10.m4a",
+      "sha1": "0adf5fdc1dd5de58e62c8b4bc9d8c77b0f683163"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_11.m4a",
+      "sha1": "04d9e45534525dab1d8011159ce0d9603cd4a03e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c02_q.m4a",
+      "sha1": "4ad5f4a838ce85b930fcb2fe6bdfbd87aae166ea"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_00.m4a",
+      "sha1": "1c356d444ac31f6fe226ba413b35f197b402b1a1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_01.m4a",
+      "sha1": "b68dbf4383d1cc461c2e4cf6cada69b375e0dfd9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_02.m4a",
+      "sha1": "594322b5c7641c94948446e49665291e601cc72a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_03.m4a",
+      "sha1": "0285084795ea3ef5502f78c24d1f65f9d9e1ba9b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_04.m4a",
+      "sha1": "67dd781560790f01abb9b72a9b1e9f34ce89453e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_05.m4a",
+      "sha1": "a9ac779e3b5b8056a9bfb2b9c6a4b5a0bad78df1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_06.m4a",
+      "sha1": "22422de51b7cc3030e18e733923e2fb0c09b3fde"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_07.m4a",
+      "sha1": "46ccd4a99eff4f955e168d4cf8a359d169e18b35"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_08.m4a",
+      "sha1": "f162a8dca9236d8bca86a69f70944a332a75c2d9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_09.m4a",
+      "sha1": "edd632fe68b210f86c374bbdfb59eab7ed14a173"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_10.m4a",
+      "sha1": "7aefdfb38469cb14c36568b2ea6e058e4204c4ff"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_11.m4a",
+      "sha1": "760b737b063326b997149657394bdc2befc95685"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_12.m4a",
+      "sha1": "a40a54902a494cb7a865e092c9f1ea694ffbc79b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_13.m4a",
+      "sha1": "cf962d5bd5ac153d4818e1f9d6831d88e2fdac54"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_14.m4a",
+      "sha1": "0be756f5abbd3485d37a88a48a99cbf8b2624238"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_15.m4a",
+      "sha1": "d724641e59c439c54df2b8d52947d1be799c9e8c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c03_q.m4a",
+      "sha1": "ac3ce4a94a65d49668b8a83634ce90d33aa57edb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_00.m4a",
+      "sha1": "be7ea19a87add26c49d8fce08534247c699314db"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_01.m4a",
+      "sha1": "ea33a3e7c5959c96f627c3c3f5b3b39786f62f67"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_02.m4a",
+      "sha1": "c7418666dca020fc5fd456e84333850fb5255e65"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_03.m4a",
+      "sha1": "1cd895ef6b9f4005324361598bb460fe850fcbae"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_04.m4a",
+      "sha1": "44846b6db38042e9796d5b4bb3d58e3aba81cdf3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_05.m4a",
+      "sha1": "f40ed09ca3a58f5a82fe26eb238e76300d7044f4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_06.m4a",
+      "sha1": "c87b1cf6a76dd5e2f2a9cc847f55635535fcf59d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_07.m4a",
+      "sha1": "9963d694b6853ed3f1fabc468089cd23c86d884a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_08.m4a",
+      "sha1": "a724b019dc5a49e69cbbd63e6420d2294e49d5ea"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_09.m4a",
+      "sha1": "c650355ab5a4fca834e43545d64ffcf66c7f760f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_10.m4a",
+      "sha1": "d98a7f1f417ba5ad2b2b2e9a18fbf5051b44d3c3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_11.m4a",
+      "sha1": "a230524b2fa8537f1fc1df1cd59316e4b66ac9f5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_12.m4a",
+      "sha1": "5c518bce5fd69a0927a70a891e24eedc78833eeb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_13.m4a",
+      "sha1": "24b47669eb14483c55e586fa347e4633969aafc1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_14.m4a",
+      "sha1": "f995b4f55602a304cf891d60dae83ff940d558a6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_15.m4a",
+      "sha1": "9b89e357b3b5b66cc6f219b7852b9c43b6e8170e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c04_q.m4a",
+      "sha1": "e7e5346543f9dce762bb8308c830b1f62ee489f3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_00.m4a",
+      "sha1": "d95bf58501b51f439cf7ce22e42af092a3bca393"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_01.m4a",
+      "sha1": "14ee99ce6b2d0bf44ca6c378f5a2198f036aec6a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_02.m4a",
+      "sha1": "5d9647aeca53c4c2f8dab85fe1edb6929dbca6e4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_03.m4a",
+      "sha1": "d227cb8e4e422a37d20083a5eb0e1a33df1904ef"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_04.m4a",
+      "sha1": "7672da38bed7a7df0eab6d69e162c613bca39f25"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_05.m4a",
+      "sha1": "acd83928ce70b2bed743cfad3ca60b82115680fe"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_06.m4a",
+      "sha1": "054da17392d8033587547a8a1ec9924bbed920e9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_07.m4a",
+      "sha1": "0e06de3f22707fa7bf336259be48f43fa520e1db"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_08.m4a",
+      "sha1": "76f7270c3fd4c8d02070b19f01fdfa473eabc4f5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_09.m4a",
+      "sha1": "397d8d6cfe512a2ae49e3067e7f7ba455535bcf0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_10.m4a",
+      "sha1": "dc0dedc71e988b97163e50593e29aee925930496"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_11.m4a",
+      "sha1": "ea445f6df31f4d9ee7fb222e796ac62a3d762381"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_12.m4a",
+      "sha1": "f8ebf271909febd0a78821f34845cf78035ef989"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_13.m4a",
+      "sha1": "0d6fa8d74db5c2b6831f4c5c36e91ef9aa3343c1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_14.m4a",
+      "sha1": "02e9acf6449f74addb4bd2934c82677054d3b294"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c05_q.m4a",
+      "sha1": "91828d67d68214fbfe5e08f864402bf9b84f180e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_00.m4a",
+      "sha1": "6cf221ed319d57f7ddf87cc5b233fd9de5871cc5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_01.m4a",
+      "sha1": "6bd4b3e3185ba7431f8e9675deac03db991b3bff"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_02.m4a",
+      "sha1": "2aa425ee1ee9223718a76288320662b09fb9a7f0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_03.m4a",
+      "sha1": "9369a9ff20cf7a1717b30f97b24db82485cf31b9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_04.m4a",
+      "sha1": "86eef572c763a654b1d737b100fc4c646aee6d13"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_05.m4a",
+      "sha1": "da4ec8d6699de86d87a4fd6429ef47931b6e55c8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_06.m4a",
+      "sha1": "295830a6ab7e8a6be351b8aa94096a2dd53d081a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_07.m4a",
+      "sha1": "7ee492de35fdc4346dc5edecbff50e540f373f67"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_08.m4a",
+      "sha1": "13c9ec2f1684a8a50f887682a990ff55421439ee"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_09.m4a",
+      "sha1": "eafcca9f1a811d16048e79d60b7a0bcc536b6c45"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_10.m4a",
+      "sha1": "b9a31d1b1aa2c61d9aff4e7218351925e782fd3c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_11.m4a",
+      "sha1": "525853023e6830a97dd859fdddb1780e56b6dc0c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_12.m4a",
+      "sha1": "e17fb969102357fb1a21bbf7a9baf33b87d02d98"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c06_q.m4a",
+      "sha1": "d2ad7c58a3cc777de7b05cadeddaa2bac65b12ad"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_00.m4a",
+      "sha1": "c1db61ebb606402856a0a4922923f1e4e49504da"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_01.m4a",
+      "sha1": "e680de1b9a7760004662b89051620f2c98e09dc2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_02.m4a",
+      "sha1": "bea50ea4f163977331d227134f1d89a068331599"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_03.m4a",
+      "sha1": "95ef65eafa498ec6786e6651984a3f74750ae1fa"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_04.m4a",
+      "sha1": "c587574967f8fc61950a2297ce6dd473ed0e1358"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_05.m4a",
+      "sha1": "a6a2fea3164ff0eb68637b25ab264d60824c7280"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_06.m4a",
+      "sha1": "9a46b2ca46d0040ec9f1e7d5855dc83b6f702f49"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_07.m4a",
+      "sha1": "a4cf61fe8d5b2c4dacf2938cc4e04f72f64c6e46"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_08.m4a",
+      "sha1": "2bfd5a623cede1e838f85858070d8701c420b71f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_09.m4a",
+      "sha1": "d859f0b4c8335268058008b4caa7c3cbb13e7eb4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_10.m4a",
+      "sha1": "e5cb215691ea1fc4eacfa8cfe25e627f26cb7496"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_11.m4a",
+      "sha1": "7b54ee3f9d39ad2b0d57d6afebb7a74712caed07"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_12.m4a",
+      "sha1": "1278add145796dcab6747e2a011d1b09f3265a5b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_13.m4a",
+      "sha1": "7353df0524a06948461c7c26969d46e84cb85060"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_14.m4a",
+      "sha1": "a552cf8dbd183edbe87ea83e5d280dfb261dfa40"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c07_q.m4a",
+      "sha1": "dee643e497e0201260edc0833295469be450bfe0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_00.m4a",
+      "sha1": "964037cffc7e2654535103cbe94c0ac32441005a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_01.m4a",
+      "sha1": "72ecb68cf54864a7077f3a98602e8a1b96057ccc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_02.m4a",
+      "sha1": "3b9255f0a33531d7bccb328e4bcf2fb42505a825"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_03.m4a",
+      "sha1": "9f9fff307a56559f9df1c32361272a6d6712bf1e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_04.m4a",
+      "sha1": "73c43c1200300cbaad32f3d9bb20e3f30b2d4d03"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_05.m4a",
+      "sha1": "92e450bad190c390f2c52402828974a7c926c408"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_06.m4a",
+      "sha1": "064452a35107656dc04004c657a88a96dab6dbef"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_07.m4a",
+      "sha1": "a5e5a0f007d17855c7004b6294ab65cf5fd9cb67"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_08.m4a",
+      "sha1": "a45c807577bf3de57bebd31157abf02087e499aa"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_09.m4a",
+      "sha1": "bbda98adb3f59c9af110a50278a5dcc91ec53380"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_10.m4a",
+      "sha1": "0313778dd2c2e81e0e0d42f54ae77ea8c303f3dc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_11.m4a",
+      "sha1": "1286ac84f2d465d4f470d8eb513ba7be60549192"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_12.m4a",
+      "sha1": "bb873365e2fd068c75b14d313e903defb592a730"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c08_q.m4a",
+      "sha1": "a54207f113414ff6c0c588b9402f10a55c1eaae9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_00.m4a",
+      "sha1": "8c0a1771d6f182d2a07d44c34ae90eedc2a8e3e0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_01.m4a",
+      "sha1": "24ab04219335a436fe2bda0dba2c48040c43f42b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_02.m4a",
+      "sha1": "a507fc8290064bae44fb356ffac917e2b5b81339"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_03.m4a",
+      "sha1": "efee798368047b9ed0c0d31cb98596467db727b3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_04.m4a",
+      "sha1": "0bc52d56be96727ad9087d5061f267dff3c52455"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_05.m4a",
+      "sha1": "869fd80d6d004b9fefb8be47e39907ef6b6e2113"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_06.m4a",
+      "sha1": "3954e967d26463c13bee1d30c8f9f144ab871503"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_07.m4a",
+      "sha1": "136b1a6683ac664e31a7f0530e4e78dda00545dc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_08.m4a",
+      "sha1": "2dddadfd5e07049f7a3b124a9fe90cd10c04fb24"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_09.m4a",
+      "sha1": "9003e8c50b6167ea73a1d51a33aa84e0294d238f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_10.m4a",
+      "sha1": "c31cd4f675a1b5cdca13376328d340873038f3d8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_11.m4a",
+      "sha1": "2825b1fd88eccf1b22549a03f29c3ac317ace525"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_12.m4a",
+      "sha1": "573667737c0bfc1e94818267f2092a3d93dea895"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c09_q.m4a",
+      "sha1": "ca003459c566cdcbd25a3908ffbf1098483600fb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_00.m4a",
+      "sha1": "e5b549ee71c45fc2ae18e20c54db2200205094be"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_01.m4a",
+      "sha1": "b6b1bb8b3e56c0ae2080620962f738506138d9e5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_02.m4a",
+      "sha1": "ff08cff7e593c6ea30d582746d1fb2d084c18339"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_03.m4a",
+      "sha1": "c2a074acb7a94327e2636ed500b01600a0602821"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_04.m4a",
+      "sha1": "ed44bb3f7dc1df5e29d76b8c16c6f0ed62f4ac34"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_05.m4a",
+      "sha1": "3cd329441b937a3f6b7e2f1dcc6d965ff83002e3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_06.m4a",
+      "sha1": "9b750ebb2103ef9d790045ff6afff018ed758ead"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_07.m4a",
+      "sha1": "1a9ede11a73830f116ed03d1933571154d6c3bd9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_08.m4a",
+      "sha1": "3d94a5afbd5bb253e96d346c86fe7675fe8851ca"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_09.m4a",
+      "sha1": "354948120d0eab720f50e07fa6288f30535cb744"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_10.m4a",
+      "sha1": "1782ddc40b434a1e09e5e842e141d656e38e9e24"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_11.m4a",
+      "sha1": "4dde84a6143242ebb82897c2cec8574d0c586cf9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_12.m4a",
+      "sha1": "8e789da1818852b1bd6f3dbb863e93d21d38c491"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_13.m4a",
+      "sha1": "e37b6434b92efd44c20d4ec631a6647bca5a591e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c10_q.m4a",
+      "sha1": "bb4f80d6621aeeae05184f05589fc48cf88c7607"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_00.m4a",
+      "sha1": "97acf66162074acadc891d268116bfcbbc6f89d0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_01.m4a",
+      "sha1": "5dde962da139c1bcfc4e2cd69498f50b4566d8d0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_02.m4a",
+      "sha1": "14a118fa0b04341e6d4b1cf5545c59d5d9aa377f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_03.m4a",
+      "sha1": "c4f2c1338181c792cd87b6e01fbd13eb51279363"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_04.m4a",
+      "sha1": "0f035d6796fbdfa4455cb36de7d67f428e0f4676"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_05.m4a",
+      "sha1": "e6c9f85707c810cb85d36c468d6dba21e5cb8390"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_06.m4a",
+      "sha1": "e1755e1c3b61ffde7f17221137e518f42adaf59d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_07.m4a",
+      "sha1": "5ce3757795c1d310d5fd36705feb96bc18bc86b5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_08.m4a",
+      "sha1": "cd1c71c1b5ca191a20f85035be1ef0f201b05894"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_09.m4a",
+      "sha1": "f25fd7f4ada35c8cd410f3ff31a67f8e97c19539"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_10.m4a",
+      "sha1": "192ca59ef664d66f0d9d0056df96d2d6ae8ff079"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_11.m4a",
+      "sha1": "9042dd4fec362f8b3ca9b2cd5debb919c21d6de8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_12.m4a",
+      "sha1": "db6ba1699f1307a7575901f6dbe1d6a582153a68"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_13.m4a",
+      "sha1": "7a009f1d32adca4879569aaab5b28be66b43dd53"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_14.m4a",
+      "sha1": "9f132c73c5e724ed3605506e75624504bc7900c5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_15.m4a",
+      "sha1": "98de23172e4f8a791b4e68ef5d3fd18ee2344f6a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c11_q.m4a",
+      "sha1": "cec116b0ea701a7f9322be025c77f1f82a5fc2a1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_00.m4a",
+      "sha1": "e61b62ebda9f015127692966ee22f5fe8d192a04"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_01.m4a",
+      "sha1": "480fbf3af3906b123c6a0f2d81d3ad1026fd80bc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_02.m4a",
+      "sha1": "52f39842656bfbb344011250f8a2ffa1134ac575"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_03.m4a",
+      "sha1": "59fd1d793901837b40f1f9c262ccadaaac382bb8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_04.m4a",
+      "sha1": "f1b3de308bf7325bdbb8ecc7f6d35138036c2894"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_05.m4a",
+      "sha1": "938233aa50781ece0a3c9ab77d26a372bb2816db"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_06.m4a",
+      "sha1": "604442a005150a7af717edc42498dd7fe45efe0b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_07.m4a",
+      "sha1": "a7695b72636ed17f205d1e6395c61eac0cdeed9e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_08.m4a",
+      "sha1": "a43dd2835684e7aed90d297fdcc57bc9592121b1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_09.m4a",
+      "sha1": "0b60e12125ef30687d57bfe34afc464c0d6178e1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_10.m4a",
+      "sha1": "38842d43901baaa892d226cf4c96113f621713b2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_11.m4a",
+      "sha1": "eda25f128eb3ec895bd808fd040411c8ee8c71ad"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_12.m4a",
+      "sha1": "ab7ddc92ddd964c753b6738ee3fbc81f57ddc9bf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_13.m4a",
+      "sha1": "56f7eebfd8414bc14ea02ca2a4b1d76b50612f8c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_14.m4a",
+      "sha1": "6e6fb4a3c4bee33ee1ccd6978284695ad4e774cc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_vi_c12_q.m4a",
+      "sha1": "08b5f59275009c1f92f3ad5f216e8b04cd227ef2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_00.m4a",
+      "sha1": "bf8e20ae81147e9f4789756bd22e2af9819dee1a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_01.m4a",
+      "sha1": "18f257aad191bfd0e24b1fef1ea472021e75c55a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_02.m4a",
+      "sha1": "de20beb6a8df2664ba6d93085f1eb72e40f38527"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_03.m4a",
+      "sha1": "67ac1125764e99a93c54de4ded0d3191ddef3adc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_04.m4a",
+      "sha1": "4974b66068c7b1076384d41f29332e64e692cfc8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_05.m4a",
+      "sha1": "926d9127da2a7064e88bcf89183e560157f123ca"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_06.m4a",
+      "sha1": "0b5045cd5bf1416f3aed3d7635014597c70a024b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_07.m4a",
+      "sha1": "004913da215bd089ae2415365e6e86196a930609"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_08.m4a",
+      "sha1": "ee9dd4015eb406e6a121b23234f105a97f9c2115"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_09.m4a",
+      "sha1": "f437d92433f6f8137cf8465eb11b82b74d250c07"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_10.m4a",
+      "sha1": "e3cfb7ded347274b5b2f041860d49bf2174159b8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c01_q.m4a",
+      "sha1": "6566ad7626f6323a267101e8c04ba551ebdd6751"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_00.m4a",
+      "sha1": "b681ab41dd3b8ee557e0a7972a395bef8f535d02"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_01.m4a",
+      "sha1": "6bdde62103089a7b01300ce87d1c2ea0ddb87dfa"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_02.m4a",
+      "sha1": "0db1d3bb6e7e1061ad340d7ed74cc59a07b8da68"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_03.m4a",
+      "sha1": "1a01147b2fb9100c765c0dd943daa80983ba20aa"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_04.m4a",
+      "sha1": "0dcdc7ef6293fd107d2228ad947d717bdceec22c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_05.m4a",
+      "sha1": "5d6ea837ed4960181855b8f1d72a0c9e0ae393f6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_06.m4a",
+      "sha1": "4578ece333e7ee15a7726e42350b3cb402f810e2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_07.m4a",
+      "sha1": "5d02b34efda14c39db2aead548dee3b31d37c418"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_08.m4a",
+      "sha1": "d435db76dc0ff55f485934a82fa5b92549adc183"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_09.m4a",
+      "sha1": "e3708061b9d26e49f313d924eacad7d4a6e06a24"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_10.m4a",
+      "sha1": "44eb91f150857a15064e5dfe0f85b08ce328af66"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c02_q.m4a",
+      "sha1": "728b4bdf6017166b52d44b380a560be47aaad973"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_00.m4a",
+      "sha1": "da9e5dcf29c05f66298d3089c5e63e7853eaf7cb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_01.m4a",
+      "sha1": "e839e6b14d065701869b6328b50279100e418636"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_02.m4a",
+      "sha1": "938d5353ba58a680cbddf89ffe332b463c9d1b41"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_03.m4a",
+      "sha1": "08f5c2ce4674136c12b964323822bdf73a24832b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_04.m4a",
+      "sha1": "931b3bbf36238873f10326ed95778bb54fe768b3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_05.m4a",
+      "sha1": "899d7fe2454d8c45f6dc0433bae9eac4149e99ce"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_06.m4a",
+      "sha1": "a9a1429b0fd28715ab257722132594bfb722ad95"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_07.m4a",
+      "sha1": "4b70b751a3ed9e728590a52c9f76a9ddf4f974da"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_08.m4a",
+      "sha1": "fb57353cb35bb9d6579fe23158bd459e6b4be435"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_09.m4a",
+      "sha1": "79fc8fad83044ad14232d49484a9b0f461b7ec4a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_10.m4a",
+      "sha1": "1745ac3f52a097c1318cd27c95a4b1a7632eab7d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_11.m4a",
+      "sha1": "c4b3951d38c51fce75502c16bb19301e97207fc7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_12.m4a",
+      "sha1": "51f86cf72e6b19c4e6fc2be02c864c589c3e8ee6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_13.m4a",
+      "sha1": "70c4c07837dfc0608c0191cf6f6d717dbdbd9604"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_14.m4a",
+      "sha1": "9cbb4a63b7fcf8b65e211d80b6a8b5a5a5bdbd17"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c03_q.m4a",
+      "sha1": "a8d7d4221c47b03bd429d0700abe7ca7990eb24b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_00.m4a",
+      "sha1": "cb31dc107abf2bff7aa0e1fea281cb3cb86c7cc9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_01.m4a",
+      "sha1": "60eb2a2d6b447a6db19f739d10d75132e1d96b19"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_02.m4a",
+      "sha1": "7f94a8e5b90ab377b8e7d5e6ecf5d5afdd173102"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_03.m4a",
+      "sha1": "9536047f1b7f1a3babc66ef20d3e108b1946deb7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_04.m4a",
+      "sha1": "281cd8e9ffe6afe9694c872c3d07a100e7724470"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_05.m4a",
+      "sha1": "949e7125cb82ac10b37d8ad36403dafe1f80fab8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_06.m4a",
+      "sha1": "a76670e6b9225f807a17044e4d0e96562c0f21cf"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_07.m4a",
+      "sha1": "17b5c83106b19bb31fa92849bad239ab416c1f9c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_08.m4a",
+      "sha1": "f8469be47dfdc94f9663ba777ec7d2c1cfbdf278"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_09.m4a",
+      "sha1": "6092562df168e1f3704b6368f67aec604ce8b877"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_10.m4a",
+      "sha1": "c8858d7a23cfce4de4d7859bdac6e802d790d954"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_11.m4a",
+      "sha1": "148101f45759dc89efd3520203f02bb57e622650"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_12.m4a",
+      "sha1": "da1ba3202cfcd82dd0a1449df875579e2974b184"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_13.m4a",
+      "sha1": "a88b81315d0f9fccc78aa2d8d4a8d90e605f42c3"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_14.m4a",
+      "sha1": "0a5e56dc73a5bacc7e0553d42d0948054d4691fd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c04_q.m4a",
+      "sha1": "93d757484db16f1dac54c545afa8a55dfac794d8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_00.m4a",
+      "sha1": "05e2fbf15c1929f5792ec87e3b9c8184c06e63ec"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_01.m4a",
+      "sha1": "a6df6ea1f6d7bdfd60f83590e5ef4a26ca16433d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_02.m4a",
+      "sha1": "d74e91b90f0e60e740e5520cb53bde947e684f3c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_03.m4a",
+      "sha1": "68b6f768769d714171dc75bd616b236d9f7908bd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_04.m4a",
+      "sha1": "e972b2d7ac4bf512f64ca563ce23ecca1e338a30"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_05.m4a",
+      "sha1": "f905d3b2783a80497a268a540d57a58840155b2f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_06.m4a",
+      "sha1": "99a1d9e9901434b0485a57d6944f94707fc7f7dd"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_07.m4a",
+      "sha1": "e7c1f754a1cd1eefac88dcc51cb68429f787026d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_08.m4a",
+      "sha1": "9e9202ff6efbe5fa2e0e75f368595c51d8fb0533"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_09.m4a",
+      "sha1": "894740f740587d588d33517135f64a48fb1d0e40"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_10.m4a",
+      "sha1": "8d5c6e7e8e5781c28e2889e2eb3e4c83707e125a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_11.m4a",
+      "sha1": "c6bf0781baa9841e50bcdeca91111de9879505bb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_12.m4a",
+      "sha1": "1cbd8619c62236317c6ae598788858ded918c473"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_13.m4a",
+      "sha1": "a8530e932e9d8910e708fd1a2de49ecc6e5aac97"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c05_q.m4a",
+      "sha1": "e7b7a4c9e1c7c5142b019f8163237b1573888a97"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_00.m4a",
+      "sha1": "7d3fbc0cf0fe09cef38aad675d1bb4b118bcc3a6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_01.m4a",
+      "sha1": "ec5d57904fadabef44534facf5ab0ba9c6a63ee4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_02.m4a",
+      "sha1": "11d4e0502e7e651a57bbbb8ddf76500d55605502"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_03.m4a",
+      "sha1": "d7ad0c6e7e6a6005981df5a89f8033d897027bb2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_04.m4a",
+      "sha1": "1eec524bc8b267838f5ec1a2b5a1570982115246"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_05.m4a",
+      "sha1": "2255d1e2a1c98303513257dee2c8641b062acc65"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_06.m4a",
+      "sha1": "5bc6b7d052c2b218d7c95f5dc6631853d8109b33"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_07.m4a",
+      "sha1": "bc737e5c1212c789e734dfa7eabfd5bb2dd108a1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_08.m4a",
+      "sha1": "4281493d5272ef4c60226fa0e8d036b310a2f83d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_09.m4a",
+      "sha1": "2aa56cf55a1509c1617ace4f455acf7a01aec548"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_10.m4a",
+      "sha1": "dc77dd8affe358740e632cb97920703a310c51e7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_11.m4a",
+      "sha1": "284fe049b14514e8d9f664becd4f05891ae7c71d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c06_q.m4a",
+      "sha1": "199b119e2537e7bbb1ab9a32ccfbd7092d5506c2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_00.m4a",
+      "sha1": "7cd2cdedb843dd2a4cfb65c64e6e288b84f3f5f8"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_01.m4a",
+      "sha1": "8562b45e39886c579cdaf2be50b07d6fd4327d6d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_02.m4a",
+      "sha1": "5d210c5c6d4bbf5e4354a788fcf55ae5c79bf928"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_03.m4a",
+      "sha1": "e9029d4c6765040d851b0ad175efd7102e714a0d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_04.m4a",
+      "sha1": "b31de4c94449fde720034cb43588246b6820997e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_05.m4a",
+      "sha1": "2533cf339328f9534c8bf11820a76d126bdef6b1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_06.m4a",
+      "sha1": "be11cd933475c46812f1ddce5a4dfc812c8a6eb0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_07.m4a",
+      "sha1": "6ca5f16b6f1e3fa4d2ec1c76ddba6b99a2cf741c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_08.m4a",
+      "sha1": "3e4278d4cc7a947ac12916048f33c88e47255abc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_09.m4a",
+      "sha1": "ce940bfeeb6b154e72b0d5f2233b3518afa676d4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_10.m4a",
+      "sha1": "df24b5357edd9e695724a3090fd7055f8b76b63d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_11.m4a",
+      "sha1": "c690e290cb4315bd2b42c6d9e352f53518e6931a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_12.m4a",
+      "sha1": "6d8c3956b90de977dc97921f3bd366768c749a86"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_13.m4a",
+      "sha1": "eb9b0d2a06502d1cb1f0113691a8d8e0f28493bc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_14.m4a",
+      "sha1": "27bb16a8c4f340648f0724bc9c4dd598d708853d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c07_q.m4a",
+      "sha1": "43f5f6dccf1219cc99a8e68319a02ac492b44b47"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_00.m4a",
+      "sha1": "41b09a2879aa1dc19daa419a1173452f9f0e4d5e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_01.m4a",
+      "sha1": "30a45b6d2e522366f86aec740482f0293d8080a2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_02.m4a",
+      "sha1": "f8554c5fc157c990a2f9a06e98fe00579708e8e0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_03.m4a",
+      "sha1": "fcb2f00b335f895eecb9b9f5d979ed85db8dc4cb"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_04.m4a",
+      "sha1": "030e471f288bb28bf8b6e7a05b783f3dd182837a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_05.m4a",
+      "sha1": "aaca7f58562054095dfd87807023aef84cf5a5f0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_06.m4a",
+      "sha1": "4e1c7e6b10a09ee20b7811cfabe2bd3a12fe70c7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_07.m4a",
+      "sha1": "20ff67681d32e7ace511d90c82f1c4931c3926ae"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_08.m4a",
+      "sha1": "5a048497afb1db90b0de5a57dd8f30f5ceebe8d4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_09.m4a",
+      "sha1": "c3ce10bb1be39aa4f0ba7d6237a116fc8b527ad9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_10.m4a",
+      "sha1": "497c1620dde327e82b65ab502add2cf212e13b23"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c08_q.m4a",
+      "sha1": "86fbcb5c6c3ca904e6ac7222fa26f6f19bade629"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_00.m4a",
+      "sha1": "89fe0f04afbd2093c7ceef1231c4d5a650fb8fb2"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_01.m4a",
+      "sha1": "2f12b9f6539a15b27fd72eaa1b5ee2e36a48c9c7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_02.m4a",
+      "sha1": "9e77fd2be45783f82566d332e6f34bd982e151a1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_03.m4a",
+      "sha1": "844b44b30ab1a244ac1ed5f7fcf1540a212e4c7b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_04.m4a",
+      "sha1": "4afa81c44f02c4e8756f1386205eec5bddede9da"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_05.m4a",
+      "sha1": "af1cfefd5f66fd03b376398ded5ead75ed0ebfb0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_06.m4a",
+      "sha1": "ea6eed2dcb39899535f7edaceebc761c66d01dcc"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_07.m4a",
+      "sha1": "c3284448b1ed080269b5ce1904f9077d213bab8a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_08.m4a",
+      "sha1": "33098dc7e4354aa6fa59fcb4ce4069968aa29b12"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_09.m4a",
+      "sha1": "d090f6c9c4a785277dd8041bdaa5b04f316ac222"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_10.m4a",
+      "sha1": "f4f99614e8ac2ee9cf24b974eb3fbcdf21e65d78"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_11.m4a",
+      "sha1": "87bc3d221b82b1b63868fffbe19117be2f63cfa6"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_12.m4a",
+      "sha1": "d458f91a203267986bc2c2150b3c6bc903a560b1"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c09_q.m4a",
+      "sha1": "ec748d9f1cf9aa4c311944981f475b71eb6f287b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_00.m4a",
+      "sha1": "f468cd796ea64dc77f42479aa87dd91a89c0394c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_01.m4a",
+      "sha1": "425eaa6570bb654bac53fc47702b5f82d3398d5b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_02.m4a",
+      "sha1": "88ed8998cae4bd644de4da5abca0ff31c486fc6c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_03.m4a",
+      "sha1": "9b827ee41077b31d2ff89514fb1a1db5edc50f35"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_04.m4a",
+      "sha1": "2517850990f2a6e472457e5faee1673f232fa4b4"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_05.m4a",
+      "sha1": "c3d2a70fd015de7c10a14c0fec229272858f4d6b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_06.m4a",
+      "sha1": "7e17000c694d30565fbb6e3551eee6d6afcbebae"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_07.m4a",
+      "sha1": "2e81cdce57b786728e4d0bce3453310de7efa4d5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_08.m4a",
+      "sha1": "90d553852184b659b4d2a0af7a824eba97f8fa0a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_09.m4a",
+      "sha1": "9bea073a39f734c5b7f1075413731f89cac825b0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_10.m4a",
+      "sha1": "b43b95f18b7d9d01190521cff032b7f8674a5959"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_11.m4a",
+      "sha1": "ea3bd0bd2d128073c85a856f4ec41ca2339a8574"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_12.m4a",
+      "sha1": "e4c526206884480e1f4298543d0aa13c9a96b717"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_13.m4a",
+      "sha1": "d9f47d4fe25228db34e97882747bfbdee2eeef5a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c10_q.m4a",
+      "sha1": "bb2ce17a0f1dd6a07d044c2fb967b19fd95be1d5"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_00.m4a",
+      "sha1": "bc76aeba221333f58f4d98c0de0fc17068685d5d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_01.m4a",
+      "sha1": "0b493b26fb4fac9dc75ad385e867cd1db31649ac"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_02.m4a",
+      "sha1": "589f9e2642e8be0afbd5a358ed2740fa81150b2e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_03.m4a",
+      "sha1": "7427260aed60804703bbf024f194f0dc62aa07fa"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_04.m4a",
+      "sha1": "fc023d13d7ef0ae2de41abc9b59170c40046eb3d"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_05.m4a",
+      "sha1": "1782522188364a8e818f1c3138e074f810f1d01b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_06.m4a",
+      "sha1": "ccd4ff06c5eb169b284619ad974211973b571467"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_07.m4a",
+      "sha1": "f69adc39224b3806d3f3fc46b019a8b3e13d6614"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_08.m4a",
+      "sha1": "4f01575a1ecd04f20fa09f157e524379d93b981a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_09.m4a",
+      "sha1": "eeeec33b079425f6118155126a685e9d72493776"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_10.m4a",
+      "sha1": "ba8c5c70f804e82dd8a830637326f47646705776"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_11.m4a",
+      "sha1": "125004b9e5f3724331366b223173ad1fe01a3256"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_12.m4a",
+      "sha1": "4c98094c65e253979b16d850b96d0912678df4d0"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_13.m4a",
+      "sha1": "996709d7db6adc3e7e4a04a6dc9b49b38d959d8c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c11_q.m4a",
+      "sha1": "e4783e9be2839f856aca630b9f9d75cb914dde3b"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_00.m4a",
+      "sha1": "b3a5436401146fd56705e6383dfc16988d8ceb72"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_01.m4a",
+      "sha1": "628828568325f04f588da77997dbe2722869053f"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_02.m4a",
+      "sha1": "018ec8809808aaebf220754fc5002d1b9d201e2e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_03.m4a",
+      "sha1": "7b12d6b06cfeae9348fdef4a5f0cb097bcdab750"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_04.m4a",
+      "sha1": "33ce41900bda8583a2596ec2ca8dcaad04788d5a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_05.m4a",
+      "sha1": "2b1550e8767fedaa05c8eda24e474db1edd7c81c"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_06.m4a",
+      "sha1": "e3077f1e6465eaf5aa97375f207b0621e1384654"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_07.m4a",
+      "sha1": "5b22bb3a4338eeb7c092dec1724803a7dec991a9"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_08.m4a",
+      "sha1": "cd2c9c6d244ca2cb6ecf7d580cf960f53758cc5a"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_09.m4a",
+      "sha1": "e22583c85da607366a22e276b15ecbf68f07462e"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_10.m4a",
+      "sha1": "8dfc2aea6241b782bfd1397217502a9d63feee46"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_11.m4a",
+      "sha1": "0d4ff033e4ffb0e2b802a0c453c44fa1c3ed1920"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_12.m4a",
+      "sha1": "01f74eb7cb7bc728a10cf14bd52f301c848f1b43"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_13.m4a",
+      "sha1": "5666e1e689b888be195d2bf715a7ae8eb8200f47"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_14.m4a",
+      "sha1": "8d4b4a990f925bf8e10f87ba9927e6dc1c1947b7"
+    },
+    {
+      "path": "src/shared/assets/sounds/schop_zh_c12_q.m4a",
+      "sha1": "cae50009b201252ae7deea56b66b1f9847d449c2"
+    },
+    {
       "path": "src/shared/assets/sounds/splash_sound.m4a",
       "sha1": "6ed3bec66f3a9e875ac313a31866b61053f8ebaa"
     },

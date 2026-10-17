@@ -25,7 +25,6 @@ interface RawCounselor {
   id: string;
   accent: string;
   category: CounselorSummary['category'];
-  conversationCount?: number;
   isNew?: boolean;
   isTrending?: boolean;
   characterId: string;
@@ -142,7 +141,6 @@ const RAW: RawCounselor[] = [
     id: 'seoyeon',
     accent: '#8B5CF6',
     category: 'saju',
-    conversationCount: 1_820_000,
     isTrending: true,
     characterId: 'seoyeon_01',
     roomId: 'seoyeon_room',
@@ -214,7 +212,6 @@ const RAW: RawCounselor[] = [
     id: 'mina',
     accent: '#F472B6',
     category: 'love',
-    conversationCount: 1_240_000,
     isTrending: true,
     characterId: 'mina_01',
     roomId: 'mina_room',
@@ -287,9 +284,8 @@ const RAW: RawCounselor[] = [
     accent: '#38BDF8',
     // The generalist card. She is the only counsellor whose room answers every topic (her Unity
     // seed has always said `General`), so she sits under the broad chip rather than under Career —
-    // where she used to compete with Yunjung and Seri, who are genuinely career-only.
+    // where she used to compete with YunJeong and Seri, who are genuinely career-only.
     category: 'saju',
-    conversationCount: 960_000,
     characterId: 'yuna_01',
     roomId: 'yuna_room',
     previewActions: PREVIEW_ACTIONS,
@@ -360,7 +356,6 @@ const RAW: RawCounselor[] = [
     id: 'harin',
     accent: '#E9C46A',
     category: 'wealth',
-    conversationCount: 540_000,
     isNew: true,
     characterId: 'harin_01',
     roomId: 'harin_room',
@@ -432,7 +427,6 @@ const RAW: RawCounselor[] = [
     id: 'doyun',
     accent: '#A78BFA',
     category: 'tarot',
-    conversationCount: 410_000,
     isNew: true,
     characterId: 'doyun_01',
     roomId: 'doyun_room',
@@ -504,7 +498,6 @@ const RAW: RawCounselor[] = [
     id: 'jiho',
     accent: '#34D399',
     category: 'saju',
-    conversationCount: 720_000,
     characterId: 'jiho_01',
     roomId: 'jiho_room',
     previewActions: PREVIEW_ACTIONS_JIHO,
@@ -651,7 +644,7 @@ const RAW: RawCounselor[] = [
     },
   },
   /**
-   * Go Yunjung — the one who looks straight at reality, and since 16-09 the roster's first
+   * YunJeong — the one who looks straight at reality, and since 16-09 the roster's first
    * counsellor whose CARD is held to what her room actually does.
    *
    * ⚠️ NOT A CAREER SPECIALIST (26-09). She was seeded `career`, and the room took it literally:
@@ -675,27 +668,27 @@ const RAW: RawCounselor[] = [
     previewActions: PREVIEW_ACTIONS_YUNJUNG,
     l10n: {
       ko: {
-        name: '고윤정',
+        name: '윤정',
         title: '현실을 직시하는 전문가',
         hook: '돌려 말하지 않습니다. 들으실 준비가 되셨나요?',
         about:
-          '고윤정은 사주를 위로가 아니라 자료로 읽습니다. 지금 무엇이 사실인지 먼저 정리하고, 그 위에서 고를 수 있는 길을 짚어줍니다.',
+          '윤정은 사주를 위로가 아니라 자료로 읽습니다. 지금 무엇이 사실인지 먼저 정리하고, 그 위에서 고를 수 있는 길을 짚어줍니다.',
         personality: ['직설적', '냉철함', '현실적'],
         specialties: ['현실 진단', '선택', '인생'],
         tags: ['#직설', '#현실', '#선택'],
       },
       en: {
-        name: 'Go Yunjung',
+        name: 'YunJeong',
         title: 'The one who looks straight at reality',
         hook: 'I do not soften things. Are you ready to hear it?',
         about:
-          'Yunjung reads a chart as evidence, not as comfort. She settles what is actually true first, and only then points at the choices that are still open.',
+          'YunJeong reads a chart as evidence, not as comfort. She settles what is actually true first, and only then points at the choices that are still open.',
         personality: ['Direct', 'Clear-eyed', 'Practical'],
         specialties: ['Reality check', 'Decisions', 'Life'],
         tags: ['#Straight', '#Reality', '#Decisions'],
       },
       ja: {
-        name: 'コ・ユンジョン',
+        name: 'ユンジョン',
         title: '現実を直視する専門家',
         hook: '遠回しには言いません。聞く覚悟はありますか。',
         about:
@@ -705,7 +698,7 @@ const RAW: RawCounselor[] = [
         tags: ['#率直', '#現実', '#決断'],
       },
       'zh-CN': {
-        name: '高允祯',
+        name: '允祯',
         title: '直面现实的专家',
         hook: '我不绕弯子。你准备好听了吗？',
         about:
@@ -715,7 +708,7 @@ const RAW: RawCounselor[] = [
         tags: ['#直说', '#现实', '#抉择'],
       },
       'zh-TW': {
-        name: '高允禎',
+        name: '允禎',
         title: '直面現實的專家',
         hook: '我不繞彎子。你準備好聽了嗎？',
         about:
@@ -725,11 +718,11 @@ const RAW: RawCounselor[] = [
         tags: ['#直說', '#現實', '#抉擇'],
       },
       vi: {
-        name: 'Go Yunjung',
+        name: 'YunJeong',
         title: 'Chuyên gia nhìn thẳng vào thực tế',
         hook: 'Tôi không nói vòng. Bạn nghe thẳng được chứ?',
         about:
-          'Yunjung đọc lá số như đọc dữ liệu, không phải như lời an ủi. Cô chốt lại điều gì đang là sự thật trước đã, rồi mới chỉ ra những đường còn chọn được.',
+          'YunJeong đọc lá số như đọc dữ liệu, không phải như lời an ủi. Cô chốt lại điều gì đang là sự thật trước đã, rồi mới chỉ ra những đường còn chọn được.',
         personality: ['Thẳng thắn', 'Tỉnh táo', 'Thực tế'],
         specialties: ['Nhìn thẳng thực tế', 'Quyết định', 'Cuộc sống'],
         tags: ['#NóiThẳng', '#ThựcTế', '#QuyếtĐịnh'],
@@ -914,7 +907,6 @@ function localize(raw: RawCounselor, lang: Lang): CounselorSummary {
     cardImage: COUNSELOR_CARD_ART[raw.id],
     avatarImage: COUNSELOR_AVATAR_ART[raw.id],
     category: raw.category,
-    conversationCount: raw.conversationCount,
     isNew: raw.isNew,
     isTrending: raw.isTrending,
     characterId: raw.characterId,

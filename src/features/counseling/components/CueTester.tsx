@@ -7,7 +7,7 @@
  * nothing on screen. Which cues a given counselor can perform is not knowable from the project
  * window either, because the answer is three runtime facts at once (the animator's parameter set,
  * the rig's CounselorCueAliases table, and the handful the performer routes to the blink driver or
- * the gaze). Measured 22-09: Yuna answers 47 of 62, Jiho 38, Theo 22, Go Yunjung 15.
+ * the gaze). Measured 22-09: Yuna answers 47 of 62, Jiho 38, Theo 22, YunJeong 15.
  *
  * So this is not a toy. It is the only way to ask a counselor "can you do this?" and get a straight
  * answer, and the only way to watch one cue at a time instead of inferring it from a phase that

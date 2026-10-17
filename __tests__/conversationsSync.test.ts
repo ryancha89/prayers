@@ -89,7 +89,7 @@ it('keeps the transcript this device has cached — the list endpoint does not c
       session_yunjung_self: {
         sessionId: 'session_yunjung_self',
         counselorId: 'yunjung',
-        counselorName: 'Go Yunjung',
+        counselorName: 'YunJeong',
         counselorAccent: '#111',
         lastMessage: 'stale',
         updatedAt: '2026-09-01T00:00:00.000Z',
@@ -143,7 +143,7 @@ it('leaves the list alone when the account cannot be asked', async () => {
       session_yunjung_self: {
         sessionId: 'session_yunjung_self',
         counselorId: 'yunjung',
-        counselorName: 'Go Yunjung',
+        counselorName: 'YunJeong',
         counselorAccent: '#111',
         lastMessage: 'vẫn còn đây',
         updatedAt: '2026-09-01T00:00:00.000Z',

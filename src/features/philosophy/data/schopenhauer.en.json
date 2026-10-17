@@ -1,0 +1,1130 @@
+{
+ "id": "schopenhauer",
+ "lang": "en",
+ "chapters": [
+  {
+   "no": 1,
+   "title": "Who Was Schopenhauer?",
+   "staging": "Enter the lecture hall; face the audience; begin deliberately.",
+   "lines": [
+    {
+     "text": "Welcome.",
+     "file": "schop_en_c01_00.m4a",
+     "ms": 1845
+    },
+    {
+     "text": "My name is Arthur Schopenhauer.",
+     "file": "schop_en_c01_01.m4a",
+     "ms": 3800
+    },
+    {
+     "text": "I was born in Danzig in 1788.",
+     "file": "schop_en_c01_02.m4a",
+     "ms": 4600
+    },
+    {
+     "text": "All my life, I returned to one uncomfortable question: why does being human involve so much suffering?",
+     "file": "schop_en_c01_03.m4a",
+     "ms": 11000
+    },
+    {
+     "text": "People imagine that wealth will make them happy, that love will complete them, that recognition will finally bring contentment.",
+     "file": "schop_en_c01_04.m4a",
+     "ms": 11600
+    },
+    {
+     "text": "Yet even those who attain these things discover fresh reasons to be dissatisfied.",
+     "file": "schop_en_c01_05.m4a",
+     "ms": 7400
+    },
+    {
+     "text": "What is at work here?",
+     "file": "schop_en_c01_06.m4a",
+     "ms": 2688
+    },
+    {
+     "text": "I called the underlying force the will: a restless striving that does not ask whether its pursuit will make us happy.",
+     "file": "schop_en_c01_07.m4a",
+     "ms": 10500
+    },
+    {
+     "text": "I set myself the task of understanding that striving rather than flattering humanity with pleasant illusions.",
+     "file": "schop_en_c01_08.m4a",
+     "ms": 8100
+    },
+    {
+     "text": "Do not mistake me for a man who delights in despair.",
+     "file": "schop_en_c01_09.m4a",
+     "ms": 5200
+    },
+    {
+     "text": "To understand suffering is to begin to loosen its hold.",
+     "file": "schop_en_c01_10.m4a",
+     "ms": 5800
+    },
+    {
+     "text": "In our lectures we shall examine the world as we experience it, the impulses that govern us, and those rare moments in which we may find some release.",
+     "file": "schop_en_c01_11.m4a",
+     "ms": 11900
+    },
+    {
+     "text": "Come, then.",
+     "file": "schop_en_c01_12.m4a",
+     "ms": 1427
+    },
+    {
+     "text": "Let us examine human life without pretending it is other than it is.",
+     "file": "schop_en_c01_13.m4a",
+     "ms": 6100
+    }
+   ],
+   "question": {
+    "text": "What do you currently believe you must obtain before you can be happy?",
+    "file": "schop_en_c01_q.m4a",
+    "ms": 7400
+   }
+  },
+  {
+   "no": 2,
+   "title": "The World as Representation",
+   "staging": "A landscape appears, shifting with the viewpoint.",
+   "lines": [
+    {
+     "text": "Tell me: is the world before your eyes precisely the world as it is in itself?",
+     "file": "schop_en_c02_00.m4a",
+     "ms": 7600
+    },
+    {
+     "text": "You see a tree, feel the warmth of sunlight, and hear the rain.",
+     "file": "schop_en_c02_01.m4a",
+     "ms": 6500
+    },
+    {
+     "text": "Yet the world you experience is always a world presented to a knowing subject.",
+     "file": "schop_en_c02_02.m4a",
+     "ms": 6300
+    },
+    {
+     "text": "That is what I mean when I say: “The world is my representation.”",
+     "file": "schop_en_c02_03.m4a",
+     "ms": 6000
+    },
+    {
+     "text": "I do not mean that you invented the trees or that the world is a mere private fantasy.",
+     "file": "schop_en_c02_04.m4a",
+     "ms": 7700
+    },
+    {
+     "text": "I mean that everything you know as an object appears to you through the forms of your experience.",
+     "file": "schop_en_c02_05.m4a",
+     "ms": 6900
+    },
+    {
+     "text": "Space, time, and causality shape how things are presented to us.",
+     "file": "schop_en_c02_06.m4a",
+     "ms": 7600
+    },
+    {
+     "text": "One person welcomes the rain; another resents it.",
+     "file": "schop_en_c02_07.m4a",
+     "ms": 5500
+    },
+    {
+     "text": "Their feelings differ, but my argument goes deeper than mood: even what they know as an external object stands in relation to a subject that knows it.",
+     "file": "schop_en_c02_08.m4a",
+     "ms": 12700
+    },
+    {
+     "text": "We must therefore distinguish the world as representation from what the world may be in itself.",
+     "file": "schop_en_c02_09.m4a",
+     "ms": 7700
+    },
+    {
+     "text": "What lies behind its appearances?",
+     "file": "schop_en_c02_10.m4a",
+     "ms": 3900
+    },
+    {
+     "text": "I found a clue in the inner experience of our own striving, and I gave that deeper reality the name will.",
+     "file": "schop_en_c02_11.m4a",
+     "ms": 10400
+    },
+    {
+     "text": "That is where we shall turn next.",
+     "file": "schop_en_c02_12.m4a",
+     "ms": 3900
+    }
+   ],
+   "question": {
+    "text": "Have you ever mistaken your own way of seeing things for reality itself?",
+    "file": "schop_en_c02_q.m4a",
+    "ms": 5700
+   }
+  },
+  {
+   "no": 3,
+   "title": "Will and Desire",
+   "staging": "Pace slowly; symbols of striving appear behind the speaker.",
+   "lines": [
+    {
+     "text": "Do you suppose reason directs every step of your life?",
+     "file": "schop_en_c03_00.m4a",
+     "ms": 4900
+    },
+    {
+     "text": "You grow hungry and seek food.",
+     "file": "schop_en_c03_01.m4a",
+     "ms": 3700
+    },
+    {
+     "text": "You long for affection, status, security.",
+     "file": "schop_en_c03_02.m4a",
+     "ms": 5600
+    },
+    {
+     "text": "No sooner is one wish satisfied than another appears.",
+     "file": "schop_en_c03_03.m4a",
+     "ms": 6600
+    },
+    {
+     "text": "We explain ourselves with reasons, but reason often arrives after the impulse and serves it.",
+     "file": "schop_en_c03_04.m4a",
+     "ms": 7400
+    },
+    {
+     "text": "I called the force beneath these impulses will.",
+     "file": "schop_en_c03_05.m4a",
+     "ms": 4900
+    },
+    {
+     "text": "This is not simply your conscious determination to finish a task.",
+     "file": "schop_en_c03_06.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "It is a blind, insistent striving expressed throughout living nature and, in my philosophy, throughout existence.",
+     "file": "schop_en_c03_07.m4a",
+     "ms": 10000
+    },
+    {
+     "text": "Consider the wish for a finer house.",
+     "file": "schop_en_c03_08.m4a",
+     "ms": 3700
+    },
+    {
+     "text": "Is it shelter you need, or the admiration attached to its address?",
+     "file": "schop_en_c03_09.m4a",
+     "ms": 7000
+    },
+    {
+     "text": "Consider infatuation.",
+     "file": "schop_en_c03_10.m4a",
+     "ms": 2959
+    },
+    {
+     "text": "Does your judgment lead the way, or does it struggle to keep pace with an attraction already felt?",
+     "file": "schop_en_c03_11.m4a",
+     "ms": 9000
+    },
+    {
+     "text": "Our motives are rarely as transparent as we would like.",
+     "file": "schop_en_c03_12.m4a",
+     "ms": 5300
+    },
+    {
+     "text": "And yet I am not asking you merely to hate desire.",
+     "file": "schop_en_c03_13.m4a",
+     "ms": 5000
+    },
+    {
+     "text": "First learn to recognize it.",
+     "file": "schop_en_c03_14.m4a",
+     "ms": 2979
+    },
+    {
+     "text": "Observe what you pursue, what you fear losing, and why the goal matters so much.",
+     "file": "schop_en_c03_15.m4a",
+     "ms": 7900
+    },
+    {
+     "text": "A person who never examines desire is readily carried wherever desire happens to lead.",
+     "file": "schop_en_c03_16.m4a",
+     "ms": 6500
+    }
+   ],
+   "question": {
+    "text": "Is the thing you most desire truly something you have chosen for yourself?",
+    "file": "schop_en_c03_q.m4a",
+    "ms": 7000
+   }
+  },
+  {
+   "no": 4,
+   "title": "Why Is Life Full of Suffering?",
+   "staging": "Lights dim; the philosopher takes his seat.",
+   "lines": [
+    {
+     "text": "Why is life so painful?",
+     "file": "schop_en_c04_00.m4a",
+     "ms": 3500
+    },
+    {
+     "text": "You may answer: because I lack money, love, success, or peace.",
+     "file": "schop_en_c04_01.m4a",
+     "ms": 6800
+    },
+    {
+     "text": "Those are genuine hardships.",
+     "file": "schop_en_c04_02.m4a",
+     "ms": 3100
+    },
+    {
+     "text": "But I sought the structure beneath them.",
+     "file": "schop_en_c04_03.m4a",
+     "ms": 4300
+    },
+    {
+     "text": "To want something is to experience a lack.",
+     "file": "schop_en_c04_04.m4a",
+     "ms": 4500
+    },
+    {
+     "text": "A lack is felt as suffering.",
+     "file": "schop_en_c04_05.m4a",
+     "ms": 3500
+    },
+    {
+     "text": "Suppose you secure the position you worked for over many years.",
+     "file": "schop_en_c04_06.m4a",
+     "ms": 8100
+    },
+    {
+     "text": "For a moment you rejoice.",
+     "file": "schop_en_c04_07.m4a",
+     "ms": 4300
+    },
+    {
+     "text": "Soon the wish for advancement, greater income, or recognition takes its place.",
+     "file": "schop_en_c04_08.m4a",
+     "ms": 7800
+    },
+    {
+     "text": "And if nothing presses upon you, what then?",
+     "file": "schop_en_c04_09.m4a",
+     "ms": 4100
+    },
+    {
+     "text": "Often boredom appears.",
+     "file": "schop_en_c04_10.m4a",
+     "ms": 2816
+    },
+    {
+     "text": "Without an urgent object of desire, life itself can seem empty.",
+     "file": "schop_en_c04_11.m4a",
+     "ms": 7700
+    },
+    {
+     "text": "Thus, I said, human life swings like a pendulum between pain and boredom.",
+     "file": "schop_en_c04_12.m4a",
+     "ms": 8100
+    },
+    {
+     "text": "This is not a command to surrender to misery.",
+     "file": "schop_en_c04_13.m4a",
+     "ms": 4900
+    },
+    {
+     "text": "It is a warning against the fantasy of uninterrupted pleasure.",
+     "file": "schop_en_c04_14.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "Once we see how the mechanism works, we may cease blaming ourselves for every unhappy hour.",
+     "file": "schop_en_c04_15.m4a",
+     "ms": 9400
+    },
+    {
+     "text": "Suffering belongs to the human condition.",
+     "file": "schop_en_c04_16.m4a",
+     "ms": 3600
+    },
+    {
+     "text": "The question is whether we can meet it with clearer understanding, greater compassion, and less slavery to ceaseless wanting.",
+     "file": "schop_en_c04_17.m4a",
+     "ms": 10600
+    }
+   ],
+   "question": {
+    "text": "Do you seek a life entirely without pain, or a life less governed by it?",
+    "file": "schop_en_c04_q.m4a",
+    "ms": 7900
+   }
+  },
+  {
+   "no": 5,
+   "title": "Why Happiness Never Lasts",
+   "staging": "A treasure chest shines, then its light fades.",
+   "lines": [
+    {
+     "text": "Recall a moment when you were intensely happy.",
+     "file": "schop_en_c05_00.m4a",
+     "ms": 4500
+    },
+    {
+     "text": "Perhaps you passed an examination, fell in love, or received something you had long coveted.",
+     "file": "schop_en_c05_01.m4a",
+     "ms": 7300
+    },
+    {
+     "text": "How long did the feeling last?",
+     "file": "schop_en_c05_02.m4a",
+     "ms": 2770
+    },
+    {
+     "text": "A thirst is painful; water brings relief.",
+     "file": "schop_en_c05_03.m4a",
+     "ms": 5600
+    },
+    {
+     "text": "But once your thirst is quenched, another glass no longer offers the same delight.",
+     "file": "schop_en_c05_04.m4a",
+     "ms": 6700
+    },
+    {
+     "text": "Much of what we call happiness is the temporary quieting of an unmet need.",
+     "file": "schop_en_c05_05.m4a",
+     "ms": 6000
+    },
+    {
+     "text": "When a wish is fulfilled, its urgency disappears.",
+     "file": "schop_en_c05_06.m4a",
+     "ms": 4700
+    },
+    {
+     "text": "Another wish soon occupies the vacant place.",
+     "file": "schop_en_c05_07.m4a",
+     "ms": 3900
+    },
+    {
+     "text": "Our mistake is to imagine that one final achievement will end this pattern for good.",
+     "file": "schop_en_c05_08.m4a",
+     "ms": 7500
+    },
+    {
+     "text": "I valued the avoidance of unnecessary suffering more than the endless multiplication of pleasures.",
+     "file": "schop_en_c05_09.m4a",
+     "ms": 9300
+    },
+    {
+     "text": "Health, an undisturbed mind, and freedom from pressing anxiety are easily overlooked because their absence is more conspicuous than their presence.",
+     "file": "schop_en_c05_10.m4a",
+     "ms": 11400
+    },
+    {
+     "text": "Do not spend your life measuring your possessions against those of your neighbours.",
+     "file": "schop_en_c05_11.m4a",
+     "ms": 5900
+    },
+    {
+     "text": "Notice the ordinary hours in which nothing torments you.",
+     "file": "schop_en_c05_12.m4a",
+     "ms": 5200
+    },
+    {
+     "text": "There is wisdom in appreciating tranquility without insisting that it must become excitement.",
+     "file": "schop_en_c05_13.m4a",
+     "ms": 7800
+    },
+    {
+     "text": "Perhaps what you call happiness is sometimes simply peace, recognized in time.",
+     "file": "schop_en_c05_14.m4a",
+     "ms": 7500
+    }
+   ],
+   "question": {
+    "text": "What quiet good in your life have you begun to take for granted?",
+    "file": "schop_en_c05_q.m4a",
+    "ms": 6900
+   }
+  },
+  {
+   "no": 6,
+   "title": "Solitude and the Value of Being Alone",
+   "staging": "In a quiet study, the philosopher closes a book.",
+   "lines": [
+    {
+     "text": "Are you afraid of being alone?",
+     "file": "schop_en_c06_00.m4a",
+     "ms": 2753
+    },
+    {
+     "text": "Many flee silence.",
+     "file": "schop_en_c06_01.m4a",
+     "ms": 3300
+    },
+    {
+     "text": "They seek company not from affection but to escape the discomfort of their own thoughts.",
+     "file": "schop_en_c06_02.m4a",
+     "ms": 7500
+    },
+    {
+     "text": "Yet the crowd does not necessarily cure loneliness; it may merely drown it out.",
+     "file": "schop_en_c06_03.m4a",
+     "ms": 7400
+    },
+    {
+     "text": "Solitude offers a rare independence.",
+     "file": "schop_en_c06_04.m4a",
+     "ms": 4700
+    },
+    {
+     "text": "Alone, you need not continuously perform for the approval of others.",
+     "file": "schop_en_c06_05.m4a",
+     "ms": 5900
+    },
+    {
+     "text": "You may read, think, listen to music, and discover what your own mind can offer.",
+     "file": "schop_en_c06_06.m4a",
+     "ms": 7600
+    },
+    {
+     "text": "I believed that a rich inner life makes solitude more bearable and, at times, deeply rewarding.",
+     "file": "schop_en_c06_07.m4a",
+     "ms": 10300
+    },
+    {
+     "text": "This is not a demand to despise other people.",
+     "file": "schop_en_c06_08.m4a",
+     "ms": 4800
+    },
+    {
+     "text": "Friendship and kindness matter.",
+     "file": "schop_en_c06_09.m4a",
+     "ms": 3700
+    },
+    {
+     "text": "But a person who cannot endure a single evening alone becomes excessively dependent on company, even poor company.",
+     "file": "schop_en_c06_10.m4a",
+     "ms": 9400
+    },
+    {
+     "text": "The real question is not how many people surround you.",
+     "file": "schop_en_c06_11.m4a",
+     "ms": 5700
+    },
+    {
+     "text": "It is whether you can live at peace in your own presence.",
+     "file": "schop_en_c06_12.m4a",
+     "ms": 4800
+    },
+    {
+     "text": "Give yourself an hour without noise or distraction.",
+     "file": "schop_en_c06_13.m4a",
+     "ms": 5800
+    },
+    {
+     "text": "You may find discomfort at first.",
+     "file": "schop_en_c06_14.m4a",
+     "ms": 3700
+    },
+    {
+     "text": "Do not flee immediately.",
+     "file": "schop_en_c06_15.m4a",
+     "ms": 2900
+    },
+    {
+     "text": "There is something worth learning from it.",
+     "file": "schop_en_c06_16.m4a",
+     "ms": 3800
+    }
+   ],
+   "question": {
+    "text": "Who are you when no one is watching or judging you?",
+    "file": "schop_en_c06_q.m4a",
+    "ms": 4800
+   }
+  },
+  {
+   "no": 7,
+   "title": "Relationships and Expectations",
+   "staging": "Porcupines move toward and away from one another in winter.",
+   "lines": [
+    {
+     "text": "Picture a group of porcupines on a bitterly cold day.",
+     "file": "schop_en_c07_00.m4a",
+     "ms": 5600
+    },
+    {
+     "text": "They huddle together for warmth, but their quills prick one another.",
+     "file": "schop_en_c07_01.m4a",
+     "ms": 5900
+    },
+    {
+     "text": "They draw apart, grow cold, and approach again, until they find a tolerable distance.",
+     "file": "schop_en_c07_02.m4a",
+     "ms": 8400
+    },
+    {
+     "text": "I used this image to describe our social condition.",
+     "file": "schop_en_c07_03.m4a",
+     "ms": 5000
+    },
+    {
+     "text": "We need other people.",
+     "file": "schop_en_c07_04.m4a",
+     "ms": 2995
+    },
+    {
+     "text": "We wish to be understood, loved, and reassured that we matter.",
+     "file": "schop_en_c07_05.m4a",
+     "ms": 8400
+    },
+    {
+     "text": "But intimacy exposes faults, irritations, and competing wishes.",
+     "file": "schop_en_c07_06.m4a",
+     "ms": 6400
+    },
+    {
+     "text": "Do you expect a friend always to take your side?",
+     "file": "schop_en_c07_07.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "A partner to know your thoughts before you speak?",
+     "file": "schop_en_c07_08.m4a",
+     "ms": 6100
+    },
+    {
+     "text": "A relative to understand every decision?",
+     "file": "schop_en_c07_09.m4a",
+     "ms": 4700
+    },
+    {
+     "text": "Such demands burden affection with an impossible task.",
+     "file": "schop_en_c07_10.m4a",
+     "ms": 6000
+    },
+    {
+     "text": "The other person is not a character created to satisfy you.",
+     "file": "schop_en_c07_11.m4a",
+     "ms": 5600
+    },
+    {
+     "text": "They, too, have fears, limitations, and desires.",
+     "file": "schop_en_c07_12.m4a",
+     "ms": 4800
+    },
+    {
+     "text": "A reasonable distance is not necessarily indifference.",
+     "file": "schop_en_c07_13.m4a",
+     "ms": 6000
+    },
+    {
+     "text": "It can be the condition that allows respect to survive.",
+     "file": "schop_en_c07_14.m4a",
+     "ms": 5700
+    },
+    {
+     "text": "Be attentive to another's suffering, but do not make every relationship a test of perfect agreement.",
+     "file": "schop_en_c07_15.m4a",
+     "ms": 9000
+    },
+    {
+     "text": "Like the porcupines, we must learn how to be close without wounding one another.",
+     "file": "schop_en_c07_16.m4a",
+     "ms": 7300
+    }
+   ],
+   "question": {
+    "text": "Is there a relationship in which a little more space might allow greater kindness?",
+    "file": "schop_en_c07_q.m4a",
+    "ms": 8300
+   }
+  },
+  {
+   "no": 8,
+   "title": "Love and Marriage",
+   "staging": "Two silhouettes appear, then give way to an ordinary household.",
+   "lines": [
+    {
+     "text": "Few emotions seem more personal than love.",
+     "file": "schop_en_c08_00.m4a",
+     "ms": 6200
+    },
+    {
+     "text": "When people fall in love, they are sure they have discovered someone uniquely destined for them.",
+     "file": "schop_en_c08_01.m4a",
+     "ms": 7500
+    },
+    {
+     "text": "I looked at romantic passion with greater suspicion.",
+     "file": "schop_en_c08_02.m4a",
+     "ms": 5300
+    },
+    {
+     "text": "In my account, the will-to-life works through sexual attraction and the drive toward the continuation of the species.",
+     "file": "schop_en_c08_03.m4a",
+     "ms": 10100
+    },
+    {
+     "text": "Lovers believe they pursue only their own happiness; nature may be pursuing an end they scarcely perceive.",
+     "file": "schop_en_c08_04.m4a",
+     "ms": 9200
+    },
+    {
+     "text": "This does not mean their feeling is unreal.",
+     "file": "schop_en_c08_05.m4a",
+     "ms": 4100
+    },
+    {
+     "text": "It means its intensity is no guarantee of sound judgment.",
+     "file": "schop_en_c08_06.m4a",
+     "ms": 5100
+    },
+    {
+     "text": "The person who seems indispensable in the heat of infatuation may not be the person with whom everyday life proves harmonious.",
+     "file": "schop_en_c08_07.m4a",
+     "ms": 10400
+    },
+    {
+     "text": "Marriage must confront ordinary habits, conflicting expectations, money, fatigue, and time.",
+     "file": "schop_en_c08_08.m4a",
+     "ms": 8700
+    },
+    {
+     "text": "Passion may bring two people together; it cannot by itself settle these matters.",
+     "file": "schop_en_c08_09.m4a",
+     "ms": 6700
+    },
+    {
+     "text": "My account of love is deliberately unsettling.",
+     "file": "schop_en_c08_10.m4a",
+     "ms": 5700
+    },
+    {
+     "text": "You need not accept every conclusion to learn from the question it poses: how much of what you call a free choice is driven by impulses you do not fully understand?",
+     "file": "schop_en_c08_11.m4a",
+     "ms": 14700
+    },
+    {
+     "text": "Before promising a lifetime, look beyond the fever of the moment.",
+     "file": "schop_en_c08_12.m4a",
+     "ms": 6100
+    }
+   ],
+   "question": {
+    "text": "Do you love this person, or the happiness you hope they will bring you?",
+    "file": "schop_en_c08_q.m4a",
+    "ms": 5700
+   }
+  },
+  {
+   "no": 9,
+   "title": "Money, Reputation, and Success",
+   "staging": "Gold coins and a crown vanish, leaving a desk.",
+   "lines": [
+    {
+     "text": "What do people chase so tirelessly?",
+     "file": "schop_en_c09_00.m4a",
+     "ms": 3200
+    },
+    {
+     "text": "Money, standing, accomplishment, and the envy of others.",
+     "file": "schop_en_c09_01.m4a",
+     "ms": 6800
+    },
+    {
+     "text": "I distinguished three aspects of a person's lot: what one is, what one has, and what one represents in the opinion of others.",
+     "file": "schop_en_c09_02.m4a",
+     "ms": 9500
+    },
+    {
+     "text": "Most people devote extraordinary effort to the last two.",
+     "file": "schop_en_c09_03.m4a",
+     "ms": 5300
+    },
+    {
+     "text": "I held the first to be the most important.",
+     "file": "schop_en_c09_04.m4a",
+     "ms": 3300
+    },
+    {
+     "text": "Good health, a cultivated mind, and the capacity to enjoy one's own company cannot simply be purchased.",
+     "file": "schop_en_c09_05.m4a",
+     "ms": 8400
+    },
+    {
+     "text": "Money has real value: poverty brings misery, and adequate means can protect us from needless anxiety.",
+     "file": "schop_en_c09_06.m4a",
+     "ms": 9200
+    },
+    {
+     "text": "But wealth cannot give the mind a richness it does not possess.",
+     "file": "schop_en_c09_07.m4a",
+     "ms": 7000
+    },
+    {
+     "text": "Reputation is even less secure.",
+     "file": "schop_en_c09_08.m4a",
+     "ms": 3300
+    },
+    {
+     "text": "It exists in other people's heads, where you have little control.",
+     "file": "schop_en_c09_09.m4a",
+     "ms": 5500
+    },
+    {
+     "text": "Why surrender your peace to judgments that may change tomorrow?",
+     "file": "schop_en_c09_10.m4a",
+     "ms": 5600
+    },
+    {
+     "text": "The person who owns a hundred wants a thousand; the owner of a thousand envies someone with ten thousand.",
+     "file": "schop_en_c09_11.m4a",
+     "ms": 8500
+    },
+    {
+     "text": "Comparison has no natural finishing line.",
+     "file": "schop_en_c09_12.m4a",
+     "ms": 3900
+    },
+    {
+     "text": "Take care of your material needs, certainly.",
+     "file": "schop_en_c09_13.m4a",
+     "ms": 4000
+    },
+    {
+     "text": "Yet ask whether you are improving the substance of your life or merely its appearance to an audience.",
+     "file": "schop_en_c09_14.m4a",
+     "ms": 8600
+    }
+   ],
+   "question": {
+    "text": "Would you still want your present success if nobody knew about it?",
+    "file": "schop_en_c09_q.m4a",
+    "ms": 6500
+   }
+  },
+  {
+   "no": 10,
+   "title": "Why Art and Music Ease Suffering",
+   "staging": "A piano appears; the surroundings slowly soften.",
+   "lines": [
+    {
+     "text": "Have you ever listened to music and forgotten your troubles for a while?",
+     "file": "schop_en_c10_00.m4a",
+     "ms": 6000
+    },
+    {
+     "text": "Or stood before a painting until you lost all sense of time?",
+     "file": "schop_en_c10_01.m4a",
+     "ms": 5700
+    },
+    {
+     "text": "Most of our waking hours are ruled by wishes.",
+     "file": "schop_en_c10_02.m4a",
+     "ms": 4700
+    },
+    {
+     "text": "We pursue, calculate, fear, and anticipate.",
+     "file": "schop_en_c10_03.m4a",
+     "ms": 7100
+    },
+    {
+     "text": "But in genuine contemplation of beauty, something remarkable can happen.",
+     "file": "schop_en_c10_04.m4a",
+     "ms": 7000
+    },
+    {
+     "text": "For a moment, we cease to look at the world solely in terms of what it can do for us.",
+     "file": "schop_en_c10_05.m4a",
+     "ms": 7100
+    },
+    {
+     "text": "I described this as a temporary liberation from the service of the will.",
+     "file": "schop_en_c10_06.m4a",
+     "ms": 5600
+    },
+    {
+     "text": "We attend to the object itself, without asking what we might gain from it.",
+     "file": "schop_en_c10_07.m4a",
+     "ms": 6100
+    },
+    {
+     "text": "Music held a special place in my thought.",
+     "file": "schop_en_c10_08.m4a",
+     "ms": 4700
+    },
+    {
+     "text": "Whereas other arts present the Ideas through forms we perceive, I understood music as a direct expression of the will itself.",
+     "file": "schop_en_c10_09.m4a",
+     "ms": 10500
+    },
+    {
+     "text": "It reaches us without having to portray a particular event or object.",
+     "file": "schop_en_c10_10.m4a",
+     "ms": 6800
+    },
+    {
+     "text": "No work of art permanently abolishes suffering.",
+     "file": "schop_en_c10_11.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "When the music ends, our concerns may return.",
+     "file": "schop_en_c10_12.m4a",
+     "ms": 5500
+    },
+    {
+     "text": "Yet the interval matters.",
+     "file": "schop_en_c10_13.m4a",
+     "ms": 3600
+    },
+    {
+     "text": "It reminds us that consciousness need not always be busy acquiring, competing, and defending.",
+     "file": "schop_en_c10_14.m4a",
+     "ms": 7900
+    },
+    {
+     "text": "Listen sometimes without purpose.",
+     "file": "schop_en_c10_15.m4a",
+     "ms": 3600
+    },
+    {
+     "text": "Allow beauty to be enough.",
+     "file": "schop_en_c10_16.m4a",
+     "ms": 3700
+    }
+   ],
+   "question": {
+    "text": "What kind of art allows you to forget yourself in attentive absorption?",
+    "file": "schop_en_c10_q.m4a",
+    "ms": 8400
+   }
+  },
+  {
+   "no": 11,
+   "title": "How to Let Go of Desire",
+   "staging": "Enter a still meditation room; pause between sentences.",
+   "lines": [
+    {
+     "text": "We have examined the suffering that follows desire.",
+     "file": "schop_en_c11_00.m4a",
+     "ms": 4700
+    },
+    {
+     "text": "Now comes the harder question: how might we loosen its hold?",
+     "file": "schop_en_c11_01.m4a",
+     "ms": 5900
+    },
+    {
+     "text": "You may suppose that sheer determination will do it.",
+     "file": "schop_en_c11_02.m4a",
+     "ms": 5300
+    },
+    {
+     "text": "Yet the fierce wish to become a person without wishes can itself be another form of striving.",
+     "file": "schop_en_c11_03.m4a",
+     "ms": 9300
+    },
+    {
+     "text": "Begin by seeing your motives clearly.",
+     "file": "schop_en_c11_04.m4a",
+     "ms": 4100
+    },
+    {
+     "text": "Do you want admiration?",
+     "file": "schop_en_c11_05.m4a",
+     "ms": 3300
+    },
+    {
+     "text": "Are you terrified of losing something?",
+     "file": "schop_en_c11_06.m4a",
+     "ms": 3200
+    },
+    {
+     "text": "Do you pursue an object because others possess it?",
+     "file": "schop_en_c11_07.m4a",
+     "ms": 4400
+    },
+    {
+     "text": "Such questions do not instantly destroy desire, but they expose its disguises.",
+     "file": "schop_en_c11_08.m4a",
+     "ms": 6900
+    },
+    {
+     "text": "Next, look beyond yourself.",
+     "file": "schop_en_c11_09.m4a",
+     "ms": 4200
+    },
+    {
+     "text": "Another person suffers as you do.",
+     "file": "schop_en_c11_10.m4a",
+     "ms": 3400
+    },
+    {
+     "text": "Even someone you envy or dislike is vulnerable to pain.",
+     "file": "schop_en_c11_11.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "I regarded compassion as the foundation of morality, because it breaks through the narrow enclosure of self-interest.",
+     "file": "schop_en_c11_12.m4a",
+     "ms": 8100
+    },
+    {
+     "text": "Finally, consider what it could mean to renounce the tyranny of incessant wanting.",
+     "file": "schop_en_c11_13.m4a",
+     "ms": 7200
+    },
+    {
+     "text": "In ascetic practices and Indian philosophy I found profound reflections on the denial of the will.",
+     "file": "schop_en_c11_14.m4a",
+     "ms": 9200
+    },
+    {
+     "text": "This is more radical than merely replacing one ambition with another.",
+     "file": "schop_en_c11_15.m4a",
+     "ms": 6800
+    },
+    {
+     "text": "Beware, then, of becoming proud of your simplicity.",
+     "file": "schop_en_c11_16.m4a",
+     "ms": 5500
+    },
+    {
+     "text": "Vanity can flourish even in renunciation.",
+     "file": "schop_en_c11_17.m4a",
+     "ms": 5100
+    },
+    {
+     "text": "Freedom does not mean possessing everything.",
+     "file": "schop_en_c11_18.m4a",
+     "ms": 3800
+    },
+    {
+     "text": "It may begin when what you lack ceases to command your whole life.",
+     "file": "schop_en_c11_19.m4a",
+     "ms": 6000
+    }
+   ],
+   "question": {
+    "text": "What single attachment could you begin to loosen today?",
+    "file": "schop_en_c11_q.m4a",
+    "ms": 6000
+   }
+  },
+  {
+   "no": 12,
+   "title": "How Should We Live?",
+   "staging": "Memories of the lectures pass; the philosopher faces the sunset.",
+   "lines": [
+    {
+     "text": "And so we reach our last conversation.",
+     "file": "schop_en_c12_00.m4a",
+     "ms": 4000
+    },
+    {
+     "text": "We have spoken of will and representation, pain and happiness, solitude, love, money, compassion, and art.",
+     "file": "schop_en_c12_01.m4a",
+     "ms": 11600
+    },
+    {
+     "text": "You may now ask me for a final rule by which to live.",
+     "file": "schop_en_c12_02.m4a",
+     "ms": 4800
+    },
+    {
+     "text": "I will not promise that the world is always fair, that virtue is always rewarded, or that effort inevitably leads to triumph.",
+     "file": "schop_en_c12_03.m4a",
+     "ms": 10500
+    },
+    {
+     "text": "Existence is not arranged for our comfort.",
+     "file": "schop_en_c12_04.m4a",
+     "ms": 5400
+    },
+    {
+     "text": "But we can learn to value what we routinely overlook: health, a thoughtful mind, undisturbed hours, and the ability to stand on our own feet.",
+     "file": "schop_en_c12_05.m4a",
+     "ms": 14600
+    },
+    {
+     "text": "We can place less of our worth in the unreliable judgment of strangers.",
+     "file": "schop_en_c12_06.m4a",
+     "ms": 6300
+    },
+    {
+     "text": "We can cultivate solitude without losing compassion.",
+     "file": "schop_en_c12_07.m4a",
+     "ms": 5300
+    },
+    {
+     "text": "Above all, do not turn away from the suffering of others.",
+     "file": "schop_en_c12_08.m4a",
+     "ms": 5000
+    },
+    {
+     "text": "Beneath our apparent separateness we are subject to the same restless striving.",
+     "file": "schop_en_c12_09.m4a",
+     "ms": 7300
+    },
+    {
+     "text": "Compassion reveals a way of living less imprisoned by the individual ego.",
+     "file": "schop_en_c12_10.m4a",
+     "ms": 6700
+    },
+    {
+     "text": "Read.",
+     "file": "schop_en_c12_11.m4a",
+     "ms": 1278
+    },
+    {
+     "text": "Think.",
+     "file": "schop_en_c12_12.m4a",
+     "ms": 1288
+    },
+    {
+     "text": "Listen to music.",
+     "file": "schop_en_c12_13.m4a",
+     "ms": 2410
+    },
+    {
+     "text": "Look carefully at the world.",
+     "file": "schop_en_c12_14.m4a",
+     "ms": 3200
+    },
+    {
+     "text": "And when desire insists that you must acquire yet another thing before you can rest, pause and examine that command.",
+     "file": "schop_en_c12_15.m4a",
+     "ms": 10100
+    },
+    {
+     "text": "I have not come to hand you a comforting answer.",
+     "file": "schop_en_c12_16.m4a",
+     "ms": 4500
+    },
+    {
+     "text": "I have tried to give you a harder gift: a reason to think for yourself.",
+     "file": "schop_en_c12_17.m4a",
+     "ms": 6200
+    },
+    {
+     "text": "Before asking what more you must possess, ask what you might be free of.",
+     "file": "schop_en_c12_18.m4a",
+     "ms": 8100
+    },
+    {
+     "text": "Farewell, and make your own examination of life.",
+     "file": "schop_en_c12_19.m4a",
+     "ms": 4400
+    }
+   ],
+   "question": {
+    "text": "Which pursuit of happiness are you finally ready to stop chasing?",
+    "file": "schop_en_c12_q.m4a",
+    "ms": 6200
+   }
+  }
+ ]
+}

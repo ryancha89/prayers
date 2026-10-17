@@ -116,7 +116,8 @@ export interface UnitySessionPayload {
   /** Rails host override for the embedded player (dev/staging). */
   apiBase?: string;
   locale: string;
-  /** Per-device guest id → backend User-Auth header (until real login). */
+  /** The signed-in Prayers account uid (`pr_…`; `dev-…` in a dev build). Unity sends it as
+   *  User-Auth and exchanges it for its own `pgt_` token at `/api/v1/prayers/game/token`. */
   auth?: string;
 }
 
@@ -296,6 +297,19 @@ export type RNToUnityEvent =
    *  opens them and smiles. `intoMs` is how far into the breath cycle the session is at the moment
    *  of sending; Unity clocks the breath on from there rather than being told every phase. */
   | { type: 'MEDITATION_STATE'; payload: MeditationStatePayload }
+  /** Open the lecture room (the Schopenhauer series). Like MEDITATION_INIT: no ticket, no thread —
+   *  the voice and subtitles are this app's; Unity is the study and the old man in it. Repeated
+   *  until LECTURE_READY. */
+  | { type: 'LECTURE_INIT'; payload: LectureInitPayload }
+  /** What the lecture is doing: he gestures while `speaking`, rests between lines, and turns to the
+   *  listener on the closing question. Sent on every change and replayed on LECTURE_READY. */
+  | { type: 'LECTURE_STATE'; payload: LectureStatePayload }
+  /** Leaving the lecture room. */
+  | { type: 'LECTURE_END' }
+  /** The listener turning the camera round him (drag) and in/out (pinch), as WORLD_CAMERA: zoom 0..1
+   *  (0 = close), yaw −1..1 (±180° round him), pitch −1..1 (+ = higher). Unity eases toward it;
+   *  a double-tap sends the home framing. */
+  | { type: 'LECTURE_CAMERA'; payload: { zoom: number; yaw: number; pitch: number } }
   /** Open the train journey cabin (spec 003). Like MEDITATION_INIT: no ticket, no thread — the
    *  reading is this app's; Unity is the cabin and the counsellor across the table. Repeated
    *  until JOURNEY_READY. */
@@ -611,6 +625,17 @@ export interface MyRoomCamera {
   pitch: number;
 }
 
+export interface LectureInitPayload {
+  lang: string;
+  chapter: number;
+}
+
+export interface LectureStatePayload {
+  speaking: boolean;
+  chapter: number;
+  atQuestion: boolean;
+}
+
 export interface MeditationStatePayload {
   state: 'idle' | 'breathing' | 'paused' | 'done';
   inMs: number;
@@ -659,6 +684,8 @@ export type UnityToRNEvent =
    *  veil over a counselor who is about to speak, and there is nobody here to speak. This one only
    *  says "there is a room behind you now" — the screen fades its overlay in over it. */
   | { type: 'MEDITATION_READY' }
+  /** The lecture room is on screen — the lecture screen fades its portrait out over it. */
+  | { type: 'LECTURE_READY' }
   /** The train cabin is on screen (spec 003) — the journey screen fades its SVG window out. */
   | { type: 'JOURNEY_READY' }
   /** The platform walk is over and the player is in the cabin seat: start the reading. */

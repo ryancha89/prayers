@@ -60,7 +60,6 @@ export interface CounselorSummary {
   category: CounselorCategory;
 
   popularity?: number;
-  conversationCount?: number;
 
   isNew?: boolean;
   isTrending?: boolean;

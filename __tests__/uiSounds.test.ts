@@ -20,9 +20,8 @@ import path from 'path';
 const SRC = path.join(__dirname, '..', 'src');
 
 const SILENT: Record<string, string> = {
-  'features/counseling/screens/UnityEntryScreen.tsx':
-    'the handover screen — the next thing the player hears is the room fading up',
   'features/auth/screens/LoginScreen.tsx': 'not wired yet',
+  'shared/components/FeatureCard.tsx': 'the caller answers the press (HomeScreen plays select / tap)',
   'features/journey/components/JourneyHeroCard.tsx': 'the caller answers the press (HomeScreen plays select)',
   'features/journey/components/RailwayProgress.tsx': 'the caller answers the press (JourneyScreen plays tap)',
   'shared/components/hud/Hud.tsx':

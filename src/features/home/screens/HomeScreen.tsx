@@ -18,10 +18,13 @@ import { useConversationsStore } from '../../conversations/store/conversationsSt
 import { syncConversationsFromServer } from '../../conversations/syncConversations';
 import { useCoins } from '../../coins/store/coinStore';
 import { refreshCoins } from '../../coins/api/coinsApi';
+import { refreshCounselorStats } from '../../counselors/api/counselorStats';
 import { formatCoins } from '../../coins/format';
 import { checkIn, fetchAttendance, type AttendanceStatus } from '../../tickets/api/attendance';
 import { PRAYER_COIN_ART } from '../../tickets/assets/art';
 import { JourneyHeroCard } from '../../journey/components/JourneyHeroCard';
+import { LectureSeriesCard } from '../../philosophy/components/LectureSeriesCard';
+import { FeatureCard } from '../../../shared/components/FeatureCard';
 import { NEWYEAR_2027, journeyEntryRoute } from '../../journey/data/journeys';
 import { journeyActive, useJourneyPlayer } from '../../journey/player/journeyPlayer';
 
@@ -48,16 +51,26 @@ export const HomeScreen: React.FC = () => {
     () => roster.filter(c => c.category !== 'meditation' && !c.comingSoon),
     [roster],
   );
-  const categories = CATEGORIES.filter(c =>
-    c.key === 'recommended' || available.some(person => person.category === c.key),
-  );
+  const meditationGuide = roster.find(c => c.category === 'meditation');
+  // 전체 · 사주 · 강의 · 명상 (16-10, user: "메인화면에 전체 사주 강의 명상 챕터 추가"). The counsellor
+  // categories come from who is on the roster; 강의 and 명상 are not counsellors and get a tab each
+  // when there is something behind it. 전체 shows everything.
+  const categories: { key: string; label: string }[] = [
+    ...CATEGORIES.filter(c =>
+      c.key !== 'meditation' && (c.key === 'recommended' || available.some(person => person.category === c.key)),
+    ).map(c => ({ key: c.key, label: c.key === 'recommended' ? t('home.all') : t(c.labelKey) })),
+    // The Schopenhauer series is recorded in every language the app offers.
+    { key: 'lecture', label: t('cat.lecture') },
+    ...(meditationGuide ? [{ key: 'meditation', label: t('cat.meditation') }] : []),
+  ];
   const activeCategory = categories.some(c => c.key === category) ? category : 'recommended';
   const counselors = available.filter(c => activeCategory === 'recommended' || c.category === activeCategory);
+  const showLecture = (activeCategory === 'recommended' || activeCategory === 'lecture');
+  const showMeditation = !!meditationGuide && (activeCategory === 'recommended' || activeCategory === 'meditation');
   const recent = order.map(id => byId[id]).find(c =>
     c && Boolean(c.lastMessage || c.messages.length) && available.some(person => person.id === c.counselorId),
   );
   const recentCounselor = available.find(c => c.id === recent?.counselorId);
-  const meditationGuide = roster.find(c => c.category === 'meditation');
 
   useFocusEffect(useCallback(() => {
     const ac = new AbortController();
@@ -67,6 +80,8 @@ export const HomeScreen: React.FC = () => {
       if (!ac.signal.aborted) setAttendance(status);
     });
     void syncConversationsFromServer(lang, ac.signal);
+    // The cards' real "N회 상담" — a consultation just finished should show up when Home returns.
+    void refreshCounselorStats(ac.signal);
     return () => ac.abort();
   }, [lang]));
 
@@ -168,29 +183,32 @@ export const HomeScreen: React.FC = () => {
             <Text style={styles.intro}>{t('home.intro')}</Text>
             <View style={styles.filters}>
               <CategoryTabs
-                categories={categories.map(c => ({
-                  key: c.key, label: c.key === 'recommended' ? t('home.all') : t(c.labelKey),
-                }))}
+                categories={categories}
                 active={activeCategory}
                 onChange={setCategory}
               />
             </View>
           </View>
         }
-        ListFooterComponent={meditationGuide ? (
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.meditation, pressed && styles.pressed]}
-            onPress={() => { sfx.tap(); navigation.navigate('MeditationRoom'); }}>
-            {meditationGuide.cardImage ? (
-              <Image source={meditationGuide.cardImage} style={styles.meditationPortrait} resizeMode="cover" />
-            ) : <View style={styles.lotus}><Icon name="lotus" size={30} color={colors.gold} /></View>}
-            <View style={styles.cardBody}>
-              <Text style={styles.name}>{t('home.breathe')}</Text>
-              <Text style={styles.preview}>{t('home.meditation')}</Text>
-            </View>
-            <Icon name="play" size={20} color={colors.gold} />
-          </Pressable>
+        ListFooterComponent={showLecture || showMeditation ? (
+          <View>
+          {showLecture && (
+            <LectureSeriesCard
+              onOpen={(chapter, line) => { sfx.select(); navigation.navigate('Lecture', { chapter, line }); }}
+            />
+          )}
+          {showMeditation && meditationGuide?.cardImage && (
+            <FeatureCard
+              testID="meditation-card"
+              image={meditationGuide.cardImage}
+              badge={t('home.meditation')}
+              title={t('home.breathe')}
+              tagline={t('med.subtitle')}
+              cta={t('med.start')}
+              onPress={() => { sfx.tap(); navigation.navigate('MeditationRoom'); }}
+            />
+          )}
+          </View>
         ) : undefined}
       />
     </SafeAreaView>
@@ -222,12 +240,5 @@ const styles = StyleSheet.create({
   title: { ...typography.h2, color: colors.textPrimary },
   intro: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
   filters: { marginHorizontal: -spacing.lg, marginTop: spacing.md, marginBottom: spacing.sm },
-  meditation: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    padding: spacing.lg, marginTop: spacing.sm,
-    backgroundColor: colors.card, borderRadius: radius.lg,
-  },
-  meditationPortrait: { width: 72, height: 88, borderRadius: radius.md },
-  lotus: { padding: spacing.sm, borderRadius: radius.md, backgroundColor: colors.goldDim },
   pressed: { opacity: 0.7 },
 });

@@ -80,7 +80,7 @@ describe('counselor card art', () => {
   });
 
   it('serves the counselors you can actually enter', () => {
-    // These are the only ones with a 3D model, so theirs are the cards a player acts on. Yunjung
+    // These are the only ones with a 3D model, so theirs are the cards a player acts on. YunJeong
     // joined them on 2026-09-11 with f_char_003 and a room of her own (ConsultationSolo02) — this
     // list and Unity's RNBridge.PersonaFor have to gain a counselor in the same change, or the app
     // offers a name the engine cannot seat.

@@ -5,8 +5,9 @@
 - Cổng đăng nhập đứng trước mọi thứ. Không còn "khách vãng lai": id `dev-` sinh trên máy đã bị xoá
   (`shared/device/deviceId.ts`), vì server chỉ tự cấp id đó khi `Rails.env.development?` và tự nạp
   lại 100 vé mỗi request — nó chưa bao giờ là một tài khoản.
-- `POST /api/v1/auth/apple/callback` → `user_auth`, đúng hợp đồng `saju_front` đang chạy production.
-- `GET /api/v1/game/token` → token 24h cho chính tài khoản đó. **Bản release không mang bí mật dùng
+- (16-10-2026) Tài khoản Prayers riêng (`prayers_users`): `POST /api/v1/prayers/auth/{apple,google,kakao}/callback`
+  và `/auth/reviewer` (email + mật khẩu cho người duyệt store) → `user_auth` dạng `pr_…`.
+- `GET /api/v1/prayers/game/token` → token `pgt_` 24h cho chính tài khoản đó. **Bản release không mang bí mật dùng
   chung nữa**: `Saju-Authorization` chỉ còn là đường lui trong dev.
 - Host thật: `shared/config/api.ts` — dev nhận biết theo platform (iOS 127.0.0.1, Android 10.0.2.2),
   release `https://api.perpetualtalk.com`. Trước đó release **không có server nào cả**.

@@ -233,11 +233,11 @@ export type ConsultationReadiness = 'ok' | 'offline' | 'no-chart';
 /**
  * Puts a birth profile on the account, which is the ONLY thing that turns `has_saju` true.
  *
- * `POST /api/v1/saju/save` — not `/prayers/chart`, which merely computes four pillars for the
+ * `POST /api/v1/prayers/saju/save` — not `/prayers/chart`, which merely computes four pillars for the
  * room's visualisation and saves nothing. Getting those two the wrong way round is easy: both take
  * a birth date and both answer with ganji.
  *
- * ONE PROFILE PER ACCOUNT. The server persists to `UserList` index 0, so this is "who the account
+ * ONE PROFILE PER ACCOUNT. The server persists to the account's `prayers_birth_profiles` row, so this is "who the account
  * is about", not "one of the people it knows". Saving the subject at the moment a consultation
  * starts is therefore deliberate: the reading has to be about whoever was just chosen, and asking
  * about a friend genuinely does replace what the server holds until the next reading.
@@ -264,7 +264,7 @@ export async function saveSajuProfile(
   const time = input.birthTime ? /^(\d{1,2}):(\d{2})$/.exec(input.birthTime.trim()) : null;
 
   try {
-    const res = await authedFetch(`${BASE()}/api/v1/saju/save`, {
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/saju/save`, {
       method: 'POST',
       body: JSON.stringify({
         name: input.name,
@@ -294,7 +294,7 @@ export async function checkConsultationReadiness(
   signal?: AbortSignal,
 ): Promise<ConsultationReadiness> {
   try {
-    const res = await authedFetch(`${BASE()}/api/v1/saju/me`, { signal });
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/saju/me`, { signal });
     if (!res || !res.ok) return 'offline';
 
     const body = await res.json();
@@ -338,7 +338,7 @@ export async function fetchRecall(input: {
    * The counselor about to be sat with, by CARD id (`yunjung`), not characterId.
    *
    * ⚠️ WITHOUT IT THE ROOM REMEMBERS SOMEBODY ELSE'S CONVERSATION. Recall used to return the
-   * player's most recent thread whatever counselor it belonged to, so opening Go Yunjung's room
+   * player's most recent thread whatever counselor it belonged to, so opening YunJeong's room
    * after a session with Theo had her say "last time we talked about love" about a conversation
    * she was never in. The server scopes on the session key, which is built from this id.
    */

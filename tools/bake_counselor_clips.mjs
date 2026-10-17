@@ -20,7 +20,8 @@
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-const UNITY = '/Users/namaste/git/saju_fullstack/saju_world_unity/Assets/Audio/Consultation';
+// UNITY_CLIPS: the checkout the app's framework is exported from (e.g. the saju_world_unity_prayers worktree).
+const UNITY = process.env.UNITY_CLIPS || '/Users/namaste/git/saju_fullstack/saju_world_unity/Assets/Audio/Consultation';
 const FLOW = new URL('../src/features/counseling/flow/', import.meta.url).pathname;
 const API = process.env.PRAYERS_API || 'http://localhost:4000';
 const TOKEN = process.env.SAJU_ACCESS_TOKEN ||

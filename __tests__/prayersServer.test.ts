@@ -289,7 +289,7 @@ describe('saveSajuProfile', () => {
     });
 
     expect(ok).toBe(true);
-    expect(fetchSpy.mock.calls[0][0]).toContain('/api/v1/saju/save');
+    expect(fetchSpy.mock.calls[0][0]).toContain('/api/v1/prayers/saju/save');
     const body = bodyOf(fetchSpy);
     expect(body).toMatchObject({
       name: 'Linh',

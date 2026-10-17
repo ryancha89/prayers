@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,7 +15,7 @@ import { getUnityBridge, isNativeUnity, unityApiBase } from '../bridge';
 import { isPixelCounselor } from '../pixel/pixelCounselors';
 import { getUserAuth } from '../../auth/store/authStore';
 import { CounselingTopic, UnityToRNEvent } from '../types';
-import { CONSULT_COST, fetchCoins } from '../../coins/api/coinsApi';
+import { fetchCoins } from '../../coins/api/coinsApi';
 import { useCoins } from '../../coins/store/coinStore';
 import { useScreen } from '../../../shared/device/screen';
 
@@ -49,27 +49,19 @@ export const UnityEntryScreen: React.FC = () => {
   // tell Unity either.
   const landscape = useScreen().landscape;
 
-  // null = still asking, false = go ahead, true = stop here and say why.
-  //
-  // The engine refuses a ticketless session anyway, but it refuses INSIDE: the room loads, the
-  // counselor appears, and the session dies in front of the player. Asking here turns that into a
-  // precondition stated on the way in.
-  const [blocked, setBlocked] = useState<boolean | null>(null);
-
+  // The wallet is loaded on the way in, but it no longer bars the door (16-10, user: "질문전까지
+  // 이화면보이지마 질문할때 없으면 유도해야해"). Walking in and looking round costs nothing; the room
+  // asks for coins when a question would spend them (CounselingRoomScreen, NoCoinsCard).
   useEffect(() => {
     const ac = new AbortController();
     fetchCoins(ac.signal).then(r => {
       if (r) useCoins.getState().setWallet(r.balance, r.products);
-      // An unknown balance is NOT zero. Locking the player out because the server hiccuped would be
-      // a worse bug than the one this check exists to fix — the server still refuses an unpaid turn.
-      setBlocked(r != null && r.balance < CONSULT_COST);
     });
     return () => ac.abort();
   }, []);
 
   useEffect(() => {
     if (!counselor || !subject) return;
-    if (blocked !== false) return;   // do not boot Unity until the balance says it is worth booting
     const sessionId = `session_${counselor.id}_${subject.id}`;
 
     const goToRoom = () => {
@@ -115,25 +107,7 @@ export const UnityEntryScreen: React.FC = () => {
     });
 
     return unsub;
-  }, [counselor, subject, topic, navigation, params.resuming, lang, blocked]);
-
-  // Said on the way in, not after the room has loaded and given up.
-  if (blocked) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>{t('unity.noTickets.title')}</Text>
-        <Text style={styles.subtitle}>{t('unity.noTickets.body')}</Text>
-        {/* The way OUT of the dead end. This screen used to offer a single Back button: the app
-            told the player they were out of tickets and gave them nowhere to get any. */}
-        <Pressable style={styles.topUp} onPress={() => navigation.navigate('Tickets')}>
-          <Text style={styles.topUpText}>{t('unity.noTickets.topUp')}</Text>
-        </Pressable>
-        <Pressable style={styles.back} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>{t('unity.noTickets.back')}</Text>
-        </Pressable>
-      </View>
-    );
-  }
+  }, [counselor, subject, topic, navigation, params.resuming, lang]);
 
   return (
     <View style={styles.container}>
@@ -164,14 +138,4 @@ const styles = StyleSheet.create({
   spinner: { marginBottom: spacing.lg },
   title: { ...typography.h3, color: colors.textPrimary },
   subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center', paddingHorizontal: spacing.xxl },
-  topUp: {
-    backgroundColor: colors.violet,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.md,
-  },
-  topUpText: { ...typography.body, color: colors.textPrimary, fontWeight: '600' },
-  back: { marginTop: spacing.xxl, paddingHorizontal: spacing.xxl, paddingVertical: spacing.md, borderRadius: 999, backgroundColor: colors.card },
-  backText: { ...typography.body, color: colors.textPrimary },
 });

@@ -13,17 +13,34 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * It also cannot survive a reinstall or reach a second device, so any purchase made against it
  * would be lost with the app.
  *
- * WHAT IT IS INSTEAD. `userAuth` is the uid saju_server returns from a social sign-in
- * (`POST /api/v1/auth/{apple,google}/callback` → `user_auth`) — the same identity saju_front has
- * used in production for years, and the same value the server already expects in the `User-Auth`
- * header. The app is now a client of an account, not of a device.
+ * WHAT IT IS INSTEAD. `userAuth` is the `pr_` uid saju_server returns from a sign-in
+ * (`POST /api/v1/prayers/auth/{apple,google,kakao}/callback` or `/auth/reviewer` → `user_auth`) —
+ * a Prayers-only account (`prayers_users`, 2026-10-16), separate from saju_front's `users`, and the
+ * value the server expects in the `User-Auth` header. The app is a client of an account, not a device.
  *
  * THE GAME TOKEN IS NOT A SECOND IDENTITY. It is a 24h credential issued for `userAuth`
- * (`GET /api/v1/game/token`), and it is how a release build gets through `Api::V1::BaseController
+ * (`GET /api/v1/prayers/game/token` → `pgt_…`), and it is how a release build gets through `Api::V1::BaseController
  * #authenticate` WITHOUT carrying the app-wide `SAJU_ACCESS_TOKEN` in its bundle. A captured game
  * token is one user for one day; a captured shared secret is every user forever.
  */
-export type AuthProvider = 'apple' | 'google' | 'dev';
+export type AuthProvider = 'apple' | 'google' | 'kakao' | 'reviewer' | 'dev';
+
+/** A Prayers account id (`prayers_users.uid`), issued by `/api/v1/prayers/auth/*`. */
+export const PRAYERS_UID_PREFIX = 'pr_';
+/** A Prayers Game-Token, issued by `/api/v1/prayers/game/token`. */
+export const PRAYERS_TOKEN_PREFIX = 'pgt_';
+
+/**
+ * Whether a stored uid can still sign this device in. Since the Prayers account split (2026-10-16)
+ * only `pr_` uids resolve to an account; a shared `users` uid kept from an older build is refused
+ * by every account endpoint, so it is dropped on load and the player signs in again. A `dev-` uid
+ * stays usable in a dev build (the development server provisions it).
+ */
+export function isUsableUserAuth(uid: unknown): uid is string {
+  if (typeof uid !== 'string' || uid.length === 0) return false;
+  if (uid.startsWith(PRAYERS_UID_PREFIX)) return true;
+  return __DEV__ && uid.startsWith('dev-');
+}
 
 interface AuthState {
   /** The account uid, sent as the `User-Auth` header. Null = nobody is signed in. */
@@ -49,6 +66,19 @@ export const useAuthStore = create<AuthState>()(
   persist(() => empty, {
     name: 'prayers.auth.v1',
     storage: createJSONStorage(() => AsyncStorage),
+    // An account from before the split (or its non-`pgt_` token) is not restored: nobody is signed
+    // in, so the login screen asks again.
+    merge: (persisted, current) => {
+      const p = (persisted ?? {}) as Partial<AuthState>;
+      if (!isUsableUserAuth(p.userAuth)) return { ...current, ...empty };
+      const tokenOk = typeof p.gameToken === 'string' && p.gameToken.startsWith(PRAYERS_TOKEN_PREFIX);
+      return {
+        ...current,
+        ...p,
+        gameToken: tokenOk ? p.gameToken! : null,
+        gameTokenExpiresAt: tokenOk ? p.gameTokenExpiresAt ?? null : null,
+      };
+    },
   }),
 );
 

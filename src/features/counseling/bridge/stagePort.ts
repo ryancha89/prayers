@@ -7,6 +7,7 @@
  */
 import type { StagePort } from '../flow/engine';
 import type { ChatMode, OracleAskPayload, StagePhasePayload, UnityBridge } from '../types';
+import { spokenText } from '../api/sajuGlyphs';
 
 /**
  * Every take Unity is asked for is filed under `<key>@<room nonce>`.
@@ -45,11 +46,16 @@ export function createStagePort(
         payload: { mode: 'clip', locKeys, topic, cacheKey: k(cacheKey), texts },
       });
     },
+    // The bubble shows "갑자일(甲子日)"; the voice says "갑자일" once (sajuGlyphs.spokenText). Both
+    // the take and its warm-up strip the same way, or the prefetched take would not be the one asked for.
     speakText(text: string, cacheKey: string) {
-      bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey: k(cacheKey) } });
+      bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text: spokenText(text), cacheKey: k(cacheKey) } });
     },
     prefetchText(text: string, cacheKey: string) {
-      bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text, cacheKey: k(cacheKey), prefetch: true } });
+      bridge.sendEvent({
+        type: 'STAGE_SPEAK',
+        payload: { mode: 'tts', text: spokenText(text), cacheKey: k(cacheKey), prefetch: true },
+      });
     },
     stopSpeak() {
       bridge.sendEvent({ type: 'STAGE_STOP_SPEAK' });

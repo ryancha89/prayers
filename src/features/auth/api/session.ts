@@ -5,6 +5,8 @@ import { devlog } from '../../../shared/devlog';
 import { syncAccountLanguage } from '../../settings/languageSync';
 import {
   getUserAuth,
+  PRAYERS_UID_PREFIX,
+  PRAYERS_TOKEN_PREFIX,
   signedIn,
   storeGameToken,
   validGameToken,
@@ -12,17 +14,19 @@ import {
 } from '../store/authStore';
 
 /**
- * Sign-in against saju_server, and the credential every later call rides on.
+ * Sign-in against saju_server's PRAYERS-ONLY accounts (`prayers_users`, 2026-10-16), and the
+ * credential every later call rides on. Prayers no longer shares saju_front's `users` table:
  *
- * The contract is not invented here — it is the one saju_front has used in production:
- *   POST /api/v1/auth/apple/callback   { auth: <the provider's own response> }
- *   POST /api/v1/auth/google/callback  { auth: ... }
- *     → { result: 'loggedin' | 'signup_failed', user_auth, name, free_ticket_allocated, ... }
+ *   POST /api/v1/prayers/auth/apple/callback   { auth: <the provider's own response> }
+ *   POST /api/v1/prayers/auth/google/callback  { auth: ... }
+ *   POST /api/v1/prayers/auth/kakao/callback   { auth: ... }
+ *   POST /api/v1/prayers/auth/reviewer         { email, password }   (App/Play Store review)
+ *     → 200 { result: 'loggedin', user_auth: 'pr_…', name, provider } | { result: 'signup_failed' }
  *
- * ⚠️ These two endpoints are the ONLY ones that need no credential of their own
- * (`Api::V1::Auth::OmniauthCallbacksController` does not inherit the `Saju-Authorization` gate,
- * verified against the running server). That is what makes a secret-free release build possible:
- * sign in → get `user_auth` → exchange it for a 24h `Game-Token` → use that everywhere else.
+ * Unlike the shared callbacks, the server VERIFIES the provider token (JWKS signature, issuer,
+ * expiry, audience). These endpoints need no credential of their own — they ARE the credential
+ * exchange: sign in → `pr_` uid → `GET /api/v1/prayers/game/token` → a 24h `pgt_` Game-Token for
+ * everything else. A shared `users` uid never resolves to a Prayers account.
  */
 
 interface CallbackResponse {
@@ -32,19 +36,32 @@ interface CallbackResponse {
 }
 
 async function callback(
-  provider: Exclude<AuthProvider, 'dev'>,
+  provider: 'apple' | 'google' | 'kakao',
   auth: unknown,
 ): Promise<{ userAuth: string; displayName: string | null }> {
-  const res = await fetch(`${apiBase()}/api/v1/auth/${provider}/callback`, {
+  return exchange(`/api/v1/prayers/auth/${provider}/callback`, { auth });
+}
+
+async function exchange(
+  path: string,
+  payload: unknown,
+): Promise<{ userAuth: string; displayName: string | null }> {
+  const res = await fetch(`${apiBase()}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ auth }),
+    body: JSON.stringify(payload),
   });
 
   // The server answers 200 with `result: 'signup_failed'` rather than an error status, so the
   // status alone is not the test — reading only `res.ok` would sign the player in as `undefined`.
   const body = (await res.json().catch(() => null)) as CallbackResponse | null;
-  if (!res.ok || !body || body.result === 'signup_failed' || !body.user_auth) {
+  if (
+    !res.ok ||
+    !body ||
+    body.result !== 'loggedin' ||
+    !body.user_auth ||
+    !body.user_auth.startsWith(PRAYERS_UID_PREFIX)
+  ) {
     throw new Error(`sign-in refused (${res.status} ${body?.result ?? 'no result'})`);
   }
 
@@ -67,11 +84,36 @@ export async function signInWithGoogle(googleResponse: unknown) {
   return userAuth;
 }
 
+export async function signInWithKakao(kakaoResponse: unknown) {
+  const { userAuth, displayName } = await callback('kakao', kakaoResponse);
+  signedIn({ userAuth, provider: 'kakao', displayName });
+  await ensureGameToken();
+  void syncAccountLanguage();
+  return userAuth;
+}
+
+/**
+ * The store-review door: one server-configured email + password (PRAYERS_REVIEWER_EMAIL /
+ * PRAYERS_REVIEWER_PASSWORD_DIGEST). A refusal is `401 { result: 'signup_failed' }` (429 when rate
+ * limited), which `exchange` turns into a throw like every other refused sign-in.
+ */
+export async function signInAsReviewer(email: string, password: string) {
+  const { userAuth, displayName } = await exchange('/api/v1/prayers/auth/reviewer', {
+    email: email.trim(),
+    password,
+  });
+  signedIn({ userAuth, provider: 'reviewer', displayName });
+  await ensureGameToken();
+  void syncAccountLanguage();
+  return userAuth;
+}
+
 /**
  * The local-only door, kept deliberately behind `__DEV__`.
  *
- * A `dev-` uid is auto-provisioned by the server ONLY in development, and topped back up to 100
- * tickets on every request. That is exactly what a developer wants and exactly what must never
+ * A `dev-` uid is auto-provisioned by the server ONLY in development, as a PrayersUser with
+ * provider 'dev' — both `GET /api/v1/prayers/game/token` and a bare `User-Auth: dev-…` create it on
+ * first use, so it gets a real `pgt_` token like any other account. That is exactly what a developer wants and exactly what must never
  * reach a player, so it lives here rather than in the store, where it would look like one sign-in
  * option among three.
  */
@@ -100,9 +142,10 @@ interface TokenResponse {
  * normal state, not a failure: `apiHeaders` then falls back to the dev secret, and a release build
  * simply has no credential and says so once.
  *
- * `GET /api/v1/game/token` takes the uid in `User-Auth` and NOTHING else — it inherits
- * ApplicationController on purpose (see the comment at the top of game_controller.rb), which is
- * what lets a signed-in client bootstrap without an embedded secret.
+ * `GET /api/v1/prayers/game/token` takes the `pr_` uid in `User-Auth` and NOTHING else (the uid is
+ * a server-issued random secret), which is what lets a signed-in client bootstrap without an
+ * embedded secret. It answers a `pgt_` token; an unknown, deleted or non-`pr_` uid gets 401
+ * (a `dev-` uid is provisioned in development only).
  */
 export async function ensureGameToken(): Promise<string | null> {
   const existing = validGameToken();
@@ -112,9 +155,11 @@ export async function ensureGameToken(): Promise<string | null> {
   if (!uid) return null;
 
   try {
-    const res = await fetch(`${apiBase()}/api/v1/game/token`, { headers: { 'User-Auth': uid } });
+    const res = await fetch(`${apiBase()}/api/v1/prayers/game/token`, { headers: { 'User-Auth': uid } });
     const body = (await res.json().catch(() => null)) as TokenResponse | null;
-    if (!res.ok || !body?.success || !body.token) {
+    // Only a Prayers token (`pgt_`) is any use: the shared `/api/v1/game/token` kind resolves to no
+    // Prayers account on the server, so storing one would 401 every call for a day.
+    if (!res.ok || !body?.success || !body.token || !body.token.startsWith(PRAYERS_TOKEN_PREFIX)) {
       if (__DEV__) devlog(`[auth] game/token refused (${res.status}) for ${uid}`);
       return null;
     }

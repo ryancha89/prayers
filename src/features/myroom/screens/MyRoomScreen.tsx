@@ -353,7 +353,9 @@ export const MyRoomScreen: React.FC = () => {
 
   const to2D = () => {
     sfx.back();
-    navigation.navigate('Tabs', { screen: 'Home' });
+    // popTo, not navigate: since React Navigation 7 navigate pushes a second Tabs over this screen
+    // and leaves it mounted underneath (16-10: the consultation room then exited into the World).
+    navigation.popTo('Tabs', { screen: 'Home' });
   };
 
   const explain = (line: string) => { sfx.tap(); say(line); };

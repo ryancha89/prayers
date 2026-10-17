@@ -28,6 +28,17 @@ buildscript {
 
 apply plugin: "com.facebook.react.rootproject"
 
+// Unity's player data ships in the :unityAssets install-time pack (its src/main/assets is a symlink
+// to the export's), not in unityLibrary — over Play's 200 MB base-module limit otherwise.
+def unityAssetsDir = new File(rootDir, '../unity/builds/android/unityLibrary/src/main/assets')
+if (unityAssetsDir.exists()) {
+    project(':unityLibrary') {
+        afterEvaluate {
+            android.sourceSets.main.assets.srcDirs = []
+        }
+    }
+}
+
 allprojects {
     repositories {
         // Unity UaaL export ships prebuilt .aar files in unityLibrary/libs.

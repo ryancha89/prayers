@@ -13,6 +13,7 @@ import type { RootStackParamList } from '../../../navigation/types';
 import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { SajuChartPanel, useSajuChart } from '../../saju/components/SajuChartPanel';
 import { column } from '../../../shared/device/screen';
+import { zodiacOf } from '../../saju/zodiac';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -30,6 +31,7 @@ export const MyInfoScreen: React.FC = () => {
   const self = useSubjectsStore(s => s.self);
   const ready = hasBirthData(self);
   const chart = useSajuChart(self.birthDate, self.birthTime);
+  const zodiac = zodiacOf(self.birthDate);
 
   const edit = () => {
     sfx.tap();
@@ -57,6 +59,7 @@ export const MyInfoScreen: React.FC = () => {
         <View style={styles.card}>
           <Field label={t('addSubject.name')} value={self.displayName} />
           <Field label={t('addSubject.birthDate')} value={self.birthDate || '—'} />
+          <Field label={t('myInfo.zodiac')} value={zodiac ? `${zodiac.glyph} ${t(zodiac.label)}` : '—'} />
           <Field
             label={t('myInfo.birthTime')}
             value={

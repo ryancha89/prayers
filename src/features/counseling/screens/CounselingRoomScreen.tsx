@@ -26,6 +26,7 @@ import { UnityHost } from '../components/UnityHost';
 import { ConsultationOverlay } from '../components/ConsultationOverlay';
 import { useConsultationEngine } from '../hooks/useConsultationEngine';
 import { voiceFor } from '../flow/voice';
+import { roomExit } from '../exitRoute';
 import { PixelCatStage } from '../pixel/PixelCatStage';
 import { isPixelCounselor } from '../pixel/pixelCounselors';
 import type { CatCue, CatGesture } from '../pixel/cues';
@@ -34,6 +35,9 @@ import { useViewInsets, type MeasuredRects } from '../bridge/viewInsets';
 import { useRoomLook } from '../components/useRoomLook';
 import { useWorldStore } from '../../world/store/worldStore';
 import { useSoundStore } from '../../../shared/audio/store';
+import { NoCoinsCard } from '../../coins/components/NoCoinsCard';
+import { CONSULT_COST, fetchCoins } from '../../coins/api/coinsApi';
+import { useCoins } from '../../coins/store/coinStore';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'CounselingRoom'>;
@@ -119,21 +123,23 @@ export const CounselingRoomScreen: React.FC = () => {
     [appendMessage, params.sessionId],
   );
 
-  const exitTo = useCallback(async (toWorld: boolean) => {
+  const exitTo = useCallback(async () => {
     if (exited.current) return;
     exited.current = true;
     await getUnityBridge().closeCounselingRoom();
-    // Entered from the 3D world (spec 004): back to the world, at the counselling door
-    // (WorldScreen re-opens with its returnZone). Out through the room's own door: to the world
-    // whichever way the room was entered. Otherwise land on the Conversations tab so the session
-    // is visible (spec §50-23).
-    if (toWorld || navigation.getState().routes.some(r => r.name === 'World')) {
-      navigation.navigate('World');
+    // Back to whatever opened the consultation (`roomExit`), whichever way out. From the 3D world
+    // (spec 004) that is the World, which re-opens at the counselling door (its returnZone); from 2D
+    // it is the screen the player was on — never the World, a place they did not choose to go.
+    const state = navigation.getState();
+    const exit = roomExit(state.routes, state.index);
+    if (exit.pops > 0) {
+      if (exit.to === 'World') useWorldStore.getState().setReturnZone('counseling');
+      navigation.pop(exit.pops);
       return;
     }
-    navigation.navigate('Tabs', { screen: 'Conversations' });
+    navigation.popTo('Tabs', { screen: 'Conversations' });
   }, [navigation]);
-  const onExit = useCallback(() => exitTo(false), [exitTo]);
+  const onExit = exitTo;
 
   // Her register, from what the roster says she reads — not from her name, and not from the topic
   // the player picked: a career counselor asked about love still talks like a career counselor.
@@ -234,6 +240,36 @@ export const CounselingRoomScreen: React.FC = () => {
     },
   });
 
+  // Coins are asked for at the question, not at the door (16-10, user: "질문할때 없으면 유도해야해").
+  // A question the wallet cannot pay for is not sent: it stays in the box and the purchase card
+  // comes up over the room. The balance is re-read after every answer — each turn spends — so the
+  // check is against what the server holds now, not what it held when the player walked in. A
+  // refusal the check did not foresee (a 20-coin 깊은 풀이 turn on 10 coins) shows the same card.
+  const [coinPrompt, setCoinPrompt] = useState(false);
+  const ask = useCallback(
+    (text: string): boolean => {
+      const balance = useCoins.getState().balance;
+      if (balance != null && balance < CONSULT_COST) {
+        setCoinPrompt(true);
+        return false;
+      }
+      consultation.submit(text);
+      return true;
+    },
+    [consultation],
+  );
+  useEffect(() => {
+    return getUnityBridge().onEvent(e => {
+      if (e.type !== 'ORACLE_RESULT') return;
+      const failed = !e.payload?.ok;
+      fetchCoins().then(r => {
+        if (!r) return;
+        useCoins.getState().setBalance(r.balance);
+        if (failed && r.balance < CONSULT_COST) setCoinPrompt(true);
+      });
+    });
+  }, []);
+
   // What she remembers of last time, fetched while the player is still loading the room.
   //
   // Deliberately not awaited by anything: the walk starts on UNITY_READY and the welcome is four
@@ -306,11 +342,8 @@ export const CounselingRoomScreen: React.FC = () => {
   useEffect(() => {
     return getUnityBridge().onEvent(e => {
       if (e.type === 'EXIT_SESSION') onExit();
-      // Out through the room's door (walk-in): to the World, standing at the hall's counselling door.
-      if (e.type === 'ROOM_LEFT') {
-        useWorldStore.getState().setReturnZone('counseling');
-        exitTo(true);
-      }
+      // Out through the room's door (walk-in): the same way out as the Leave button.
+      if (e.type === 'ROOM_LEFT') exitTo();
       else if (e.type === 'SESSION_ERROR') {
         console.warn(`[room] session error: ${e.payload?.reason ?? 'unknown'}`);
         onExit();
@@ -408,14 +441,25 @@ export const CounselingRoomScreen: React.FC = () => {
       {/* While the player is on their feet the reading has not started, so the overlay below has
           nothing to say and these are the only controls on screen. They unmount themselves the
           moment the room reports the player seated — see useConsultationEngine.walking. */}
-      <WalkControls visible={consultation.walking} />
+      {coinPrompt && (
+        <NoCoinsCard
+          face={counselor.avatarImage ?? counselor.cardImage}
+          accent={counselor.accent}
+          cost={CONSULT_COST}
+          onClose={() => setCoinPrompt(false)}
+        />
+      )}
+      <WalkControls
+        visible={consultation.walking}
+        counselor={counselor ? { id: params.counselorId, name: counselor.name } : undefined}
+      />
       <ConsultationOverlay
         voice={voice}
         counselorName={counselor.name}
         state={consultation.state}
         onTap={consultation.tap}
         onChoose={consultation.choose}
-        onSubmit={consultation.submit}
+        onSubmit={ask}
         onRetry={consultation.retry}
         onLeave={onExit}
         onMicStart={consultation.startMic}

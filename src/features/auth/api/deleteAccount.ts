@@ -10,6 +10,7 @@ import { useArchiveStore } from '../../archive/store/archiveStore';
 import { useDiaryStore } from '../../myroom/diary/diaryStore';
 import { forgetAllLocalPhotos } from '../../myroom/diary/photos';
 import { useMyRoomStore } from '../../myroom/store/myRoomStore';
+import { forgetAvatar } from '../../profile/avatar/avatar';
 
 /** A self with no birth data — the same shape first run starts from, so the app asks again. */
 const EMPTY_SELF = { id: 'self', displayName: '', isUser: true as const };
@@ -21,20 +22,21 @@ const EMPTY_SELF = { id: 'self', displayName: '', isUser: true as const };
  * account must let them delete it in the app. This app grew an account today, so it grew this
  * obligation with it — a sign-in with no way out is a rejected submission.
  *
- * ⚠️ The server answers 200 with `{deleted: false}` when the row could not be destroyed (a foreign
- * key still pointing at it, see users_controller#delete_account). So `res.ok` is NOT the test: a
- * client that signs out on 200 would strand the player outside an account that still exists, with
- * their tickets in it. Only `deleted === true` counts.
+ * `DELETE /api/v1/prayers/account` deletes the Prayers account only (memories, diary, journeys,
+ * coins, chats, birth profile…; the `prayers_users` row is anonymised and its `pgt_` tokens die at
+ * once). It answers `200 {deleted: true}`. `res.ok` alone is still NOT the test: a client that
+ * signs out on any 200 would strand the player outside an account that may still exist, with their
+ * coins in it. Only `deleted === true` counts.
  */
 export async function deleteAccount(): Promise<boolean> {
   try {
-    const res = await authedFetch(`${apiBase()}/api/v1/users/delete_account`, {
+    const res = await authedFetch(`${apiBase()}/api/v1/prayers/account`, {
       method: 'DELETE',
     });
     if (!res) return false;
     const body = (await res.json().catch(() => null)) as { deleted?: boolean } | null;
     if (!res.ok || body?.deleted !== true) {
-      if (__DEV__) devlog(`[auth] delete_account refused (${res.status} deleted=${body?.deleted})`);
+      if (__DEV__) devlog(`[auth] prayers/account delete refused (${res.status} deleted=${body?.deleted})`);
       return false;
     }
   } catch {
@@ -75,6 +77,8 @@ export async function forgetLocalData() {
   // My Room's cached layout is keyed per account already; dropped all the same, with the rest.
   useMyRoomStore.setState({ byUser: {} });
   await forgetAllLocalPhotos();
+  // The profile photo is a face: the next person on this phone must not open My Page on it.
+  await forgetAvatar();
 
   try {
     // `removeItem` one at a time rather than multiRemove: this build's AsyncStorage typing does

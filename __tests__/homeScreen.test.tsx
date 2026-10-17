@@ -7,6 +7,7 @@ import { CategoryTabs } from '../src/features/counselors/components/CategoryTabs
 import { CounselorGrid } from '../src/features/counselors/components/CounselorGrid';
 import { HomeHeader } from '../src/features/counselors/components/HomeHeader';
 import { useCoins } from '../src/features/coins/store/coinStore';
+import { useCounselorStats } from '../src/features/counselors/store/counselorStatsStore';
 
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
@@ -23,6 +24,14 @@ jest.mock('../src/features/coins/api/coinsApi', () => ({ refreshCoins: async () 
 jest.mock('../src/features/conversations/syncConversations', () => ({
   syncConversationsFromServer: async () => null,
 }));
+// The server's real per-counsellor counts; each test says what the server "answered".
+let mockServerCounts: Record<string, number> | null = null;
+jest.mock('../src/features/counselors/api/counselorStats', () => ({
+  refreshCounselorStats: jest.fn(async () => {
+    const { useCounselorStats: store } = require('../src/features/counselors/store/counselorStatsStore');
+    if (mockServerCounts) store.getState().setCounts(mockServerCounts);
+  }),
+}));
 
 let tree: ReactTestRenderer.ReactTestRenderer;
 beforeEach(async () => {
@@ -32,23 +41,39 @@ beforeEach(async () => {
   useLanguageStore.setState({ lang: 'ko' });
   useConversationsStore.setState({ order: [], byId: {} });
   useCoins.setState({ balance: 1200 });
+  useCounselorStats.setState({ counts: null });
+  mockServerCounts = null;
 });
 afterEach(() => { if (tree) act(() => tree.unmount()); });
 const render = async () => {
   await act(async () => { tree = ReactTestRenderer.create(<HomeScreen />); });
 };
 
-it('keeps meditation reachable outside the filtered counselor list', async () => {
+it('tabs 전체 · 사주 · 강의 · 명상: lectures and meditation have tabs of their own (16-10)', async () => {
   await render();
-  const categories = tree.root.findByType(CategoryTabs).props.categories;
-  expect(categories.some((c: { key: string }) => c.key === 'meditation')).toBe(false);
-  const category = categories.find((c: { key: string }) => c.key !== 'recommended');
-  act(() => tree.root.findByType(CategoryTabs).props.onChange(category.key));
-  expect(tree.root.findByType(CounselorGrid).props.counselors.every(
-    (c: { category: string }) => c.category === category.key,
-  )).toBe(true);
-  act(() => tree.root.findByType(CounselorGrid).props.ListFooterComponent.props.onPress());
-  expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
+  const tabs = () => tree.root.findByType(CategoryTabs).props.categories.map((c: { key: string }) => c.key);
+  expect(tabs()).toEqual(['recommended', 'saju', 'lecture', 'meditation']);
+  const pick = (key: string) => act(() => tree.root.findByType(CategoryTabs).props.onChange(key));
+  const footerPress = (testID?: string) =>
+    tree.root.findAll(n => typeof n.props.onPress === 'function' && (!testID || n.props.testID === testID));
+
+  // A counsellor tab: only those counsellors, nothing else under them.
+  pick('saju');
+  expect(tree.root.findByType(CounselorGrid).props.counselors.every((c: { category: string }) => c.category === 'saju')).toBe(true);
+  expect(tree.root.findByType(CounselorGrid).props.ListFooterComponent).toBeUndefined();
+
+  // 강의: no counsellors, the Schopenhauer series, opened at its first lecture.
+  pick('lecture');
+  expect(tree.root.findByType(CounselorGrid).props.counselors).toEqual([]);
+  act(() => footerPress('lecture-series-card')[0].props.onPress());
+  expect(mockNavigate).toHaveBeenCalledWith('Lecture', { chapter: 1, line: 0 });
+
+  // 명상: no counsellors, the breathing room.
+  pick('meditation');
+  expect(tree.root.findByType(CounselorGrid).props.counselors).toEqual([]);
+  expect(tree.root.findAll(n => n.props.testID === 'lecture-series-card')).toHaveLength(0);
+  const meditation = tree.root.findByType(CounselorGrid).props.ListFooterComponent;
+  expect(meditation).toBeDefined();
 });
 
 it('resumes a real conversation with its original subject, skipping empty or removed counselors', async () => {
@@ -89,4 +114,20 @@ it('the 3D pill beside the ticket pill opens the world (spec 004)', async () => 
   expect(pill).toBeDefined();
   act(() => pill.props.onPress());
   expect(mockNavigate).toHaveBeenCalledWith('World');
+});
+
+it('prints the real consultation count from the server, and nothing while it is unknown or zero', async () => {
+  const texts = () => tree.root.findAll(n => n.type === 'Text' as any)
+    .map(n => [].concat(n.props.children).join(''));
+  // Server silent: no card claims any count (the fake 960K is gone).
+  await render();
+  expect(texts().some(t => t.endsWith('회 상담'))).toBe(false);
+  act(() => tree.unmount());
+
+  mockServerCounts = { yuna: 1234, jiho: 7 };
+  await render();
+  const counts = texts().filter(t => t.endsWith('회 상담'));
+  expect(counts).toEqual(expect.arrayContaining(['1.2K회 상담', '7회 상담']));
+  // YunJeong has no consultations yet: her card has no count line at all.
+  expect(counts).toHaveLength(2);
 });

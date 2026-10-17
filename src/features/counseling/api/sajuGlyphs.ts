@@ -83,6 +83,7 @@ const ENDS_LATIN = /[A-Za-z\u00C0-\u024F\u1E00-\u1EFF]$/;
 export function sayGlyphs(text: string, lang: Lang): string {
   const table = TABLES[lang];
   if (!table || !text) return text;
+  if (lang === 'ko') return sayKorean(text, table);
 
   return text.replace(RUN, (run, at: number) => {
     const said = run.split('').map((c: string) => table[c]).join(' ');
@@ -92,4 +93,126 @@ export function sayGlyphs(text: string, lang: Lang): string {
     const padAfter = ENDS_LATIN.test(said) && !!after && LATIN_NEIGHBOUR.test(after);
     return (padBefore ? ' ' : '') + said + (padAfter ? ' ' : '');
   });
+}
+
+/* ── Korean: one word, with the hanja beside it ─────────────────────────────────────────────────
+
+   THE BUG (16-10, "갑 자 이렇게 띄어져 나오는데 갑자일 이라고 해야하고 한자도 넣어줘"). The room's
+   prompt tells the model to write ganji in hanja, so "내일운은?" came back as "10월 17일 甲子일은…",
+   and the run-join above — right for Pinyin, "Jia Zi" — made it "갑 자일". A Korean pillar is ONE
+   word: 갑자일, 병오년, 무술월. And on screen a reader of 명리 expects the characters too, so a pillar
+   is written the way Korean saju text writes it: 갑자일(甲子日), first the reading, then the hanja.
+
+   Only a real pillar gets the gloss: stem + branch of the same parity (甲子 yes, 癸子 never exists).
+   A lone stem or branch stays a bare reading — "월주의 庚과" is "월주의 경과", the particle attaching.
+   The voice must not read the gloss twice; `spokenText` below takes it out again before TTS. */
+
+const KO_UNIT_HANJA: Record<string, string> = { 년: '年', 월: '月', 일: '日', 시: '時' };
+const KO_UNIT_HANGUL: Record<string, string> = { 年: '년', 月: '월', 日: '일', 時: '시' };
+
+/** A pillar (optionally with its unit in hanja or Hangul, optionally glossed "(갑자)" by the model),
+ *  or a lone glyph. Pillars first, so 甲子 is never read as two lone glyphs. A Hangul 일/월/년/시
+ *  followed by 주·간·지·령 is not the pillar's unit but the start of 일주/월간/일지/월령. */
+const KO_TOKEN = new RegExp(
+  `([${STEMS}][${BRANCHES}])([年月日時])?(?:\\s*[(（]\\s*([가-힣]+)\\s*[)）])?([년월일시](?![주간지령]))?|[${STEMS}${BRANCHES}]`,
+  'g',
+);
+
+/** "갑자(甲子)일" → "갑자일(甲子日)": the model's other habit, the unit outside the parenthesis. */
+const KO_UNIT_OUTSIDE = new RegExp(`([가-힣]{2})[(（]([${STEMS}][${BRANCHES}])[)）]([년월일시])`, 'g');
+
+function isPillar(pair: string): boolean {
+  const s = STEMS.indexOf(pair[0]);
+  const b = BRANCHES.indexOf(pair[1]);
+  return s >= 0 && b >= 0 && s % 2 === b % 2;
+}
+
+function sayKorean(text: string, table: Record<string, string>): string {
+  const read = (s: string) => s.replace(/./g, c => table[c] ?? c);
+  const once = text.replace(KO_UNIT_OUTSIDE, (all, reading: string, pair: string, unit: string) =>
+    reading === read(pair) ? `${reading}${unit}(${pair}${KO_UNIT_HANJA[unit]})` : all,
+  );
+  return once.replace(
+    KO_TOKEN,
+    (all: string, pair: string | undefined, hanjaUnit: string | undefined, gloss: string | undefined,
+     hangulUnit: string | undefined, at: number) => {
+      // Already the gloss of a reading written just before it: "갑자일(甲子日)" stays as it is.
+      const before = once[at - 1];
+      if (before === '(' || before === '（') return all;
+      if (!pair) return table[all] ?? all;
+      if (!isPillar(pair)) return read(all);
+
+      const reading = read(pair);
+      // A gloss that is not this pillar's reading is the model's own aside — keep it, after the label.
+      const glossUnit = gloss && gloss.startsWith(reading) ? gloss.slice(reading.length) : undefined;
+      const strayGloss = gloss !== undefined && glossUnit === undefined ? `(${gloss})` : '';
+      const unitKo =
+        (hanjaUnit && KO_UNIT_HANGUL[hanjaUnit]) ||
+        (glossUnit && KO_UNIT_HANJA[glossUnit] ? glossUnit : undefined) ||
+        hangulUnit ||
+        '';
+      const label = `${reading}${unitKo}(${pair}${unitKo ? KO_UNIT_HANJA[unitKo] : ''})`;
+      // A Hangul unit that lost to the hanja one ("甲子年월") is not the pillar's — give it back.
+      const tail = hangulUnit && unitKo !== hangulUnit ? hangulUnit : '';
+      return label + strayGloss + tail;
+    },
+  );
+}
+
+/** Hanja glossed after a Hangul word — "갑자일(甲子日)", "정관(正官)". The screen shows them; a
+ *  voice reading them would say the word twice, or say it in Chinese. */
+const HANJA_GLOSS = /([가-힣])\s*[(（][\u3400-\u9FFF]+[)）]/g;
+
+/**
+ * The text as the counselor SAYS it. The room sends the bubble's string to TTS (Unity speaks
+ * `STAGE_SPEAK.text` and shows nothing of it), so the gloss added for the eye comes out here.
+ * Only after Hangul: in ja/zh the characters ARE the words, and a parenthesis there is content.
+ */
+export function spokenText(text: string): string {
+  if (!text) return text;
+  const out = text.replace(HANJA_GLOSS, '$1');
+  // An answer in a Latin-script language that kept its hanja (asked in English in a Korean app —
+  // see `replyLangFor`): the screen keeps "Mu-jin/戊辰", the voice says "Mu-jin" — and a bare
+  // 甲子 is read the way that language's own answers read it, not in Chinese.
+  const lang = scriptLang(out);
+  if (lang !== 'en' && lang !== 'vi') return out;
+  return sayGlyphs(out.replace(LATIN_HANJA_GLOSS, '$1').replace(EMPTY_PARENS, ''), lang);
+}
+
+/* ── Which language a text is in, by its script ─────────────────────────────────────────────────
+
+   16-10 ("영어로 질문했는데 한글이 섞여있어"). The counsellor answers in the language she is asked
+   in (the server's rule), but the room assumed the APP's language: in a Korean app an English
+   question got a Korean "잠깐만요…" before the English answer, and the answer's hanja were turned
+   into Korean readings mid-English — "(Mu-jin/무진(戊辰))". Script alone decides it, and only
+   across scripts: Latin text in an English or Vietnamese app is that app's language (a Vietnamese
+   player typing without diacritics is not writing English). */
+
+const HANGUL = /[\uAC00-\uD7A3]/g;
+const KANA = /[\u3040-\u30FF]/g;
+const HAN = /[\u3400-\u9FFF]/g;
+const LATIN = /[A-Za-z\u00C0-\u024F\u1E00-\u1EFF]/g;
+const VI_MARKS = /[ăâđêôơưĂÂĐÊÔƠƯ\u1EA0-\u1EF9]/;
+const LATIN_HANJA_GLOSS = /([A-Za-z\u00C0-\u024F\u1E00-\u1EFF.'’-])\s*(?:\/\s*[\u3400-\u9FFF]+|[(（][\u3400-\u9FFF]+[)）])/g;
+const EMPTY_PARENS = /\s*[(（]\s*[)）]/g;
+
+const count = (text: string, re: RegExp) => (text.match(re) ?? []).length;
+
+/** The language `text` is written in, by script: ko, ja, zh-CN, vi or en; null when it has no letters. */
+export function scriptLang(text: string): Lang | null {
+  const ko = count(text, HANGUL), kana = count(text, KANA), han = count(text, HAN), latin = count(text, LATIN);
+  if (ko + kana + han + latin === 0) return null;
+  if (latin > ko + kana + han) return VI_MARKS.test(text) ? 'vi' : 'en';
+  if (ko > 0 && ko >= kana) return 'ko';
+  if (kana > 0) return 'ja';
+  return 'zh-CN';
+}
+
+/** The language her answer to `question` will be in: the app's, unless the question is plainly in
+ *  another script. Latin vs Latin, and Chinese in either written form, keep the app's language. */
+export function replyLangFor(question: string, appLang: Lang): Lang {
+  const said = scriptLang(question);
+  if (!said) return appLang;
+  const family = (l: Lang) => (l === 'en' || l === 'vi' ? 'latin' : l === 'zh-TW' ? 'zh-CN' : l);
+  return family(said) === family(appLang) ? appLang : said;
 }
