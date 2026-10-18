@@ -34,6 +34,7 @@ const PERSONAS = {
   metal: { preset: 'sudam', register: 'default' },        // 테오
   wood: { preset: 'sunyeo', register: 'default' },        // 유나
   dosa: { preset: 'dosa', register: 'default' },          // 지호
+  luna: { preset: 'luna', register: 'default' },          // 루나 (Unity persona folder `luna`, once it exists)
 };
 
 const args = process.argv.slice(2);

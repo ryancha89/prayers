@@ -895,6 +895,86 @@ const RAW: RawCounselor[] = [
       },
     },
   },
+  /**
+   * Luna (루나) — the starlight-temple oracle, from the reference art delivered 17-10
+   * (별빛 신전의 천상 오라클: crescent-moon ornament, lavender robes, armillary lantern).
+   *
+   * She reads the SAME chart every counsellor reads — the stars and the moon are how she SPEAKS
+   * about it (server persona `luna`), not a second system. Her card art is cropped from the
+   * reference. Her model (17-10) is built on Go Yunjung's rig, so she performs f_char_003's clips —
+   * hence Yunjung's preview actions, rendered from Luna's own model in her own room.
+   */
+  {
+    id: 'luna',
+    accent: '#9B8AC4',
+    category: 'saju',
+    isNew: true,
+    characterId: 'luna_01',
+    roomId: 'luna_room',
+    previewActions: PREVIEW_ACTIONS_YUNJUNG,
+    l10n: {
+      ko: {
+        name: '루나',
+        title: '별빛 신전의 오라클',
+        hook: '별과 달이 비춰주는 당신의 길, 함께 읽어드릴게요.',
+        about:
+          '루나는 별빛 신전에서 등불을 들고 당신의 길을 비춰요. 사주의 흐름을 별자리처럼 이어 읽고, 막막한 밤에도 다음 걸음이 어디로 이어지는지 다정하고 또렷하게 짚어줍니다.',
+        personality: ['다정함', '직관적', '몽환적'],
+        specialties: ['위로', '인생의 흐름', '연애', '선택'],
+        tags: ['#별빛', '#직관', '#위로'],
+      },
+      en: {
+        name: 'Luna',
+        title: 'Oracle of the Starlight Temple',
+        hook: 'Let us read the path the stars and the moon are lighting for you.',
+        about:
+          'Luna carries her lantern through the starlight temple to light your way. She reads the flow of your chart like a constellation, and even on the darkest night she shows you — gently, and clearly — where the next step leads.',
+        personality: ['Gentle', 'Intuitive', 'Dreamy'],
+        specialties: ['Comfort', 'Life flow', 'Love', 'Choices'],
+        tags: ['#Starlight', '#Intuition', '#Comfort'],
+      },
+      ja: {
+        name: 'ルナ',
+        title: '星明かりの神殿のオラクル',
+        hook: '星と月が照らすあなたの道を、一緒に読みましょう。',
+        about:
+          'ルナは星明かりの神殿で灯りを掲げ、あなたの道を照らします。命式の流れを星座のようにつないで読み、迷う夜にも次の一歩の行き先を、やさしく、はっきりと示してくれます。',
+        personality: ['やさしさ', '直感', '夢見がち'],
+        specialties: ['癒し', '人生の流れ', '恋愛', '選択'],
+        tags: ['#星明かり', '#直感', '#癒し'],
+      },
+      'zh-CN': {
+        name: '露娜',
+        title: '星光神殿的神谕者',
+        hook: '星星和月亮照亮的那条路，我陪你一起读。',
+        about:
+          '露娜在星光神殿里提着灯，为你照亮前路。她把命盘的流向像星座一样连起来读，即使在迷茫的夜里，也会温柔而清楚地告诉你下一步通向哪里。',
+        personality: ['温柔', '直觉敏锐', '梦幻'],
+        specialties: ['安慰', '人生走向', '感情', '抉择'],
+        tags: ['#星光', '#直觉', '#安慰'],
+      },
+      'zh-TW': {
+        name: '露娜',
+        title: '星光神殿的神諭者',
+        hook: '星星和月亮照亮的那條路，我陪你一起讀。',
+        about:
+          '露娜在星光神殿裡提著燈，為你照亮前路。她把命盤的流向像星座一樣連起來讀，即使在迷惘的夜裡，也會溫柔而清楚地告訴你下一步通向哪裡。',
+        personality: ['溫柔', '直覺敏銳', '夢幻'],
+        specialties: ['安慰', '人生走向', '感情', '抉擇'],
+        tags: ['#星光', '#直覺', '#安慰'],
+      },
+      vi: {
+        name: 'Luna',
+        title: 'Nhà tiên tri của Đền Ánh Sao',
+        hook: 'Con đường sao và trăng đang soi cho bạn, mình cùng đọc nhé.',
+        about:
+          'Luna cầm đèn trong Đền Ánh Sao để soi đường cho bạn. Cô đọc dòng chảy lá số như nối những vì sao thành chòm, và ngay cả trong đêm tối nhất, cô vẫn dịu dàng, rõ ràng chỉ cho bạn bước tiếp theo dẫn về đâu.',
+        personality: ['Dịu dàng', 'Trực giác', 'Mơ mộng'],
+        specialties: ['An ủi', 'Dòng đời', 'Tình cảm', 'Lựa chọn'],
+        tags: ['#ÁnhSao', '#TrựcGiác', '#AnỦi'],
+      },
+    },
+  },
 ];
 
 function localize(raw: RawCounselor, lang: Lang): CounselorSummary {

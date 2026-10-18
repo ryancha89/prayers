@@ -30,7 +30,7 @@ export const JourneySajuScreen: React.FC = () => {
   const t = useT();
   const journey = JOURNEYS[params.journeyId];
   const who = useJourneySubject();
-  const chart = useSajuChart(who.birthDate, who.birthTime);
+  const chart = useSajuChart(who.birthDate, who.birthTime, who.birthPlace);
   if (!journey) return null;
 
   const isSelf = who.id === 'self' || who.isUser;
@@ -79,7 +79,7 @@ export const JourneySajuScreen: React.FC = () => {
 
         {hasBirthData(who) && (
           <SajuChartPanel
-            person={{ birthDate: who.birthDate!, birthTime: who.birthTime, gender: who.gender! }}
+            person={{ birthDate: who.birthDate!, birthTime: who.birthTime, birthPlace: who.birthPlace, gender: who.gender! }}
             other={!isSelf}
           />
         )}

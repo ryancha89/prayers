@@ -239,6 +239,24 @@ export const CATEGORY_ICON: Record<ArchiveCategory, IconName> = {
   manual: 'book',
 };
 
+/** Each category's own colour on the Archive tab (10-17 redesign): its icon tile, its progress bar.
+ *  Drawn from the app's accents and their neighbours, so the grid reads as a set, not a rainbow. */
+export const CATEGORY_ACCENT: Record<ArchiveCategory, string> = {
+  profile: '#A78BFA',
+  interest: '#F472B6',
+  relationship: '#FB923C',
+  career: '#60A5FA',
+  story: '#34D399',
+  diary: '#E9C46A',
+  goal: '#F87171',
+  wish: '#C084FC',
+  plan: '#22D3EE',
+  possession: '#FBBF24',
+  like: '#F9A8D4',
+  dislike: '#94A3B8',
+  manual: '#B4B4C4',
+};
+
 export const MOOD_ICON: Record<string, IconName> = {
   great: 'faceGreat',
   good: 'faceGood',

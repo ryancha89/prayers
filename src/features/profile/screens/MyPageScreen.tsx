@@ -18,7 +18,8 @@ import { useCoins } from '../../coins/store/coinStore';
 import { refreshCoins } from '../../coins/api/coinsApi';
 import { formatCoins } from '../../coins/format';
 import { sfx } from '../../../shared/audio/sfx';
-import { useAuthStore } from '../../auth/store/authStore';
+import { signedOut, useAuthStore } from '../../auth/store/authStore';
+import { forgetLocalData } from '../../auth/api/deleteAccount';
 import { column } from '../../../shared/device/screen';
 import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 import { useAvatarStore } from '../avatar/avatarStore';
@@ -253,7 +254,7 @@ export const MyPageScreen: React.FC = () => {
               deletion inside Account); notifications stays inert until there are notifications to
               settle, and says so by not looking tappable. */}
           <Row label={t('my.account')} onPress={() => navigation.navigate('Account')} />
-          <Row label={t('my.notifications')} />
+          <Row label={t('my.notifications')} onPress={() => navigation.navigate('Notifications')} />
           <Row
             label={t('my.terms')}
             onPress={() => navigation.navigate('Legal', { doc: 'terms' })}
@@ -263,6 +264,21 @@ export const MyPageScreen: React.FC = () => {
             onPress={() => navigation.navigate('Legal', { doc: 'privacy' })}
           />
         </Section>
+        {/* Sign out where people look for it (10-17: "로그아웃 버튼없음?" — it was only inside 계정).
+            Same as Account's: clears this device, leaves the server account alone. Asks once. */}
+        <Pressable
+          testID="mypage-sign-out"
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.signOut, pressed && styles.settingRowPressed]}
+          onPress={() => {
+            sfx.tap();
+            Alert.alert(t('account.signOut'), undefined, [
+              { text: t('account.cancel'), style: 'cancel' },
+              { text: t('account.signOut'), style: 'destructive', onPress: () => { forgetLocalData().finally(() => signedOut()); } },
+            ]);
+          }}>
+          <Text style={styles.signOutText}>{t('account.signOut')}</Text>
+        </Pressable>
         <MiniPlayerSpacer />
       </ScrollView>
     </SafeAreaView>
@@ -419,6 +435,11 @@ const styles = StyleSheet.create({
   creditBtn: { height: 44, paddingHorizontal: spacing.lg },
   section: { marginTop: spacing.lg, paddingHorizontal: spacing.lg },
   sectionTitle: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.sm },
+  signOut: {
+    marginTop: spacing.lg, marginHorizontal: spacing.lg, paddingVertical: spacing.md,
+    borderRadius: radius.lg, backgroundColor: colors.card, alignItems: 'center',
+  },
+  signOutText: { ...typography.body, color: '#F87171', fontWeight: '600' },
   sectionCard: { backgroundColor: colors.card, borderRadius: radius.lg, overflow: 'hidden' },
   settingRow: {
     flexDirection: 'row',

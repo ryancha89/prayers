@@ -1,4 +1,9 @@
 import {
+  CafeBridge,
+  CafeInitPayload,
+  CafeRevealCard,
+  CafeTarotSpeak,
+  CafeTarotStart,
   MyRoomAction,
   MyRoomBook,
   MyRoomBridge,
@@ -28,7 +33,7 @@ import {
  * Keep this the ONLY place that knows Unity is not yet real. UI code depends
  * solely on the `UnityBridge` interface (rule §52-7).
  */
-export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge {
+export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, CafeBridge {
   private handlers = new Set<(e: UnityToRNEvent) => void>();
   private ready = false;
   private lastPayload?: UnitySessionPayload;
@@ -170,6 +175,37 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge {
   sendMyRoomAdd(item: string): void { this.myRoomEdits.push({ type: 'MYROOM_ADD', payload: { item } }); }
   sendMyRoomRemove(): void { this.myRoomEdits.push({ type: 'MYROOM_REMOVE' }); }
   sendMyRoomTheme(theme: string): void { this.myRoomEdits.push({ type: 'MYROOM_THEME', payload: { theme } }); }
+
+  /* ---- CafeBridge. Accepts every call; no cafe loads, so CAFE_READY never comes and the screen stays
+     on its picture — the whole no-Unity experience. Recorded for tests. ---- */
+
+  lastCafeInit?: CafeInitPayload;
+  cafeOpen = false;
+  cafeCamera: MyRoomCamera | null = null;
+  cafeCalls: { type: string; payload?: unknown }[] = [];
+
+  openCafe(init: CafeInitPayload): void {
+    this.lastCafeInit = init;
+    this.cafeOpen = true;
+  }
+
+  closeCafe(): void {
+    this.cafeOpen = false;
+    this.cafeCamera = null;
+  }
+
+  sendCafeCamera(camera: MyRoomCamera): void { this.cafeCamera = { ...camera }; }
+  sendCafeSit(spot: string): void { this.cafeCalls.push({ type: 'CAFE_SIT', payload: { spot } }); }
+  sendCafeSay(text: string): void { this.cafeCalls.push({ type: 'CAFE_SAY', payload: { text } }); }
+  sendCafeShot(): void { this.cafeCalls.push({ type: 'CAFE_SHOT' }); }
+  sendCafeStand(): void { this.cafeCalls.push({ type: 'CAFE_STAND' }); }
+  sendCafeTarotStart(start: CafeTarotStart): void { this.cafeCalls.push({ type: 'CAFE_TAROT_START', payload: { ...start } }); }
+  sendCafeTarotSpread(): void { this.cafeCalls.push({ type: 'CAFE_TAROT_SPREAD' }); }
+  sendCafeTarotReveal(cards: CafeRevealCard[]): void { this.cafeCalls.push({ type: 'CAFE_TAROT_REVEAL', payload: { cards } }); }
+  sendCafeTarotSpeak(speak: CafeTarotSpeak): void { this.cafeCalls.push({ type: 'CAFE_TAROT_SPEAK', payload: { ...speak } }); }
+  sendCafeTarotEnd(): void { this.cafeCalls.push({ type: 'CAFE_TAROT_END' }); }
+  sendCafeCoffeeOrder(): void { this.cafeCalls.push({ type: 'CAFE_COFFEE_ORDER' }); }
+  sendCafeCookieFortune(text: string): void { this.cafeCalls.push({ type: 'CAFE_COOKIE_FORTUNE', payload: { text } }); }
 
   onEvent(handler: (event: UnityToRNEvent) => void): () => void {
     this.handlers.add(handler);

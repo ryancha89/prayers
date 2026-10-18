@@ -153,12 +153,12 @@ describe('card order', () => {
     const order = ids();
     expect(order.slice(0, 2)).toEqual(['yunjung', 'theo']);
     expect(order).toEqual(
-      expect.arrayContaining(['yuna', 'jiho', 'yunjung', 'theo', 'breathe']),
+      expect.arrayContaining(['yuna', 'jiho', 'yunjung', 'theo', 'breathe', 'luna']),
     );
     // Nabi (the pixel cat) is playable but hidden from the feed for now (27-09) — resolvable by id.
     expect(order).not.toContain('nabi');
     expect(getLocalizedCounselor('nabi', 'ko')?.name).toBe('나비');
-    expect(order).toHaveLength(5);
+    expect(order).toHaveLength(6);
   });
 });
 

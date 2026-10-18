@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
@@ -13,6 +14,7 @@ import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsSto
 import { getUnityBridge } from '../bridge';
 import { roomSubjects } from '../bridge/subjectPayload';
 import type { CounselingSubject } from '../types';
+import { ALL_ORIENTATIONS } from '../../coins/components/CoinShopSheet';
 
 /**
  * Whose chart the room is reading, switchable without leaving it (10-13, "대화하는 사람 바꿀수있게").
@@ -29,6 +31,7 @@ export const SubjectSwitcher: React.FC<{ initialId: string }> = ({ initialId }) 
   const saved = useSubjectsStore(s => s.subjects);
   const [currentId, setCurrentId] = useState(initialId);
   const [open, setOpen] = useState(false);
+  const safe = useSafeAreaInsets();
 
   const people = [self, ...saved];
   const current = people.find(p => p.id === currentId) ?? self;
@@ -57,8 +60,10 @@ export const SubjectSwitcher: React.FC<{ initialId: string }> = ({ initialId }) 
         <Icon name="back" size={12} color={colors.gold} style={styles.chevron} />
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.scrim} onPress={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}
+        supportedOrientations={[...ALL_ORIENTATIONS]}>
+        <Pressable style={[styles.scrim, { paddingLeft: safe.left + spacing.xl, paddingRight: safe.right + spacing.xl,
+          paddingTop: safe.top + spacing.md, paddingBottom: safe.bottom + spacing.md }]} onPress={() => setOpen(false)}>
           <Pressable style={styles.sheet} onPress={() => {}}>
             <Text style={styles.title}>{t('room.subject.title')}</Text>
             <Text style={styles.note}>{t('room.subject.note')}</Text>
@@ -111,10 +116,11 @@ const styles = StyleSheet.create({
   pillText: { ...typography.caption, color: IVORY, fontWeight: '700', flexShrink: 1 },
   chevron: { transform: [{ rotate: '-90deg' }] },
   pressed: { opacity: 0.7 },
-  scrim: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: spacing.xl },
+  // Centred, phone-card width in landscape too — not a bar across the notch (10-17).
+  scrim: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', alignItems: 'center' },
   sheet: {
     backgroundColor: colors.bgElevated, borderRadius: radius.lg, padding: spacing.lg,
-    borderWidth: 1, borderColor: 'rgba(233,196,106,0.35)', maxHeight: '75%',
+    borderWidth: 1, borderColor: 'rgba(233,196,106,0.35)', maxHeight: '100%', width: '100%', maxWidth: 440,
   },
   title: { ...typography.h3, color: colors.textPrimary },
   note: { ...typography.caption, color: colors.textSecondary, marginTop: 4, marginBottom: spacing.md },

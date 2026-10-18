@@ -8,9 +8,10 @@ import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import type { RootStackParamList } from '../../../navigation/types';
-import { useArchiveStore } from '../store/archiveStore';
+import { COMPLETION_TARGET, useArchiveStore } from '../store/archiveStore';
 import { syncArchive } from '../api/memoriesApi';
-import { CATEGORIES, CATEGORY_ICON, MOOD_ICON, type ArchiveCategory } from '../types';
+import Svg, { Circle } from 'react-native-svg';
+import { CATEGORIES, CATEGORY_ACCENT, CATEGORY_ICON, MOOD_ICON, type ArchiveCategory } from '../types';
 import { dayKey, questionFor } from '../questions';
 import { MemoryEditor } from '../components/MemoryEditor';
 import { useSavedJourneys } from '../../journey/store/savedJourneysStore';
@@ -69,6 +70,14 @@ export const ArchiveScreen: React.FC = () => {
   }, [memories]);
 
   const recentDiary = memories.filter(m => m.category === 'diary').slice(0, 3);
+  // The meter's two plain numbers, and the one piece to fill next: the first card in display order
+  // still short of its share (the meter counts each card only up to COMPLETION_TARGET).
+  const filled = CATEGORIES.filter(c => (counts[c] ?? 0) > 0).length;
+  const next = CATEGORIES.find(c => (counts[c] ?? 0) < COMPLETION_TARGET[c]);
+  const openCategory = (c: ArchiveCategory) => {
+    sfx.tap();
+    navigation.navigate('ArchiveSection', { category: c });
+  };
 
   const keepAnswer = () => {
     if (!question || !answer.trim()) return;
@@ -89,12 +98,32 @@ export const ArchiveScreen: React.FC = () => {
         <Text style={styles.title}>{t('archive.title')}</Text>
         <Text style={styles.tagline}>{t('archive.tagline')}</Text>
 
-        {/* The meter. Reachable on purpose — see COMPLETION_TARGET. */}
-        <View style={styles.meterCard}>
-          <Text style={styles.meterLabel}>{t('archive.completion', { percent: completion })}</Text>
-          <View style={styles.meterTrack}>
-            <View style={[styles.meterFill, { width: `${Math.max(2, completion)}%` }]} />
+        {/* The meter, as a ring with the two numbers behind it and the next piece to fill.
+            Reachable on purpose — see COMPLETION_TARGET. */}
+        <View style={styles.meterCard} testID="archive-meter">
+          <View style={styles.meterTop}>
+            <CompletionRing percent={completion} />
+            <View style={styles.meterText}>
+              <Text style={styles.meterLabel}>{t('archive.completion', { percent: completion })}</Text>
+              <Text style={styles.meterStats}>
+                {t('archive.stats', { count: memories.length, filled, total: CATEGORIES.length })}
+              </Text>
+            </View>
           </View>
+          {next && (
+            <Pressable
+              testID="archive-next"
+              onPress={() => openCategory(next)}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.nextRow, pressed && styles.cellPressed]}>
+              <View style={[styles.nextTile, { backgroundColor: `${CATEGORY_ACCENT[next]}24` }]}>
+                <Icon name={CATEGORY_ICON[next]} size={16} color={CATEGORY_ACCENT[next]} />
+              </View>
+              <Text style={styles.nextLabel}>{t('archive.next')}</Text>
+              <Text style={styles.nextName} numberOfLines={1}>{t(`archive.cat.${next}` as TranslationKey)}</Text>
+              <Icon name="chevronRight" size={14} color={colors.textMuted} />
+            </Pressable>
+          )}
         </View>
 
         {/* What a counsellor heard, waiting for a verdict. */}
@@ -158,33 +187,42 @@ export const ArchiveScreen: React.FC = () => {
 
         {/* Today's question — one line, filed where it belongs. */}
         <View style={styles.questionCard}>
-          <Text style={styles.questionLabel}>{t('archive.question.title')}</Text>
+          <View style={styles.questionHead}>
+            <Icon name="sparkle" size={14} color={colors.violetSoft} />
+            <Text style={[styles.questionLabel, styles.grow]}>{t('archive.question.title')}</Text>
+            {question && (
+              <Pressable
+                onPress={() => {
+                  sfx.tap();
+                  markAnswered(question.id);
+                }}
+                hitSlop={8}
+                accessibilityRole="button">
+                <Text style={styles.skipText}>{t('archive.question.skip')}</Text>
+              </Pressable>
+            )}
+          </View>
           {question ? (
             <>
               <Text style={styles.questionText}>{t(`archive.q.${question.id}` as TranslationKey)}</Text>
-              <TextInput
-                style={styles.questionInput}
-                value={answer}
-                onChangeText={setAnswer}
-                placeholder={t('archive.question.placeholder')}
-                placeholderTextColor={colors.textMuted}
-                onSubmitEditing={keepAnswer}
-                returnKeyType="done"
-              />
-              <View style={styles.questionActions}>
-                <Pressable
-                  onPress={() => {
-                    sfx.tap();
-                    markAnswered(question.id);
-                  }}
-                  style={styles.smallBtn}>
-                  <Text style={styles.smallBtnText}>{t('archive.question.skip')}</Text>
-                </Pressable>
+              {/* One line and its send button, as a chat's input: the answer is the only action. */}
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={styles.questionInput}
+                  value={answer}
+                  onChangeText={setAnswer}
+                  placeholder={t('archive.question.placeholder')}
+                  placeholderTextColor={colors.textMuted}
+                  onSubmitEditing={keepAnswer}
+                  returnKeyType="done"
+                />
                 <Pressable
                   disabled={!answer.trim()}
                   onPress={keepAnswer}
-                  style={[styles.smallBtn, styles.smallBtnPrimary, !answer.trim() && styles.disabled]}>
-                  <Text style={styles.smallBtnTextPrimary}>{t('archive.question.save')}</Text>
+                  accessibilityRole="button"
+                  accessibilityLabel={t('archive.question.save')}
+                  style={[styles.sendBtn, !answer.trim() && styles.disabled]}>
+                  <Icon name="send" size={18} color={colors.textPrimary} />
                 </Pressable>
               </View>
             </>
@@ -235,21 +273,31 @@ export const ArchiveScreen: React.FC = () => {
 
         <Text style={styles.sectionTitle}>{t('archive.sections')}</Text>
         <View style={styles.grid}>
-          {CATEGORIES.map(c => (
-            <Pressable
-              key={c}
-              style={({ pressed }) => [styles.cell, pressed && styles.cellPressed]}
-              onPress={() => {
-                sfx.tap();
-                navigation.navigate('ArchiveSection', { category: c });
-              }}>
-              <Icon name={CATEGORY_ICON[c]} size={26} color={colors.violetSoft} testID={`archive-cell-icon-${c}`} />
-              <Text style={styles.cellTitle} numberOfLines={2}>
-                {t(`archive.cat.${c}` as TranslationKey)}
-              </Text>
-              <Text style={styles.cellCount}>{t('archive.count', { count: counts[c] ?? 0 })}</Text>
-            </Pressable>
-          ))}
+          {CATEGORIES.map(c => {
+            const n = counts[c] ?? 0;
+            const accent = CATEGORY_ACCENT[c];
+            const share = Math.min(1, n / COMPLETION_TARGET[c]);
+            return (
+              <Pressable
+                key={c}
+                testID={`archive-cell-${c}`}
+                style={({ pressed }) => [styles.cell, pressed && styles.cellPressed]}
+                onPress={() => openCategory(c)}>
+                <View style={styles.cellHead}>
+                  <View style={[styles.cellTile, { backgroundColor: `${accent}24` }]}>
+                    <Icon name={CATEGORY_ICON[c]} size={22} color={accent} testID={`archive-cell-icon-${c}`} />
+                  </View>
+                  <Text style={[styles.cellCount, n > 0 && { color: accent }]}>{t('archive.count', { count: n })}</Text>
+                </View>
+                <Text style={styles.cellTitle} numberOfLines={2}>
+                  {t(`archive.cat.${c}` as TranslationKey)}
+                </Text>
+                <View style={styles.cellTrack}>
+                  <View style={[styles.cellFill, { width: `${share * 100}%`, backgroundColor: accent }]} />
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
 
         {recentDiary.length > 0 && (
@@ -277,15 +325,57 @@ export const ArchiveScreen: React.FC = () => {
   );
 };
 
+/** The meter's ring: gold over the elevated track, starting at twelve o'clock. */
+const RING = 76;
+const RING_STROKE = 7;
+const CompletionRing: React.FC<{ percent: number }> = ({ percent }) => {
+  const r = (RING - RING_STROKE) / 2;
+  const len = 2 * Math.PI * r;
+  return (
+    <View style={styles.ring}>
+      <Svg width={RING} height={RING} style={styles.ringSvg}>
+        <Circle cx={RING / 2} cy={RING / 2} r={r} stroke={colors.bgElevated} strokeWidth={RING_STROKE} fill="none" />
+        <Circle
+          cx={RING / 2}
+          cy={RING / 2}
+          r={r}
+          stroke={colors.gold}
+          strokeWidth={RING_STROKE}
+          strokeLinecap="round"
+          fill="none"
+          strokeDasharray={`${len} ${len}`}
+          strokeDashoffset={len * (1 - Math.max(0.02, Math.min(1, percent / 100)))}
+          transform={`rotate(-90 ${RING / 2} ${RING / 2})`}
+        />
+      </Svg>
+      <Text style={styles.ringText}>{percent}%</Text>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: spacing.xl, paddingBottom: spacing.xxl, gap: spacing.lg },
   title: { ...typography.hero, color: colors.textPrimary },
-  tagline: { ...typography.body, color: colors.textSecondary, marginTop: -spacing.sm },
-  meterCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
-  meterLabel: { ...typography.h3, color: colors.gold },
-  meterTrack: { height: 8, borderRadius: radius.pill, backgroundColor: colors.bgElevated, overflow: 'hidden' },
-  meterFill: { height: 8, borderRadius: radius.pill, backgroundColor: colors.gold },
+  tagline: { ...typography.caption, color: colors.textSecondary, marginTop: -spacing.sm, lineHeight: 19 },
+  meterCard: {
+    backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md,
+    borderWidth: 1, borderColor: colors.goldDim,
+  },
+  meterTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  meterText: { flex: 1, gap: spacing.xs },
+  meterLabel: { ...typography.h3, color: colors.textPrimary },
+  meterStats: { ...typography.caption, color: colors.textSecondary },
+  ring: { width: RING, height: RING, alignItems: 'center', justifyContent: 'center' },
+  ringSvg: { position: 'absolute' },
+  ringText: { ...typography.h3, color: colors.gold },
+  nextRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: radius.md, backgroundColor: colors.bgElevated,
+  },
+  nextTile: { width: 28, height: 28, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  nextLabel: { ...typography.caption, color: colors.textMuted },
+  nextName: { ...typography.bodyStrong, color: colors.textPrimary, flex: 1 },
   discoverCard: {
     backgroundColor: colors.card,
     borderRadius: radius.lg,
@@ -298,18 +388,25 @@ const styles = StyleSheet.create({
   discoverRow: { gap: spacing.sm },
   discoverText: { ...typography.body, color: colors.textPrimary },
   discoverActions: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  questionCard: { backgroundColor: colors.violetDim, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
-  questionLabel: { ...typography.tiny, color: colors.violetSoft, textTransform: 'uppercase' },
-  questionText: { ...typography.h3, color: colors.textPrimary },
+  questionCard: {
+    backgroundColor: colors.violetDim, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md,
+    borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.22)',
+  },
+  questionHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  questionLabel: { ...typography.tiny, color: colors.violetSoft, textTransform: 'uppercase', letterSpacing: 0.6 },
+  skipText: { ...typography.caption, color: colors.textMuted },
+  questionText: { ...typography.h2, color: colors.textPrimary, lineHeight: 27 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   questionInput: {
     ...typography.body,
+    flex: 1,
     color: colors.textPrimary,
     backgroundColor: colors.bgElevated,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  questionActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
+  sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.violet, alignItems: 'center', justifyContent: 'center' },
   smallBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.bgElevated },
   smallBtnPrimary: { backgroundColor: colors.violet },
   smallBtnText: { ...typography.caption, color: colors.textSecondary },
@@ -323,11 +420,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.lg,
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   cellPressed: { backgroundColor: colors.cardPressed },
-  cellTitle: { ...typography.bodyStrong, color: colors.textPrimary },
-  cellCount: { ...typography.caption, color: colors.textMuted },
+  cellHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cellTile: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  cellTitle: { ...typography.bodyStrong, color: colors.textPrimary, minHeight: 22 },
+  cellCount: { ...typography.caption, color: colors.textMuted, fontWeight: '700' },
+  cellTrack: { height: 4, borderRadius: radius.pill, backgroundColor: colors.bgElevated, overflow: 'hidden' },
+  cellFill: { height: 4, borderRadius: radius.pill },
   recent: { gap: spacing.md },
   diaryRow: { flexDirection: 'row', gap: spacing.md, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md },
   diaryIcon: { marginTop: 2 },

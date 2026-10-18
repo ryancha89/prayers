@@ -155,28 +155,33 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   // ── A locked moment: the offer, unlock, or later ──────────────────────────────────────
   if (s.moment === 'locked' && s.stage === '') {
     return (
-      <View style={[center, styles.dim]}>
-        <View style={[styles.lockBadge, landscape && styles.lockBadgeSide]}>
-          <Icon name="lock" size={landscape ? 22 : 30} color={colors.gold} />
+      // One card, like every other stage card — not a dimmed slab over the whole window (10-17).
+      <View style={center}>
+        <View style={[styles.card, styles.lockCard, landscape && styles.cardSide]}>
+          <View style={[styles.lockBadge, landscape && styles.lockBadgeSide]}>
+            <Icon name="lock" size={landscape ? 18 : 24} color={colors.gold} />
+          </View>
+          {/* The offer is what gives way to a short window; the buttons under it never do. */}
+          <ScrollView style={styles.shrink} contentContainerStyle={styles.teaserBody} bounces={false}>
+            <Text style={[styles.teaser, landscape && styles.teaserSide]}>{teaserOf(s)}</Text>
+          </ScrollView>
+          <Pressable style={[styles.primary, styles.fixed, styles.wide, s.unlocking && styles.busy]} disabled={s.unlocking}
+            onPress={() => { sfx.select(); s.unlock(); }} accessibilityRole="button"
+            accessibilityLabel={`${price ?? ''} ${t('journey.moment.unlock')}`}>
+            {s.unlocking ? <ActivityIndicator color={INK} /> : (
+              <>
+                {!!price && <><Icon name="coin" size={18} color={INK} /><Text style={styles.primaryText}>{price}</Text></>}
+                <Text style={styles.primaryText}>{t('journey.moment.unlock')}</Text>
+              </>
+            )}
+          </Pressable>
+          <View style={[styles.lockFoot, styles.fixed]}>
+            <UnlockNote error={s.unlockError} coins={coins} price={price} />
+            <Pressable hitSlop={8} disabled={s.unlocking} onPress={() => { sfx.tap(); s.later(); }} accessibilityRole="button">
+              <Text style={styles.laterText}>{t('journey.moment.later')}</Text>
+            </Pressable>
+          </View>
         </View>
-        {/* The offer is what gives way to a short window; the buttons under it never do. */}
-        <ScrollView style={styles.shrink} contentContainerStyle={styles.teaserBody} bounces={false}>
-          <Text style={styles.teaser}>{teaserOf(s)}</Text>
-        </ScrollView>
-        <Pressable style={[styles.primary, styles.fixed, s.unlocking && styles.busy]} disabled={s.unlocking}
-          onPress={() => { sfx.select(); s.unlock(); }} accessibilityRole="button"
-          accessibilityLabel={`${price ?? ''} ${t('journey.moment.unlock')}`}>
-          {s.unlocking ? <ActivityIndicator color={INK} /> : (
-            <>
-              {!!price && <><Icon name="coin" size={18} color={INK} /><Text style={styles.primaryText}>{price}</Text></>}
-              <Text style={styles.primaryText}>{t('journey.moment.unlock')}</Text>
-            </>
-          )}
-        </Pressable>
-        <Pressable style={[styles.secondary, styles.fixed]} disabled={s.unlocking} onPress={() => { sfx.tap(); s.later(); }} accessibilityRole="button">
-          <Text style={styles.secondaryText}>{t('journey.moment.later')}</Text>
-        </Pressable>
-        <UnlockNote error={s.unlockError} coins={coins} price={price} />
       </View>
     );
   }
@@ -318,6 +323,11 @@ const styles = StyleSheet.create({
   },
   lockBadgeSide: { width: 44, height: 44, borderRadius: 22 },
   teaserBody: { alignItems: 'center' },
+  lockCard: { width: '86%', maxWidth: 420 },
+  teaserSide: { ...typography.bodyStrong, lineHeight: 22 },
+  wide: { alignSelf: 'stretch' },
+  lockFoot: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  laterText: { ...typography.caption, color: colors.textSecondary },
   teaser: { ...typography.h3, color: colors.textPrimary, textAlign: 'center', paddingHorizontal: spacing.md, lineHeight: 26 },
   primary: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, minHeight: 50,

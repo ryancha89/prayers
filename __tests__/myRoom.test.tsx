@@ -309,7 +309,7 @@ describe('the world’s 개인실 door', () => {
     worldTiming.enterFallbackMs = was;
     const overlay = tree!.root.findAll(n => n.props.testID === 'world-overlay-myroom')[0];
     expect(overlay).toBeDefined();
-    expect(overlay.findAll(n => n.props.children === '개인실 · My Room').length).toBeGreaterThan(0);
+    expect(overlay.findAll(n => n.props.children === '개인실 · Personal Room').length).toBeGreaterThan(0);
     expect(overlay.findAll(n => n.props.children === '나만을 위한 특별한 공간').length).toBeGreaterThan(0);
     expect(overlay.findAll(n => n.props.source === MYROOM_PICTURE.landscape).length).toBeGreaterThan(0);
     // No "coming soon" on the door any more.
@@ -399,7 +399,7 @@ describe('the My Room screen', () => {
     expect(badge.props.accessibilityLabel).toBe('하늘 · Lv. 2 · 새내기 여행자');
     expect(texts()).toContain('A BRIGHTER TOMORROW');
     // The old title bar is gone; the room's name is on the world's door, not over the room.
-    expect(texts()).not.toContain('개인실 · My Room');
+    expect(texts()).not.toContain('개인실 · Personal Room');
 
     fromUnity({ type: 'MYROOM_READY' });
     await tap('myroom-profile');

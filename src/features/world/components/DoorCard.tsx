@@ -31,6 +31,7 @@ import { PROMPT_LIFT } from './PromptButton';
  *   · meditation  the session (10 min · 4·4·6) and Begin
  *   · shop        the balance, and Enter
  *   · myroom      one line, and Enter
+ *   · cafe        one line, and Enter (the coffee shop, 16-10)
  *
  * Portrait: where the old pill was (PROMPT_LIFT, centred between the safe edges). Landscape: top centre,
  * under the top row — the World camera frames the player low and centred, and at the bottom the card
@@ -84,6 +85,7 @@ export const DoorCard: React.FC<{
     );
   }
   if (zone === 'myroom') cta = t('world.myroom.cta');
+  if (zone === 'cafe') cta = t('world.cafe.cta');
   if (zone === 'counseling') cta = null;
 
   return (

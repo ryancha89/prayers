@@ -24,6 +24,9 @@ jest.mock('../src/features/coins/api/coinsApi', () => ({ refreshCoins: async () 
 jest.mock('../src/features/conversations/syncConversations', () => ({
   syncConversationsFromServer: async () => null,
 }));
+// The sleep card shows only where the sound module is linked.
+let mockSleepAvailable = true;
+jest.mock('../src/features/meditation/sleepAudio', () => ({ sleepAudio: { available: () => mockSleepAvailable } }));
 // The server's real per-counsellor counts; each test says what the server "answered".
 let mockServerCounts: Record<string, number> | null = null;
 jest.mock('../src/features/counselors/api/counselorStats', () => ({
@@ -68,12 +71,22 @@ it('tabs 전체 · 사주 · 강의 · 명상: lectures and meditation have tabs
   act(() => footerPress('lecture-series-card')[0].props.onPress());
   expect(mockNavigate).toHaveBeenCalledWith('Lecture', { chapter: 1, line: 0 });
 
-  // 명상: no counsellors, the breathing room.
+  // 명상: no counsellors, the breathing room and the sleep guide under it.
   pick('meditation');
   expect(tree.root.findByType(CounselorGrid).props.counselors).toEqual([]);
   expect(tree.root.findAll(n => n.props.testID === 'lecture-series-card')).toHaveLength(0);
-  const meditation = tree.root.findByType(CounselorGrid).props.ListFooterComponent;
-  expect(meditation).toBeDefined();
+  act(() => footerPress('meditation-card')[0].props.onPress());
+  expect(mockNavigate).toHaveBeenLastCalledWith('MeditationRoom');
+  act(() => footerPress('home-sleep')[0].props.onPress());
+  expect(mockNavigate).toHaveBeenLastCalledWith('SleepGuide');
+});
+
+it('hides the sleep card on a build without the sound module', async () => {
+  mockSleepAvailable = false;
+  await render();
+  act(() => tree.root.findByType(CategoryTabs).props.onChange('meditation'));
+  expect(tree.root.findAll(n => n.props.testID === 'home-sleep')).toHaveLength(0);
+  mockSleepAvailable = true;
 });
 
 it('resumes a real conversation with its original subject, skipping empty or removed counselors', async () => {

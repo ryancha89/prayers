@@ -390,7 +390,7 @@ export const MyRoomScreen: React.FC = () => {
       ...a, checkedToday: true, coinBalance: r.coinBalance ?? a.coinBalance,
       daysTotal: r.daysTotal ?? a.daysTotal + (r.ok ? 1 : 0),
     } : a));
-    say(r.granted > 0 ? t('home.attend.granted', { count: r.granted }) : t('home.attend.done'));
+    say(r.granted > 0 ? t('home.attend.granted', { count: r.granted }) : t(r.ok ? 'home.attend.capped' : 'home.attend.done'));
   };
 
   const openSheet = (which: 'menu' | 'profile' | 'inbox') => () => { sfx.tap(); setSheet(which); };

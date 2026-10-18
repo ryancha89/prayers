@@ -128,6 +128,8 @@ export interface ZoneActions {
   coins(): void;
   /** 들어가기 → into My Room. */
   myroom(): void;
+  /** Into the coffee shop. */
+  cafe(): void;
 }
 
 /** The entrance overlay of one door — what WORLD_ARRIVED (or Enter) opens. */
@@ -228,10 +230,21 @@ export const ZoneOverlay: React.FC<{
           <Cta label={t('world.myroom.cta')} onPress={actions.myroom} />
         </>,
       );
+    case 'cafe':
+      return sheet(
+        t(info.label),
+        t('world.cafe.line'),
+        <>
+          <View style={styles.bubble}>
+            <Text style={styles.bubbleText}>{t('world.zone.cafe.sub')}</Text>
+          </View>
+          <Cta label={t('world.cafe.cta')} onPress={actions.cafe} />
+        </>,
+      );
   }
 };
 
-/** Map: the five doors. A row asks Unity to walk the player there (WORLD_GOTO). */
+/** Map: the six doors. A row asks Unity to walk the player there (WORLD_GOTO). */
 export const MapSheet: React.FC<{
   journeyYear: number;
   onGo: (zone: WorldZone) => void;

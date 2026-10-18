@@ -8,14 +8,17 @@ import { useT } from '../../../shared/i18n';
 import { appleSignInAvailable, requestAppleIdentity } from '../providers/appleSignIn';
 import { googleSignInAvailable, requestGoogleIdentity } from '../providers/googleSignIn';
 import { kakaoSignInAvailable, requestKakaoIdentity } from '../providers/kakaoSignIn';
+import { kakaoWebSignInAvailable, requestKakaoWebTicket } from '../providers/kakaoWebSignIn';
 import {
   signInAsDeveloper,
   signInAsReviewer,
   signInWithApple,
   signInWithGoogle,
   signInWithKakao,
+  signInWithKakaoTicket,
 } from '../api/session';
 import { ensureGameToken } from '../api/session';
+import { ProviderLogo } from '../components/ProviderLogo';
 
 /**
  * The first screen, and the only one that exists before there is an account.
@@ -36,6 +39,9 @@ export const LoginScreen: React.FC = () => {
   const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Why, in a few words, under the plain line — on TestFlight too, where the plain line alone
+  // told us nothing (10-17: Kakao "로그인하지 못했습니다" with no way to see which step refused).
+  const [detail, setDetail] = useState<string | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,6 +50,7 @@ export const LoginScreen: React.FC = () => {
   const run = async (work: () => Promise<unknown>, plainError = false) => {
     setBusy(true);
     setError(null);
+    setDetail(null);
     try {
       await work();
     } catch (e) {
@@ -53,6 +60,7 @@ export const LoginScreen: React.FC = () => {
       // problems and a single generic line hides which one just happened.
       // The reviewer form always says the plain line: a wrong password is the only story there.
       setError(__DEV__ && !plainError && e instanceof Error ? e.message : t('login.error'));
+      if (!__DEV__ && !plainError) setDetail(e instanceof Error ? e.message.slice(0, 120) : String(e).slice(0, 120));
     } finally {
       setBusy(false);
     }
@@ -73,17 +81,26 @@ export const LoginScreen: React.FC = () => {
             style={[styles.button, styles.apple]}
             disabled={busy}
             onPress={() => run(async () => signInWithApple(await requestAppleIdentity()))}>
-            <Text style={styles.appleText}>{t('login.apple')}</Text>
+            <View style={styles.buttonRow}>
+              <ProviderLogo provider="apple" />
+              <Text style={styles.appleText}>{t('login.apple')}</Text>
+            </View>
           </Pressable>
         )}
 
-        {kakaoSignInAvailable() && (
+        {(kakaoWebSignInAvailable() || kakaoSignInAvailable()) && (
           <Pressable
             testID="login-kakao"
             style={[styles.button, styles.kakao]}
             disabled={busy}
-            onPress={() => run(async () => signInWithKakao(await requestKakaoIdentity()))}>
-            <Text style={styles.kakaoText}>{t('login.kakao')}</Text>
+            // iOS goes through the server (the SDK's token exchange is refused, KOE009); Android keeps the SDK.
+            onPress={() => run(async () => (kakaoWebSignInAvailable()
+              ? signInWithKakaoTicket(await requestKakaoWebTicket())
+              : signInWithKakao(await requestKakaoIdentity())))}>
+            <View style={styles.buttonRow}>
+              <ProviderLogo provider="kakao" />
+              <Text style={styles.kakaoText}>{t('login.kakao')}</Text>
+            </View>
           </Pressable>
         )}
 
@@ -93,7 +110,10 @@ export const LoginScreen: React.FC = () => {
             style={[styles.button, styles.google]}
             disabled={busy}
             onPress={() => run(async () => signInWithGoogle(await requestGoogleIdentity()))}>
-            <Text style={styles.googleText}>{t('login.google')}</Text>
+            <View style={styles.buttonRow}>
+              <ProviderLogo provider="google" />
+              <Text style={styles.googleText}>{t('login.google')}</Text>
+            </View>
           </Pressable>
         )}
 
@@ -113,6 +133,7 @@ export const LoginScreen: React.FC = () => {
 
         {busy && <ActivityIndicator color={colors.violetSoft} style={styles.spinner} />}
         {error && !emailOpen && <Text style={styles.error}>{error}</Text>}
+        {detail && !emailOpen && <Text testID="login-error-detail" style={styles.errorDetail}>{detail}</Text>}
       </View>
 
       <Text style={styles.note}>{t('login.note')}</Text>
@@ -194,6 +215,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
+  // Logo then label, centred together (each brand guide's sign-in button layout).
+  buttonRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
   apple: { backgroundColor: '#FFFFFF' },
   appleText: { ...typography.body, color: '#000000', fontWeight: '600' },
   // Kakao's own brand yellow and label colour (Kakao Login design guide).
@@ -205,6 +228,7 @@ const styles = StyleSheet.create({
   devText: { ...typography.body, color: colors.violetSoft },
   spinner: { marginTop: spacing.sm },
   error: { ...typography.caption, color: colors.gold, marginTop: spacing.sm },
+  errorDetail: { ...typography.tiny, color: colors.textMuted, marginTop: spacing.xs },
   note: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
   emailLink: { alignSelf: 'center', marginTop: spacing.xl, paddingVertical: spacing.xs },
   emailLinkText: { ...typography.caption, color: colors.textMuted, textDecorationLine: 'underline' },

@@ -3,7 +3,8 @@ import type { TranslationKey } from '../../../shared/i18n';
 import type { WorldZone } from '../../counseling/types';
 
 /**
- * The world's five doors (spec 004, "The map"), in the order the Map sheet lists them. `id` is the
+ * The world's six doors (spec 004, "The map"; the coffee shop since 16-10), in the order the Map sheet
+ * lists them. `id` is the
  * bridge's zone string — Unity maps it to ZONE_Consultation / ZONE_Meditation / … — so it is not
  * free text. Pet Area, Garden, Shrine and Seasonal are walkable scenery with no door and are not here.
  */
@@ -21,6 +22,7 @@ export const WORLD_ZONES: readonly WorldZoneInfo[] = [
   { id: 'journey', icon: 'train', label: 'world.zone.journey', sub: 'world.zone.journey.sub' },
   { id: 'shop', icon: 'bag', label: 'world.zone.shop', sub: 'world.zone.shop.sub' },
   { id: 'myroom', icon: 'home', label: 'world.zone.myroom', sub: 'world.zone.myroom.sub' },
+  { id: 'cafe', icon: 'coffee', label: 'world.zone.cafe', sub: 'world.zone.cafe.sub' },
 ];
 
 const IDS = new Set<string>(WORLD_ZONES.map(z => z.id));

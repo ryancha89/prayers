@@ -66,7 +66,7 @@ const isCategory = (v: string): v is ArchiveCategory => (CATEGORIES as string[])
 
 /** What "complete" means: a few entries in most categories, weighted to the ones that change a
  *  reading. 100% is deliberately reachable — a meter nobody can fill is a nag, not a game. */
-const COMPLETION_TARGET: Record<ArchiveCategory, number> = {
+export const COMPLETION_TARGET: Record<ArchiveCategory, number> = {
   profile: 4,
   interest: 4,
   relationship: 3,

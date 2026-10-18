@@ -33,6 +33,8 @@ export type RootStackParamList = {
   Login: undefined;
   /** The account itself: who is signed in, signing out, and deleting it. */
   Account: undefined;
+  DeleteAccount: undefined;
+  Notifications: undefined;
   /** 내 정보: the account holder's birth data and the saju chart computed from it. */
   MyInfo: undefined;
   /**
@@ -71,6 +73,11 @@ export type RootStackParamList = {
    */
   MeditationRoom: undefined;
   /**
+   * The 30-minute sleep guide: voice + music, pure RN, no Unity. The NAME is load-bearing too —
+   * App.tsx silences the app's bed on it (`SELF_SCORED_SCREENS`).
+   */
+  SleepGuide: undefined;
+  /**
    * The 3D world hub (spec 004): walk the sanctuary, go in through its doors. Reached from the Home
    * header's 3D pill and the 월드 tab. The NAME is load-bearing — App.tsx lists it as a Unity screen
    * (`UNITY_SCREENS`), which keeps the app's bed and the mini player off it and stops the route rule
@@ -82,6 +89,11 @@ export type RootStackParamList = {
    * is load-bearing — App.tsx lists it as a Unity screen (`UNITY_SCREENS`), like World.
    */
   MyRoom: undefined;
+  /**
+   * The coffee shop (Afterglow), behind the world's sixth door: walk in, sit with Jiho, talk. The NAME
+   * is load-bearing — App.tsx lists it as a Unity screen (`UNITY_SCREENS`), like MyRoom.
+   */
+  Cafe: undefined;
   /** Terms and the privacy policy. Apple wants both reachable, and 5.1.1(v) wants the deletion
    *  above reachable too. */
   Legal: { doc: 'terms' | 'privacy' };

@@ -18,6 +18,7 @@ import { create } from 'zustand';
 import { JourneyMiniPlayer } from './features/journey/components/JourneyMiniPlayer';
 import { CoinShopSheet } from './features/coins/components/CoinShopSheet';
 import { startCoinPurchaseRecovery } from './features/coins/api/coinsApi';
+import { applyReminder } from './features/notifications/reminder';
 import { useAuthStore } from './features/auth/store/authStore';
 import { useJourneyPlayer } from './features/journey/player/journeyPlayer';
 
@@ -46,7 +47,8 @@ const navigationRef = createNavigationContainerRef<RootStackParamList>();
 // is started by the screen on Begin, exactly as before.
 // World (spec 004) since 02-10: the hub is a Unity scene like the rooms — same speaker rule, no mini
 // player over it, and above all no SESSION_END posted into it on arrival.
-export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom', 'World', 'MyRoom', 'Lecture']);
+// Cafe (16-10): the world's sixth door, a Unity scene like My Room.
+export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom', 'World', 'MyRoom', 'Cafe', 'Lecture']);
 /** Screens that host the Unity player but NOT as a room that owns the sound: the train journey
  *  (spec 003) draws its cabin in Unity while its own narration keeps playing. They must not tear
  *  Unity down (stopAllAudio → SESSION_END), and must not pause the journey either — which is why
@@ -62,7 +64,8 @@ const UNITY_SCENERY_SCREENS = new Set(['Journey']);
  * Pause, and is dropped on the way out. A bed that came up with the screen would be playing at
  * someone still deciding whether they have ten minutes.
  */
-const SELF_SCORED_SCREENS = new Set(['MeditationRoom', 'Lecture']);
+// The sleep guide is the same kind of room: its voice and music are the content (sleepAudio.ts).
+const SELF_SCORED_SCREENS = new Set(['MeditationRoom', 'SleepGuide', 'Lecture']);
 
 /** Whether the app's own music may play. The splash has a cue of its own and the two would
  *  overlap, so nothing starts until it is done. */
@@ -152,6 +155,8 @@ const App: React.FC = () => {
   // credited) is credited once someone is signed in — the server needs whose wallet it is.
   const signedIn = useAuthStore(s => s.userAuth);
   useEffect(() => (signedIn ? startCoinPurchaseRecovery() : undefined), [signedIn]);
+  // The check-in reminder's 14-day window rolls forward on every launch.
+  useEffect(() => { void applyReminder(); }, []);
   const onSplashDone = useCallback(() => {
     setSplashDone(true);
     // The splash chime has finished; the bed can come up under whatever screen is showing.

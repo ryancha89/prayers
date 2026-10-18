@@ -17,6 +17,7 @@ type GoogleModule = {
     hasPlayServices(options?: { showPlayServicesUpdateDialog: boolean }): Promise<boolean>;
     signIn(): Promise<{ type: 'success'; data: GoogleUser } | { type: 'cancelled'; data: null }>;
     signOut(): Promise<null>;
+    revokeAccess(): Promise<null>;
   };
 };
 
@@ -57,4 +58,16 @@ export async function requestGoogleIdentity(): Promise<GoogleUser> {
     throw new Error('Google returned no id token — the sign-in was cancelled.');
   }
   return res.data;
+}
+
+/**
+ * On account deletion: drop Prayers' grant on the Google account (Google's own "third-party
+ * access" entry). Best effort — it only works while the SDK still holds a session, and the account
+ * is deleted either way.
+ */
+export async function revokeGoogleAccess(): Promise<void> {
+  const google = load();
+  if (!google) return;
+  await google.GoogleSignin.revokeAccess().catch(() => null);
+  await google.GoogleSignin.signOut().catch(() => null);
 }

@@ -92,6 +92,15 @@ export async function signInWithKakao(kakaoResponse: unknown) {
   return userAuth;
 }
 
+/** Kakao through the server (providers/kakaoWebSignIn.ts): the redirect's ticket → the account. */
+export async function signInWithKakaoTicket(ticket: string) {
+  const { userAuth, displayName } = await exchange('/api/v1/prayers/auth/kakao/ticket', { ticket });
+  signedIn({ userAuth, provider: 'kakao', displayName });
+  await ensureGameToken();
+  void syncAccountLanguage();
+  return userAuth;
+}
+
 /**
  * The store-review door: one server-configured email + password (PRAYERS_REVIEWER_EMAIL /
  * PRAYERS_REVIEWER_PASSWORD_DIGEST). A refusal is `401 { result: 'signup_failed' }` (429 when rate

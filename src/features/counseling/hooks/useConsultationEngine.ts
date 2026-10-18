@@ -58,6 +58,11 @@ export interface Consultation {
   ready: boolean;
   /** The room is up and the player is on their feet — draw the walk controls, not the reading. */
   walking: boolean;
+  /** The 일어서기 button can show: a walk-in room, someone in the chair, no answer on its way. */
+  canStand: boolean;
+  /** Out of the chair (10-17): her voice and the mic stop, the room goes back to walking; the
+   *  conversation is kept and 대화하기 carries it on. */
+  stand(): void;
   tap(): void;
   choose(choice: PhaseChoice): void;
   submit(text: string): void;
@@ -88,6 +93,8 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
   // that is the only place where a room can exist with nobody seated in it. UNITY_READY flips it
   // to false when it arrives with walkIn:true, and UNITY_SEATED turns it back on.
   const [seated, setSeated] = useState(true);
+  // Only a walk-in room has anywhere to stand up to.
+  const [walkIn, setWalkIn] = useState(false);
   const [state, setState] = useState<FlowState>(() => emptyish());
   const engineRef = useRef<ConsultationEngine | null>(null);
 
@@ -156,9 +163,10 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
         // Order matters: mark the hold BEFORE lifting the veil, or the begin effect below runs
         // for one render with seated still true and the counselor opens on an empty chair — the
         // exact race this whole signal exists to close.
-        if (e.payload?.walkIn) setSeated(false);
+        if (e.payload?.walkIn) { setSeated(false); setWalkIn(true); }
         setReady(true);
       } else if (e.type === 'UNITY_SEATED') setSeated(true);
+      else if (e.type === 'UNITY_STOOD') setSeated(false);
       else if (e.type === 'ORACLE_RESULT') engineRef.current?.onOracleResult(e.payload);
       else if (e.type === 'SPEAK_DONE') engineRef.current?.onSpeakDone(engineKey(e.payload.cacheKey));
       else if (e.type === 'MIC_STATE') engineRef.current?.onMicState(e.payload.state, e.payload.level);
@@ -180,6 +188,12 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
     // `ready && !seated` is the whole of "walking": a seated room sets seated true before ready,
     // so this is false there, and a walk-in room flips it the moment the player sits.
     walking: ready && !seated,
+    canStand: usesUnity && walkIn && ready && seated && begun.current && !state.pending,
+    stand: useCallback(() => {
+      engineRef.current?.hush();
+      engineRef.current?.cancelMic();
+      getUnityBridge().sendEvent({ type: 'WALK_STAND' });
+    }, []),
     tap: useCallback(() => engineRef.current?.tap(), []),
     choose: useCallback((c: PhaseChoice) => engineRef.current?.choose(c), []),
     submit: useCallback((t: string) => engineRef.current?.submitQuestion(t), []),

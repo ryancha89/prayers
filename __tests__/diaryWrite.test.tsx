@@ -50,8 +50,8 @@ beforeEach(() => {
 });
 
 describe('the entry’s counsellor (not asked on Write, 08-10)', () => {
-  it('offers the four consultable counsellors, by tone', () => {
-    expect(diaryCounselors('en').map(c => c.tone).sort()).toEqual(['coldgirl', 'dosa', 'sudam', 'sunyeo']);
+  it('offers the consultable counsellors, by tone', () => {
+    expect(diaryCounselors('en').map(c => c.tone).sort()).toEqual(['coldgirl', 'dosa', 'luna', 'sudam', 'sunyeo']);
   });
 
   it('preselects the most recent conversation, else Yuna', () => {

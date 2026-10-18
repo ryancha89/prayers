@@ -129,7 +129,7 @@ export const AttendanceScreen: React.FC = () => {
             <View style={styles.flex}>
               <Text style={styles.bannerTitle}>{t('attend.checked')}</Text>
               <Text style={styles.bannerBody}>
-                {just.granted > 0 ? t('home.attend.granted', { count: just.granted }) : t('home.attend.done')}
+                {just.granted > 0 ? t('home.attend.granted', { count: just.granted }) : t('home.attend.capped')}
               </Text>
             </View>
           </View>
@@ -147,7 +147,7 @@ export const AttendanceScreen: React.FC = () => {
               {busy ? (
                 <ActivityIndicator color={colors.bg} />
               ) : (
-                <Text style={styles.ctaText}>{t('home.attend.cta', { count: status.dailyCoins })}</Text>
+                <Text style={styles.ctaText}>{status.dailyCoins > 0 ? t('home.attend.cta', { count: status.dailyCoins }) : t('home.attend.ctaFull')}</Text>
               )}
             </Pressable>
           )}

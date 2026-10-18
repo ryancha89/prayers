@@ -11,6 +11,7 @@ import { useDiaryStore } from '../../myroom/diary/diaryStore';
 import { forgetAllLocalPhotos } from '../../myroom/diary/photos';
 import { useMyRoomStore } from '../../myroom/store/myRoomStore';
 import { forgetAvatar } from '../../profile/avatar/avatar';
+import { forgetJourneyVoices } from '../../journey/api/voiceCache';
 
 /** A self with no birth data — the same shape first run starts from, so the app asks again. */
 const EMPTY_SELF = { id: 'self', displayName: '', isUser: true as const };
@@ -28,10 +29,24 @@ const EMPTY_SELF = { id: 'self', displayName: '', isUser: true as const };
  * signs out on any 200 would strand the player outside an account that may still exist, with their
  * coins in it. Only `deleted === true` counts.
  */
-export async function deleteAccount(): Promise<boolean> {
+export interface DeleteAccountOptions {
+  /** One of the server's reason codes (PrayersAccountDeletion::REASONS); optional. */
+  reason?: string;
+  /** Free text for "other", ≤ 500 chars. */
+  detail?: string;
+  /** A FRESH Sign in with Apple code, so the server can revoke the Apple tokens (Apple rule). */
+  appleAuthorizationCode?: string;
+}
+
+export async function deleteAccount(opts: DeleteAccountOptions = {}): Promise<boolean> {
   try {
     const res = await authedFetch(`${apiBase()}/api/v1/prayers/account`, {
       method: 'DELETE',
+      body: JSON.stringify({
+        reason: opts.reason,
+        detail: opts.detail,
+        apple_authorization_code: opts.appleAuthorizationCode,
+      }),
     });
     if (!res) return false;
     const body = (await res.json().catch(() => null)) as { deleted?: boolean } | null;
@@ -79,6 +94,8 @@ export async function forgetLocalData() {
   await forgetAllLocalPhotos();
   // The profile photo is a face: the next person on this phone must not open My Page on it.
   await forgetAvatar();
+  // Journey narration kept for replays says the player's name and year.
+  await forgetJourneyVoices();
 
   try {
     // `removeItem` one at a time rather than multiRemove: this build's AsyncStorage typing does

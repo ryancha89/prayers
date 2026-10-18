@@ -124,10 +124,14 @@ export const DecorateBar: React.FC<{
             disabled={buyingSkin}
             onPress={onBuySkin}
             style={({ pressed }) => [styles.pill, styles.buy, pressed && styles.pressed]}>
-            {buyingSkin ? <ActivityIndicator size="small" color={colors.gold} /> : (
+            {buyingSkin ? <ActivityIndicator size="small" color="#1A1330" /> : (
+              // Says what it does — a bare price read as a counter, not a button (10-17).
               <View style={styles.buyRow}>
-                <CoinGlyph size={14} />
-                <Text style={styles.pillText} numberOfLines={1}>{formatCoins(skin.price)}</Text>
+                <Text style={[styles.pillText, styles.buyText]} numberOfLines={1}>{t('myroom.skin.buy')}</Text>
+                <View style={styles.buyPrice}>
+                  <CoinGlyph size={14} />
+                  <Text style={[styles.pillText, styles.buyText]} numberOfLines={1}>{formatCoins(skin.price)}</Text>
+                </View>
               </View>
             )}
           </Pressable>
@@ -239,8 +243,10 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: 'rgba(233,196,106,0.6)', backgroundColor: 'rgba(18,14,40,0.8)',
   },
-  buy: { minWidth: 64, borderColor: colors.gold },
-  buyRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  buy: { minWidth: 64, borderColor: colors.gold, backgroundColor: colors.gold },
+  buyText: { color: '#1A1330', fontWeight: '700' },
+  buyPrice: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 8, borderLeftWidth: 1, borderLeftColor: 'rgba(26,19,48,0.25)' },
+  buyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   status: { ...typography.caption, color: IVORY, flex: 1, textAlign: 'center' },
   statusBad: { color: '#F2A7A7', fontWeight: '700' },
   selection: {

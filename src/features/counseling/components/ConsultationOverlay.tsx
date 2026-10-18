@@ -97,6 +97,8 @@ export interface ConsultationOverlayProps {
    *  stack along the bottom, full width in portrait and the centred band in landscape — or null
    *  while it shows nothing. The room reports this to Unity as VIEW_INSETS. */
   onPanelLayout?(rect: LayoutRectangle | null): void;
+  /** The player is up and walking (일어서기): the conversation waits, nothing of it on screen. */
+  away?: boolean;
 }
 
 export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
@@ -117,6 +119,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   counselorName,
   panelTop = 0,
   onPanelLayout,
+  away,
 }) => {
   const lang = useLang();
   // The one-line explanation of the style just picked, the way SAVIS toasts it. Shown under the
@@ -157,7 +160,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
 
   // `none` is the doc's "minimal UI; prioritize environmental immersion" — the
   // entrance beat and the closing pull-back are meant to be watched, not read.
-  const hidden = state.screen === 'none' && !state.line;
+  const hidden = (state.screen === 'none' && !state.line) || !!away;
   useEffect(() => {
     if (hidden) onPanelLayout?.(null);
   }, [hidden, onPanelLayout]);
@@ -352,10 +355,21 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
                 ) : (
                   modeRow
                 )}
+                {/* A small glass toast (10-17, "누를 때 나오는 메세지 개선"): the style's name in gold,
+                    then what it does — on its own background, readable over any room. */}
                 {!!modeHint && (
-                  <Text style={styles.modeHint}>
-                    {ui(modeHint === 'short' ? 'mode.short.hint' : modeHint === 'tiki' ? 'mode.tiki.hint' : 'mode.detail.hint', lang)}
-                  </Text>
+                  <View style={styles.modeHint} testID="chat-mode-hint">
+                    {modeHint === 'short' && (
+                      <Image source={QUICK_CHAT_ICON} style={[styles.modeIcon, { tintColor: colors.gold }]} />
+                    )}
+                    <Text style={styles.modeHintName}>
+                      {ui(modeHint === 'short' ? 'mode.short' : modeHint === 'tiki' ? 'mode.tiki' : 'mode.detail', lang)}
+                    </Text>
+                    <Text style={styles.modeHintText} numberOfLines={2}>
+                      {ui(modeHint === 'short' ? 'mode.short.hint' : modeHint === 'tiki' ? 'mode.tiki.hint' : 'mode.detail.hint', lang)
+                        .replace(/^[^:：]+[:：]\s*/, '')}
+                    </Text>
+                  </View>
                 )}
               </View>
             )}
@@ -809,5 +823,12 @@ const styles = StyleSheet.create({
   modeIcon: { width: 16, height: 16 },
   modeText: { ...typography.caption, color: colors.textSecondary },
   modeTextOn: { color: ON_GOLD, fontWeight: '700' },
-  modeHint: { ...typography.tiny, color: colors.textMuted, marginBottom: spacing.xs },
+  modeHint: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'flex-start',
+    marginBottom: spacing.xs, paddingHorizontal: spacing.sm + 2, paddingVertical: 6,
+    borderRadius: radius.lg, backgroundColor: 'rgba(18,14,40,0.82)',
+    borderWidth: 1, borderColor: 'rgba(233,196,106,0.35)', maxWidth: '100%',
+  },
+  modeHintName: { ...typography.caption, color: colors.gold, fontWeight: '700' },
+  modeHintText: { ...typography.caption, color: colors.textPrimary, flexShrink: 1 },
 });

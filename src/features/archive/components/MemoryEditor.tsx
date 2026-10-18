@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../shared/components/Text';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
@@ -27,7 +27,13 @@ export const MemoryEditor: React.FC<{
   onCancel(): void;
   /** Delete is offered only when editing something that exists. */
   onDelete?(): void;
-}> = ({ category, initial, onSave, onCancel, onDelete }) => {
+  /**
+   * Autosave (10-17, user: "아카이브 자동저장하게 해줘"): called with the value a moment after typing
+   * stops, and once more when the editor closes or the screen goes away — whenever the form is
+   * complete and differs from what was last saved. With it, Save/Cancel become one Done.
+   */
+  onAutoSave?(value: EditorValue): void;
+}> = ({ category, initial, onSave, onCancel, onDelete, onAutoSave }) => {
   const t = useT();
   const specs = FIELDS[category];
   const [content, setContent] = useState(initial?.content ?? '');
@@ -43,6 +49,37 @@ export const MemoryEditor: React.FC<{
     content.trim().length > 0 &&
     specs.every(f => !f.required || (details[f.key] ?? '').trim().length > 0) &&
     specs.every(f => errors[f.key] === null);
+
+  const value: EditorValue = { content: content.trim(), details };
+  const lastSaved = useRef(JSON.stringify(initial ? { content: initial.content.trim(), details } : null));
+  const [saved, setSaved] = useState(false);
+  const pending = useRef<{ key: string; value: EditorValue } | null>(null);
+  const flush = () => {
+    const p = pending.current;
+    pending.current = null;
+    if (!p || !onAutoSave || p.key === lastSaved.current) return;
+    lastSaved.current = p.key;
+    onAutoSave(p.value);
+    setSaved(true);
+  };
+  const flushRef = useRef(flush);
+  flushRef.current = flush;
+  const valueKey = JSON.stringify(value);
+  useEffect(() => {
+    if (!onAutoSave) return;
+    if (!complete || valueKey === lastSaved.current) {
+      pending.current = null;
+      return;
+    }
+    setSaved(false);
+    pending.current = { key: valueKey, value };
+    const timer = setTimeout(() => flushRef.current(), AUTOSAVE_MS);
+    return () => clearTimeout(timer);
+    // `value` is captured through valueKey.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valueKey, complete, onAutoSave]);
+  // Leaving the screen mid-sentence keeps what was typed.
+  useEffect(() => () => flushRef.current(), []);
 
   // The desk's four kinds (spec 006) hold up to 1,000 characters — a page, not a headline — so an
   // entry written at the desk is not cut short when it is edited here.
@@ -138,6 +175,23 @@ export const MemoryEditor: React.FC<{
         ) : (
           <View />
         )}
+        {onAutoSave ? (
+          <View style={styles.actionsRight}>
+            <Text testID="memory-autosave" style={styles.autosave}>
+              {saved ? t('archive.autosaved') : t('archive.autosaveHint')}
+            </Text>
+            <Pressable
+              testID="memory-done"
+              onPress={() => {
+                sfx.select();
+                flush();
+                onCancel();
+              }}
+              style={styles.saveBtn}>
+              <Text style={styles.saveText}>{t('archive.done')}</Text>
+            </Pressable>
+          </View>
+        ) : (
         <View style={styles.actionsRight}>
           <Pressable
             onPress={() => {
@@ -157,10 +211,14 @@ export const MemoryEditor: React.FC<{
             <Text style={styles.saveText}>{t('archive.save')}</Text>
           </Pressable>
         </View>
+        )}
       </View>
     </View>
   );
 };
+
+/** How long typing must pause before an autosave. */
+const AUTOSAVE_MS = 700;
 
 /** Digits in, dashes out: 19950412 → 1995-04-12. Typing the dash by hand is also accepted. */
 export const maskDate = (v: string): string => {
@@ -211,7 +269,8 @@ const styles = StyleSheet.create({
   chipText: { ...typography.caption, color: colors.textSecondary },
   chipTextOn: { color: colors.textPrimary },
   actions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
-  actionsRight: { flexDirection: 'row', gap: spacing.sm },
+  actionsRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  autosave: { ...typography.tiny, color: colors.textMuted },
   deleteBtn: { paddingVertical: spacing.sm },
   deleteText: { ...typography.caption, color: colors.trending },
   ghostBtn: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.pill },
