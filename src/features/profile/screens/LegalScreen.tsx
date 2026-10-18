@@ -1,6 +1,6 @@
 import React from 'react';
-import { useRoute, type RouteProp } from '@react-navigation/native';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../../../navigation/types';
@@ -9,6 +9,8 @@ import { useLanguageStore } from '../../../shared/i18n';
 import { docFor } from '../data/legalDocs';
 import { column } from '../../../shared/device/screen';
 import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
+import { Icon } from '../../../shared/components/Icon';
+import { sfx } from '../../../shared/audio/sfx';
 
 /**
  * Terms and the privacy policy, in the app rather than behind a link.
@@ -19,11 +21,25 @@ import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
  */
 export const LegalScreen: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'Legal'>>();
+  const navigation = useNavigation();
   const lang = useLanguageStore(s => s.lang);
   const doc = docFor(route.params.doc, lang);
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
+      {/* The stack has no header (headerShown: false), so the way back is drawn here. */}
+      <View style={styles.header}>
+        <Pressable
+          testID="legal-back"
+          hitSlop={12}
+          onPress={() => {
+            sfx.tap();
+            navigation.goBack();
+          }}
+          accessibilityRole="button">
+          <Icon name="back" size={22} />
+        </Pressable>
+      </View>
       <ScrollView contentContainerStyle={[styles.scroll, column]} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{doc.title}</Text>
         <Text style={styles.updated}>{doc.updated}</Text>
@@ -45,7 +61,8 @@ export const LegalScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: spacing.xl, paddingBottom: spacing.xxl ?? spacing.xl },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+  scroll: { padding: spacing.xl, paddingTop: spacing.sm, paddingBottom: spacing.xxl ?? spacing.xl },
   title: { ...typography.h1, color: colors.textPrimary },
   updated: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.xl },
   section: { marginBottom: spacing.xl },

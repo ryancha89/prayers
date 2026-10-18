@@ -52,7 +52,10 @@ export const HomeScreen: React.FC = () => {
   const byId = useConversationsStore(s => s.byId);
   const roster = useMemo(() => localizeCounselors(lang), [lang]);
   const available = useMemo(
-    () => roster.filter(c => c.category !== 'meditation' && !c.comingSoon),
+    // New counsellors lead the feed ("가장 위로 올려", 10-17); otherwise the roster's own order.
+    () => roster
+      .filter(c => c.category !== 'meditation' && !c.comingSoon)
+      .sort((a, b) => Number(!!b.isNew) - Number(!!a.isNew)),
     [roster],
   );
   const meditationGuide = roster.find(c => c.category === 'meditation');
@@ -104,7 +107,7 @@ export const HomeScreen: React.FC = () => {
     if (!r) return;
     setAttendance(a => (a ? { ...a, checkedToday: true, coinBalance: r.coinBalance ?? a.coinBalance } : a));
     if (r.coinBalance == null) void refreshCoins();
-    setAttendMsg(r.granted > 0 ? t('home.attend.granted', { count: r.granted }) : t('home.attend.done'));
+    setAttendMsg(r.granted > 0 ? t('home.attend.granted', { count: r.granted }) : t(r.ok ? 'home.attend.capped' : 'home.attend.done'));
     // "누르면 출석체크했습니다 하고 페이지 이동" — the page opens on the result and the calendar.
     navigation.navigate('Attendance', { justChecked: { granted: r.granted } });
   };
@@ -143,7 +146,9 @@ export const HomeScreen: React.FC = () => {
                     {attendMsg ??
                       (attendance.checkedToday
                         ? t('home.attend.done')
-                        : t('home.attend.cta', { count: attendance.dailyCoins }))}
+                        : attendance.dailyCoins > 0
+                          ? t('home.attend.cta', { count: attendance.dailyCoins })
+                          : t('home.attend.ctaFull'))}
                   </Text>
                 </View>
               </Pressable>

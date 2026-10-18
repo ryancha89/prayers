@@ -16,16 +16,19 @@ export const CounselorGrid: React.FC<{
   ListHeaderComponent?: React.ReactElement;
   ListFooterComponent?: React.ReactElement;
 }> = ({ counselors, onPressCounselor, ListHeaderComponent, ListFooterComponent }) => {
-  const renderItem: ListRenderItem<CounselorSummary> = ({ item }) => (
+  // An odd roster used to leave the last card alone on its row, where `flex: 1` stretched it to
+  // the full width and twice the height (Luna, 10-17). A blank cell keeps every card one column.
+  const cells: (CounselorSummary | null)[] = counselors.length % 2 ? [...counselors, null] : counselors;
+  const renderItem: ListRenderItem<CounselorSummary | null> = ({ item }) => (
     <View style={styles.cell}>
-      <CounselorCard counselor={item} onPress={() => onPressCounselor(item)} />
+      {item && <CounselorCard counselor={item} onPress={() => onPressCounselor(item)} />}
     </View>
   );
 
   return (
     <FlatList
-      data={counselors}
-      keyExtractor={c => c.id}
+      data={cells}
+      keyExtractor={(c, i) => c?.id ?? `blank-${i}`}
       renderItem={renderItem}
       numColumns={2}
       columnWrapperStyle={styles.column}

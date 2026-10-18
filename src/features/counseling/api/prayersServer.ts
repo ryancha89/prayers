@@ -290,6 +290,34 @@ export async function saveSajuProfile(
   }
 }
 
+/**
+ * The account's saved birth profile, as the form's fields — so a fresh sign-in (new phone,
+ * reinstall, signed out and back) doesn't ask "who are you" again when the server already knows.
+ * `null` when the account has none or the server can't be reached; the caller then asks.
+ */
+export async function fetchSajuProfile(
+  signal?: AbortSignal,
+): Promise<SajuProfileInput | null> {
+  try {
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/saju/me`, { signal });
+    if (!res || !res.ok) return null;
+
+    const body = await res.json();
+    const p = body?.has_saju === true ? body.profile : null;
+    if (!p?.year || !p.month || !p.day) return null;
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return {
+      name: String(p.name ?? ''),
+      birthDate: `${p.year}-${pad(p.month)}-${pad(p.day)}`,
+      birthTime: p.time_unknown ? undefined : `${pad(p.hour ?? 0)}:${pad(p.minute ?? 0)}`,
+      gender: p.gender === 'female' ? 'female' : 'male',
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function checkConsultationReadiness(
   signal?: AbortSignal,
 ): Promise<ConsultationReadiness> {

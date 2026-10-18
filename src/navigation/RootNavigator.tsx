@@ -12,6 +12,7 @@ import { AddSubjectScreen } from '../features/subjects/screens/AddSubjectScreen'
 import { hasBirthData, useSubjectsStore } from '../features/subjects/store/subjectsStore';
 import { LoginScreen } from '../features/auth/screens/LoginScreen';
 import { AccountScreen } from '../features/profile/screens/AccountScreen';
+import { DeleteAccountScreen } from '../features/profile/screens/DeleteAccountScreen';
 import { LibraryScreen } from '../features/profile/screens/LibraryScreen';
 import { MyInfoScreen } from '../features/profile/screens/MyInfoScreen';
 import { MeditationRoomScreen } from '../features/meditation/screens/MeditationRoomScreen';
@@ -28,6 +29,7 @@ import { JourneyEndingScreen } from '../features/journey/screens/JourneyEndingSc
 import { JourneyCollectionScreen } from '../features/journey/screens/JourneyCollectionScreen';
 import { ArchiveSectionScreen } from '../features/archive/screens/ArchiveSectionScreen';
 import { LegalScreen } from '../features/profile/screens/LegalScreen';
+import { NotificationsScreen } from '../features/notifications/screens/NotificationsScreen';
 import { WorldScreen } from '../features/world/screens/WorldScreen';
 import { MyRoomScreen } from '../features/myroom/screens/MyRoomScreen';
 import { CafeScreen } from '../features/cafe/screens/CafeScreen';
@@ -78,6 +80,8 @@ export const RootNavigator: React.FC = () => {
     ) : null}
     <Stack.Screen name="Tabs" component={BottomTabNavigator} />
     <Stack.Screen name="Account" component={AccountScreen} />
+    <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
+    <Stack.Screen name="Notifications" component={NotificationsScreen} />
     <Stack.Screen name="Library" component={LibraryScreen} />
     <Stack.Screen name="MyInfo" component={MyInfoScreen} />
     <Stack.Screen name="Tickets" component={TicketsScreen} />

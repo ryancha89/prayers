@@ -15,6 +15,7 @@ export const NEWYEAR_2027: Journey = {
     { id: 'theo', pitch: 'journey.pitch.theo' },
     { id: 'yuna', pitch: 'journey.pitch.yuna' },
     { id: 'jiho', pitch: 'journey.pitch.jiho' },
+    { id: 'luna', pitch: 'journey.pitch.luna' },
   ],
   // The 2027 mockup (24 panels, 01-10): six numbered stations between the departure and the end of
   // the line. The monthly station is its own stop now, and the window shows its seasons ('arrival'

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -43,6 +43,8 @@ export const ArchiveSectionScreen: React.FC = () => {
 
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  // The row a new entry's first autosave created; later autosaves update it.
+  const draftId = useRef<string | null>(null);
 
   const sorted = React.useMemo(() => {
     const list = [...items];
@@ -52,6 +54,7 @@ export const ArchiveSectionScreen: React.FC = () => {
   }, [items, category]);
 
   const after = () => {
+    draftId.current = null;
     setAdding(false);
     setEditingId(null);
     syncArchive().catch(() => {});
@@ -174,7 +177,7 @@ export const ArchiveSectionScreen: React.FC = () => {
         )}
         {/* The star sign, the animal and the pillars for the profile above (10-15, user: "이 화면에 표시"). */}
         {category === 'profile' && !!self.birthDate && (
-          <BirthPreview birthDate={self.birthDate} birthTime={self.birthTime || undefined} />
+          <BirthPreview birthDate={self.birthDate} birthTime={self.birthTime || undefined} birthPlace={self.birthPlace} />
         )}
 
         {adding && (
@@ -184,7 +187,11 @@ export const ArchiveSectionScreen: React.FC = () => {
               add({ category, content: v.content, details: withChart(v.details), source: category === 'diary' ? 'diary' : 'manual' });
               after();
             }}
-            onCancel={() => setAdding(false)}
+            onAutoSave={v => {
+              if (draftId.current) update(draftId.current, { content: v.content, details: withChart(v.details) });
+              else draftId.current = add({ category, content: v.content, details: withChart(v.details), source: category === 'diary' ? 'diary' : 'manual' }).id;
+            }}
+            onCancel={after}
           />
         )}
 
@@ -200,7 +207,8 @@ export const ArchiveSectionScreen: React.FC = () => {
                 update(m.id, { content: v.content, details: withChart(v.details) });
                 after();
               }}
-              onCancel={() => setEditingId(null)}
+              onAutoSave={v => update(m.id, { content: v.content, details: withChart(v.details) })}
+              onCancel={after}
               onDelete={() => {
                 remove(m.id);
                 // A diary-kind row's photos and reflection go with it (spec 006).

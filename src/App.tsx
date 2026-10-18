@@ -18,6 +18,7 @@ import { create } from 'zustand';
 import { JourneyMiniPlayer } from './features/journey/components/JourneyMiniPlayer';
 import { CoinShopSheet } from './features/coins/components/CoinShopSheet';
 import { startCoinPurchaseRecovery } from './features/coins/api/coinsApi';
+import { applyReminder } from './features/notifications/reminder';
 import { useAuthStore } from './features/auth/store/authStore';
 import { useJourneyPlayer } from './features/journey/player/journeyPlayer';
 
@@ -154,6 +155,8 @@ const App: React.FC = () => {
   // credited) is credited once someone is signed in — the server needs whose wallet it is.
   const signedIn = useAuthStore(s => s.userAuth);
   useEffect(() => (signedIn ? startCoinPurchaseRecovery() : undefined), [signedIn]);
+  // The check-in reminder's 14-day window rolls forward on every launch.
+  useEffect(() => { void applyReminder(); }, []);
   const onSplashDone = useCallback(() => {
     setSplashDone(true);
     // The splash chime has finished; the bed can come up under whatever screen is showing.

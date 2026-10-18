@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT } from '../../../shared/i18n';
 import { useAuthStore, signedOut } from '../../auth/store/authStore';
-import { deleteAccount, forgetLocalData } from '../../auth/api/deleteAccount';
+import { forgetLocalData } from '../../auth/api/deleteAccount';
 import { column } from '../../../shared/device/screen';
 import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
+import { useNavigation } from '@react-navigation/native';
+import { Icon } from '../../../shared/components/Icon';
+import { sfx } from '../../../shared/audio/sfx';
 
 /**
  * The account screen, and the one thing on it that is not optional.
@@ -16,15 +19,15 @@ import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
  * deleted FROM INSIDE THE APP. A link to a support page does not satisfy it, and neither does
  * signing out. This app grew an account today; this is the other half of that change.
  *
- * Deletion asks twice — the system alert is the second ask — because it is immediate and permanent
- * and takes the person's tickets with it. Signing out asks once: it costs nothing.
+ * Deletion opens DeleteAccountScreen (what is deleted / kept, reason, agree, final confirm) because
+ * it is immediate and permanent and takes the person's coins with it. Signing out costs nothing.
  */
 export const AccountScreen: React.FC = () => {
   const t = useT();
   const provider = useAuthStore(s => s.provider);
   const displayName = useAuthStore(s => s.displayName);
   const userAuth = useAuthStore(s => s.userAuth);
-  const [busy, setBusy] = useState(false);
+  const navigation = useNavigation();
 
   const signOut = () => {
     // Sign-out leaves the SERVER account alone but must still clear this device: the next person to
@@ -32,26 +35,28 @@ export const AccountScreen: React.FC = () => {
     forgetLocalData().finally(() => signedOut());
   };
 
+  // Deletion has its own screen (what goes, what is kept, a reason, an explicit agree) — the
+  // shape App Store 5.1.1(v) and Play's deletion policy expect. See DeleteAccountScreen.
   const confirmDelete = () => {
-    Alert.alert(t('account.delete'), t('account.deleteWarning'), [
-      { text: t('account.cancel'), style: 'cancel' },
-      {
-        text: t('account.deleteConfirm'),
-        style: 'destructive',
-        onPress: async () => {
-          setBusy(true);
-          const ok = await deleteAccount();
-          setBusy(false);
-          // Only a refusal needs saying. On success the store empties, the navigator swaps to the
-          // login screen underneath, and an alert would be talking to a screen that is gone.
-          if (!ok) Alert.alert(t('account.deleteFailedTitle'), t('account.deleteFailedBody'));
-        },
-      },
-    ]);
+    sfx.tap();
+    navigation.navigate('DeleteAccount' as never);
   };
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
+      {/* The stack has no header (headerShown: false), so the way back is drawn here. */}
+      <View style={styles.header}>
+        <Pressable
+          testID="account-back"
+          hitSlop={12}
+          onPress={() => {
+            sfx.tap();
+            navigation.goBack();
+          }}
+          accessibilityRole="button">
+          <Icon name="back" size={22} />
+        </Pressable>
+      </View>
       <ScrollView contentContainerStyle={[styles.scroll, column]}>
         <Text style={styles.title}>{t('my.account')}</Text>
 
@@ -63,16 +68,15 @@ export const AccountScreen: React.FC = () => {
           <Field label={t('account.identifier')} value={userAuth ?? '—'} />
         </View>
 
-        <Pressable style={styles.row} onPress={signOut} disabled={busy}>
+        <Pressable style={styles.row} onPress={signOut}>
           <Text style={styles.rowText}>{t('account.signOut')}</Text>
         </Pressable>
 
-        <Pressable style={[styles.row, styles.danger]} onPress={confirmDelete} disabled={busy}>
+        <Pressable style={[styles.row, styles.danger]} onPress={confirmDelete}>
           <Text style={[styles.rowText, styles.dangerText]}>{t('account.delete')}</Text>
         </Pressable>
         <Text style={styles.note}>{t('account.deleteNote')}</Text>
 
-        {busy && <ActivityIndicator color={colors.violetSoft} style={styles.spinner} />}
         <MiniPlayerSpacer />
       </ScrollView>
     </SafeAreaView>
@@ -89,8 +93,9 @@ const Field: React.FC<{ label: string; value: string }> = ({ label, value }) => 
 );
 
 const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   root: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: spacing.xl },
+  scroll: { padding: spacing.xl, paddingTop: spacing.sm },
   title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.xl },
   card: {
     backgroundColor: colors.card,
@@ -111,5 +116,4 @@ const styles = StyleSheet.create({
   danger: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.gold },
   dangerText: { color: colors.gold },
   note: { ...typography.caption, color: colors.textMuted },
-  spinner: { marginTop: spacing.lg },
 });

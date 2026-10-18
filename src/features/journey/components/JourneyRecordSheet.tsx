@@ -31,7 +31,9 @@ export const JourneyRecordSheet: React.FC<{
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} supportedOrientations={['portrait', 'landscape']}>
       <Pressable style={styles.scrim} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('journey.record.close')} />
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}>
+      {/* Landscape: clear of the notch / Dynamic Island on both sides, plus a margin (10-17). */}
+      <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md,
+        paddingLeft: insets.left + spacing.md, paddingRight: insets.right + spacing.md }]}>
         <View style={styles.grip} />
         <View style={styles.header}>
           <Text style={styles.title}>{t('journey.record.title')}</Text>

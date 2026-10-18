@@ -3,6 +3,7 @@
  * corrections that decide the hour pillar: Seoul's −30 min and Korean summer time.
  */
 import { adjustTime, chartFromFields, computeChart, isSummerTime, locationFor, pillarsText, timePillar } from '../src/features/saju/chart';
+import { searchKoreaPlaces } from '../src/features/saju/data/koreaPlaces';
 
 describe('summer time', () => {
   it('knows the Korean daylight-saving years', () => {
@@ -87,5 +88,36 @@ describe('the chart', () => {
   it('refuses what the table cannot answer', () => {
     expect(computeChart({ year: 1850, month: 1, day: 1 })).toBeNull();
     expect(chartFromFields('1995-13-01')).toBeNull();
+  });
+});
+
+// 10-17: the birthplace's longitude sets the clock correction (user: "태어난곳 검색 … 써머타임도 계산").
+describe('birthplace correction', () => {
+  it('reads the hour at the birthplace’s sun, then takes summer time off', () => {
+    // 1988-07-28 12:00 is summer time. Seoul (no place) keeps the old −30 min.
+    const seoul = chartFromFields('1988-07-28', '12:00')!;
+    expect([seoul.offsetMinutes, seoul.summerTime, seoul.adjusted]).toEqual([-30, true, { hour: 10, minute: 30 }]);
+    // Mokpo 126.39°E under 135°E: −34 min, then −1 h.
+    const mokpo = chartFromFields('1988-07-28', '12:00', '목포')!;
+    expect([mokpo.offsetMinutes, mokpo.summerTime, mokpo.adjusted]).toEqual([-34, true, { hour: 10, minute: 26 }]);
+  });
+
+  it('agrees with the sister app’s fixed Busan minutes under both meridians', () => {
+    expect(chartFromFields('1990-03-10', '08:00', '부산')!.offsetMinutes).toBe(-24); // 135°E
+    expect(chartFromFields('1958-03-10', '08:00', '부산')!.offsetMinutes).toBe(6); // 127.5°E years
+  });
+
+  it('an unknown place name falls back to Seoul', () => {
+    expect(chartFromFields('1990-03-10', '08:00', '어딘가')!.offsetMinutes).toBe(-30);
+  });
+});
+
+describe('searchKoreaPlaces', () => {
+  it('finds by name, names starting with the query first, and by province', () => {
+    expect(searchKoreaPlaces('전주')[0].name).toBe('전주');
+    expect(searchKoreaPlaces('광주').map(p => p.name).slice(0, 2)).toEqual(['광주', '광주(경기)']);
+    expect(searchKoreaPlaces('제주').map(p => p.name)).toEqual(['제주', '서귀포']);
+    expect(searchKoreaPlaces('경남').length).toBeGreaterThan(5);
+    expect(searchKoreaPlaces('  ')).toEqual([]);
   });
 });

@@ -5,6 +5,7 @@ import { buyWithStore, confirmStorePurchase, type StoreConfirmInput } from '../.
 import type { Lang } from '../../../shared/i18n';
 import type { JourneyCard, JourneyContent, JourneyPart, JourneyReport, JourneySummary, ReportBlock, ReportSection, StationCard } from '../types';
 import type { CounselingSubject } from '../../counseling/types';
+import { cachedVoice, storeVoice, voiceKey } from './voiceCache';
 
 /**
  * The player's own birth data, shaped as the server's `base_info.first`.
@@ -177,6 +178,7 @@ export function mapReport(b: any): JourneyReport {
   return {
     status,
     progress: { done: Number(b?.progress?.done ?? 0), total: Number(b?.progress?.total ?? 0) },
+    ...(typeof b?.moment_price === 'number' ? { momentPrice: b.moment_price } : {}),
     sections: (b?.sections ?? []).map((x: any): ReportSection => ({
       id: String(x?.id),
       kind: x?.kind === 'topic' || x?.kind === 'quarter' ? x.kind : 'text',
@@ -257,6 +259,10 @@ export async function narrationUrl(
   lang: Lang,
 ): Promise<NarrationClip | null> {
   if (!text.trim()) return null;
+  // Heard before on this phone (a replay): play the kept file, no server round trip.
+  const key = voiceKey(text, preset, lang);
+  const kept = await cachedVoice(key);
+  if (kept) return kept;
   try {
     const res = await authedFetch(`${apiBase()}/api/v1/prayers/tts/url`, {
       method: 'POST',
@@ -270,13 +276,15 @@ export async function narrationUrl(
       return null;
     }
     const env = b.envelope;
-    return {
+    const clip: NarrationClip = {
       url: String(b.url),
       duration: Number(b.duration ?? 0),
       envelope: env && Array.isArray(env.levels) && env.fps > 0
         ? { fps: Number(env.fps), levels: env.levels.map((v: unknown) => Number(v) || 0) }
         : null,
     };
+    void storeVoice(key, clip);
+    return clip;
   } catch (e) {
     devlog(`[journey] narration failed: ${String(e)}`);
     return null;

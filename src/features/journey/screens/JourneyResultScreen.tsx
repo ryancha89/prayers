@@ -140,14 +140,8 @@ export const JourneyResultScreen: React.FC = () => {
             <Text style={styles.kept}>{t('journey.result.kept')}</Text>
           </View>
 
-          <JourneyReportBook
-            year={year}
-            lang={lang}
-            guideName={guide?.name ?? ''}
-            price={s.content?.momentPrice ?? null}
-            state={report}
-          />
-
+          {/* Ride again sits ABOVE the long book: from the 아카이브 this screen opens on a saved
+              journey, and a button under ~15k characters of report was never found (10-17). */}
           <View style={styles.actions}>
             <Pressable
               style={styles.primary}
@@ -162,6 +156,14 @@ export const JourneyResultScreen: React.FC = () => {
               <Text style={styles.secondaryText}>{t('journey.record.title')}</Text>
             </Pressable>
           </View>
+          <JourneyReportBook
+            year={year}
+            lang={lang}
+            guideName={guide?.name ?? ''}
+            price={report.report?.momentPrice ?? s.content?.momentPrice ?? null}
+            state={report}
+          />
+
           <JourneyRecordSheet visible={recordOpen} onClose={() => setRecordOpen(false)} guideName={guide?.name} />
 
           <Text style={styles.section}>{t('journey.ticket.heading', { year })}</Text>

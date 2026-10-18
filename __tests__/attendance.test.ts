@@ -1,3 +1,4 @@
+jest.mock('../src/features/notifications/reminder', () => ({ noteCheckedInToday: jest.fn() }));
 jest.mock('../src/shared/config/api', () => ({ apiBase: () => 'http://localhost:4000' }));
 const mockFetch = jest.fn();
 jest.mock('../src/features/auth/api/headers', () => ({ authedFetch: (...a: unknown[]) => mockFetch(...a) }));

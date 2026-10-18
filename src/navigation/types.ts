@@ -33,6 +33,8 @@ export type RootStackParamList = {
   Login: undefined;
   /** The account itself: who is signed in, signing out, and deleting it. */
   Account: undefined;
+  DeleteAccount: undefined;
+  Notifications: undefined;
   /** 내 정보: the account holder's birth data and the saju chart computed from it. */
   MyInfo: undefined;
   /**

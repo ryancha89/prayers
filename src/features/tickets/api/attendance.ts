@@ -2,10 +2,11 @@ import { apiBase } from '../../../shared/config/api';
 import { authedFetch } from '../../auth/api/headers';
 import { noteCheckIn } from '../../myroom/inbox/inboxStore';
 import { useCoins } from '../../coins/store/coinStore';
+import { noteCheckedInToday } from '../../notifications/reminder';
 
 /**
- * The daily check-in: 10-15, 20 Prayer Coins a day into the coin wallet, no cap (it was two free
- * tickets, up to ten kept). The policy is the server's (Prayers::AttendanceService) — this only asks
+ * The daily check-in: 20 Prayer Coins a day into the coin wallet, topping it up to 100 at most
+ * (10-17: at 85 it gives 15, at 100+ nothing — the day still counts). The policy is the server's (Prayers::AttendanceService) — this only asks
  * and shows. The wallet is written here from the server's answer, as every coin layer does.
  *
  * "Today" is the PHONE's date, sent as `local_date`: a player in Hanoi checks in on their own
@@ -13,7 +14,7 @@ import { useCoins } from '../../coins/store/coinStore';
  */
 export interface AttendanceStatus {
   checkedToday: boolean;
-  /** Prayer Coins a check-in gives. */
+  /** Prayer Coins a check-in would give now — 0 once the wallet is at the server's cap. */
   dailyCoins: number;
   coinBalance: number | null;
   /** Every day ever checked in (server `days_total`); 0 from a server that predates it. */
@@ -49,6 +50,7 @@ export async function fetchAttendance(signal?: AbortSignal): Promise<AttendanceS
     };
     // My Room's mailbox: today's reward waiting (or already claimed elsewhere).
     noteCheckIn(localDate(), status.checkedToday);
+    if (status.checkedToday) noteCheckedInToday();
     return status;
   } catch {
     return null;
@@ -67,6 +69,8 @@ export async function checkIn(): Promise<CheckInResult | null> {
     const already = b?.error_code === 'already_checked';
     if (!b?.success && !already) return null;
     if (b?.success) noteCheckIn(localDate(), true, b.granted ?? 0);
+    // Today is done either way: today's reminder must not ring.
+    if (b?.success || already) noteCheckedInToday();
     const coinBalance = typeof b.coin_balance === 'number' ? b.coin_balance : null;
     if (coinBalance != null) useCoins.getState().setBalance(coinBalance);
     return {

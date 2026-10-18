@@ -1,0 +1,184 @@
+{
+  "armature_name": [
+    "Armature",
+    "Armature"
+  ],
+  "armature_matrix_max_diff": 0.0,
+  "bones_original": 176,
+  "bones_exported": 176,
+  "missing_bones": [],
+  "extra_bones": [],
+  "parent_mismatch": [],
+  "rest_head_max_err_rig_units": 0.00012629350802603433,
+  "rest_rot_max_err_deg": 0.0,
+  "bbox_original": [
+    [
+      -0.551,
+      -0.151,
+      0.001
+    ],
+    [
+      0.551,
+      0.144,
+      1.802
+    ]
+  ],
+  "bbox_exported": [
+    [
+      -0.558,
+      -0.445,
+      0.001
+    ],
+    [
+      0.551,
+      0.655,
+      1.793
+    ]
+  ],
+  "meshes": [
+    "Body_Geo",
+    "CO_Anklets",
+    "CO_Arm_Gold",
+    "CO_Belt_Chains",
+    "CO_Belt_Tassels",
+    "CO_Bodice",
+    "CO_Bodice_Piping",
+    "CO_Corset",
+    "CO_Corset_GoldTrim",
+    "CO_Earrings",
+    "CO_Hair_Long",
+    "CO_Hair_Ornament",
+    "CO_Hair_Ornament_Gem",
+    "CO_Lantern_Core",
+    "CO_Lantern_Prop",
+    "CO_Medallion",
+    "CO_Medallion_Gem",
+    "CO_Necklace_Choker",
+    "CO_Pendant_Gem",
+    "CO_Skirt_FrontPanel",
+    "CO_Skirt_NavyPanels",
+    "CO_Skirt_Outer",
+    "CO_Skirt_Under",
+    "CO_Sleeve_Bands",
+    "CO_Sleeve_L",
+    "CO_Sleeve_R",
+    "EBrows_Geo",
+    "Face_Geo",
+    "HairB_Geo",
+    "Mouth_Geo"
+  ],
+  "clips": {
+    "idle": {
+      "file": "Female_Platform_LookAtTrain_Idle.fbx",
+      "frame": 31,
+      "range": [
+        1,
+        61
+      ],
+      "bbox": [
+        [
+          -0.494,
+          -0.453,
+          0.001
+        ],
+        [
+          0.485,
+          0.664,
+          1.793
+        ]
+      ],
+      "finite": true,
+      "worst_edge_stretch": {
+        "Body_Geo": 2.0,
+        "CO_Bodice_Piping": 1.85,
+        "CO_Sleeve_R": 1.74,
+        "CO_Sleeve_L": 1.71,
+        "CO_Necklace_Choker": 1.4
+      }
+    },
+    "sit_idle": {
+      "file": "Female_SitIdle.fbx",
+      "frame": 21,
+      "range": [
+        1,
+        41
+      ],
+      "bbox": [
+        [
+          -0.507,
+          -0.422,
+          -0.37
+        ],
+        [
+          0.492,
+          0.759,
+          1.288
+        ]
+      ],
+      "finite": true,
+      "worst_edge_stretch": {
+        "Body_Geo": 12.48,
+        "CO_Bodice_Piping": 8.73,
+        "CO_Skirt_Under": 6.05,
+        "CO_Skirt_FrontPanel": 5.13,
+        "CO_Skirt_NavyPanels": 3.42
+      }
+    },
+    "talk": {
+      "file": "Female_Talking.fbx",
+      "frame": 37,
+      "range": [
+        1,
+        81
+      ],
+      "bbox": [
+        [
+          -0.507,
+          -0.422,
+          -0.37
+        ],
+        [
+          0.492,
+          0.761,
+          1.285
+        ]
+      ],
+      "finite": true,
+      "worst_edge_stretch": {
+        "Body_Geo": 12.48,
+        "CO_Bodice_Piping": 8.8,
+        "CO_Skirt_Under": 6.05,
+        "CO_Skirt_FrontPanel": 5.13,
+        "CO_Skirt_NavyPanels": 3.42
+      }
+    },
+    "walk": {
+      "file": "Female_Walk.fbx",
+      "frame": 23,
+      "range": [
+        1,
+        77
+      ],
+      "bbox": [
+        [
+          -0.497,
+          -0.493,
+          -0.026
+        ],
+        [
+          0.461,
+          0.607,
+          1.808
+        ]
+      ],
+      "finite": true,
+      "worst_edge_stretch": {
+        "CO_Bodice_Piping": 4.45,
+        "CO_Skirt_Under": 3.03,
+        "CO_Skirt_FrontPanel": 2.85,
+        "Body_Geo": 2.73,
+        "CO_Belt_Chains": 2.12
+      }
+    }
+  }
+}

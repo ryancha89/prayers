@@ -26,6 +26,7 @@ export type IconName =
   | 'speaker'
   | 'speakerOff'
   | 'exit'
+  | 'stand'
   | 'plus'
   | 'sparkle'
   | 'play'
@@ -395,6 +396,15 @@ const ICONS: Record<IconName, Draw> = {
     </>
   ),
   // An arrow up out of a tray: the share sheet's own glyph on iOS.
+  // 일어서기 (10-17): a figure on its feet with an up arrow beside it.
+  stand: c => (
+    <>
+      <Circle cx="9" cy="4.5" r="2" stroke={c} />
+      <Path d="M9 8v6.5M9 14.5l-3 6M9 14.5l3 6M5.5 11l3.5-2.5 3.5 2.5" stroke={c} />
+      <Line x1="18" y1="19" x2="18" y2="7" stroke={c} />
+      <Polyline points="15 10 18 7 21 10" stroke={c} />
+    </>
+  ),
   exit: c => (
     <>
       <Path d="M14 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H14" stroke={c} />

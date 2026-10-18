@@ -12,6 +12,9 @@ export interface CounselingSubject {
   /** Narrowed from `string`: the server defaults a missing gender to `male`, and that default
    *  changes the reading instead of failing, so it must be asked for and sent. */
   gender?: 'male' | 'female';
+  /** A `KOREA_PLACES` name (saju/data/koreaPlaces.ts): the hour is corrected to that place's sun.
+   *  Absent = Seoul, as before (10-17). */
+  birthPlace?: string;
   relationship?: string;
   isUser: boolean;
 }
@@ -448,6 +451,9 @@ export type RNToUnityEvent =
   /** Leave by the consultation room's door (walk-in, within its reach): Unity opens it and answers
    *  ROOM_LEFT. */
   | { type: 'WALK_LEAVE' }
+  /** 일어서기 (10-17): out of the chair and on foot again, mid-conversation. Unity answers
+   *  UNITY_STOOD; 대화하기 seats the player again (UNITY_SEATED). */
+  | { type: 'WALK_STAND' }
   /** How much of the UnityView the app's own UI covers, so the room can frame its camera into the
    *  part the player can actually see. Sent by every screen that hosts Unity on each layout change
    *  (rotation, a panel growing), deduplicated, and replayed on the room's READY message. */
@@ -741,6 +747,8 @@ export type UnityToRNEvent =
   /** The player walked up to the counselor and sat down. Only a walk-in room sends this, and it
    *  is the go-ahead the engine held its first phase for. */
   | { type: 'UNITY_SEATED' }
+  /** The player got up (WALK_STAND) — walking again, the conversation kept. */
+  | { type: 'UNITY_STOOD' }
   | { type: 'USER_MESSAGE'; payload: { text: string } }
   /** A counselor line — mirrored so the app's history holds both halves. */
   | { type: 'COUNSELOR_MESSAGE'; payload: { text: string } }

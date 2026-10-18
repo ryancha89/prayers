@@ -29,6 +29,8 @@ export const COUNSELOR_CARD_ART: Record<string, ImageSourcePropType> = {
   theo: require('./theo.jpg'),
   // Pixel art, cut from his own sprite: tools/pixelcat/gen_pixel_cat.py.
   nabi: require('./nabi.png'),
+  // Cropped from her reference art (별빛 신전의 천상 오라클.png) until her model can be rendered.
+  luna: require('./luna.jpg'),
 };
 
 export const COUNSELOR_AVATAR_ART: Record<string, ImageSourcePropType> = {
@@ -42,4 +44,5 @@ export const COUNSELOR_AVATAR_ART: Record<string, ImageSourcePropType> = {
   yunjung: require('./yunjung_avatar.jpg'),
   theo: require('./theo_avatar.jpg'),
   nabi: require('./nabi_avatar.png'),
+  luna: require('./luna_avatar.jpg'),
 };

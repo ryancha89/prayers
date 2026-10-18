@@ -16,6 +16,7 @@ import { pauseLine, playLine, resumeLine, setLineSpeed, stopLine } from '../lect
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useFollowCamera } from '../../world/components/useWorldCamera';
+import { ALL_ORIENTATIONS } from '../../coins/components/CoinShopSheet';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'Lecture'>;
@@ -464,7 +465,8 @@ export const LectureScreen: React.FC = () => {
         </>
       )}
 
-      <Modal visible={sheet} transparent animationType="slide" onRequestClose={() => setSheet(false)}>
+      <Modal visible={sheet} transparent animationType="slide" onRequestClose={() => setSheet(false)}
+        supportedOrientations={[...ALL_ORIENTATIONS]}>
         <Pressable style={styles.sheetScrim} onPress={() => setSheet(false)} />
         <View style={styles.sheet}>
           <View style={styles.sheetGrip} />

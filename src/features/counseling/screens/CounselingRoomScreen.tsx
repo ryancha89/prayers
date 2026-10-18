@@ -36,6 +36,7 @@ import { useRoomLook } from '../components/useRoomLook';
 import { useWorldStore } from '../../world/store/worldStore';
 import { useSoundStore } from '../../../shared/audio/store';
 import { NoCoinsCard } from '../../coins/components/NoCoinsCard';
+import { CoinPill } from '../../coins/components/CoinPill';
 import { CONSULT_COST, fetchCoins } from '../../coins/api/coinsApi';
 import { useCoins } from '../../coins/store/coinStore';
 
@@ -345,7 +346,12 @@ export const CounselingRoomScreen: React.FC = () => {
       // Out through the room's door (walk-in): the same way out as the Leave button.
       if (e.type === 'ROOM_LEFT') exitTo();
       else if (e.type === 'SESSION_ERROR') {
-        console.warn(`[room] session error: ${e.payload?.reason ?? 'unknown'}`);
+        const reason = e.payload?.reason ?? 'unknown';
+        console.warn(`[room] session error: ${reason}`);
+        // Unity's old door gate (under 10 PC = 0 "tickets"): stay in the room and offer coins,
+        // as the question gate does (10-17, "대화하기하면 홈으로 가는 버그"). The room is still
+        // walkable and the next 대화하기 asks again.
+        if (reason === 'no_tickets') { setCoinPrompt(true); return; }
         onExit();
       }
     });
@@ -441,16 +447,9 @@ export const CounselingRoomScreen: React.FC = () => {
       {/* While the player is on their feet the reading has not started, so the overlay below has
           nothing to say and these are the only controls on screen. They unmount themselves the
           moment the room reports the player seated — see useConsultationEngine.walking. */}
-      {coinPrompt && (
-        <NoCoinsCard
-          face={counselor.avatarImage ?? counselor.cardImage}
-          accent={counselor.accent}
-          cost={CONSULT_COST}
-          onClose={() => setCoinPrompt(false)}
-        />
-      )}
       <WalkControls
-        visible={consultation.walking}
+        // Not under the coin card: its own 대화하기 sat on top of the card's 충전하기 (10-17).
+        visible={consultation.walking && !coinPrompt}
         counselor={counselor ? { id: params.counselorId, name: counselor.name } : undefined}
       />
       <ConsultationOverlay
@@ -471,7 +470,17 @@ export const CounselingRoomScreen: React.FC = () => {
         onChatMode={pixel ? undefined : setChatMode}
         panelTop={topBarBottom}
         onPanelLayout={onPanelLayout}
+        away={consultation.walking}
       />
+      {/* Last, so it sits above the walk controls and the overlay. */}
+      {coinPrompt && (
+        <NoCoinsCard
+          face={counselor.avatarImage ?? counselor.cardImage}
+          accent={counselor.accent}
+          cost={CONSULT_COST}
+          onClose={() => setCoinPrompt(false)}
+        />
+      )}
 
       {/* Top controls — kept minimal, never covering the character (spec §27) */}
       {/* Inset by hand, not a SafeAreaView, so a test can pin it: clear of the island on whichever
@@ -491,21 +500,34 @@ export const CounselingRoomScreen: React.FC = () => {
         onLayout={onTopBarLayout}
         testID="room-top-bar">
         {/* Silent on purpose, as the room has always been: its mix is Unity's (uiSounds.test). */}
-        <RingButton testID="room-back" icon="back" size={RING_COMPACT} label={t('hud.back')} onPress={onExit} />
+        <View style={styles.topRight} pointerEvents="box-none">
+          <RingButton testID="room-back" icon="back" size={RING_COMPACT} label={t('hud.back')} onPress={onExit} />
+          {/* 일어서기 (10-17): out of the chair to walk the room; 대화하기 sits back down and the
+              conversation carries on where it was. Walk-in rooms only, never mid-answer. */}
+          {consultation.canStand && (
+            <RingButton testID="room-stand" icon="stand" size={RING_COMPACT} label={t('room.stand')}
+              onPress={consultation.stand} />
+          )}
+        </View>
         {/* Whose chart: me, or someone I am asking about (10-13). Unity rooms only — the pixel room
             is told by the app and has no SUBJECT_SWITCH to hear. */}
         {!pixel && subject && <SubjectSwitcher initialId={subject.id} />}
         {/* The counselor's voice on/off (10-15). Her lines play on Unity's Voice bus; VOICE_AUDIO
             mutes it, the line already playing included, and the subtitles carry on. Remembered
             (sound store) and replayed to every room on READY. The pixel room has no voice to mute. */}
-        <RingButton
-          testID="room-sound"
-          icon={voiceOn ? 'speaker' : 'speakerOff'}
-          size={RING_COMPACT}
-          label={t(voiceOn ? 'hud.voiceOff' : 'hud.voiceOn')}
-          disabled={pixel}
-          onPress={() => setVoiceOn(!voiceOn)}
-        />
+        {/* The balance beside it (10-17, "현재 코인 보유 보여야함"): a question costs coins, so the
+            room shows what is left; the pill opens the shop. */}
+        <View style={styles.topRight} pointerEvents="box-none">
+          <CoinPill />
+          <RingButton
+            testID="room-sound"
+            icon={voiceOn ? 'speaker' : 'speakerOff'}
+            size={RING_COMPACT}
+            label={t(voiceOn ? 'hud.voiceOff' : 'hud.voiceOn')}
+            disabled={pixel}
+            onPress={() => setVoiceOn(!voiceOn)}
+          />
+        </View>
       </View>
 
       {/* Dev only, and mounted LAST on purpose: it has to sit above ConsultationOverlay, whose
@@ -538,6 +560,7 @@ const SHOW_CUE_TESTER = false;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   missing: { ...typography.body, color: colors.textSecondary, margin: spacing.xl },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   topBar: {
     position: 'absolute',
     top: 0,

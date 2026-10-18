@@ -229,5 +229,8 @@ export interface ReportSection {
 export interface JourneyReport {
   status: 'pending' | 'generating' | 'partial' | 'ready';
   progress: { done: number; total: number };
+  /** What opening the rest costs this account NOW (0 once the journey is paid). A saved journey's
+   *  content carries the price from when it was ridden, which went stale after paying. */
+  momentPrice?: number;
   sections: ReportSection[];
 }

@@ -27,11 +27,10 @@ jest.mock('../src/features/journey/player/beatVoice', () => ({
 import React from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 import { Icon, ICON_NAMES, type IconName } from '../src/shared/components/Icon';
-import { CATEGORIES, CATEGORY_ICON, FIELDS, KIND_ICON, MOOD_ICON, type ArchiveCategory } from '../src/features/archive/types';
+import { CATEGORIES, CATEGORY_ACCENT, CATEGORY_ICON, FIELDS, KIND_ICON, MOOD_ICON, type ArchiveCategory } from '../src/features/archive/types';
 import { ArchiveScreen } from '../src/features/archive/screens/ArchiveScreen';
 import { useArchiveStore } from '../src/features/archive/store/archiveStore';
 import { useLanguageStore } from '../src/shared/i18n';
-import { colors } from '../src/shared/theme';
 
 const EMOJI = /\p{Extended_Pictographic}|️/u;
 
@@ -64,7 +63,7 @@ describe('the Archive’s icon maps', () => {
 });
 
 describe('the Archive tab', () => {
-  it('draws one Icon per category card, in the accent purple, and no emoji in any text', () => {
+  it('draws one Icon per category card, in that category’s own colour, and no emoji in any text', () => {
     useLanguageStore.setState({ lang: 'en' });
     useArchiveStore.setState({ memories: [], discoveries: [], answeredQuestions: [] } as never);
     let tree!: ReactTestRenderer.ReactTestRenderer;
@@ -72,8 +71,8 @@ describe('the Archive tab', () => {
     for (const c of CATEGORIES) {
       const icon = tree.root.findAll(n => n.type === Icon && n.props.testID === `archive-cell-icon-${c}`);
       expect([c, icon.length, icon[0]?.props.name]).toEqual([c, 1, CATEGORY_ICON[c]]);
-      expect(icon[0].props.size).toBe(26);
-      expect(icon[0].props.color).toBe(colors.violetSoft);
+      expect(icon[0].props.size).toBe(22);
+      expect(icon[0].props.color).toBe(CATEGORY_ACCENT[c]);
     }
     const strings: string[] = [];
     const walk = (node: unknown) => {

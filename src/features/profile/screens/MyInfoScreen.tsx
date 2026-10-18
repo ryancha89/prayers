@@ -30,7 +30,7 @@ export const MyInfoScreen: React.FC = () => {
   const t = useT();
   const self = useSubjectsStore(s => s.self);
   const ready = hasBirthData(self);
-  const chart = useSajuChart(self.birthDate, self.birthTime);
+  const chart = useSajuChart(self.birthDate, self.birthTime, self.birthPlace);
   const zodiac = zodiacOf(self.birthDate);
 
   const edit = () => {
@@ -81,7 +81,7 @@ export const MyInfoScreen: React.FC = () => {
             <PrimaryButton label={t('addSubject.editSelf')} onPress={edit} style={styles.emptyBtn} />
           </View>
         ) : (
-          <SajuChartPanel person={{ birthDate: self.birthDate!, birthTime: self.birthTime, gender: self.gender! }} />
+          <SajuChartPanel person={{ birthDate: self.birthDate!, birthTime: self.birthTime, birthPlace: self.birthPlace, gender: self.gender! }} />
         )}
       </ScrollView>
     </SafeAreaView>

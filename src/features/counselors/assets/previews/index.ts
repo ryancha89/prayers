@@ -83,5 +83,12 @@ export const PREVIEW_STRIPS: Record<string, Record<string, ImageSourcePropType>>
     explaining: require('./theo_explaining.jpg'),
     surprised: require('./theo_surprised.jpg'),
   },
+  // Luna (17-10): Go Yunjung's rig re-dressed (Unity LunaImporter), so her clips ARE f_char_003's —
+  // the same three gestures, filmed in her own room (ConsultationSolo04).
+  luna: {
+    smile: require('./luna_smile.jpg'),
+    explaining: require('./luna_explaining.jpg'),
+    laugh: require('./luna_laugh.jpg'),
+  },
 
 };

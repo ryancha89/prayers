@@ -31,13 +31,15 @@ export interface SajuPerson {
   birthDate: string;
   /** `HH:MM`, absent = unknown. */
   birthTime?: string;
+  /** A `KOREA_PLACES` name; absent = Seoul. */
+  birthPlace?: string;
   gender: 'male' | 'female';
 }
 
 /** The pillars for a person, as the panel computes them — for a caller that also shows the clock
  *  (the summer-time label next to the birth time). */
-export const useSajuChart = (birthDate?: string, birthTime?: string): Chart | null =>
-  useMemo(() => (birthDate ? chartFromFields(birthDate, birthTime) : null), [birthDate, birthTime]);
+export const useSajuChart = (birthDate?: string, birthTime?: string, birthPlace?: string): Chart | null =>
+  useMemo(() => (birthDate ? chartFromFields(birthDate, birthTime, birthPlace) : null), [birthDate, birthTime, birthPlace]);
 
 /**
  * A person's saju as the app shows it: the four pillars (computed on the phone, `chart.ts`), the
@@ -53,8 +55,8 @@ export const SajuChartPanel: React.FC<{ person: SajuPerson; /** Someone else's (
 }) => {
   const t = useT();
   const lang = useLang();
-  const { birthDate, birthTime, gender } = person;
-  const chart = useSajuChart(birthDate, birthTime);
+  const { birthDate, birthTime, birthPlace, gender } = person;
+  const chart = useSajuChart(birthDate, birthTime, birthPlace);
 
   // 대운·세운 come from the server (the 대운수 needs the solar-term distance).
   const [luck, setLuck] = useState<Luck | null>(null);

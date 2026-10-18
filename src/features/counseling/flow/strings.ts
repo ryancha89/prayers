@@ -37,9 +37,9 @@ const KO: Bundle = {
   'mode.short': '짧게',
   'mode.tiki': '티키타카',
   'mode.detail': '깊은 풀이',
-  'mode.short.hint': '짧게: 한두 마디로 바로바로 답해요.',
-  'mode.tiki.hint': '티키타카: 서너 문장으로 대화하듯 답해요.',
-  'mode.detail.hint': '깊은 풀이: 명리 근거를 갖춘 상세 풀이로 답해요.',
+  'mode.short.hint': '짧게: 한두 마디로 바로바로 답해드려요',
+  'mode.tiki.hint': '티키타카: 친구랑 얘기하듯 주고받으며 답해드려요',
+  'mode.detail.hint': '깊은 풀이: 사주 근거를 짚어가며 자세히 풀어드려요',
 };
 
 const EN: Bundle = {

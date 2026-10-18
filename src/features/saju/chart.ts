@@ -19,6 +19,7 @@
  */
 import TERMS from './data/solarTerms.json';
 import TERM_TIMES from './data/solarTermTimes.json';
+import { findKoreaPlace } from './data/koreaPlaces';
 
 export const GABJA = [
   '甲子', '乙丑', '丙寅', '丁卯', '戊辰', '己巳', '庚午', '辛未', '壬申', '癸酉',
@@ -66,6 +67,11 @@ export interface ChartInput {
   minute?: number | null;
   /** Default: Seoul under the standard the country used on that date (`locationFor`). */
   location?: Location;
+  /**
+   * Birthplace longitude (°E). Given, the clock is corrected to that place's sun —
+   * (longitude − the meridian Korea kept that day) × 4 min — instead of `location`'s fixed minutes.
+   */
+  longitude?: number;
   /** Default: `isSummerTime(date, clock)`. */
   summerTime?: boolean;
   /** 야자시 as the same day's 子 rather than the next day's. */
@@ -79,6 +85,8 @@ export interface Chart {
   zodiacTime: string | null;
   /** The clock after longitude and summer-time correction — what the hour pillar was read from. */
   adjusted: { hour: number; minute: number } | null;
+  /** Minutes the birthplace's longitude moved the clock (−30 for the default Seoul). */
+  offsetMinutes: number;
   /** Summer time moved the birth clock back an hour (never with time unknown). */
   summerTime: boolean;
   location: Location;
@@ -132,8 +140,13 @@ export function locationFor(year: number, month: number, day: number): Location 
 /** `adjutTime` — longitude minutes, then −1 h for summer time, carrying across the hour and
  *  wrapping at midnight the way the original does. */
 export function adjustTime(hour: number, minute: number, location: Location, summerTime: boolean): [number, number] {
+  return adjustTimeBy(hour, minute, LOCATION_MINUTES[location], summerTime);
+}
+
+/** The same correction by a number of minutes (a birthplace's longitude, −120 … +59). */
+export function adjustTimeBy(hour: number, minute: number, offsetMinutes: number, summerTime: boolean): [number, number] {
   let h = hour;
-  let m = minute + LOCATION_MINUTES[location];
+  let m = minute + offsetMinutes;
   if (m < 0) {
     if (m < -60) {
       h -= 2;
@@ -180,6 +193,9 @@ export function computeChart(input: ChartInput): Chart | null {
   const minute = timeKnown ? Number(input.minute ?? 0) : 0;
   const location = input.location ?? locationFor(year, month, day);
   const summerTime = input.summerTime ?? isSummerTime(year, month, day, hour, minute);
+  const meridian = LOCATION_MINUTES[locationFor(year, month, day)] === 0 ? 127.5 : 135;
+  const offsetMinutes =
+    input.longitude != null ? Math.round((input.longitude - meridian) * 4) : LOCATION_MINUTES[location];
   const nightMouse = input.nightMouse === true;
 
   // The month's first solar-term row (節, always within the first ten days).
@@ -201,7 +217,7 @@ export function computeChart(input: ChartInput): Chart | null {
   const termTime = termRow ? Date.parse(termRow[3]) : null;
 
   let adjusted: [number, number] | null = null;
-  if (hour !== null) adjusted = adjustTime(hour, minute, location, summerTime);
+  if (hour !== null) adjusted = adjustTimeBy(hour, minute, offsetMinutes, summerTime);
 
   let targetTime = Date.UTC(year, month - 1, day, adjusted ? adjusted[0] : 23, adjusted ? adjusted[1] : 0);
 
@@ -234,6 +250,7 @@ export function computeChart(input: ChartInput): Chart | null {
     // Only when it moved the clock: with no birth time there is nothing to correct or to label.
     summerTime: summerTime && adjusted !== null,
     location,
+    offsetMinutes,
     timeUnknown: hour === null,
   };
 }
@@ -242,8 +259,8 @@ export function computeChart(input: ChartInput): Chart | null {
 export const pillarsText = (c: Chart): string =>
   [c.zodiacYear, c.zodiacMonth, c.zodiacDay, c.zodiacTime].filter(Boolean).join(' ');
 
-/** From the archive's own fields: "1988-07-28", "18:00" (optional). */
-export function chartFromFields(birthDate: string, birthTime?: string): Chart | null {
+/** From the archive's own fields: "1988-07-28", "18:00" (optional), a `KOREA_PLACES` name (optional). */
+export function chartFromFields(birthDate: string, birthTime?: string, birthPlace?: string): Chart | null {
   const m = birthDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!m) return null;
   const t = (birthTime ?? '').match(/^(\d{2}):(\d{2})$/);
@@ -253,5 +270,6 @@ export function chartFromFields(birthDate: string, birthTime?: string): Chart | 
     day: Number(m[3]),
     hour: t ? Number(t[1]) : null,
     minute: t ? Number(t[2]) : null,
+    longitude: findKoreaPlace(birthPlace)?.longitude,
   });
 }

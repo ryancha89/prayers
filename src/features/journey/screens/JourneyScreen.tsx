@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -124,6 +124,35 @@ export const JourneyScreen: React.FC = () => {
     if (!journey || !s.content || !s.counselorId || !s.tone) return;
     keepJourney({ journeyId: journey.id, counselorId: s.counselorId, tone: s.tone, lang: s.lang, year: journey.year, content: s.content, ...journeyWho() });
   }, [journey, s.content, s.counselorId, s.tone, s.lang, keepJourney]);
+
+  // The panel's size (10-17, "축소하기 · 대본만 밑에 · 풍경 보기"): everything, only the script line at
+  // the bottom, or nothing but the view out of the window (a chip brings the panel back). The ride
+  // keeps playing in every mode; only the controls are folded away.
+  const [panelMode, setPanelMode] = useState<'full' | 'script' | 'scenery'>('full');
+  // The folded panel lies OVER the window (bottom in portrait, bottom-right in landscape): its height,
+  // so the stage cards (unlock, title, …) keep clear of it instead of sliding under the dialogue.
+  const [panelH, setPanelH] = useState(0);
+  const setMode = (m: 'full' | 'script' | 'scenery') => { sfx.tap(); setPanelMode(m); };
+
+  // 여행 종료하기 (10-17): leaves the ride for good — back to the 3D world map when the journey was
+  // entered from the world, otherwise to the main home. A journey with any paid part stays in
+  // 아카이브 → 저장한 여행 (kept above), so say where to find it; an unpaid one just goes.
+  const endJourney = () => {
+    sfx.back();
+    const paid = s.content?.momentPrice === 0
+      || !!s.content?.chapters.some(c => (c.parts ?? []).some(p => !!p.momentId && p.unlocked));
+    const leave = () => {
+      s.stop();
+      const fromWorld = navigation.getState().routes.some(r => r.name === 'World');
+      if (fromWorld) navigation.popTo('World');
+      else navigation.popTo('Tabs', { screen: 'Home' });
+    };
+    if (!paid) return leave();
+    Alert.alert(t('journey.endTitle'), t('journey.endSaved'), [
+      { text: t('account.cancel'), style: 'cancel' },
+      { text: t('journey.endConfirm'), onPress: leave },
+    ]);
+  };
 
   // The journey finished → the ending painting, then the collection (mockup panels 21-22).
   useEffect(() => {
@@ -442,7 +471,12 @@ export const JourneyScreen: React.FC = () => {
             delayMs={unity && cabinState?.mood ? MOOD_BEAT_LEAD_MS : 0} />
         </View>
       )}
-      <JourneyStageOverlay journey={journey} />
+      {/* Kept clear of the folded panel that now lies over the window (10-17, "서로 안겹치게"). */}
+      <View pointerEvents="box-none" style={[styles.stageLayer, panelMode === 'script' && (landscape
+        ? { right: screen.sidePanel + safe.right - spacing.sm }
+        : { bottom: panelH })]}>
+        <JourneyStageOverlay journey={journey} />
+      </View>
       <JourneyRecordSheet visible={recordOpen} onClose={() => setRecordOpen(false)} guideName={guide?.name}
         onStation={i => s.goTo(i)} />
     </>
@@ -462,16 +496,10 @@ export const JourneyScreen: React.FC = () => {
         onLayout={insets.track('header')}>
         {/* The HUD's compact ring, as every in-world top bar has it (My Room's row: md from the
             safe edge, sm under the status bar). */}
-        <RingButton
-          testID="journey-back"
-          icon="back"
-          size={RING_COMPACT}
-          label={t('hud.back')}
-          onPress={() => {
-            sfx.back();
-            navigation.goBack(); // the journey keeps going; the mini player carries it
-          }}
-        />
+        <Pressable testID="journey-end" style={styles.endButton} onPress={endJourney} hitSlop={8}
+          accessibilityRole="button">
+          <Text style={styles.endText}>{t('journey.end')}</Text>
+        </Pressable>
         <Text style={styles.brand}>{t('journey.header', { year: journey.year })}</Text>
         <CoinPill />
       </View>
@@ -504,16 +532,35 @@ export const JourneyScreen: React.FC = () => {
           "board the train". */}
       {/* Landscape: the same panel, down the right-hand side and scrollable — 402pt of height holds
           it on every phone measured, the scroll is for the largest text sizes. */}
+      {panelMode === 'scenery' ? (
+        <View style={[styles.sceneryBar, { paddingBottom: safe.bottom + spacing.sm }]} onLayout={insets.track('panel')}>
+          <Pressable style={styles.modeChip} onPress={() => setMode('full')} accessibilityRole="button">
+            <Text style={styles.modeChipText}>{t('journey.panel.show')}</Text>
+          </Pressable>
+        </View>
+      ) : (
       <View
-        style={[cabinUp && styles.panel, landscape && styles.panelSide,
+        style={[cabinUp && styles.panel, panelMode === 'script' && styles.panelScript,
+          panelMode === 'script' && !landscape && styles.panelScriptDocked,
+          landscape && (panelMode === 'script' ? styles.panelScriptDockedSide : styles.panelSide),
           // Out to the screen edge; the width the content gets stays `sidePanel`.
           landscape && { width: screen.sidePanel + safe.right, paddingRight: safe.right, paddingBottom: safe.bottom }]}
-        onLayout={insets.track('panel')}>
+        onLayout={e => { insets.track('panel')(e); setPanelH(e.nativeEvent.layout.height); }}>
       <ScrollView
-        style={landscape ? styles.panelScrollSide : styles.panelScroll}
+        style={landscape && panelMode !== 'script' ? styles.panelScrollSide : styles.panelScroll}
         scrollEnabled={landscape}
         showsVerticalScrollIndicator={false}
         bounces={false}>
+      <View style={styles.modeRow}>
+        <Pressable style={styles.modeChip} onPress={() => setMode(panelMode === 'full' ? 'script' : 'full')}
+          accessibilityRole="button" testID="journey-panel-fold">
+          <Text style={styles.modeChipText}>{t(panelMode === 'full' ? 'journey.panel.fold' : 'journey.panel.unfold')}</Text>
+        </Pressable>
+        <Pressable style={styles.modeChip} onPress={() => setMode('scenery')} accessibilityRole="button"
+          testID="journey-panel-scenery">
+          <Text style={styles.modeChipText}>{t('journey.panel.scenery')}</Text>
+        </Pressable>
+      </View>
       {/* The dialogue box (mockup): who is speaking, the line, and "››" while the voice goes on. */}
       {/* Tapping the box opens the record of everything said so far (10-08). */}
       <Pressable style={styles.dialogue} onPress={() => { sfx.tap(); setRecordOpen(true); }}
@@ -532,6 +579,7 @@ export const JourneyScreen: React.FC = () => {
         {s.status === 'playing' && <Icon name="chevronRight" size={18} color={colors.gold} style={styles.more} />}
       </Pressable>
 
+      {panelMode === 'full' && (<>
       <View style={[styles.progress, storyShowing && styles.dimmed]} pointerEvents={storyShowing ? 'none' : 'auto'}>
         <View style={styles.bar}>
           <View style={[styles.barFill, { width: `${progress * 100}%` }]} />
@@ -592,8 +640,10 @@ export const JourneyScreen: React.FC = () => {
         onStation={i => { sfx.tap(); s.goTo(i); }}
       />
       </View>
+      </>)}
       </ScrollView>
       </View>
+      )}
       </View>
     </SafeAreaView>
     </View>
@@ -603,6 +653,7 @@ export const JourneyScreen: React.FC = () => {
 const styles = StyleSheet.create({
   stage: { flex: 1, backgroundColor: '#07061A' },
   unity: { ...absoluteFill },
+  stageLayer: { ...absoluteFill },
   root: { flex: 1, backgroundColor: '#07061A' },
   rootOverCabin: { backgroundColor: 'transparent' },
   curtain: { ...absoluteFill, backgroundColor: '#07061A' },
@@ -619,6 +670,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
   },
   brand: { ...typography.tiny, color: colors.gold, letterSpacing: 3, flex: 1 },
+  // 축소: only the script line — no glass of its own (the dialogue card has one), so the window
+  // shows around it.
+  panelScript: { backgroundColor: 'transparent', borderTopWidth: 0 },
+  // Portrait: folded down onto the floor of the screen, over the window instead of under it (10-17,
+  // "축소하기 누르면 바닥으로 가서 창문 안 가리게").
+  panelScriptDocked: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingBottom: spacing.sm },
+  // Landscape: folded down into the bottom-right corner over the window, which then runs the full
+  // width (10-17, "가로 모드에서 축소하면 밑으로").
+  panelScriptDockedSide: { position: 'absolute', right: 0, bottom: 0 },
+  sceneryBar: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
+  modeRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.xs, paddingHorizontal: spacing.md, paddingTop: spacing.xs },
+  modeChip: {
+    paddingHorizontal: spacing.sm + 2, paddingVertical: 4, borderRadius: 999,
+    borderWidth: 1, borderColor: 'rgba(233,196,106,0.4)', backgroundColor: 'rgba(7,6,26,0.6)',
+  },
+  modeChipText: { ...typography.tiny, color: colors.gold },
+  endButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(10,10,24,0.55)',
+    marginRight: spacing.sm,
+  },
+  endText: { ...typography.caption, color: colors.textPrimary },
   chapter: { ...typography.tiny, color: colors.textSecondary, letterSpacing: 1 },
   // The window and the panel: a column in portrait, a row in landscape.
   body: { flex: 1 },

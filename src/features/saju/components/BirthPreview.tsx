@@ -7,6 +7,7 @@ import { sfx } from '../../../shared/audio/sfx';
 import { sayGlyphs } from '../../counseling/api/sajuGlyphs';
 import { useSajuChart, ELEMENT_COLOR, ELEMENT_OF } from './SajuChartPanel';
 import { starSign, zodiacAnimal } from '../signs';
+import { findKoreaPlace } from '../data/koreaPlaces';
 
 /**
  * What a birth date says, shown on the birth form the moment the date is complete (10-15, user:
@@ -15,12 +16,14 @@ import { starSign, zodiacAnimal } from '../signs';
  * The star sign and the zodiac animal first — the two things a player who has never heard of saju
  * already recognises — then the four pillars themselves, and a plain "What is saju?" that opens
  * under them. Everything is computed on the phone (chart.ts); the form never waits on the server.
- * A birth time typed later adds the hour pillar in place.
+ * A birth time typed later adds the hour pillar in place. Under the pillars: the clock the hour
+ * pillar was read from — the birthplace's longitude and, inside Korea's summer-time years, the hour
+ * taken off — with a 서머타임 badge when it applied (10-17).
  */
-export const BirthPreview: React.FC<{ birthDate: string; birthTime?: string }> = ({ birthDate, birthTime }) => {
+export const BirthPreview: React.FC<{ birthDate: string; birthTime?: string; birthPlace?: string }> = ({ birthDate, birthTime, birthPlace }) => {
   const t = useT();
   const lang = useLang();
-  const chart = useSajuChart(birthDate, birthTime);
+  const chart = useSajuChart(birthDate, birthTime, birthPlace);
   const [explain, setExplain] = useState(false);
   if (!chart) return null;
 
@@ -93,6 +96,28 @@ export const BirthPreview: React.FC<{ birthDate: string; birthTime?: string }> =
         </Text>
       )}
 
+      {chart.adjusted && (
+        <View style={styles.clockRow} testID="birth-preview-clock">
+          <View style={styles.clockText}>
+            <Text style={styles.clockMain}>
+              {t('myInfo.noteAdjusted', { time: `${pad(chart.adjusted.hour)}:${pad(chart.adjusted.minute)}` })}
+            </Text>
+            <Text style={styles.clockSub}>
+              {t('birthPreview.placeOffset', {
+                place: findKoreaPlace(birthPlace)?.name ?? t('birthPreview.seoul'),
+                min: chart.offsetMinutes > 0 ? `+${chart.offsetMinutes}` : String(chart.offsetMinutes),
+              })}
+              {chart.summerTime ? ` · ${t('myInfo.noteSummer')}` : ''}
+            </Text>
+          </View>
+          {chart.summerTime && (
+            <View style={styles.summerBadge} testID="birth-preview-summer">
+              <Text style={styles.summerBadgeText}>{t('myInfo.summerTag')}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
       <Pressable
         onPress={() => { sfx.tap(); setExplain(v => !v); }}
         style={styles.whatRow}
@@ -106,6 +131,8 @@ export const BirthPreview: React.FC<{ birthDate: string; birthTime?: string }> =
     </View>
   );
 };
+
+const pad = (n: number) => String(n).padStart(2, '0');
 
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md },
@@ -133,6 +160,15 @@ const styles = StyleSheet.create({
   glyphReading: { ...typography.tiny, color: colors.textSecondary },
   unknown: { ...typography.tiny, color: colors.textMuted, textAlign: 'center' },
   dayMaster: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
+  clockRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    padding: spacing.md, borderRadius: radius.md, backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  clockText: { flex: 1, gap: 2 },
+  clockMain: { ...typography.caption, color: colors.textPrimary },
+  clockSub: { ...typography.tiny, color: colors.textMuted },
+  summerBadge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: colors.gold },
+  summerBadgeText: { ...typography.tiny, color: '#1A1330' },
   whatRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.12)',
