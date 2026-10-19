@@ -31,6 +31,8 @@ jest.mock('../src/shared/audio/sfx', () => ({
   sfx: { tap: jest.fn(), select: jest.fn(), back: jest.fn(), send: jest.fn() },
 }));
 jest.mock('../src/features/auth/api/headers', () => ({ authedFetch: jest.fn(), apiHeaders: jest.fn() }));
+// The cafe mints the Game-Token (shared rooms) before it opens; here it is already at hand.
+jest.mock('../src/features/auth/api/session', () => ({ ensureGameToken: async () => 'pgt_test' }));
 jest.mock('../src/features/coins/api/coinsApi', () => ({ refreshCoins: jest.fn(), buyCoins: jest.fn() }));
 jest.mock('../src/features/tickets/api/attendance', () => ({ fetchAttendance: async () => null, checkIn: jest.fn() }));
 jest.mock('../src/features/journey/player/beatVoice', () => ({
@@ -273,11 +275,17 @@ describe('the world’s cafe door', () => {
 describe('the cafe screen', () => {
   const render = async () => {
     await act(async () => { tree = ReactTestRenderer.create(<CafeScreen />); });
+    await act(async () => {}); // the open waits for the Game-Token
   };
 
   it('opens with the language, the host and the account; the veil stays until CAFE_READY', async () => {
     await render();
-    expect(posts('CAFE_INIT').map(p => p.payload)).toEqual([{ lang: 'ko', apiBase: 'http://localhost:4000', auth: 'acct-42' }]);
+    expect(posts('CAFE_INIT').map(p => p.payload)).toEqual([{
+      lang: 'ko', apiBase: 'http://localhost:4000', auth: 'acct-42',
+      // Shared rooms: the dev presence socket, the account's Game-Token (none stored in this test)
+      // and the display name.
+      presenceUrl: 'ws://127.0.0.1:9090/ws', gameToken: '', name: '',
+    }]);
     expect(byTestID('cafe-veil').length).toBeGreaterThan(0);
     expect(byTestID('cafe-look')).toHaveLength(0);
     fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar', 'lounge'] } });
@@ -360,5 +368,8 @@ describe('the cafe’s pure parts', () => {
       .toEqual({ top: 60, bottom: 300 });
     expect(cafeCoveredPx({ host: { x: 0, y: 0, width: 800, height: 400 }, panel: { x: 500, y: 0, width: 300, height: 400 } }, true))
       .toEqual({ top: 0, right: 300 });
+    // Sideways, the reading's strip runs along the bottom: a bottom inset, not 90% of the width.
+    expect(cafeCoveredPx({ host: { x: 0, y: 0, width: 800, height: 400 }, panel: { x: 40, y: 330, width: 720, height: 60 } }, true))
+      .toEqual({ top: 0, bottom: 70 });
   });
 });

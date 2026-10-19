@@ -6,7 +6,7 @@ import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import { useScreen } from '../../../shared/device/screen';
-import { IVORY, SERIF } from '../../../shared/components/hud/Hud';
+import { IVORY, RING_COMPACT, SERIF } from '../../../shared/components/hud/Hud';
 import type { TarotConsultant } from '../api/cafeApi';
 import { readerPortrait } from '../table/portrait';
 import {
@@ -69,18 +69,21 @@ export const TablePanel: React.FC<{
   }
 
   const panelH = screen.vh(0.46, 260, 420);
+  // Sideways the column starts under the cafe's top row (back · title · coins), not at the top edge:
+  // from 0 it sat over the coin pill (19-10).
+  const sideTop = safe.top + spacing.sm + RING_COMPACT + spacing.sm;
   return (
     // Measured on the dock, not the panel: the dock is a child of the cafe's stage, so its frame is in
     // the UnityView's coordinates; the panel's own onLayout would be relative to the dock (y = 0).
     <View pointerEvents="box-none" onLayout={onLayout}
-      style={landscape ? [styles.sideDock, { top: 0, width: screen.sidePanel }] : styles.bottomDock}>
+      style={landscape ? [styles.sideDock, { top: sideTop, width: screen.sidePanel }] : styles.bottomDock}>
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} pointerEvents="box-none" style={landscape ? styles.grow : undefined}>
       <View
         testID="cafe-table"
         style={[
           styles.panel,
           landscape
-            ? [styles.panelSide, { paddingTop: safe.top + spacing.md, paddingRight: safe.right + spacing.md, paddingBottom: bottomPad }]
+            ? [styles.panelSide, { paddingTop: spacing.md, paddingRight: safe.right + spacing.md, paddingBottom: bottomPad }]
             : { height: panelH + safe.bottom, paddingBottom: bottomPad, paddingLeft: safe.left + spacing.md, paddingRight: safe.right + spacing.md },
         ]}>
         {s.consultant && inTarot(s) && <ReaderHead reader={s.consultant} onEnd={table.end} />}
@@ -156,7 +159,7 @@ const Body: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) => {
     case 'followup':
       return (
         <>
-          <Lines>
+          <Lines follow>
             <Said who={s.consultant?.name ?? ''} text={s.line} />
             {s.followups.map((f, i) => (
               <View key={i} style={styles.exchange}>
@@ -212,7 +215,7 @@ const Menu: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) => {
       {s.line ? <Text style={styles.reply} testID="cafe-farewell">{s.line}</Text> : null}
       <Text style={styles.heading}>{t('cafe.table.prompt')}</Text>
       <MenuRow icon="coffee" label={t('cafe.table.coffee')} tag={t('cafe.price', { price: CAFE_PRICE.coffee })} onPress={table.orderCoffee} testID="cafe-order-coffee" />
-      <MenuRow icon="sparkle" label={t('cafe.table.tarot')} tag={t('cafe.free')} onPress={table.openTarot} testID="cafe-order-tarot" />
+      <MenuRow icon="sparkle" label={t('cafe.table.tarot')} tag={t('cafe.price', { price: CAFE_PRICE.reading })} onPress={table.openTarot} testID="cafe-order-tarot" />
       <Pressable onPress={() => { sfx.back(); table.leaveTable(); }} accessibilityRole="button" accessibilityLabel={t('cafe.table.leave')}
         style={({ pressed }) => [styles.ghost, styles.selfStart, pressed && styles.pressed]} testID="cafe-leave-table">
         <Text style={styles.ghostText}>{t('cafe.table.leave')}</Text>
@@ -357,9 +360,20 @@ const Dots: React.FC<{ step: number }> = ({ step }) => (
   </View>
 );
 
-const Lines: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <ScrollView style={styles.lines} contentContainerStyle={styles.linesBody}>{children}</ScrollView>
-);
+/** The panel's text. `follow`: keep the newest line in view as it grows (the follow-up exchange,
+ *  whose newest answer otherwise lands under the composer, cut off). */
+const Lines: React.FC<{ children: React.ReactNode; follow?: boolean }> = ({ children, follow }) => {
+  const ref = React.useRef<ScrollView>(null);
+  return (
+    <ScrollView
+      ref={ref}
+      style={styles.lines}
+      contentContainerStyle={styles.linesBody}
+      onContentSizeChange={follow ? () => ref.current?.scrollToEnd({ animated: true }) : undefined}>
+      {children}
+    </ScrollView>
+  );
+};
 
 const Said: React.FC<{ who: string; text: string }> = ({ who, text }) =>
   text ? (

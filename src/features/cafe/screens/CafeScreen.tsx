@@ -16,7 +16,9 @@ import { UnityHost } from '../../counseling/components/UnityHost';
 import { getCafeBridge, isNativeUnity, nativeUnityBridge, unityApiBase } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
 import type { CafePhase, CafeReplyError, MyRoomCamera } from '../../counseling/types';
-import { getUserAuth } from '../../auth/store/authStore';
+import { getUserAuth, useAuthStore, validGameToken } from '../../auth/store/authStore';
+import { ensureGameToken } from '../../auth/api/session';
+import { presenceUrl } from '../../../shared/config/api';
 import { WorldJoystick } from '../../world/components/WorldJoystick';
 import { PROMPT_LIFT } from '../../world/components/PromptButton';
 import { useFollowCamera } from '../../world/components/useWorldCamera';
@@ -67,7 +69,12 @@ export function cafeCoveredPx(r: MeasuredRects, landscape: boolean) {
   if (!host) return null;
   const covered = { top: top ? top.y + top.height : 0 };
   if (!panel) return covered;
-  return landscape ? { ...covered, right: host.width - panel.x } : { ...covered, bottom: host.height - panel.y };
+  // Sideways the panel is a right-hand column — except the reading's strip (spreading, picking,
+  // revealing), which runs along the bottom edge in both orientations. Reported as a right inset it
+  // read as ~80% of the view hidden, and Unity pushed the table to the left edge from metres away
+  // (19-10, "góc ngang camera bị che"). A panel across most of the width covers the bottom.
+  const across = panel.width > host.width * 0.6;
+  return landscape && !across ? { ...covered, right: host.width - panel.x } : { ...covered, bottom: host.height - panel.y };
 }
 
 /**
@@ -138,15 +145,31 @@ export const CafeScreen: React.FC = () => {
     compute: r => cafeCoveredPx(r, landscape),
   });
 
+  // The Go presence server verifies the pgt_ token with Rails; without one the cafe opens alone.
   const initFor = useCallback(
-    () => ({ lang, apiBase: unityApiBase, auth: getUserAuth() ?? '' }),
+    () => ({
+      lang,
+      apiBase: unityApiBase,
+      auth: getUserAuth() ?? '',
+      presenceUrl: presenceUrl(),
+      gameToken: validGameToken() ?? '',
+      name: useAuthStore.getState().displayName ?? '',
+    }),
     [lang],
   );
+  // Mint the token before the door opens, so the shared room is joined on the first try. A visit
+  // left while the token was still on its way must not reopen the cafe behind the player's back.
+  const visiting = useRef(false);
+  const openWithToken = useCallback(() => {
+    ensureGameToken()
+      .catch(() => null)
+      .finally(() => { if (visiting.current) bridge.openCafe(initFor()); });
+  }, [bridge, initFor]);
   const retry = () => {
     sfx.tap();
     setStalled(false);
     setAttempt(a => a + 1);
-    bridge.openCafe(initFor());
+    openWithToken();
   };
 
   // Ask for the cafe on the way in; close it on the way out. `lang` is read once, as in My Room.
@@ -190,8 +213,10 @@ export const CafeScreen: React.FC = () => {
         }
       }
     });
-    bridge.openCafe(initFor());
+    visiting.current = true;
+    openWithToken();
     return () => {
+      visiting.current = false;
       off();
       bridge.closeCafe();
     };

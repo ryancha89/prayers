@@ -73,8 +73,8 @@ export const DoorCard: React.FC<{
   }
   if (zone === 'journey') cta = journey ? t('world.journey.resume') : t('world.journey.cta');
   if (zone === 'meditation') {
-    line = <Text style={styles.line} numberOfLines={1}>{t(info.sub)}{'  ·  10′ · 4·4·6'}</Text>;
-    cta = t('world.med.cta');
+    // Two sessions now (10-minute meditation, sleep guide): the door opens onto the choice.
+    line = <Text style={styles.line} numberOfLines={1}>{t(info.sub)}</Text>;
   }
   if (zone === 'shop') {
     line = (

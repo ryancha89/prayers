@@ -33,15 +33,6 @@ export const isWorldZone = (v: unknown): v is WorldZone => typeof v === 'string'
 
 export const zoneInfo = (id: WorldZone): WorldZoneInfo => WORLD_ZONES.find(z => z.id === id)!;
 
-/** The meditation room has ONE session (ten minutes, 4-4-6). The mockup's four chips are kept as the
- *  room's menu — every one of them opens that same session — until the room learns more than one. */
-export const MEDITATION_CHIPS: readonly { key: TranslationKey; icon: IconName }[] = [
-  { key: 'world.med.breath', icon: 'wind' },
-  { key: 'world.med.sleep', icon: 'moon' },
-  { key: 'world.med.calm', icon: 'heart' },
-  { key: 'world.med.energy', icon: 'bolt' },
-];
-
 /** The shop's four aisles from the mockup. Nothing is sold in them yet (spec: out of scope). */
 export const SHOP_TABS: readonly { key: TranslationKey; icon: IconName }[] = [
   { key: 'world.shop.outfit', icon: 'shirt' },

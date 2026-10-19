@@ -12,7 +12,8 @@ import { localizeCounselors } from '../../counselors/data/mockCounselors';
 import { speakingPlayable } from '../../counselors/data/registry';
 import type { CounselorSummary } from '../../counselors/types';
 import type { WorldZone } from '../../counseling/types';
-import { MEDITATION_CHIPS, SHOP_TABS, WORLD_ZONES, koWith, zoneInfo } from '../data/zones';
+import { SHOP_TABS, WORLD_ZONES, koWith, zoneInfo } from '../data/zones';
+import { sleepAudio } from '../../meditation/sleepAudio';
 import { MYROOM_PICTURE } from '../../myroom/picture';
 
 /** Where the World's top bar ends (points from the screen top). A landscape sheet starts below it:
@@ -93,7 +94,26 @@ const Secondary: React.FC<{ label: string; onPress: () => void }> = ({ label, on
   </Pressable>
 );
 
-/** A square tile with an icon and a word: the meditation sessions and the shop's aisles. */
+/** One of the meditation door's two sessions, as a full-width row: the same two cards Home shows
+ *  (the 10-minute meditation, the sleep guide), with Home's own words. */
+const SessionCard: React.FC<{ icon: IconName; title: string; note: string; onPress: () => void; testID?: string }> = ({ icon, title, note, onPress, testID }) => (
+  <Pressable
+    testID={testID}
+    accessibilityRole="button"
+    accessibilityLabel={title}
+    onPress={() => { sfx.select(); onPress(); }}
+    style={({ pressed }) => [styles.session, pressed && styles.pressed]}>
+    <View style={styles.sessionIcon}>
+      <Icon name={icon} size={22} color={colors.gold} />
+    </View>
+    <View style={styles.sessionText}>
+      <Text style={styles.sessionTitle} numberOfLines={2}>{title}</Text>
+      <Text style={styles.sessionNote} numberOfLines={1}>{note}</Text>
+    </View>
+  </Pressable>
+);
+
+/** A square tile with an icon and a word: the shop's aisles. */
 const Tile: React.FC<{ icon: IconName; label: string; note?: string; onPress?: () => void }> = ({ icon, label, note, onPress }) => (
   <Pressable
     disabled={!onPress}
@@ -123,6 +143,8 @@ export interface ZoneActions {
   /** 상담사 둘러보기 → the counsellor list. */
   browse(): void;
   meditate(): void;
+  /** The 30-minute sleep guide (Home's second meditation card). */
+  sleep(): void;
   /** Board (or resume) the 2027 journey. */
   journey(): void;
   coins(): void;
@@ -188,12 +210,12 @@ export const ZoneOverlay: React.FC<{
         t(info.label),
         t('world.med.line'),
         <>
-          <View style={styles.tiles}>
-            {MEDITATION_CHIPS.map(chip => (
-              <Tile key={chip.key} icon={chip.icon} label={t(chip.key)} onPress={actions.meditate} />
-            ))}
-          </View>
-          <Cta label={t('world.med.cta')} onPress={actions.meditate} />
+          {/* The two sessions Home offers, in Home's words: ten minutes of breathing, and the 30-minute
+              sleep guide (hidden on a build without the sound module, as on Home). */}
+          <SessionCard testID="world-med-breathe" icon="lotus" title={t('home.breathe')} note={t('home.meditation')} onPress={actions.meditate} />
+          {sleepAudio.available() ? (
+            <SessionCard testID="world-med-sleep" icon="moon" title={t('home.sleep')} note={t('home.sleepHint')} onPress={actions.sleep} />
+          ) : null}
         </>,
       );
     case 'journey':
@@ -374,6 +396,21 @@ const styles = StyleSheet.create({
   },
   secondaryText: { ...typography.bodyStrong, color: colors.textPrimary },
   tiles: { flexDirection: 'row', gap: spacing.sm },
+  session: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(233,196,106,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  sessionIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(233,196,106,0.12)' },
+  sessionText: { flex: 1, gap: 2 },
+  sessionTitle: { ...typography.body, color: colors.textPrimary },
+  sessionNote: { ...typography.tiny, color: colors.textSecondary },
   tile: {
     flex: 1, alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.md, paddingHorizontal: spacing.xs,
     borderRadius: radius.md, backgroundColor: 'rgba(255,255,255,0.06)',

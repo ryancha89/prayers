@@ -297,6 +297,7 @@ export const WorldScreen: React.FC = () => {
     counsel: c => leaveTo('counseling', () => openCounselor(navigation, c)),
     browse: () => navigation.popTo('Tabs', { screen: 'Home' }),
     meditate: () => leaveTo('meditation', () => navigation.navigate('MeditationRoom')),
+    sleep: () => leaveTo('meditation', () => navigation.navigate('SleepGuide')),
     journey: () =>
       leaveTo('journey', () => {
         if (journeyRunning) navigation.navigate('Journey');
@@ -333,7 +334,9 @@ export const WorldScreen: React.FC = () => {
       if (c) actions.counsel(c);
       else setOverlay('counseling');
     },
-    meditation: actions.meditate,
+    // Two sessions behind this door (the 10-minute meditation, the sleep guide): the choice opens over
+    // the world, as the counselling door's picker does, rather than dropping into one of them.
+    meditation: () => setOverlay('meditation'),
     journey: actions.journey,
     shop: () => leaveTo('shop', () => navigation.navigate('Tickets')),
     myroom: actions.myroom,

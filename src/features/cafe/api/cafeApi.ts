@@ -130,6 +130,12 @@ export async function fetchTarotConsultants(lang: Lang, signal?: AbortSignal): P
   }
 }
 
+/** The reader's text, as shown and as spoken. The model marks card names `[Like This]` (the
+ *  prompt asks it to, so the server can find them); on screen and in the voice they are just names. */
+export function plain(text: string): string {
+  return text.replace(/\[([^\]\n]{1,60})\]/g, '$1');
+}
+
 function readCard(c: any): TarotReadingCard {
   return {
     id: str(c?.id),
@@ -137,7 +143,7 @@ function readCard(c: any): TarotReadingCard {
     orientation: c?.orientation === 'reversed' ? 'reversed' : 'upright',
     // The server sends the 0-based slot as `position` and the localised name as `position_label`.
     position: str(c?.position_label) || str(c?.position),
-    meaning: str(c?.meaning),
+    meaning: plain(str(c?.meaning)),
   };
 }
 
@@ -155,7 +161,7 @@ export function createReading(req: {
       // Seven cards or it is not a reading this screen can present.
       if (b?.reading_id == null || !Array.isArray(b.cards) || b.cards.length !== 7) return null;
       return {
-        reading: { readingId: str(b.reading_id), cards: b.cards.map(readCard), overall: str(b.overall), advice: str(b.advice) },
+        reading: { readingId: str(b.reading_id), cards: b.cards.map(readCard), overall: plain(str(b.overall)), advice: plain(str(b.advice)) },
       };
     },
   );
@@ -170,7 +176,7 @@ export function askFollowup(req: {
   return post(
     `tarot/readings/${encodeURIComponent(req.readingId)}/followups`,
     { request_id: req.requestId, question: req.question, lang: req.lang },
-    b => (typeof b?.answer === 'string' && b.answer.length > 0 ? { answer: b.answer } : null),
+    b => (typeof b?.answer === 'string' && b.answer.length > 0 ? { answer: plain(b.answer) } : null),
   );
 }
 

@@ -32,6 +32,8 @@ jest.mock('../src/features/auth/api/headers', () => ({
   authedFetch: (...args: unknown[]) => mockFetch(...args),
   apiHeaders: jest.fn(),
 }));
+// The cafe mints a Game-Token before it opens; never ask the real server for one from a test.
+jest.mock('../src/features/auth/api/session', () => ({ ensureGameToken: async () => null }));
 jest.mock('../src/features/coins/api/coinsApi', () => ({ refreshCoins: jest.fn(), buyCoins: jest.fn() }));
 jest.mock('../src/features/tickets/api/attendance', () => ({ fetchAttendance: async () => null, checkIn: jest.fn() }));
 jest.mock('@react-navigation/native', () => ({
@@ -175,8 +177,9 @@ describe('a tarot reading at the table', () => {
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'talking', spot: 'table_2', reason: '' } });
     expect(byTestID('cafe-panel')).toHaveLength(0);
     expect(shown()).toContain('Order Coffee');
-    expect(shown()).toContain('30 PC');
-    expect(shown()).toContain('Free');
+    // Both rows carry their real price: the reading costs 30 too (asked again before the spread).
+    expect(shown().split('30 PC').length - 1).toBe(2);
+    expect(shown()).not.toContain('Free');
   });
 
   it('lists the readers from the server in the app language, with the counselor portraits', async () => {
@@ -271,6 +274,9 @@ describe('a tarot reading at the table', () => {
 
     await press('End');
     expect(calls('CAFE_TAROT_END')).toHaveLength(1);
+    // Spec step 7: the reader SAYS the goodbye (spoken before the stand-up, which waits for it).
+    expect(speaks().at(-1)?.text).toBe('Thank you for visiting. I hope the cards have given you some clarity. See you again!');
+    expect(types().lastIndexOf('CAFE_TAROT_SPEAK')).toBeLessThan(types().lastIndexOf('CAFE_TAROT_END'));
     expect(byTestID('cafe-farewell')[0].props.children).toBe(
       'Thank you for visiting. I hope the cards have given you some clarity. See you again!',
     );
@@ -463,5 +469,14 @@ describe('the native bridge’s table messages', () => {
       { type: 'CAFE_COFFEE_ORDER' },
       { type: 'CAFE_COOKIE_FORTUNE', payload: { text: 'Good things.' } },
     ]);
+  });
+});
+
+describe('the reader’s text', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { plain } = require('../src/features/cafe/api/cafeApi');
+  it('shows and speaks card names without the model’s [brackets]', () => {
+    expect(plain('Lá [Nữ Hoàng Kiếm] ở vị trí quá khứ, [The Sun] xuôi.')).toBe('Lá Nữ Hoàng Kiếm ở vị trí quá khứ, The Sun xuôi.');
+    expect(plain('No marks here.')).toBe('No marks here.');
   });
 });

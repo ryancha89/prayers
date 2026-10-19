@@ -580,6 +580,11 @@ export interface CafeInitPayload {
   apiBase?: string;
   /** The account → User-Auth (SESSION_INIT's auth). */
   auth?: string;
+  /** Shared rooms (multiplayer): the Go presence socket ('' = play alone), the account's pgt_
+   *  Game-Token it verifies against Rails, and the name shown above this player for the others. */
+  presenceUrl?: string;
+  gameToken?: string;
+  name?: string;
 }
 
 /** Where the cafe visit is: on foot, walking to a table, or seated in conversation. */

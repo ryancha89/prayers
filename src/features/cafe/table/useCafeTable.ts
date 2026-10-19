@@ -190,7 +190,9 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     patch({ step });
     if (step < SPREAD_SIZE) {
       const card = reading.cards[step];
-      speak({ slot: step, text: `${card.name}. ${card.meaning}`, mood: 'explain' });
+      // The model usually opens the meaning with the card's name already; say it once.
+      const named = card.meaning.toLowerCase().includes(card.name.toLowerCase());
+      speak({ slot: step, text: named ? card.meaning : `${card.name}. ${card.meaning}`, mood: 'explain' });
     } else if (step === STEP_OVERALL) {
       speak({ text: reading.overall, mood: 'explain' });
     } else {
@@ -266,12 +268,15 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     gen.current += 1;
     clearReveal();
     endIntent();
+    // The reader SAYS goodbye (spec step 7), then stands: Unity's leave waits for the line to finish.
+    const farewell = tRef.current('cafe.tarot.farewell');
+    speak({ text: farewell, mood: 'warm' });
     bridge.sendCafeTarotEnd();
     setState(prev => ({
       ...OFF,
       seated: prev.seated,
       stage: 'menu',
-      line: tRef.current('cafe.tarot.farewell'),
+      line: farewell,
     }));
   };
 
