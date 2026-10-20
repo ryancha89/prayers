@@ -412,12 +412,16 @@ export type RNToUnityEvent =
    *  starts), yaw -1..1 (= ±180°), pitch -1..1 (+ = higher). Absolute, many a second. */
   | { type: 'CAFE_CAMERA'; payload: MyRoomCamera }
   /** Sit with the guest at a spot id from CAFE_READY. Unity answers CAFE_PHASE seating → talking (or
-   *  back to exploring with a reason). */
-  | { type: 'CAFE_SIT'; payload: { spot: string } }
+   *  back to exploring with a reason). `guided` (20-10, the choice made at the World door): the
+   *  barista meets the player at the door and walks them to the seat instead of a straight walk. */
+  | { type: 'CAFE_SIT'; payload: { spot: string; guided?: boolean } }
   /** One message to the guest. Always answered by exactly one CAFE_REPLY. */
   | { type: 'CAFE_SAY'; payload: { text: string } }
   /** The next camera angle while seated. */
   | { type: 'CAFE_SHOT' }
+  /** A tap over the table, 0..1 of the view from its top-left (WORLD_TAP's convention): picks a card
+   *  while the deck is out, opens the fortune cookie. The embedded view gets no touch of its own. */
+  | { type: 'CAFE_TAP'; payload: { x: number; y: number } }
   /** Stand up from the table, or cancel the walk to it. */
   | { type: 'CAFE_STAND' }
   /** Leaving the cafe. */
@@ -917,9 +921,10 @@ export interface CafeBridge {
   openCafe(init: CafeInitPayload): void;
   closeCafe(): void;
   sendCafeCamera(camera: MyRoomCamera): void;
-  sendCafeSit(spot: string): void;
+  sendCafeSit(spot: string, guided?: boolean): void;
   sendCafeSay(text: string): void;
   sendCafeShot(): void;
+  sendCafeTap(x: number, y: number): void;
   sendCafeStand(): void;
   sendCafeTarotStart(start: CafeTarotStart): void;
   sendCafeTarotSpread(): void;

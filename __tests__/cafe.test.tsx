@@ -17,6 +17,9 @@
 import React from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 
+// Whole-flow tests render the cafe many times over; under a parallel run they pass 5 s.
+jest.setTimeout(20000);
+
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: { getItem: async () => null, setItem: async () => {}, removeItem: async () => {} },
@@ -47,6 +50,7 @@ const mockNav = {
 const mockNavigate = jest.fn((...args: unknown[]) => mockNav.calls.push({ args, hostUnmounts: mockHost.unmounts }));
 const mockGoBack = jest.fn();
 jest.mock('@react-navigation/native', () => ({
+  useRoute: () => ({ params: undefined }),
   useNavigation: () => ({
     navigate: mockNavigate,
     goBack: mockGoBack,
@@ -248,16 +252,33 @@ afterEach(() => {
 });
 
 describe('the world’s cafe door', () => {
-  it('through the door: the world’s host goes down FIRST, then the Cafe route opens, remembering the door', async () => {
+  it('through the door: coffee or a reading is chosen out here, then the world’s host goes down FIRST and the Cafe route opens with it', async () => {
     await act(async () => { tree = ReactTestRenderer.create(<WorldScreen />); });
     fromUnity({ type: 'WORLD_READY' });
     fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'cafe' } });
     fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'cafe' } });
     await act(async () => {});
-    expect(mockNav.calls.map(c => c.args)).toEqual([['Cafe']]);
+    // The door opens onto the choice, not straight into the cafe (20-10).
+    expect(mockNav.calls).toHaveLength(0);
+    expect(byTestID('world-overlay-cafe').length).toBeGreaterThan(0);
+    expect(byTestID('world-cafe-tarot').length).toBeGreaterThan(0);
+    await act(async () => { byTestID('world-cafe-coffee')[0].props.onPress(); });
+    await act(async () => {});
+    expect(mockNav.calls.map(c => c.args)).toEqual([['Cafe', { intent: { kind: 'coffee' } }]]);
     expect(mockNav.calls[0].hostUnmounts).toBe(1);
     expect(posts('WORLD_END')).toHaveLength(1);
     expect(useWorldStore.getState().returnZone).toBe('cafe');
+  });
+
+  it('“just look around” walks in with no choice', async () => {
+    await act(async () => { tree = ReactTestRenderer.create(<WorldScreen />); });
+    fromUnity({ type: 'WORLD_READY' });
+    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'cafe' } });
+    fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'cafe' } });
+    await act(async () => {});
+    press('그냥 둘러볼게요');
+    await act(async () => {});
+    expect(mockNav.calls.map(c => c.args)).toEqual([['Cafe', undefined]]);
   });
 
   it('the door card names the cafe and its way in', async () => {

@@ -306,7 +306,7 @@ export const WorldScreen: React.FC = () => {
     // The shop sheet floats over every screen (App.tsx): the world stays where it is under it.
     coins: () => useCoins.getState().openShop(),
     myroom: () => leaveTo('myroom', () => navigation.navigate('MyRoom')),
-    cafe: () => leaveTo('cafe', () => navigation.navigate('Cafe')),
+    cafe: intent => leaveTo('cafe', () => navigation.navigate('Cafe', intent ? { intent } : undefined)),
   };
 
   /**
@@ -340,7 +340,9 @@ export const WorldScreen: React.FC = () => {
     journey: actions.journey,
     shop: () => leaveTo('shop', () => navigation.navigate('Tickets')),
     myroom: actions.myroom,
-    cafe: actions.cafe,
+    // Coffee or a reading is chosen out here (20-10), so the door opens onto that choice; the barista
+    // then shows the player to a table inside.
+    cafe: () => setOverlay('cafe'),
   };
   door.current = {
     wait: zone => {

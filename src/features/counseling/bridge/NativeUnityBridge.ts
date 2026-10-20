@@ -734,9 +734,9 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   }
 
   /** Taps, not streams: posted at once (the buttons only show once the cafe is up). */
-  sendCafeSit(spot: string): void {
-    devlog(`[unity-bridge] CAFE_SIT ${spot}`);
-    this.post({ type: 'CAFE_SIT', payload: { spot } });
+  sendCafeSit(spot: string, guided = false): void {
+    devlog(`[unity-bridge] CAFE_SIT ${spot}${guided ? ' (guided)' : ''}`);
+    this.post({ type: 'CAFE_SIT', payload: guided ? { spot, guided } : { spot } });
   }
 
   sendCafeSay(text: string): void {
@@ -746,6 +746,10 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
 
   sendCafeShot(): void {
     this.post({ type: 'CAFE_SHOT' });
+  }
+
+  sendCafeTap(x: number, y: number): void {
+    if (this.view) this.post({ type: 'CAFE_TAP', payload: { x: unit(x), y: unit(y) } });
   }
 
   sendCafeStand(): void {
