@@ -14,6 +14,9 @@
 import React from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 
+// Whole-flow tests render the cafe many times over; under a parallel run they pass 5 s.
+jest.setTimeout(20000);
+
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: { getItem: async () => null, setItem: async () => {}, removeItem: async () => {} },
@@ -32,10 +35,15 @@ jest.mock('../src/features/auth/api/headers', () => ({
   authedFetch: (...args: unknown[]) => mockFetch(...args),
   apiHeaders: jest.fn(),
 }));
+// The cafe mints a Game-Token before it opens; never ask the real server for one from a test.
+jest.mock('../src/features/auth/api/session', () => ({ ensureGameToken: async () => null }));
 jest.mock('../src/features/coins/api/coinsApi', () => ({ refreshCoins: jest.fn(), buyCoins: jest.fn() }));
 jest.mock('../src/features/tickets/api/attendance', () => ({ fetchAttendance: async () => null, checkIn: jest.fn() }));
+/** The Cafe route's params: what the World door chose (set per test; none = walking in). */
+const mockRoute: { params?: { intent?: { kind: 'coffee' | 'tarot' } } } = {};
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn(), addListener: () => () => {} }),
+  useRoute: () => mockRoute,
   useFocusEffect: () => {},
 }));
 jest.mock('../src/features/counseling/bridge', () => {
@@ -59,7 +67,7 @@ import { useAuthStore } from '../src/features/auth/store/authStore';
 import { COUNSELOR_AVATAR_ART } from '../src/features/counselors/assets';
 import { readerPortrait } from '../src/features/cafe/table/portrait';
 import { CAFE_PRICE, REVEAL_FALLBACK_MS } from '../src/features/cafe/table/useCafeTable';
-import { isRetryable } from '../src/features/cafe/api/cafeApi';
+import { IN_PROGRESS_WAIT_MS, isRetryable } from '../src/features/cafe/api/cafeApi';
 import type { UnityToRNEvent } from '../src/features/counseling/types';
 
 const bridge = getCafeBridge() as unknown as MockUnityBridge;
@@ -133,6 +141,7 @@ beforeEach(async () => {
   useAuthStore.setState({ userAuth: 'acct-42' } as never);
   useCoins.setState({ balance: 100, shopOpen: false });
   bridge.cafeCalls.length = 0;
+  mockRoute.params = undefined;
   routes.length = 0;
   sent.length = 0;
 });
@@ -175,8 +184,9 @@ describe('a tarot reading at the table', () => {
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'talking', spot: 'table_2', reason: '' } });
     expect(byTestID('cafe-panel')).toHaveLength(0);
     expect(shown()).toContain('Order Coffee');
-    expect(shown()).toContain('30 PC');
-    expect(shown()).toContain('Free');
+    // Both rows carry their real price: the reading costs 30 too (asked again before the spread).
+    expect(shown().split('30 PC').length - 1).toBe(2);
+    expect(shown()).not.toContain('Free');
   });
 
   it('lists the readers from the server in the app language, with the counselor portraits', async () => {
@@ -230,18 +240,22 @@ describe('a tarot reading at the table', () => {
     fromUnity({ type: 'CAFE_CARDS_CHOSEN', payload: { cards: DEALT as never } });
     await flush();
     expect(shown()).toContain('You were not charged');
-    expect(types()).not.toContain('CAFE_TAROT_REVEAL');
+    // The seven turned over the moment they were chosen (spec step 4), before any reading — names unknown yet.
+    expect(calls('CAFE_TAROT_REVEAL').map(c => c.payload)).toEqual([{ cards: DEALT.map(c => ({ ...c, name: '' })) }]);
     await press('Try again');
     const [first, second] = posted('cafe/tarot/readings').map(p => p.body);
     expect(first).toEqual({ request_id: expect.stringMatching(UUID), consultant_id: 'luna', question: 'Will I move this year?', cards: DEALT, lang: 'en' });
     expect(second.request_id).toBe(first.request_id);
     expect(useCoins.getState().balance).toBe(70);
 
-    expect(calls('CAFE_TAROT_REVEAL').map(c => c.payload)).toEqual([
+    expect(calls('CAFE_TAROT_REVEAL').map(c => c.payload).at(-1)).toEqual(
       { cards: READING.cards.map(c => ({ id: c.id, orientation: c.orientation, name: c.name })) },
-    ]);
+    );
+    // The reading waits for the LAST card to be face up, not the first.
     expect(shown()).toContain('Turning the cards over…');
     fromUnity({ type: 'CAFE_CARD_REVEALED', payload: { slot: 0 } });
+    expect(shown()).toContain('Turning the cards over…');
+    fromUnity({ type: 'CAFE_CARD_REVEALED', payload: { slot: 6 } });
     expect(shown()).toContain('Card 1 of 7 · Pos 0');
     expect(speaks().at(-1)).toEqual({ slot: 0, text: 'Card 0. Meaning 0', mood: 'explain' });
     for (let i = 1; i < 7; i++) await press('Next');
@@ -271,18 +285,29 @@ describe('a tarot reading at the table', () => {
 
     await press('End');
     expect(calls('CAFE_TAROT_END')).toHaveLength(1);
+    // Spec step 7: the reader SAYS the goodbye (spoken before the stand-up, which waits for it).
+    expect(speaks().at(-1)?.text).toBe('Thank you for visiting. I hope the cards have given you some clarity. See you again!');
+    expect(types().lastIndexOf('CAFE_TAROT_SPEAK')).toBeLessThan(types().lastIndexOf('CAFE_TAROT_END'));
     expect(byTestID('cafe-farewell')[0].props.children).toBe(
       'Thank you for visiting. I hope the cards have given you some clarity. See you again!',
     );
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
   });
 
-  it('a cancelled question comes back in the box, and nothing is spread', async () => {
+  it('a sent question stays on the table as the player\u2019s words; cancelled, Begin asks to pay for it again', async () => {
     await toConfirm();
+    expect(byTestID('cafe-question-said')[0].props.children).toBe('Will I move this year?');
+    expect(byTestID('cafe-question-input')[0].props.value).toBe('');
+    // No second way to pay while the sheet is up.
+    expect(byTestID('cafe-tarot-begin')).toHaveLength(0);
     await press('Cancel');
     expect(byTestID('cafe-confirm')).toHaveLength(0);
-    expect(byTestID('cafe-question-input')[0].props.value).toBe('Will I move this year?');
     expect(types()).not.toContain('CAFE_TAROT_SPREAD');
+    expect(byTestID('cafe-question-said')[0].props.children).toBe('Will I move this year?');
+    await press('Begin the reading');
+    expect(byTestID('cafe-confirm').length).toBeGreaterThan(0);
+    await press('Pay 30 PC');
+    expect(types()).toContain('CAFE_TAROT_SPREAD');
   });
 
   it('short of coins: the sheet says so and leads to the coin shop instead of paying', async () => {
@@ -318,6 +343,17 @@ describe('a tarot reading at the table', () => {
     expect(calls('CAFE_TAROT_END')).toHaveLength(1);
   });
 
+  it('the reading arriving after all seven are face up starts at once', async () => {
+    let release!: () => void;
+    serve('cafe/tarot/readings', { ...ok(READING), wait: new Promise<void>(r => { release = r; }) });
+    await toChosen();
+    fromUnity({ type: 'CAFE_CARD_REVEALED', payload: { slot: 6 } });
+    expect(shown()).toContain('Reading the cards…');
+    await act(async () => { release(); });
+    await flush();
+    expect(shown()).toContain('Card 1 of 7');
+  });
+
   it('starts narrating even if Unity never reports a flip', async () => {
     jest.useFakeTimers();
     serve('cafe/tarot/readings', ok(READING));
@@ -341,15 +377,34 @@ describe('a tarot reading at the table', () => {
     expect(byLabel('End')).toBeDefined();
   });
 
+  it('while picking, a tap over the table goes to Unity as CAFE_TAP (0..1 of the view); a drag does not', async () => {
+    await toConfirm();
+    expect(byTestID('cafe-tap')).toHaveLength(0);
+    await press('Pay 30 PC');
+    expect(byTestID('cafe-tap')).toHaveLength(0);
+    fromUnity({ type: 'CAFE_DECK_READY' });
+    const layer = byTestID('cafe-tap')[0];
+    act(() => layer.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 400, height: 800 } } }));
+    expect(layer.props.onStartShouldSetResponder()).toBe(true);
+    const touch = (x: number, y: number) => ({ nativeEvent: { locationX: x, locationY: y } });
+    act(() => { layer.props.onResponderGrant(touch(100, 200)); layer.props.onResponderRelease(touch(103, 202)); });
+    act(() => { layer.props.onResponderGrant(touch(100, 200)); layer.props.onResponderRelease(touch(180, 200)); });
+    expect(calls('CAFE_TAP').map(c => c.payload)).toEqual([{ x: 103 / 400, y: 202 / 800 }]);
+    serve('cafe/tarot/readings', ok(READING));
+    fromUnity({ type: 'CAFE_CARDS_CHOSEN', payload: { cards: DEALT as never } });
+    expect(byTestID('cafe-tap')).toHaveLength(0);
+  });
+
   it('an answer that lands after End is dropped', async () => {
     let release!: () => void;
     serve('cafe/tarot/readings', { ...ok(READING), wait: new Promise<void>(r => { release = r; }) });
     await toChosen();
     expect(shown()).toContain('Reading the cards…');
     await press('End');
+    const reveals = calls('CAFE_TAROT_REVEAL').length;   // the early turn-over, at the seventh card
     await act(async () => { release(); });
     await flush();
-    expect(types()).not.toContain('CAFE_TAROT_REVEAL');
+    expect(calls('CAFE_TAROT_REVEAL')).toHaveLength(reveals);
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
   });
 
@@ -395,13 +450,36 @@ describe('coffee and a fortune cookie', () => {
     expect(shown()).toContain('The barista is making your coffee…');
     // The fortune is not shown before the cookie is opened.
     expect(byTestID('cafe-fortune')).toHaveLength(0);
+    expect(byTestID('cafe-tap')).toHaveLength(0);
     fromUnity({ type: 'CAFE_COFFEE_SERVED' });
     expect(byTestID('cafe-cookie-prompt').length).toBeGreaterThan(0);
+    // The cookie is tapped through RN too: the embedded view gets no touch.
+    expect(byTestID('cafe-tap').length).toBeGreaterThan(0);
     fromUnity({ type: 'CAFE_COOKIE_OPENED' });
     expect(byTestID('cafe-fortune-text')[0].props.children).toBe('A kind word finds you today.');
     await press('Close');
     expect(byTestID('cafe-fortune')).toHaveLength(0);
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+  });
+
+  it('409 REQUEST_IN_PROGRESS (iOS re-sent the slow POST) is waited out with the same request_id, not shown as a failure', async () => {
+    await sit();
+    serve('cafe/coffee', { status: 409, body: { success: false, error_code: 'REQUEST_IN_PROGRESS' } },
+      ok({ fortune: 'Patience pays.', coins_balance: 70 }));
+    await press('Order Coffee');
+    jest.useFakeTimers();
+    const pay = byLabel('Pay 30 PC');
+    // Two taps in one frame: one purchase.
+    act(() => { pay.props.onPress(); pay.props.onPress(); });
+    await act(async () => { for (let i = 0; i < 12; i++) await Promise.resolve(); });
+    expect(posted('cafe/coffee')).toHaveLength(1);
+    expect(byTestID('cafe-table-error')).toHaveLength(0);
+    await act(async () => { jest.advanceTimersByTime(IN_PROGRESS_WAIT_MS); for (let i = 0; i < 12; i++) await Promise.resolve(); });
+    const bodies = posted('cafe/coffee').map(p => p.body);
+    expect(bodies).toHaveLength(2);
+    expect(bodies[1].request_id).toBe(bodies[0].request_id);
+    expect(byTestID('cafe-table-error')).toHaveLength(0);
+    expect(calls('CAFE_COOKIE_FORTUNE')).toEqual([{ type: 'CAFE_COOKIE_FORTUNE', payload: { text: 'Patience pays.' } }]);
   });
 
   it('a coffee abandoned after no answer keeps its request_id for the next order', async () => {
@@ -463,5 +541,79 @@ describe('the native bridge’s table messages', () => {
       { type: 'CAFE_COFFEE_ORDER' },
       { type: 'CAFE_COOKIE_FORTUNE', payload: { text: 'Good things.' } },
     ]);
+  });
+});
+
+describe('the reader’s text', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { plain } = require('../src/features/cafe/api/cafeApi');
+  it('shows and speaks card names without the model’s [brackets]', () => {
+    expect(plain('Lá [Nữ Hoàng Kiếm] ở vị trí quá khứ, [The Sun] xuôi.')).toBe('Lá Nữ Hoàng Kiếm ở vị trí quá khứ, The Sun xuôi.');
+    expect(plain('No marks here.')).toBe('No marks here.');
+  });
+});
+
+/* ---- the guided way in (20-10) ------------------------------------------------------------------ */
+
+describe('chosen at the World door: the barista shows the player to a table', () => {
+  const ready = () => fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar', 'lounge', 'tarot'] } });
+  const open = async () => { await act(async () => { tree = ReactTestRenderer.create(<CafeScreen />); }); ready(); };
+
+  it('tarot: guided to the tarot table, a taken seat moves on to the next, and sitting opens the readers there', async () => {
+    mockRoute.params = { intent: { kind: 'tarot' } };
+    serve('cafe/tarot/consultants', ok(READERS));
+    await open();
+    expect(calls('CAFE_SIT')).toEqual([{ type: 'CAFE_SIT', payload: { spot: 'tarot', guided: true } }]);
+    // No stick for a player who is being shown the way.
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'tarot', reason: '' } });
+    expect(shown()).toContain('Following the barista to the tarot table');
+    // Someone else in the shared room sits there: the next seat.
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'exploring', spot: '', reason: 'busy' } });
+    expect(calls('CAFE_SIT').at(-1)?.payload).toEqual({ spot: 'lounge', guided: true });
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'talking', spot: 'lounge', reason: '' } });
+    fromUnity({ type: 'CAFE_SEATED', payload: { spot: 'lounge' } });
+    await flush();
+    // The reader is chosen sitting at the table (user, 20-10), not before.
+    expect(byTestID('cafe-readers').length).toBeGreaterThan(0);
+    expect(calls('CAFE_TAROT_START')).toHaveLength(0);
+    await press('Luna');
+    expect(calls('CAFE_TAROT_START')).toHaveLength(1);
+  });
+
+  it('coffee: seated, the 30 PC confirmation opens at once', async () => {
+    mockRoute.params = { intent: { kind: 'coffee' } };
+    await open();
+    expect(calls('CAFE_SIT')).toEqual([{ type: 'CAFE_SIT', payload: { spot: 'lounge', guided: true } }]);
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'talking', spot: 'lounge', reason: '' } });
+    fromUnity({ type: 'CAFE_SEATED', payload: { spot: 'lounge' } });
+    await flush();
+    expect(byTestID('cafe-confirm').length).toBeGreaterThan(0);
+    expect(shown()).toContain('Coffee & fortune cookie');
+  });
+
+  it('every seat taken: the player is in on foot, told so, and a later seat opens the plain menu', async () => {
+    mockRoute.params = { intent: { kind: 'coffee' } };
+    await open();
+    for (let i = 0; i < 3; i++) fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'exploring', spot: '', reason: 'busy' } });
+    expect(calls('CAFE_SIT')).toHaveLength(3);
+    expect(byTestID('cafe-note').length).toBeGreaterThan(0);
+    expect(shown()).toContain('Every table is taken');
+    fromUnity({ type: 'CAFE_SEATED', payload: { spot: 'bar' } });
+    await flush();
+    expect(byTestID('cafe-confirm')).toHaveLength(0);
+    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+  });
+
+  it('a repeated CAFE_READY does not start a second walk; no choice = no walk', async () => {
+    mockRoute.params = { intent: { kind: 'tarot' } };
+    await open();
+    ready();
+    expect(calls('CAFE_SIT')).toHaveLength(1);
+    act(() => tree!.unmount());
+    tree = null;
+    bridge.cafeCalls.length = 0;
+    mockRoute.params = undefined;
+    await open();
+    expect(calls('CAFE_SIT')).toHaveLength(0);
   });
 });

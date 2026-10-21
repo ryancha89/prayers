@@ -7,9 +7,9 @@ import { backgroundMusic } from '../../shared/audio/backgroundMusic';
  * The spoken guide for a meditation session, where a language has one.
  *
  * 15-09 decided "no guided voice": text and music pace the breath. On 26-09 guides were recorded
- * for English (3:50), Japanese (6:34) and Chinese (1:07); those languages have one, and every other
- * language keeps the silent session it had — a missing row here IS the decision for that language,
- * not a gap to paper over with a recording in someone else's language.
+ * for English (3:50), Japanese (6:34) and Chinese (1:07). Since 19-10 (Linh: "ngôn ngữ nào không có
+ * thì sử dụng tiếng Anh luôn") a language without its own recording hears the English one — Korean
+ * and Vietnamese today — the same rule the Sleep Guide follows (sleepSession.ts).
  *
  * All three are levelled to -18 LUFS (the Chinese recording came in 9 dB quieter and vanished under
  * the bed). It plays ONCE from Begin, over the start of the ten minutes; the breath carries on
@@ -25,6 +25,9 @@ export const GUIDES: Partial<Record<Lang, string>> = {
   'zh-CN': 'meditation_guide_zh.m4a',
   'zh-TW': 'meditation_guide_zh.m4a',
 };
+
+/** The recording a language hears: its own, else the English one. */
+export const guideFor = (lang: Lang | string): string | null => GUIDES[lang as Lang] ?? GUIDES.en ?? null;
 
 let SoundModule: any = null;
 try {
@@ -66,7 +69,7 @@ function playFromCurrent() {
  * that has already finished this session, does nothing.
  */
 export function play(lang: Lang) {
-  const wantFile = GUIDES[lang] ?? null;
+  const wantFile = guideFor(lang);
   if (!SoundModule || !wantFile || finished) return;
   wanted = true;
 

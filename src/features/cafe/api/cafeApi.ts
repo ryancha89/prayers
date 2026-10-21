@@ -76,7 +76,18 @@ function balanceOf(b: any): number | null {
 /** True when the failure leaves the purchase intent open (retry with the same request_id). */
 export const isRetryable = (r: CafeFailure): boolean => r.kind === 'unavailable' || r.kind === 'failed';
 
-async function post<T>(path: string, body: object, read: (b: any) => T | null): Promise<CafeResult<T>> {
+/**
+ * 409 REQUEST_IN_PROGRESS: the server is still working on this very purchase. Seen on the simulator
+ * (20-10): the coffee's fortune took ~50 s through the LLM bridge, iOS sent the POST a second time
+ * on its own, and that copy's 409 came back as "couldn't reach the server" while the first went on
+ * to charge and serve. It is not a failure: ask again with the same request_id until the first one
+ * finishes, whose stored answer the server then replays.
+ */
+export const IN_PROGRESS_WAIT_MS = 3000;
+export const IN_PROGRESS_TRIES = 40;
+const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function post<T>(path: string, body: object, read: (b: any) => T | null, tries = IN_PROGRESS_TRIES): Promise<CafeResult<T>> {
   let res: Response | null;
   try {
     res = await authedFetch(`${apiBase()}/api/v1/prayers/cafe/${path}`, {
@@ -93,6 +104,11 @@ async function post<T>(path: string, body: object, read: (b: any) => T | null): 
   if (res.status === 402) return { ok: false, ...readInsufficient({ price: b?.price, coin_balance: balanceOf(b) }) };
   if (res.status === 422) return { ok: false, kind: 'invalidCards' };
   if (res.status === 404) return { ok: false, kind: 'notFound' };
+  if (res.status === 409 && b?.error_code === 'REQUEST_IN_PROGRESS' && tries > 1) {
+    devlog(`[cafe] ${path} still in progress — asking again`);
+    await pause(IN_PROGRESS_WAIT_MS);
+    return post(path, body, read, tries - 1);
+  }
   if (res.status === 503) {
     devlog(`[cafe] ${path} 503 ${b?.error_code ?? ''}`);
     return { ok: false, kind: 'unavailable' };
@@ -130,6 +146,12 @@ export async function fetchTarotConsultants(lang: Lang, signal?: AbortSignal): P
   }
 }
 
+/** The reader's text, as shown and as spoken. The model marks card names `[Like This]` (the
+ *  prompt asks it to, so the server can find them); on screen and in the voice they are just names. */
+export function plain(text: string): string {
+  return text.replace(/\[([^\]\n]{1,60})\]/g, '$1');
+}
+
 function readCard(c: any): TarotReadingCard {
   return {
     id: str(c?.id),
@@ -137,7 +159,7 @@ function readCard(c: any): TarotReadingCard {
     orientation: c?.orientation === 'reversed' ? 'reversed' : 'upright',
     // The server sends the 0-based slot as `position` and the localised name as `position_label`.
     position: str(c?.position_label) || str(c?.position),
-    meaning: str(c?.meaning),
+    meaning: plain(str(c?.meaning)),
   };
 }
 
@@ -155,7 +177,7 @@ export function createReading(req: {
       // Seven cards or it is not a reading this screen can present.
       if (b?.reading_id == null || !Array.isArray(b.cards) || b.cards.length !== 7) return null;
       return {
-        reading: { readingId: str(b.reading_id), cards: b.cards.map(readCard), overall: str(b.overall), advice: str(b.advice) },
+        reading: { readingId: str(b.reading_id), cards: b.cards.map(readCard), overall: plain(str(b.overall)), advice: plain(str(b.advice)) },
       };
     },
   );
@@ -170,7 +192,7 @@ export function askFollowup(req: {
   return post(
     `tarot/readings/${encodeURIComponent(req.readingId)}/followups`,
     { request_id: req.requestId, question: req.question, lang: req.lang },
-    b => (typeof b?.answer === 'string' && b.answer.length > 0 ? { answer: b.answer } : null),
+    b => (typeof b?.answer === 'string' && b.answer.length > 0 ? { answer: plain(b.answer) } : null),
   );
 }
 

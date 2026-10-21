@@ -308,7 +308,7 @@ export const MeditationRoomScreen: React.FC = () => {
     startAnimation();
     tellRoom('breathing');
     backgroundMusic.start(meditationBed(lang));
-    // The spoken guide (English only, for now — see guideVoice.ts). A fresh start lets the bell ring
+    // The spoken guide (its own language where recorded, else English — see guideVoice.ts). A fresh start lets the bell ring
     // out first; Carry on picks the voice up at once, where it stopped.
     clearGuideTimer();
     if (fresh) guideTimer.current = setTimeout(() => guideVoice.play(lang), 1500);

@@ -47,7 +47,7 @@ jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
 // Required, not imported: an import is hoisted above MockSound's definition, and the mock factory
 // would then hand the module a class that does not exist yet.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { guideVoice, GUIDES } = require('../src/features/meditation/guideVoice');
+const { guideVoice, GUIDES, guideFor } = require('../src/features/meditation/guideVoice');
 
 beforeEach(() => {
   guideVoice.stop();
@@ -68,11 +68,12 @@ describe('the meditation guide', () => {
     }
   });
 
-  it('says nothing in a language that has no guide', () => {
-    guideVoice.play('ko');
+  it('speaks English in a language that has no guide of its own', () => {
     guideVoice.play('vi');
-    expect(mockCalls).toEqual([]);
-    expect(mockDuck).not.toHaveBeenCalled();
+    expect(mockCalls).toEqual([expect.stringContaining('meditation_guide_en'), 'play']);
+    expect(mockDuck).toHaveBeenLastCalledWith(true);
+    expect(guideFor('ko')).toBe('meditation_guide_en.m4a');
+    expect(guideFor('ja')).toBe('meditation_guide_ja.m4a');
   });
 
   it('speaks in English, over a ducked bed', () => {

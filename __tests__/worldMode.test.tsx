@@ -30,6 +30,8 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 jest.mock('react-native-sound', () => null);
+// The meditation door offers the sleep guide only where it can play; here it can.
+jest.mock('../src/features/meditation/sleepAudio', () => ({ sleepAudio: { available: () => true } }));
 const mockSafe = { top: 0, right: 0, bottom: 0, left: 0 };
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -423,13 +425,13 @@ describe('the World screen', () => {
     await render();
     fromUnity({ type: 'WORLD_READY' });
     expect(doorEnter()).toBeUndefined();
-    fromUnity({ type: 'WORLD_NEAR', payload: { zone: 'meditation', near: true } });
+    fromUnity({ type: 'WORLD_NEAR', payload: { zone: 'myroom', near: true } });
     expect(stickShown()).toBe(true);
     pressDoor();
-    expect(posts('WORLD_ENTER').map(p => p.payload)).toEqual([{ zone: 'meditation' }]);
+    expect(posts('WORLD_ENTER').map(p => p.payload)).toEqual([{ zone: 'myroom' }]);
     // The door is opening: no card yet, and nothing over the world but the room's name — no Enter, no
     // stick, no buttons.
-    expect(overlayOpen('meditation')).toBe(false);
+    expect(overlayOpen('myroom')).toBe(false);
     expect(doorEnter()).toBeUndefined();
     expect(tree!.root.findAll(n => n.props.testID === 'world-door-title').length).toBeGreaterThan(0);
     expect(stickShown()).toBe(false);
@@ -437,11 +439,11 @@ describe('the World screen', () => {
     expect(byLabel('달리기')).toBeUndefined();
     expect(tree!.root.findAll(n => n.props.testID === 'world-look')).toHaveLength(0);
     // Through the door: its own screen, not a card over the world (12-10), the host down first.
-    fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'meditation' } });
-    expect(overlayOpen('meditation')).toBe(false);
-    expect(mockNav.calls.map(c => c.args)).toEqual([['MeditationRoom']]);
+    fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'myroom' } });
+    expect(overlayOpen('myroom')).toBe(false);
+    expect(mockNav.calls.map(c => c.args)).toEqual([['MyRoom']]);
     expect(mockNav.calls[0].hostUnmounts).toBe(1);
-    expect(useWorldStore.getState().returnZone).toBe('meditation');
+    expect(useWorldStore.getState().returnZone).toBe('myroom');
   });
 
   it('walking into a doorway (WORLD_ARRIVED): Unity opens the door itself, the screen waits for ENTERED', async () => {
@@ -573,8 +575,8 @@ describe('the World screen', () => {
 
   it('back from the room: the host waits for the room to go, then the world opens at that door', async () => {
     await render();
-    throughDoor('meditation');
-    expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
+    throughDoor('myroom');
+    expect(mockNavigate).toHaveBeenCalledWith('MyRoom');
     fire('blur');
     mockPosted.length = 0;
     fire('focus');
@@ -582,7 +584,7 @@ describe('the World screen', () => {
     fire('transitionEnd', { data: { closing: false } });
     expect(mockHost.mounts).toBe(2);
     await act(async () => {});
-    expect(posts('WORLD_INIT')[0].payload).toEqual({ lang: 'ko', spawn: { x: 5, z: 6, yaw: 30 }, zone: 'meditation' });
+    expect(posts('WORLD_INIT')[0].payload).toEqual({ lang: 'ko', spawn: { x: 5, z: 6, yaw: 30 }, zone: 'myroom' });
     // The door is used up once the world is back.
     fromUnity({ type: 'WORLD_READY' });
     expect(useWorldStore.getState().returnZone).toBeNull();
@@ -593,11 +595,11 @@ describe('the World screen', () => {
     worldTiming.hostReleaseMs = 450;
     try {
       await render();
-      throughDoor('meditation');
+      throughDoor('myroom');
       expect(mockHost.unmounts).toBe(1);
       expect(mockNavigate).not.toHaveBeenCalled();
       act(() => { jest.advanceTimersByTime(460); });
-      expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
+      expect(mockNavigate).toHaveBeenCalledWith('MyRoom');
     } finally {
       worldTiming.hostReleaseMs = 0;
       jest.useRealTimers();
@@ -608,7 +610,7 @@ describe('the World screen', () => {
     jest.useFakeTimers();
     try {
       await render();
-      throughDoor('meditation');
+      throughDoor('myroom');
       fire('focus');
       act(() => { jest.advanceTimersByTime(HOST_REMOUNT_FALLBACK_MS + 10); });
       expect(mockHost.mounts).toBe(2);
@@ -617,11 +619,23 @@ describe('the World screen', () => {
     }
   });
 
-  it('명상의 방: the four session chips all open the one meditation room', async () => {
+  it('명상의 방: through the door, Home’s two sessions — the 10-minute meditation and the sleep guide', async () => {
+    await render();
+    throughDoor('meditation');
+    // The door opens onto the choice, over the world, not into one of the two.
+    expect(overlayOpen('meditation')).toBe(true);
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(byLabel('잠시 쉬어가기')).toBeDefined();
+    expect(byLabel('수면 가이드')).toBeDefined();
+    press('수면 가이드');
+    expect(mockNavigate).toHaveBeenCalledWith('SleepGuide');
+
+    mockNavigate.mockClear();
+    act(() => tree!.unmount());
+    tree = null;
     await render();
     await cardOf('meditation');
-    for (const chip of ['호흡 명상', '수면 명상', '마음 안정', '에너지 충전']) expect(byLabel(chip)).toBeDefined();
-    press('수면 명상');
+    press('잠시 쉬어가기');
     expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
   });
 

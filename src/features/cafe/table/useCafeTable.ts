@@ -15,6 +15,7 @@ import {
   type TarotConsultant,
   type TarotReading,
 } from '../api/cafeApi';
+import type { CafeIntent } from './intent';
 
 /**
  * What the table sells, in Prayer Coins — mirrored from the contract so the confirmation can name
@@ -27,9 +28,10 @@ export type CafePaid = keyof typeof CAFE_PRICE;
 /** Magic Seven. */
 export const SPREAD_SIZE = 7;
 
-/** How long the reading waits for Unity's first CAFE_CARD_REVEALED before it starts talking anyway:
- *  a flip that never reports must not leave the player looking at "Turning the cards over…". */
-export const REVEAL_FALLBACK_MS = 4000;
+/** How long after the seventh card the reading waits for Unity's last CAFE_CARD_REVEALED before it
+ *  counts the cards as turned anyway: the flip of all seven takes ~20 s, and a flip that never reports
+ *  must not leave the player looking at "Turning the cards over…". */
+export const REVEAL_FALLBACK_MS = 30000;
 
 /**
  * Where the table is. One stage at a time, in the order the contract's flow walks them:
@@ -133,6 +135,8 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
   langRef.current = lang;
 
   const gen = useRef(0);
+  /** All seven are face up (Unity's last CAFE_CARD_REVEALED, or the fallback): narration may start. */
+  const revealed = useRef(false);
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearReveal = () => {
     if (revealTimer.current) clearTimeout(revealTimer.current);
@@ -153,6 +157,10 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
   };
 
   const speak = (s: CafeTarotSpeak) => bridge.sendCafeTarotSpeak(s);
+
+  /** What the player chose at the door, served the moment they sit (once): the coffee's
+   *  confirmation, or the list of readers to choose from. Null = the menu, as before. */
+  const arrival = useRef<CafeIntent | null>(null);
 
   /* ---- tarot --------------------------------------------------------------------------------- */
 
@@ -190,7 +198,9 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     patch({ step });
     if (step < SPREAD_SIZE) {
       const card = reading.cards[step];
-      speak({ slot: step, text: `${card.name}. ${card.meaning}`, mood: 'explain' });
+      // The model usually opens the meaning with the card's name already; say it once.
+      const named = card.meaning.toLowerCase().includes(card.name.toLowerCase());
+      speak({ slot: step, text: named ? card.meaning : `${card.name}. ${card.meaning}`, mood: 'explain' });
     } else if (step === STEP_OVERALL) {
       speak({ text: reading.overall, mood: 'explain' });
     } else {
@@ -220,12 +230,28 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     const reading = r.reading;
     ref.current = { ...ref.current, reading, stage: 'presenting', step: -1 };
     patch({ busy: false, reading, stage: 'presenting', step: -1 });
+    // The cards started turning when the seventh was picked; a repeat is ignored by Unity (and covers
+    // an early REVEAL that was lost). The reading starts once all seven are face up.
     bridge.sendCafeTarotReveal(reading.cards.map(c => ({ id: c.id, orientation: c.orientation, name: c.name })));
+    if (revealed.current) showStep(0);
+  };
+
+  /** Spec step 4: "once all seven cards are selected, the cards flip face up" — at once, while the
+   *  server reads them (~15 s). They used to wait for the reading, face down under "Reading…". */
+  const startReveal = (chosen: CafeCard[]) => {
+    revealed.current = false;
+    bridge.sendCafeTarotReveal(chosen.map(c => ({ id: c.id, orientation: c.orientation, name: '' })));
     clearReveal();
+    const g = gen.current;
     revealTimer.current = setTimeout(() => {
       revealTimer.current = null;
-      if (g === gen.current && ref.current.stage === 'presenting' && ref.current.step < 0) showStep(0);
+      if (g === gen.current) allTurned();
     }, REVEAL_FALLBACK_MS);
+  };
+  const allTurned = () => {
+    clearReveal();
+    revealed.current = true;
+    if (ref.current.stage === 'presenting' && ref.current.step < 0) showStep(0);
   };
 
   const next = () => {
@@ -266,12 +292,15 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     gen.current += 1;
     clearReveal();
     endIntent();
+    // The reader SAYS goodbye (spec step 7), then stands: Unity's leave waits for the line to finish.
+    const farewell = tRef.current('cafe.tarot.farewell');
+    speak({ text: farewell, mood: 'warm' });
     bridge.sendCafeTarotEnd();
     setState(prev => ({
       ...OFF,
       seated: prev.seated,
       stage: 'menu',
-      line: tRef.current('cafe.tarot.farewell'),
+      line: farewell,
     }));
   };
 
@@ -325,6 +354,8 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
       useCoins.getState().openShop();
       return;
     }
+    // Closed in the ref at once too: a second tap on Pay in the same frame finds nothing to pay for.
+    ref.current = { ...ref.current, confirm: null };
     patch({ confirm: null });
     if (paid === 'reading') {
       // Consent now, charge later: the reading is paid by POST readings once seven cards are down.
@@ -362,9 +393,17 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     const off = bridge.onEvent((e: UnityToRNEvent) => {
       const s = ref.current;
       switch (e.type) {
-        case 'CAFE_SEATED':
-          if (!s.seated) setState({ ...OFF, seated: true });
+        case 'CAFE_SEATED': {
+          if (s.seated) break;
+          const seated = { ...OFF, seated: true };
+          ref.current = seated;
+          setState(seated);
+          const want = arrival.current;
+          arrival.current = null;
+          if (want?.kind === 'coffee') askToPay('coffee');
+          else if (want?.kind === 'tarot') openTarot();
           break;
+        }
         case 'CAFE_PHASE':
           // On foot again: whatever the table was doing is over.
           if (e.payload?.phase === 'exploring' && s.seated) {
@@ -399,15 +438,13 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
             const chosen = cards.map(c => ({ id: String(c.id), orientation: c.orientation === 'reversed' ? 'reversed' as const : 'upright' as const }));
             ref.current = { ...ref.current, chosen, stage: 'reading', picked: SPREAD_SIZE };
             patch({ chosen, stage: 'reading', picked: SPREAD_SIZE, line: '' });
+            startReveal(chosen);
             runReading();
           }
           break;
         }
         case 'CAFE_CARD_REVEALED':
-          if (s.stage === 'presenting' && s.step < 0) {
-            clearReveal();
-            showStep(0);
-          }
+          if (Number(e.payload?.slot) === SPREAD_SIZE - 1 && !revealed.current) allTurned();
           break;
         case 'CAFE_COFFEE_SERVED':
           if (s.stage === 'serving') patch({ stage: 'cookie' });
@@ -426,6 +463,8 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
 
   return {
     state,
+    /** The door's choice, for the next CAFE_SEATED (null clears it: the guided walk failed). */
+    expect: (want: CafeIntent | null) => { arrival.current = want; },
     openTarot,
     loadConsultants,
     backToMenu: () => patch({ stage: 'menu', line: '' }),
