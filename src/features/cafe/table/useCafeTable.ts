@@ -84,6 +84,9 @@ export interface TableState {
   /** The table they sit at (CAFE_SEATED.spot). */
   spot: string;
   stage: TableStage;
+  /** `moving`, but back to the seat the player came from: the tarot table was taken on the way
+   *  (CAFE_PHASE seating/busy). The strip says so instead of "Moving to the tarot table…". */
+  returning: boolean;
   consultants: TarotConsultant[] | null;
   consultantsFailed: boolean;
   consultant: TarotConsultant | null;
@@ -110,6 +113,7 @@ const OFF: TableState = {
   seated: false,
   spot: '',
   stage: 'menu',
+  returning: false,
   consultants: null,
   consultantsFailed: false,
   consultant: null,
@@ -176,8 +180,8 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
       if (g !== gen.current || ref.current.stage !== 'moving') return;
       devlog(`[cafe] move to the tarot table: no answer from Unity in ${ms} ms`);
       const line = moveCancelled.current ? '' : tRef.current('cafe.move.stalled');
-      ref.current = { ...ref.current, stage: 'menu', line };
-      patch({ stage: 'menu', line });
+      ref.current = { ...ref.current, stage: 'menu', returning: false, line };
+      patch({ stage: 'menu', returning: false, line });
     }, ms);
   };
   useEffect(() => () => { clearReveal(); clearMove(); }, []);
@@ -220,8 +224,8 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
   const openTarot = () => {
     const s = ref.current;
     if (!needsTarotMove(s.spot, spots.current)) { listReaders(); return; }
-    ref.current = { ...s, stage: 'moving', line: '', error: null };
-    patch({ stage: 'moving', line: '', error: null });
+    ref.current = { ...s, stage: 'moving', returning: false, line: '', error: null };
+    patch({ stage: 'moving', returning: false, line: '', error: null });
     moveCancelled.current = false;
     armMove(MOVE_ANSWER_MS);
     bridge.sendCafeSit(TAROT_TABLE);
@@ -471,8 +475,8 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
               break;
             }
             clearMove();
-            ref.current = { ...s, spot, stage: 'menu' };
-            patch({ spot, stage: 'menu' });
+            ref.current = { ...s, spot, stage: 'menu', returning: false };
+            patch({ spot, stage: 'menu', returning: false });
             if (spot === TAROT_TABLE) listReaders();
             break;
           }
@@ -492,11 +496,16 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
           } else if (e.payload?.phase === 'talking' && e.payload.reason === 'busy' && s.stage === 'moving') {
             // The tarot table is taken: still seated where they were, at the menu.
             clearMove();
-            ref.current = { ...s, stage: 'menu' };
-            patch({ stage: 'menu' });
+            ref.current = { ...s, stage: 'menu', returning: false };
+            patch({ stage: 'menu', returning: false });
           } else if (e.payload?.phase === 'seating' && s.stage === 'moving' && !moveCancelled.current) {
             // Walking (to the tarot table, or back from it): Unity's own walk limit applies from here.
+            // `busy` here is the walk back — a fresh walk in Unity (BackToPreviousSeat), a fresh limit.
             armMove(MOVE_WALK_MS);
+            if (e.payload.reason === 'busy' && !s.returning) {
+              ref.current = { ...s, returning: true };
+              patch({ returning: true });
+            }
           }
           break;
         case 'CAFE_CONSULTANT_SEATED':

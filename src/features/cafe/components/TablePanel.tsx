@@ -75,7 +75,7 @@ export const TablePanel: React.FC<{
       <View pointerEvents="box-none" onLayout={onLayout}
         style={[styles.stripDock, { bottom: bottomPad, left: safe.left + spacing.md, right: safe.right + spacing.md }]}>
         <View pointerEvents="box-none" style={styles.strip} testID="cafe-strip">
-          <Medallion icon={STRIP_ICON[s.stage] ?? 'sparkle'} size={34} />
+          <Medallion icon={s.stage === 'moving' && s.returning ? 'coffee' : STRIP_ICON[s.stage] ?? 'sparkle'} size={34} />
           <View pointerEvents="none" style={styles.grow}>
             <StripText table={table} />
           </View>
@@ -133,7 +133,7 @@ const StripText: React.FC<{ table: CafeTable }> = ({ table }) => {
   const s = table.state;
   switch (s.stage) {
     case 'moving':
-      return <Text style={styles.stripLine} testID="cafe-moving">{t('cafe.move.tarot')}</Text>;
+      return <Text style={styles.stripLine} testID="cafe-moving">{t(s.returning ? 'cafe.move.back' : 'cafe.move.tarot')}</Text>;
     case 'arriving':
       return <Text style={styles.stripLine}>{t('cafe.tarot.arriving', { name: s.consultant?.name ?? '' })}</Text>;
     case 'spreading':

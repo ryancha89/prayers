@@ -671,11 +671,18 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
     // Taken on the way instead: walked back, seated again at the bar's menu, told why.
     await press('Tarot Consultation');
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'tarot', reason: '' } });
+    expect(shown()).toContain('Moving to the tarot table…');
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'bar', reason: 'busy' } });
     expect(shown()).toContain('Someone is at the tarot table right now');
+    // Walking back now: the strip says where to, not "Moving to the tarot table…".
+    expect(byTestID('cafe-moving')[0].props.children).toBe('Returning to your seat…');
+    expect(shown()).not.toContain('Moving to the tarot table…');
     await seatAt('bar');
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
     expect(byTestID('cafe-readers')).toHaveLength(0);
+    // The next move starts as a move to the tarot table again.
+    await press('Tarot Consultation');
+    expect(byTestID('cafe-moving')[0].props.children).toBe('Moving to the tarot table…');
   });
 
   it('the move to the tarot table can be cancelled: CAFE_STAND, and the table clears on Unity\u2019s exploring', async () => {
