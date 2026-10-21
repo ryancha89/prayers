@@ -33,6 +33,16 @@ export const SPREAD_SIZE = 7;
  *  must not leave the player looking at "Turning the cards over…". */
 export const REVEAL_FALLBACK_MS = 30000;
 
+/** How long a move to the tarot table waits for Unity's first word (CAFE_PHASE seating, or a refusal)
+ *  before it gives up and puts the menu back. Unity answers a CAFE_SIT in the same frame; silence means
+ *  it never took it (CafeEntry.Sit returns quietly while the cafe is not active), and `moving` had no
+ *  way out but the world (QA 21-10). Also the wait for CAFE_PHASE exploring after Cancel. */
+export const MOVE_ANSWER_MS = 3000;
+/** …and once walking, how long until CAFE_SEATED (or the walk back's seating/busy) must have come:
+ *  Unity's own limit for a plain walk (CafeExperience.SeatSeconds, 18 s) plus slack. Unity gives up
+ *  first and says so; this only catches the answer that never arrives. */
+export const MOVE_WALK_MS = (18 + 5) * 1000;
+
 /**
  * Where the table is. One stage at a time, in the order the contract's flow walks them:
  *
@@ -149,7 +159,28 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     if (revealTimer.current) clearTimeout(revealTimer.current);
     revealTimer.current = null;
   };
-  useEffect(() => () => clearReveal(), []);
+  /** The move's watchdog (MOVE_ANSWER_MS / MOVE_WALK_MS): `moving` never outlives Unity's silence. */
+  const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearMove = () => {
+    if (moveTimer.current) clearTimeout(moveTimer.current);
+    moveTimer.current = null;
+  };
+  /** Cancel was pressed: a watchdog that fires after it puts the menu back without the "could not
+   *  move" line — the player asked for it. */
+  const moveCancelled = useRef(false);
+  const armMove = (ms: number) => {
+    clearMove();
+    const g = gen.current;
+    moveTimer.current = setTimeout(() => {
+      moveTimer.current = null;
+      if (g !== gen.current || ref.current.stage !== 'moving') return;
+      devlog(`[cafe] move to the tarot table: no answer from Unity in ${ms} ms`);
+      const line = moveCancelled.current ? '' : tRef.current('cafe.move.stalled');
+      ref.current = { ...ref.current, stage: 'menu', line };
+      patch({ stage: 'menu', line });
+    }, ms);
+  };
+  useEffect(() => () => { clearReveal(); clearMove(); }, []);
 
   /** One purchase intent → one request_id, kept across retries (cafeApi's rule). */
   const intent = useRef<{ paid: CafePaid; id: string } | null>(null);
@@ -191,7 +222,21 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     if (!needsTarotMove(s.spot, spots.current)) { listReaders(); return; }
     ref.current = { ...s, stage: 'moving', line: '', error: null };
     patch({ stage: 'moving', line: '', error: null });
+    moveCancelled.current = false;
+    armMove(MOVE_ANSWER_MS);
     bridge.sendCafeSit(TAROT_TABLE);
+  };
+
+  /** Cancel on the moving strip. Unity has no "cancel a move": the old seat was given up when the
+   *  player stood (CafeExperience.MoveSeat), so the one way out is the on-foot seating's own Cancel —
+   *  CAFE_STAND, which ends the walk wherever it is (EndConversation) and answers CAFE_PHASE exploring.
+   *  That answer clears the table like any standing up; the strip stays until it comes, so RN and Unity
+   *  change state together. No answer at all (Unity never got the move) → the watchdog's menu. */
+  const cancelMove = () => {
+    if (ref.current.stage !== 'moving') return;
+    moveCancelled.current = true;
+    armMove(MOVE_ANSWER_MS);
+    bridge.sendCafeStand();
   };
 
   const chooseConsultant = (c: TarotConsultant) => {
@@ -400,6 +445,7 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
   const leaveTable = () => {
     gen.current += 1;
     clearReveal();
+    clearMove();
     setState(OFF);
     bridge.sendCafeStand();
   };
@@ -418,7 +464,13 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
           if (s.seated) {
             // The end of a move: at the tarot table the readers open; back at the old seat (the tarot
             // table was taken on the way) the menu, as it was.
-            if (s.stage !== 'moving') break;
+            if (s.stage !== 'moving') {
+              // A move the watchdog had already given up on, landing late: the menu stays, at the seat
+              // Unity says the player is in.
+              if (spot && spot !== s.spot) { ref.current = { ...s, spot }; patch({ spot }); }
+              break;
+            }
+            clearMove();
             ref.current = { ...s, spot, stage: 'menu' };
             patch({ spot, stage: 'menu' });
             if (spot === TAROT_TABLE) listReaders();
@@ -435,11 +487,16 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
           if (e.payload?.phase === 'exploring' && s.seated) {
             gen.current += 1;
             clearReveal();
+            clearMove();
             setState(OFF);
           } else if (e.payload?.phase === 'talking' && e.payload.reason === 'busy' && s.stage === 'moving') {
             // The tarot table is taken: still seated where they were, at the menu.
+            clearMove();
             ref.current = { ...s, stage: 'menu' };
             patch({ stage: 'menu' });
+          } else if (e.payload?.phase === 'seating' && s.stage === 'moving' && !moveCancelled.current) {
+            // Walking (to the tarot table, or back from it): Unity's own walk limit applies from here.
+            armMove(MOVE_WALK_MS);
           }
           break;
         case 'CAFE_CONSULTANT_SEATED':
@@ -494,6 +551,7 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
   return {
     state,
     openTarot,
+    cancelMove,
     loadConsultants,
     backToMenu: () => patch({ stage: 'menu', line: '' }),
     chooseConsultant,

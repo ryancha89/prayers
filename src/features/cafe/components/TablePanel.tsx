@@ -80,6 +80,9 @@ export const TablePanel: React.FC<{
             <StripText table={table} />
           </View>
           {inTarot(s) && <EndButton onPress={table.end} />}
+          {s.stage === 'moving' && (
+            <GhostButton label={t('cafe.cancel')} icon="close" onPress={table.cancelMove} testID="cafe-move-cancel" />
+          )}
         </View>
       </View>
     );

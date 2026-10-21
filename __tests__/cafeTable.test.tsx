@@ -63,7 +63,7 @@ import { useCoins } from '../src/features/coins/store/coinStore';
 import { useAuthStore } from '../src/features/auth/store/authStore';
 import { COUNSELOR_AVATAR_ART } from '../src/features/counselors/assets';
 import { readerPortrait } from '../src/features/cafe/table/portrait';
-import { CAFE_PRICE, REVEAL_FALLBACK_MS } from '../src/features/cafe/table/useCafeTable';
+import { CAFE_PRICE, MOVE_ANSWER_MS, MOVE_WALK_MS, REVEAL_FALLBACK_MS } from '../src/features/cafe/table/useCafeTable';
 import { IN_PROGRESS_WAIT_MS, isRetryable } from '../src/features/cafe/api/cafeApi';
 import type { UnityToRNEvent } from '../src/features/counseling/types';
 
@@ -676,6 +676,68 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
     await seatAt('bar');
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
     expect(byTestID('cafe-readers')).toHaveLength(0);
+  });
+
+  it('the move to the tarot table can be cancelled: CAFE_STAND, and the table clears on Unity\u2019s exploring', async () => {
+    await open();
+    await sitBy('lounge');
+    await seatAt('lounge');
+    await press('Tarot Consultation');
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'tarot', reason: '' } });
+    expect(byTestID('cafe-move-cancel').length).toBeGreaterThan(0);
+    await press('Cancel');
+    // Unity has no "cancel a move": the on-foot seating's Cancel (CAFE_STAND) ends the walk.
+    expect(calls('CAFE_STAND')).toHaveLength(1);
+    expect(byTestID('cafe-moving').length).toBeGreaterThan(0);
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'exploring', spot: '', reason: '' } });
+    await flush();
+    expect(byTestID('cafe-strip')).toHaveLength(0);
+    expect(byTestID('cafe-menu')).toHaveLength(0);
+    expect(byTestID('cafe-look').length).toBeGreaterThan(0);
+  });
+
+  it('Unity never answers the move: the menu comes back after MOVE_ANSWER_MS with a gentle line; a late arrival keeps it', async () => {
+    jest.useFakeTimers();
+    await open();
+    await sitBy('bar');
+    await seatAt('bar');
+    await press('Tarot Consultation');
+    act(() => { jest.advanceTimersByTime(MOVE_ANSWER_MS - 1); });
+    expect(byTestID('cafe-moving').length).toBeGreaterThan(0);
+    act(() => { jest.advanceTimersByTime(1); });
+    expect(byTestID('cafe-moving')).toHaveLength(0);
+    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    expect(shown()).toContain("Couldn't get to the tarot table");
+    // The move did happen after all: the menu stays, but now it is the tarot table's — Tarot lists readers.
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'talking', spot: 'tarot', reason: '' } });
+    fromUnity({ type: 'CAFE_SEATED', payload: { spot: 'tarot' } });
+    await flush();
+    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    serve('cafe/tarot/consultants', ok(READERS));
+    await press('Tarot Consultation');
+    expect(calls('CAFE_SIT').filter(c => (c.payload as { spot: string }).spot === 'tarot')).toHaveLength(1);
+    expect(byTestID('cafe-readers').length).toBeGreaterThan(0);
+  });
+
+  it('walking but never seated: the menu after MOVE_WALK_MS, not before; Cancel with no answer clears without the line', async () => {
+    jest.useFakeTimers();
+    await open();
+    await sitBy('lounge');
+    await seatAt('lounge');
+    await press('Tarot Consultation');
+    act(() => { jest.advanceTimersByTime(1000); });
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'tarot', reason: '' } });
+    act(() => { jest.advanceTimersByTime(MOVE_WALK_MS - 1); });
+    expect(byTestID('cafe-moving').length).toBeGreaterThan(0);
+    act(() => { jest.advanceTimersByTime(1); });
+    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    expect(shown()).toContain("Couldn't get to the tarot table");
+    // Again, and this time Cancel — to a Unity that says nothing: the menu, and no "could not" line.
+    await press('Tarot Consultation');
+    await press('Cancel');
+    act(() => { jest.advanceTimersByTime(MOVE_ANSWER_MS); });
+    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    expect(shown()).not.toContain("Couldn't get to the tarot table");
   });
 
   it('a repeated CAFE_READY and a second sit in the same visit: still the plain menu', async () => {
