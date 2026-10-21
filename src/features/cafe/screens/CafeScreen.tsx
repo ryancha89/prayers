@@ -31,6 +31,7 @@ import { ConfirmSheet } from '../components/ConfirmSheet';
 import { FortuneCard } from '../components/FortuneCard';
 import { Bubble, GhostButton, Medallion, PanelBackdrop } from '../components/CafeChrome';
 import { TAROT_TABLE } from '../table/tarotTable';
+import { ANY_TABLE, tableChips } from '../table/tableChips';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -45,8 +46,10 @@ export const CAFE_HOME: MyRoomCamera = { zoom: 0.5, yaw: 0, pitch: 0 };
  *  offered as "sit together" rather than as its raw id. */
 const SPOT_LABEL: Record<string, TranslationKey> = { bar: 'cafe.spot.bar', lounge: 'cafe.spot.lounge', tarot: 'cafe.spot.tarot' };
 export const spotLabel = (spot: string): TranslationKey => SPOT_LABEL[spot] ?? 'cafe.spot.any';
-/** The same seats as the table chooser's short names. */
-const TABLE_LABEL: Record<string, TranslationKey> = { bar: 'cafe.tables.bar', lounge: 'cafe.tables.lounge', tarot: 'cafe.tables.tarot' };
+/** The same seats as the table chooser's short names; `any` is the one chip of the dining tables. */
+const TABLE_LABEL: Record<string, TranslationKey> = {
+  bar: 'cafe.tables.bar', lounge: 'cafe.tables.lounge', tarot: 'cafe.tables.tarot', [ANY_TABLE]: 'cafe.tables.anyFree',
+};
 export const tableLabel = (spot: string): TranslationKey => TABLE_LABEL[spot] ?? 'cafe.tables.any';
 
 const SEAT_REASONS = new Set(['unreachable', 'blocked', 'busy']);
@@ -347,7 +350,8 @@ export const CafeScreen: React.FC = () => {
       </View>
 
       {/* On foot: the tables, as the pins in the room show them, in the scene's order — a taken one
-          shown and refused. Above the stick, one row of chips so the room stays in view. */}
+          shown and refused. Above the stick, one row of chips so the room stays in view: the dining
+          floor's tables are one "any free table" chip (tableChips), each of them a pin in the room. */}
       {up && exploring && tables.length > 0 && (
         <View pointerEvents="box-none" style={[styles.promptWrap, { bottom: safe.bottom + (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait) }]} testID="cafe-tables">
           <View style={styles.card}>
@@ -359,7 +363,7 @@ export const CafeScreen: React.FC = () => {
               </View>
             </View>
             <View style={styles.chips}>
-              {tables.map(row => (
+              {tableChips(tables).map(row => (
                 <Pressable key={row.spot} testID={`cafe-table-${row.spot}`} onPress={() => choose(row.spot)} accessibilityRole="button"
                   accessibilityLabel={t(tableLabel(row.spot))} accessibilityState={{ disabled: row.taken }}
                   style={({ pressed }) => [styles.chip, row.taken && styles.chipTaken, pressed && styles.pressed]}>

@@ -95,7 +95,8 @@ jest.mock('../src/features/counseling/components/UnityHost', () => {
 
 import { NativeUnityBridge } from '../src/features/counseling/bridge/NativeUnityBridge';
 import { nativeUnityBridge } from '../src/features/counseling/bridge';
-import { CAFE_HOME, CafeScreen, cafeCoveredPx, guestName, replyErrorKey, spotLabel } from '../src/features/cafe/screens/CafeScreen';
+import { CAFE_HOME, CafeScreen, cafeCoveredPx, guestName, replyErrorKey, spotLabel, tableLabel } from '../src/features/cafe/screens/CafeScreen';
+import { ANY_TABLE, isDiningTable, tableChips } from '../src/features/cafe/table/tableChips';
 import { WorldScreen, worldTiming } from '../src/features/world/screens/WorldScreen';
 import { WORLD_ZONES, isWorldZone } from '../src/features/world/data/zones';
 import { LABEL_AT, LABEL_W } from '../src/features/world/components/WorldHubArt';
@@ -354,6 +355,25 @@ describe('the cafe screen', () => {
     expect(byTestID('cafe-note')[0].findAll(n => n.props.children === '지금은 그 자리에 앉을 수 없어요.').length).toBeGreaterThan(0);
   });
 
+  it('the dining floor’s seven tables are one “any free table” chip; Unity picks the nearest free one', async () => {
+    await render();
+    const dining = ['table1', 'table2', 'table3', 'table4', 'table5', 'table6', 'table7'];
+    fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar', 'lounge', 'tarot', ...dining] } });
+    const chips = () => byTestID('cafe-tables')[0].findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('cafe-table-') && typeof n.props.onPress === 'function');
+    // Ten chips would cover the room: the three corners by name, the rest by their pins and this one chip.
+    expect(chips().map(c => c.props.testID)).toEqual(['cafe-table-bar', 'cafe-table-lounge', 'cafe-table-tarot', 'cafe-table-any']);
+    press('아무 빈 테이블');
+    expect(posts('CAFE_SIT').map(p => p.payload)).toEqual([{ spot: 'any', guided: true }]);
+    // Unity answers with the table it chose; the walk is the coffee one (Tarot there moves on to the tarot table).
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'table3', reason: '' } });
+    expect(byTestID('cafe-seating').length).toBeGreaterThan(0);
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'exploring', spot: '', reason: '' } });
+    // Every dining table taken in the shared room: the chip says so, and Unity would answer busy.
+    fromUnity({ type: 'CAFE_TABLES', payload: { tables: ['bar', 'lounge', 'tarot', ...dining].map(spot => ({ spot, taken: isDiningTable(spot) })) } });
+    expect(byTestID('cafe-table-any')[0].props.accessibilityState).toEqual({ disabled: true });
+    expect(byTestID('cafe-table-bar')[0].props.accessibilityState).toEqual({ disabled: false });
+  });
+
   it('seated: a message goes out as CAFE_SAY, the answer comes back in the panel, an error is worded', async () => {
     await render();
     fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar'] } });
@@ -397,6 +417,17 @@ describe('the cafe’s pure parts', () => {
     expect(guestName('nobody', 'en')).toBe('nobody');
     expect(spotLabel('bar')).toBe('cafe.spot.bar');
     expect(spotLabel('roof')).toBe('cafe.spot.any');
+    expect(tableLabel(ANY_TABLE)).toBe('cafe.tables.anyFree');
+    expect(tableLabel('roof')).toBe('cafe.tables.any');
+    // The chips: corners as themselves in the scene's order, the dining tables folded into `any` at the end,
+    // taken only when all of them are; no dining tables, no `any`.
+    expect(tableChips([{ spot: 'table1', taken: true }, { spot: 'bar', taken: false }, { spot: 'table2', taken: false }]))
+      .toEqual([{ spot: 'bar', taken: false }, { spot: 'any', taken: false }]);
+    expect(tableChips([{ spot: 'table1', taken: true }, { spot: 'table2', taken: true }])).toEqual([{ spot: 'any', taken: true }]);
+    expect(tableChips([{ spot: 'bar', taken: false }])).toEqual([{ spot: 'bar', taken: false }]);
+    expect(isDiningTable('table12')).toBe(true);
+    expect(isDiningTable('tarot')).toBe(false);
+    expect(isDiningTable('tables')).toBe(false);
     expect(replyErrorKey('ticket')).toBe('cafe.err.ticket');
     expect(replyErrorKey('something_new')).toBe('cafe.err.upstream');
     expect(CAFE_HOME).toEqual({ zoom: 0.5, yaw: 0, pitch: 0 });
