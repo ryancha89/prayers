@@ -71,6 +71,9 @@ const MEDITATION_MAX_TRIES = 4;
 const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'CAFE_CAMERA', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
 /** ~30 a second per type: smooth under Unity's own easing, a quarter of what a thumb produced. */
 const STREAM_MS = 33;
+/** The scenes' own handshake events. Not every `*_READY` is one: CAFE_DECK_READY is a step inside the
+ *  cafe, and filtering it as a stale scene READY left the tarot stuck at "spreading" (21-10). */
+const SCENE_READY = new Set<string>(['UNITY_READY', 'MEDITATION_READY', 'LECTURE_READY', 'JOURNEY_READY', 'WORLD_READY', 'MYROOM_READY', 'CAFE_READY']);
 
 export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, CafeBridge {
   private handlers = new Set<(e: UnityToRNEvent) => void>();
@@ -964,8 +967,8 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     }
 
     // A late READY from the previous scene must not mark this one ready or stop its handshake.
-    if (this.expectedReady && event.type.endsWith('_READY') &&
-        event.type !== 'BRIDGE_READY' && event.type !== this.expectedReady) return;
+    const sceneReady = SCENE_READY.has(event.type);
+    if (this.expectedReady && sceneReady && event.type !== this.expectedReady) return;
 
     // Anything at all from the far side means the handshake does not need saying again — see
     // armInitRetry.
@@ -983,10 +986,10 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     // the meditation bed and My Room all play through Unity's SoundManager, and a switch the
     // player turned off must hold there too (10-12: "배경음악 오프했는데 나오는거"). Replayed on
     // each scene's READY, since a freshly loaded scene starts at Unity's own defaults.
-    if (event.type.endsWith('_READY') && this.worldAudio && event.type !== 'WORLD_READY') {
+    if (sceneReady && this.worldAudio && event.type !== 'WORLD_READY') {
       this.post({ type: 'WORLD_AUDIO', payload: this.worldAudio });
     }
-    if (event.type.endsWith('_READY') && this.voiceOn !== null) {
+    if (sceneReady && this.voiceOn !== null) {
       this.post({ type: 'VOICE_AUDIO', payload: { on: this.voiceOn } });
     }
 
