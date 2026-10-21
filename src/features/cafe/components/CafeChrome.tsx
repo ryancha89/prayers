@@ -167,7 +167,8 @@ const styles = StyleSheet.create({
     paddingLeft: 5, paddingRight: spacing.sm, paddingVertical: 3, borderRadius: radius.pill,
     backgroundColor: 'rgba(10,8,26,0.55)', borderWidth: 1, borderColor: GOLD_LINE,
   },
-  chipOnGold: { backgroundColor: 'rgba(26,19,48,0.12)', borderColor: 'rgba(26,19,48,0.25)' },
+  // Inside the send pill, whose row centres its children: `chip`'s flex-start would ride it to the top.
+  chipOnGold: { alignSelf: 'center', backgroundColor: 'rgba(26,19,48,0.12)', borderColor: 'rgba(26,19,48,0.25)' },
   chipText: { ...typography.caption, color: colors.gold, fontWeight: '700' },
   chipTextOnGold: { color: INK },
   face: { overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(233,196,106,0.85)' },

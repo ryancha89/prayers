@@ -594,7 +594,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', backgroundColor: colors.gold,
     shadowColor: colors.gold, shadowOpacity: 0.45, shadowRadius: 8, shadowOffset: { width: 0, height: 0 },
   },
-  sendWide: { paddingLeft: 6, paddingRight: spacing.md },
+  // The chip sits as far in from the pill's left end as it does from its top and bottom; the arrow
+  // matches it on the right.
+  sendWide: { paddingHorizontal: spacing.md },
   muted: { opacity: 0.45, shadowOpacity: 0 },
   pressed: { opacity: 0.78 },
 });
