@@ -789,12 +789,6 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     if (this.view) this.post({ type: 'CAFE_TAP', payload: { x: unit(x), y: unit(y) } });
   }
 
-  /** The choice made on the sheet inside the door (offered only once CAFE_READY is in). */
-  sendCafeSuggest(suggest: string[]): void {
-    devlog(`[unity-bridge] CAFE_SUGGEST ${suggest.join(',') || '(none)'}`);
-    this.post({ type: 'CAFE_SUGGEST', payload: { suggest } });
-  }
-
   sendCafeStand(): void {
     this.post({ type: 'CAFE_STAND' });
   }

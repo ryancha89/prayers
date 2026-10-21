@@ -172,7 +172,6 @@ async function toChosen() {
 describe('a tarot reading at the table', () => {
   it('seated: the menu replaces the stick, the look layer and the guest panel', async () => {
     await render();
-    await press('Close'); // the choice sheet at the door: just looking around
     expect(byTestID('cafe-look').length).toBeGreaterThan(0);
     fromUnity({ type: 'CAFE_SEATED', payload: { spot: 'table_2' } });
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
@@ -552,16 +551,13 @@ describe('the reader’s text', () => {
 
 /* ---- choosing the table (21-10) ------------------------------------------------------------------ */
 
-describe('chosen inside, at the door: the choice suggests a table, the player picks it', () => {
+describe('walked straight in: any free table, then coffee or tarot from its menu', () => {
   const ready = () => fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar', 'lounge', 'tarot'] } });
-  /** In through the door and the choice sheet answered: coffee, tarot, or (null) closed — looking around. */
-  const open = async (want: 'coffee' | 'tarot' | null = null) => {
+  /** In through the door, the cafe up. Nothing is asked there (user, 21-10). */
+  const open = async () => {
     await act(async () => { tree = ReactTestRenderer.create(<CafeScreen />); });
     await flush();
     ready();
-    expect(byTestID('cafe-tables')).toHaveLength(0);
-    if (want) await act(async () => { byTestID(`cafe-choice-${want}`)[0].props.onPress(); });
-    else await press('Close');
     await flush();
   };
   const seatAt = async (spot: string) => {
@@ -569,21 +565,44 @@ describe('chosen inside, at the door: the choice suggests a table, the player pi
     fromUnity({ type: 'CAFE_SEATED', payload: { spot } });
     await flush();
   };
+  const chipIds = () => byTestID('cafe-tables')[0]
+    .findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('cafe-table-') && typeof n.props.onPress === 'function')
+    .map(c => c.props.testID);
 
-  it('tarot: nothing seats the player by itself; the tarot table is suggested first and opens the readers there', async () => {
-    serve('cafe/tarot/consultants', ok(READERS));
-    await open('tarot');
+  it('the tables at once, in the scene’s order, none suggested; nothing seats the player by itself', async () => {
+    await open();
+    // No sheet at the door (CAFE_INIT's exact payload is pinned in cafe.test.tsx).
+    expect(byTestID('cafe-choice')).toHaveLength(0);
+    expect(types()).not.toContain('CAFE_SUGGEST');
+    expect(chipIds()).toEqual(['cafe-table-bar', 'cafe-table-lounge', 'cafe-table-tarot']);
+    expect(shown()).not.toContain('Suggested');
+    expect(byTestID('cafe-look').length).toBeGreaterThan(0);
     expect(calls('CAFE_SIT')).toHaveLength(0);
-    // The chooser leads with the suggestion; Unity's pins are told the same order in CAFE_SUGGEST.
-    expect(calls('CAFE_SUGGEST')).toEqual([{ type: 'CAFE_SUGGEST', payload: { suggest: ['tarot', 'lounge', 'bar'] } }]);
-    const chips = byTestID('cafe-tables')[0].findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('cafe-table-') && typeof n.props.onPress === 'function');
-    expect(chips.map(c => c.props.testID)).toEqual(['cafe-table-tarot', 'cafe-table-bar', 'cafe-table-lounge']);
-    expect(shown()).toContain('Suggested');
+  });
+
+  it('any table, first sit: the menu — coffee is ordered from it, at whichever table', async () => {
+    await open();
+    await press('Bar');
+    expect(calls('CAFE_SIT')).toEqual([{ type: 'CAFE_SIT', payload: { spot: 'bar', guided: true } }]);
+    await seatAt('bar');
+    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    expect(byTestID('cafe-confirm')).toHaveLength(0);
+    await press('Order Coffee');
+    expect(byTestID('cafe-confirm').length).toBeGreaterThan(0);
+    expect(shown()).toContain('Coffee & fortune cookie');
+  });
+
+  it('at the tarot table: the menu first, and Tarot there opens the readers without a move', async () => {
+    serve('cafe/tarot/consultants', ok(READERS));
+    await open();
     await press('Tarot table');
-    expect(calls('CAFE_SIT')).toEqual([{ type: 'CAFE_SIT', payload: { spot: 'tarot', guided: true } }]);
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'tarot', reason: '' } });
     expect(shown()).toContain('Following the barista to the tarot table');
     await seatAt('tarot');
+    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    expect(byTestID('cafe-readers')).toHaveLength(0);
+    await press('Tarot Consultation');
+    expect(calls('CAFE_SIT')).toHaveLength(1);
     // The reader is chosen sitting at the table (user, 20-10), not before.
     expect(byTestID('cafe-readers').length).toBeGreaterThan(0);
     expect(calls('CAFE_TAROT_START')).toHaveLength(0);
@@ -591,30 +610,12 @@ describe('chosen inside, at the door: the choice suggests a table, the player pi
     expect(calls('CAFE_TAROT_START')).toHaveLength(1);
   });
 
-  it('a suggested table somebody else holds is not suggested: the next free one is', async () => {
-    await open('tarot');
-    fromUnity({ type: 'CAFE_TABLES', payload: { tables: [{ spot: 'bar', taken: false }, { spot: 'lounge', taken: false }, { spot: 'tarot', taken: true }] } });
-    const first = byTestID('cafe-tables')[0].findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('cafe-table-') && typeof n.props.onPress === 'function')[0];
-    expect(first.props.testID).toBe('cafe-table-lounge');
-  });
-
-  it('coffee: seated wherever they chose, the 30 PC confirmation opens at once', async () => {
-    await open('coffee');
-    expect(calls('CAFE_SUGGEST').map(c => c.payload)).toEqual([{ suggest: ['lounge', 'bar', 'tarot'] }]);
-    await press('Bar');
-    expect(calls('CAFE_SIT')).toEqual([{ type: 'CAFE_SIT', payload: { spot: 'bar', guided: true } }]);
-    await seatAt('bar');
-    expect(byTestID('cafe-confirm').length).toBeGreaterThan(0);
-    expect(shown()).toContain('Coffee & fortune cookie');
-  });
-
-  it('came for tarot but chose the lounge: the menu; Tarot there walks the player to the tarot table, and the readers open on arrival', async () => {
+  it('Tarot at the lounge walks the player to the tarot table, and the readers open on arrival', async () => {
     serve('cafe/tarot/consultants', ok(READERS));
-    await open('tarot');
+    await open();
     await press('Window lounge');
     await seatAt('lounge');
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
-    expect(byTestID('cafe-readers')).toHaveLength(0);
     await press('Tarot Consultation');
     // PM 21-10: "if user select tarot consultation, should move to the tarot table".
     expect(calls('CAFE_SIT').at(-1)).toEqual({ type: 'CAFE_SIT', payload: { spot: 'tarot', guided: true } });
@@ -651,23 +652,16 @@ describe('chosen inside, at the door: the choice suggests a table, the player pi
     expect(byTestID('cafe-readers')).toHaveLength(0);
   });
 
-  it('a repeated CAFE_READY neither asks again nor serves the choice twice; looking around = no suggestion', async () => {
-    await open('coffee');
+  it('a repeated CAFE_READY and a second sit in the same visit: still the plain menu', async () => {
+    await open();
     ready();
-    expect(byTestID('cafe-choice')).toHaveLength(0);
     await press('Window lounge');
     await seatAt('lounge');
-    expect(byTestID('cafe-confirm').length).toBeGreaterThan(0);
-    await press('Cancel');
-    // Up and down again in the same visit: the plain menu this time.
+    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'exploring', spot: '', reason: '' } });
-    await seatAt('lounge');
+    await seatAt('tarot');
+    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
     expect(byTestID('cafe-confirm')).toHaveLength(0);
-    act(() => tree!.unmount());
-    tree = null;
-    bridge.cafeCalls.length = 0;
-    await open();
-    expect(calls('CAFE_SUGGEST').map(c => c.payload)).toEqual([{ suggest: [] }]);
-    expect(shown()).not.toContain('Suggested');
+    expect(byTestID('cafe-readers')).toHaveLength(0);
   });
 });

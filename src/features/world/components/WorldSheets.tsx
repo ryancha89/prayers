@@ -151,7 +151,7 @@ export interface ZoneActions {
   coins(): void;
   /** 들어가기 → into My Room. */
   myroom(): void;
-  /** Into the coffee shop. What the player came for is asked inside, at its door (CafeChoiceSheet). */
+  /** Into the coffee shop. Nothing is asked at its door: the player picks a table, then coffee or tarot there. */
   cafe(): void;
 }
 
@@ -254,7 +254,7 @@ export const ZoneOverlay: React.FC<{
         </>,
       );
     case 'cafe':
-      // Never opened: the cafe door goes straight in, and asks inside (PM 21-10) — CafeChoiceSheet.
+      // Never opened: the cafe door goes straight in (21-10); coffee or tarot is chosen seated, at the table.
       return null;
   }
 };

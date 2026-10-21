@@ -10,8 +10,8 @@
  *    dropped, CAFE_END once,
  *  · the way in: through the cafe door the world's host goes down FIRST, then the Cafe route opens,
  *    remembering the door — with no sheet over the World (PM 21-10: the choice is made inside),
- *  · inside, at the door: the choice sheet first (pins held back by CAFE_INIT `choosing`), then
- *    CAFE_SUGGEST in the choice's order and the table chooser,
+ *  · inside, at the door: nothing asked (user, 21-10) — the look layer, the stick and the table chooser
+ *    at once, in the scene's order, none suggested,
  *  · the screen: CAFE_INIT carries the language, the host and the account; the veil until READY;
  *    CAFE_NEAR offers the seats Unity named; seated, a message goes out as CAFE_SAY and the answer
  *    (or the worded error) comes back in the panel; a seat that failed says why; back goes back.
@@ -303,8 +303,6 @@ describe('the cafe screen', () => {
       // Shared rooms: the dev presence socket, the account's Game-Token (none stored in this test)
       // and the display name.
       presenceUrl: 'ws://127.0.0.1:9090/ws', gameToken: '', name: '',
-      // Nothing chosen yet: no table to suggest, and the pins wait for the choice sheet.
-      suggest: [], choosing: true,
     }]);
     expect(byTestID('cafe-veil').length).toBeGreaterThan(0);
     expect(byTestID('cafe-look')).toHaveLength(0);
@@ -313,41 +311,22 @@ describe('the cafe screen', () => {
     expect(byTestID('cafe-veil')).toHaveLength(0);
   });
 
-  it('inside, at the door: the choice sheet first, alone; the choice goes out as CAFE_SUGGEST and the tables follow', async () => {
+  it('inside, at the door: no question — the room, the stick and the tables at once, none suggested', async () => {
     await render();
     fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar', 'lounge', 'tarot'] } });
-    // The World's sheet, words and art, now over the cafe (PM 21-10).
-    const sheet = byTestID('cafe-choice')[0];
-    expect(sheet).toBeDefined();
-    expect(sheet.findAll(n => n.props.children === '커피숍').length).toBeGreaterThan(0);
-    expect(byTestID('cafe-choice-coffee').length).toBeGreaterThan(0);
-    expect(byTestID('cafe-choice-tarot').length).toBeGreaterThan(0);
-    expect(byLabel('그냥 둘러볼게요')).toBeDefined();
-    // Nothing competes with it: no look layer (so no CAFE_TAP on a pin), no stick, no table chooser.
-    expect(byTestID('cafe-look')).toHaveLength(0);
-    expect(byTestID('cafe-tables')).toHaveLength(0);
-    expect(posts('CAFE_SUGGEST')).toHaveLength(0);
-    act(() => byTestID('cafe-choice-tarot')[0].props.onPress());
-    expect(posts('CAFE_SUGGEST').map(p => p.payload)).toEqual([{ suggest: ['tarot', 'lounge', 'bar'] }]);
+    // User, 21-10: the Coffee / Tarot / "just look around" sheet is gone from the cafe as well.
     expect(byTestID('cafe-choice')).toHaveLength(0);
+    expect(byLabel('그냥 둘러볼게요')).toBeUndefined();
     expect(byTestID('cafe-look').length).toBeGreaterThan(0);
+    expect(posts('CAFE_SUGGEST')).toHaveLength(0);
     const chips = byTestID('cafe-tables')[0].findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('cafe-table-') && typeof n.props.onPress === 'function');
-    expect(chips.map(c => c.props.testID)).toEqual(['cafe-table-tarot', 'cafe-table-bar', 'cafe-table-lounge']);
-  });
-
-  it('closing the sheet (X) is “just looking around”: CAFE_SUGGEST with no suggestion', async () => {
-    await render();
-    fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar', 'lounge'] } });
-    press('닫기');
-    expect(posts('CAFE_SUGGEST').map(p => p.payload)).toEqual([{ suggest: [] }]);
-    expect(byTestID('cafe-choice')).toHaveLength(0);
-    expect(byTestID('cafe-tables').length).toBeGreaterThan(0);
+    expect(chips.map(c => c.props.testID)).toEqual(['cafe-table-bar', 'cafe-table-lounge', 'cafe-table-tarot']);
+    expect(byTestID('cafe-tables')[0].findAll(n => n.props.children === '추천')).toHaveLength(0);
   });
 
   it('on foot: the player chooses the table — worded, a taken one marked — and the barista walks them there', async () => {
     await render();
     fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar', 'lounge', 'roof'] } });
-    press('그냥 둘러볼게요');
     // PM 21-10: nothing seats the player by itself; the tables are offered as soon as the cafe is up.
     expect(posts('CAFE_SIT')).toHaveLength(0);
     const chooser = byTestID('cafe-tables')[0];

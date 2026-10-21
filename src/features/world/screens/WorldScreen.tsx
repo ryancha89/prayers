@@ -340,8 +340,8 @@ export const WorldScreen: React.FC = () => {
     journey: actions.journey,
     shop: () => leaveTo('shop', () => navigation.navigate('Tickets')),
     myroom: actions.myroom,
-    // Straight in (PM 21-10: the choice sheet stood over the World, "should be inside the coffee
-    // shop"): coffee / tarot / look around is asked in the cafe, at its door (CafeChoiceSheet).
+    // Straight in (21-10): no choice sheet anywhere; coffee or tarot is chosen from the table's menu
+    // once the player has sat down.
     cafe: actions.cafe,
   };
   /** A door's overlay — except the cafe's, which has none any more: every way of reaching that door

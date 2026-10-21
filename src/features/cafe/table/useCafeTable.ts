@@ -15,7 +15,7 @@ import {
   type TarotConsultant,
   type TarotReading,
 } from '../api/cafeApi';
-import { needsTarotMove, TAROT_TABLE, type CafeIntent } from './intent';
+import { needsTarotMove, TAROT_TABLE } from './tarotTable';
 
 /**
  * What the table sells, in Prayer Coins — mirrored from the contract so the confirmation can name
@@ -165,9 +165,6 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
 
   const speak = (s: CafeTarotSpeak) => bridge.sendCafeTarotSpeak(s);
 
-  /** What the player came for (the cafe's choice sheet), served the moment they first sit (once): the coffee's
-   *  confirmation, or — at the tarot table — the list of readers. Null = the menu, as before. */
-  const arrival = useRef<CafeIntent | null>(null);
   /** The seat ids the scene has (CAFE_READY): whether there is a tarot table to walk to. */
   const spots = useRef<string[]>([]);
 
@@ -426,14 +423,10 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
             if (spot === TAROT_TABLE) listReaders();
             break;
           }
+          // Any table, first sit: the menu (user, 21-10 — nothing is chosen before the player sits).
           const seated = { ...OFF, seated: true, spot };
           ref.current = seated;
           setState(seated);
-          const want = arrival.current;
-          arrival.current = null;
-          if (want?.kind === 'coffee') askToPay('coffee');
-          // Came for a reading and chose another table: the menu; Tarot there walks them over.
-          else if (want?.kind === 'tarot' && !needsTarotMove(spot, spots.current)) listReaders();
           break;
         }
         case 'CAFE_PHASE':
@@ -499,8 +492,6 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
 
   return {
     state,
-    /** What the player came for, for the first CAFE_SEATED of the visit (null clears it). */
-    expect: (want: CafeIntent | null) => { arrival.current = want; },
     openTarot,
     loadConsultants,
     backToMenu: () => patch({ stage: 'menu', line: '' }),

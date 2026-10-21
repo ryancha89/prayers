@@ -426,10 +426,6 @@ export type RNToUnityEvent =
    *  pin (a guided CAFE_SIT there); seated it picks a card while the deck is out, or opens the fortune
    *  cookie. The embedded view gets no touch of its own. */
   | { type: 'CAFE_TAP'; payload: { x: number; y: number } }
-  /** (21-10) What the player came for, chosen on the sheet inside the door: the tables to suggest,
-   *  best first ([] = just looking around). Ends CAFE_INIT `choosing` — the pins come out, the first
-   *  free one of the order breathing. */
-  | { type: 'CAFE_SUGGEST'; payload: { suggest: string[] } }
   /** Stand up from the table, or cancel the walk to it. */
   | { type: 'CAFE_STAND' }
   /** Leaving the cafe. */
@@ -597,12 +593,6 @@ export interface CafeInitPayload {
   presenceUrl?: string;
   gameToken?: string;
   name?: string;
-  /** The tables to suggest, best first (what the player came for — table/intent.ts). Unity makes the
-   *  first free one's pin breathe; absent = no suggestion. */
-  suggest?: string[];
-  /** (21-10) RN is asking what the player came for (the choice sheet, over the cafe at its door):
-   *  Unity holds the table pins back until CAFE_SUGGEST answers it, or until the player sits. */
-  choosing?: boolean;
 }
 
 /** CAFE_TABLES' row: a seat id and whether somebody else (the shared room) sits there. */
@@ -948,7 +938,6 @@ export interface CafeBridge {
   sendCafeSay(text: string): void;
   sendCafeShot(): void;
   sendCafeTap(x: number, y: number): void;
-  sendCafeSuggest(suggest: string[]): void;
   sendCafeStand(): void;
   sendCafeTarotStart(start: CafeTarotStart): void;
   sendCafeTarotSpread(): void;
