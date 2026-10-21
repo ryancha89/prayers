@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, LayoutRectangle, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text, TextInput } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
@@ -30,7 +30,8 @@ import { TablePanel } from '../components/TablePanel';
 import { ConfirmSheet } from '../components/ConfirmSheet';
 import { FortuneCard } from '../components/FortuneCard';
 import { Bubble, GhostButton, Medallion, PanelBackdrop } from '../components/CafeChrome';
-import { suggestOrder, suggestTable, tableChoices, TAROT_TABLE } from '../table/intent';
+import { CafeChoiceSheet } from '../components/CafeChoiceSheet';
+import { suggestOrder, suggestTable, tableChoices, TAROT_TABLE, type CafeIntent } from '../table/intent';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -93,6 +94,12 @@ export function cafeCoveredPx(r: MeasuredRects, landscape: boolean) {
  * CAFE_REPLY, CAFE_SHOT, CAFE_STAND). The words are this app's, in six languages;
  * the guest's answers come from the server the consultation rooms use, through Unity.
  *
+ * WHAT THEY CAME FOR (PM 21-10: "should be inside the coffee shop"). The World's door comes straight
+ * in; once the cafe is up, the player at its door, CafeChoiceSheet asks — Order Coffee / Tarot / Just
+ * look around. Until it is answered nothing else is offered on foot (no stick, no look layer, no table
+ * chooser) and Unity holds its table pins back (CAFE_INIT `choosing`); the answer goes out as
+ * CAFE_SUGGEST and orders the suggestion, and the table serves it when the player first sits.
+ *
  * ONE UNITYVIEW AT A TIME: the world unmounts its host before navigating here (WorldScreen.leaveTo)
  * and mounts it again at the cafe's door (returnZone 'cafe') once this screen has gone.
  *
@@ -106,8 +113,6 @@ export function cafeCoveredPx(r: MeasuredRects, landscape: boolean) {
  */
 export const CafeScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
-  /** What the player chose at the World door (coffee, a reading) — none = walking in to look around. */
-  const intent = useRoute<RouteProp<RootStackParamList, 'Cafe'>>().params?.intent ?? null;
   const t = useT();
   const lang = useLang();
   const screen = useScreen();
@@ -128,6 +133,10 @@ export const CafeScreen: React.FC = () => {
   const [reply, setReply] = useState<{ text: string; error: boolean } | null>(null);
   const [waiting, setWaiting] = useState(false);
   const [draft, setDraft] = useState('');
+  /** The choice sheet is still to be answered (once per visit; sitting down by any other way ends it). */
+  const [choosing, setChoosing] = useState(true);
+  /** What the player came for (coffee, a reading) — null = looking around, or not chosen yet. */
+  const [intent, setIntent] = useState<CafeIntent | null>(null);
 
   // No CAFE_READY after the bridge's retries: say so and offer another try (My Room's rule).
   const [stalled, setStalled] = useState(false);
@@ -164,8 +173,9 @@ export const CafeScreen: React.FC = () => {
       gameToken: validGameToken() ?? '',
       name: useAuthStore.getState().displayName ?? '',
       suggest: suggestOrder(intent),
+      choosing,
     }),
-    [lang, intent],
+    [lang, intent, choosing],
   );
   // Mint the token before the door opens, so the shared room is joined on the first try. A visit
   // left while the token was still on its way must not reopen the cafe behind the player's back.
@@ -185,11 +195,22 @@ export const CafeScreen: React.FC = () => {
   /**
    * CHOOSING A TABLE (21-10, PM: "could you let user select tables to sit down?"). On foot the player
    * picks a table — its pin in the room (a tap on the look layer goes out as CAFE_TAP) or a row of the
-   * chooser — and the barista walks them there (CAFE_SIT guided). The door's choice only suggests one
-   * (listed first, its pin breathes) and is served once they sit: the coffee's confirmation, or the
-   * readers at the tarot table. A taken table is refused `busy` and said so; nothing moves on its own.
+   * chooser — and the barista walks them there (CAFE_SIT guided). What they came for (the choice
+   * sheet) only suggests one (listed first, its pin breathes) and is served once they sit: the
+   * coffee's confirmation, or the readers at the tarot table. A taken table is refused `busy` and said
+   * so; nothing moves on its own.
    */
   const suggested = useMemo(() => suggestTable(intent, tables), [intent, tables]);
+  /** The choice sheet answered (null = just looking, or closed): the table will serve it at the first
+   *  seat, and Unity brings its pins out in the matching order. */
+  const decide = (want: CafeIntent | null) => {
+    // No sound here: the tile, the X and "just look around" each make their own.
+    setChoosing(false);
+    setIntent(want);
+    table.expect(want);
+    bridge.sendCafeSuggest(suggestOrder(want));
+  };
+  const putSheet = useCallback((rect: LayoutRectangle | null) => insets.put('panel', rect), [insets]);
   const choose = (spot: string) => {
     sfx.select();
     say(t('cafe.guide.welcome'));
@@ -208,10 +229,6 @@ export const CafeScreen: React.FC = () => {
           setGuest(e.payload?.guest ?? '');
           // All free until CAFE_TABLES (right behind) says otherwise; a repeated READY keeps what it said.
           setTables(prev => seatIds.map(spot => ({ spot, taken: prev.find(x => x.spot === spot)?.taken ?? false })));
-          if (!ready.current) {
-            ready.current = true;
-            tableRef.current?.expect(intent);
-          }
           break;
         }
         case 'CAFE_TABLES': {
@@ -219,10 +236,16 @@ export const CafeScreen: React.FC = () => {
           setTables(rows.filter(r => typeof r?.spot === 'string').map(r => ({ spot: r.spot, taken: r.taken === true })));
           break;
         }
+        case 'CAFE_SEATED':
+          // Seated without answering the sheet (a seat Unity was asked for some other way): the
+          // question is moot, and Unity has let its pins go on the same rule.
+          setChoosing(false);
+          break;
         case 'CAFE_PHASE': {
           const p = e.payload;
           if (!p) break;
           setPhase(p.phase);
+          if (p.phase !== 'exploring') setChoosing(false);
           if (p.phase === 'seating') setHeading(p.spot ?? '');
           if (p.phase === 'talking') {
             setSaid('');
@@ -258,11 +281,6 @@ export const CafeScreen: React.FC = () => {
   }, [bridge]);
 
   const table = useCafeTable(bridge, lang, t);
-  const tableRef = useRef(table);
-  tableRef.current = table;
-  /** The door's choice is handed to the table once per visit: a repeated CAFE_READY (a re-sent INIT)
-   *  must not serve it a second time. */
-  const ready = useRef(false);
   const atTable = table.state.seated;
   // Standing up from the table takes its panel's cover with it (the guest's panel reports its own).
   useEffect(() => {
@@ -272,8 +290,11 @@ export const CafeScreen: React.FC = () => {
   const exploring = phase === 'exploring' && !atTable;
   const talking = phase === 'talking' && !atTable;
   const controlsOn = !unity || up;
+  /** The choice sheet is up: on foot, but nothing else competes with it. */
+  const asking = up && choosing && exploring;
+  const onFoot = exploring && !asking;
   const look = useFollowCamera({
-    enabled: controlsOn && exploring,
+    enabled: controlsOn && onFoot,
     home: CAFE_HOME,
     send: c => bridge.sendCafeCamera(c),
     doubleTapHome: true,
@@ -326,7 +347,10 @@ export const CafeScreen: React.FC = () => {
       )}
 
       {/* The look-around layer: transparent, over the Unity view, under every control. */}
-      {controlsOn && exploring && <View style={StyleSheet.absoluteFill} testID="cafe-look" {...look} />}
+      {controlsOn && onFoot && <View style={StyleSheet.absoluteFill} testID="cafe-look" {...look} />}
+
+      {/* At the door: what brings them in. Under the top row, so the way back stays in reach. */}
+      {asking && <CafeChoiceSheet onChoose={decide} onRect={putSheet} />}
 
       {/* At the table the cards and the cookie are Unity's, but the touch is this screen's: the embedded
           view gets none (sim QA 20-10, not one card could be picked). Under the top row and the strip. */}
@@ -352,12 +376,12 @@ export const CafeScreen: React.FC = () => {
 
       {/* On foot: the world's stick, bottom-left. */}
       <View pointerEvents="box-none" style={[styles.stick, { left: safe.left + spacing.xs, bottom: bottomPad }]}>
-        <WorldJoystick visible={controlsOn && exploring} />
+        <WorldJoystick visible={controlsOn && onFoot} />
       </View>
 
       {/* On foot: the tables, as the pins in the room show them — the suggestion first, a taken one
           shown and refused. Above the stick, one row of chips so the room stays in view. */}
-      {up && exploring && tables.length > 0 && (
+      {up && onFoot && tables.length > 0 && (
         <View pointerEvents="box-none" style={[styles.promptWrap, { bottom: safe.bottom + (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait) }]} testID="cafe-tables">
           <View style={styles.card}>
             <View style={styles.row}>
@@ -382,7 +406,7 @@ export const CafeScreen: React.FC = () => {
         </View>
       )}
 
-      {/* On the way to the table — behind the barista when the door's choice brought them in. */}
+      {/* On the way to the table, behind the barista. */}
       {phase === 'seating' && !atTable && (
         <View pointerEvents="box-none" style={[styles.promptWrap, { bottom: safe.bottom + (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait) }]} testID="cafe-seating">
           <View style={[styles.card, styles.row]}>

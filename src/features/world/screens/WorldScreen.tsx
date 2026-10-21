@@ -306,7 +306,7 @@ export const WorldScreen: React.FC = () => {
     // The shop sheet floats over every screen (App.tsx): the world stays where it is under it.
     coins: () => useCoins.getState().openShop(),
     myroom: () => leaveTo('myroom', () => navigation.navigate('MyRoom')),
-    cafe: intent => leaveTo('cafe', () => navigation.navigate('Cafe', intent ? { intent } : undefined)),
+    cafe: () => leaveTo('cafe', () => navigation.navigate('Cafe')),
   };
 
   /**
@@ -340,9 +340,15 @@ export const WorldScreen: React.FC = () => {
     journey: actions.journey,
     shop: () => leaveTo('shop', () => navigation.navigate('Tickets')),
     myroom: actions.myroom,
-    // Coffee or a reading is chosen out here (20-10), so the door opens onto that choice; the barista
-    // then shows the player to a table inside.
-    cafe: () => setOverlay('cafe'),
+    // Straight in (PM 21-10: the choice sheet stood over the World, "should be inside the coffee
+    // shop"): coffee / tarot / look around is asked in the cafe, at its door (CafeChoiceSheet).
+    cafe: actions.cafe,
+  };
+  /** A door's overlay — except the cafe's, which has none any more: every way of reaching that door
+   *  (Unity silent at the door, Map while loading, the drawn hub) goes in instead. */
+  const openOverlay = (zone: WorldZone) => {
+    if (zone === 'cafe') actions.cafe();
+    else setOverlay(zone);
   };
   door.current = {
     wait: zone => {
@@ -355,7 +361,7 @@ export const WorldScreen: React.FC = () => {
       enterTimer.current = setTimeout(() => {
         enterTimer.current = null;
         setEntering(null);
-        setOverlay(zone);
+        openOverlay(zone);
       }, worldTiming.enterFallbackMs);
     },
     entered: throughDoor,
@@ -370,7 +376,7 @@ export const WorldScreen: React.FC = () => {
     setSheet(null);
     // With a world to walk, Unity walks there and answers WORLD_ARRIVED. A world still loading has
     // no NavMesh yet: open the door's overlay straight away rather than drop the request.
-    if (unity && !worldUp) setOverlay(zone);
+    if (unity && !worldUp) openOverlay(zone);
     else bridge.sendWorldGoto(zone);
   };
 
@@ -399,7 +405,7 @@ export const WorldScreen: React.FC = () => {
       {unity && hostOn && <UnityHost style={styles.unity} />}
       {(!unity || !worldUp) && (
         <WorldHubArt
-          onZone={unity ? undefined : setOverlay}
+          onZone={unity ? undefined : openOverlay}
           caption={unity ? t('world.loading') : undefined}
         />
       )}

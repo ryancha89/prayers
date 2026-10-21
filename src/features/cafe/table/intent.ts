@@ -1,8 +1,9 @@
 import type { CafeTableInfo } from '../../counseling/types';
 
 /**
- * What the player came into the coffee shop for, chosen at the World door (20-10, user: "chọn ngay
- * từ ngoài rồi có người dắt vô quán mới hợp lý").
+ * What the player came into the coffee shop for. Chosen at the World door from 20-10 (user: "chọn
+ * ngay từ ngoài rồi có người dắt vô quán mới hợp lý"); since PM 21-10 ("should be inside the coffee
+ * shop") on the same sheet INSIDE, at the cafe's door (CafeChoiceSheet), and sent on as CAFE_SUGGEST.
  *
  *   coffee  the coffee's confirmation opens as they sit, at whichever table they chose
  *   tarot   the reader list opens as they sit at the tarot table (user, 20-10: "let user firstly
@@ -10,7 +11,7 @@ import type { CafeTableInfo } from '../../counseling/types';
  *   (none)  walk in and look around
  *
  * Since 21-10 (PM: "could you let user select tables to sit down?") the choice no longer seats the
- * player by itself: they pick the table — a pin in the room, or the list — and the door's choice only
+ * player by itself: they pick the table — a pin in the room, or the list — and the choice only
  * SUGGESTS one (suggestTable), which the list puts first and Unity's pin breathes for.
  */
 export type CafeIntent = { kind: 'coffee' } | { kind: 'tarot' };
@@ -27,7 +28,7 @@ export const SUGGEST_ORDER: Record<CafeIntent['kind'], string[]> = {
   tarot: [TAROT_TABLE, 'lounge', 'bar'],
 };
 
-/** The order CAFE_INIT `suggest` carries for this intent (none = no suggestion). */
+/** The order CAFE_SUGGEST (and a re-sent CAFE_INIT) carries for this intent (none = no suggestion). */
 export function suggestOrder(intent: CafeIntent | null): string[] {
   return intent ? SUGGEST_ORDER[intent.kind] : [];
 }

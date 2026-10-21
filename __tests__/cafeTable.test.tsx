@@ -39,11 +39,8 @@ jest.mock('../src/features/auth/api/headers', () => ({
 jest.mock('../src/features/auth/api/session', () => ({ ensureGameToken: async () => null }));
 jest.mock('../src/features/coins/api/coinsApi', () => ({ refreshCoins: jest.fn(), buyCoins: jest.fn() }));
 jest.mock('../src/features/tickets/api/attendance', () => ({ fetchAttendance: async () => null, checkIn: jest.fn() }));
-/** The Cafe route's params: what the World door chose (set per test; none = walking in). */
-const mockRoute: { params?: { intent?: { kind: 'coffee' | 'tarot' } } } = {};
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn(), addListener: () => () => {} }),
-  useRoute: () => mockRoute,
   useFocusEffect: () => {},
 }));
 jest.mock('../src/features/counseling/bridge', () => {
@@ -141,7 +138,6 @@ beforeEach(async () => {
   useAuthStore.setState({ userAuth: 'acct-42' } as never);
   useCoins.setState({ balance: 100, shopOpen: false });
   bridge.cafeCalls.length = 0;
-  mockRoute.params = undefined;
   routes.length = 0;
   sent.length = 0;
 });
@@ -176,6 +172,7 @@ async function toChosen() {
 describe('a tarot reading at the table', () => {
   it('seated: the menu replaces the stick, the look layer and the guest panel', async () => {
     await render();
+    await press('Close'); // the choice sheet at the door: just looking around
     expect(byTestID('cafe-look').length).toBeGreaterThan(0);
     fromUnity({ type: 'CAFE_SEATED', payload: { spot: 'table_2' } });
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
@@ -555,9 +552,18 @@ describe('the reader’s text', () => {
 
 /* ---- choosing the table (21-10) ------------------------------------------------------------------ */
 
-describe('chosen at the World door: the door suggests a table, the player picks it', () => {
+describe('chosen inside, at the door: the choice suggests a table, the player picks it', () => {
   const ready = () => fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar', 'lounge', 'tarot'] } });
-  const open = async () => { await act(async () => { tree = ReactTestRenderer.create(<CafeScreen />); }); await flush(); ready(); };
+  /** In through the door and the choice sheet answered: coffee, tarot, or (null) closed — looking around. */
+  const open = async (want: 'coffee' | 'tarot' | null = null) => {
+    await act(async () => { tree = ReactTestRenderer.create(<CafeScreen />); });
+    await flush();
+    ready();
+    expect(byTestID('cafe-tables')).toHaveLength(0);
+    if (want) await act(async () => { byTestID(`cafe-choice-${want}`)[0].props.onPress(); });
+    else await press('Close');
+    await flush();
+  };
   const seatAt = async (spot: string) => {
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'talking', spot, reason: '' } });
     fromUnity({ type: 'CAFE_SEATED', payload: { spot } });
@@ -565,11 +571,11 @@ describe('chosen at the World door: the door suggests a table, the player picks 
   };
 
   it('tarot: nothing seats the player by itself; the tarot table is suggested first and opens the readers there', async () => {
-    mockRoute.params = { intent: { kind: 'tarot' } };
     serve('cafe/tarot/consultants', ok(READERS));
-    await open();
+    await open('tarot');
     expect(calls('CAFE_SIT')).toHaveLength(0);
-    // The chooser leads with the suggestion; Unity's pins are told the same order in CAFE_INIT.
+    // The chooser leads with the suggestion; Unity's pins are told the same order in CAFE_SUGGEST.
+    expect(calls('CAFE_SUGGEST')).toEqual([{ type: 'CAFE_SUGGEST', payload: { suggest: ['tarot', 'lounge', 'bar'] } }]);
     const chips = byTestID('cafe-tables')[0].findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('cafe-table-') && typeof n.props.onPress === 'function');
     expect(chips.map(c => c.props.testID)).toEqual(['cafe-table-tarot', 'cafe-table-bar', 'cafe-table-lounge']);
     expect(shown()).toContain('Suggested');
@@ -586,16 +592,15 @@ describe('chosen at the World door: the door suggests a table, the player picks 
   });
 
   it('a suggested table somebody else holds is not suggested: the next free one is', async () => {
-    mockRoute.params = { intent: { kind: 'tarot' } };
-    await open();
+    await open('tarot');
     fromUnity({ type: 'CAFE_TABLES', payload: { tables: [{ spot: 'bar', taken: false }, { spot: 'lounge', taken: false }, { spot: 'tarot', taken: true }] } });
     const first = byTestID('cafe-tables')[0].findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('cafe-table-') && typeof n.props.onPress === 'function')[0];
     expect(first.props.testID).toBe('cafe-table-lounge');
   });
 
   it('coffee: seated wherever they chose, the 30 PC confirmation opens at once', async () => {
-    mockRoute.params = { intent: { kind: 'coffee' } };
-    await open();
+    await open('coffee');
+    expect(calls('CAFE_SUGGEST').map(c => c.payload)).toEqual([{ suggest: ['lounge', 'bar', 'tarot'] }]);
     await press('Bar');
     expect(calls('CAFE_SIT')).toEqual([{ type: 'CAFE_SIT', payload: { spot: 'bar', guided: true } }]);
     await seatAt('bar');
@@ -604,9 +609,8 @@ describe('chosen at the World door: the door suggests a table, the player picks 
   });
 
   it('came for tarot but chose the lounge: the menu; Tarot there walks the player to the tarot table, and the readers open on arrival', async () => {
-    mockRoute.params = { intent: { kind: 'tarot' } };
     serve('cafe/tarot/consultants', ok(READERS));
-    await open();
+    await open('tarot');
     await press('Window lounge');
     await seatAt('lounge');
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
@@ -647,10 +651,10 @@ describe('chosen at the World door: the door suggests a table, the player picks 
     expect(byTestID('cafe-readers')).toHaveLength(0);
   });
 
-  it('a repeated CAFE_READY does not serve the door\u2019s choice twice; no choice = no suggestion', async () => {
-    mockRoute.params = { intent: { kind: 'coffee' } };
-    await open();
+  it('a repeated CAFE_READY neither asks again nor serves the choice twice; looking around = no suggestion', async () => {
+    await open('coffee');
     ready();
+    expect(byTestID('cafe-choice')).toHaveLength(0);
     await press('Window lounge');
     await seatAt('lounge');
     expect(byTestID('cafe-confirm').length).toBeGreaterThan(0);
@@ -662,8 +666,8 @@ describe('chosen at the World door: the door suggests a table, the player picks 
     act(() => tree!.unmount());
     tree = null;
     bridge.cafeCalls.length = 0;
-    mockRoute.params = undefined;
     await open();
+    expect(calls('CAFE_SUGGEST').map(c => c.payload)).toEqual([{ suggest: [] }]);
     expect(shown()).not.toContain('Suggested');
   });
 });

@@ -165,7 +165,7 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
 
   const speak = (s: CafeTarotSpeak) => bridge.sendCafeTarotSpeak(s);
 
-  /** What the player chose at the door, served the moment they first sit (once): the coffee's
+  /** What the player came for (the cafe's choice sheet), served the moment they first sit (once): the coffee's
    *  confirmation, or — at the tarot table — the list of readers. Null = the menu, as before. */
   const arrival = useRef<CafeIntent | null>(null);
   /** The seat ids the scene has (CAFE_READY): whether there is a tarot table to walk to. */
@@ -499,7 +499,7 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
 
   return {
     state,
-    /** The door's choice, for the first CAFE_SEATED of the visit (null clears it). */
+    /** What the player came for, for the first CAFE_SEATED of the visit (null clears it). */
     expect: (want: CafeIntent | null) => { arrival.current = want; },
     openTarot,
     loadConsultants,

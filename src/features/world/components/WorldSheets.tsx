@@ -15,10 +15,6 @@ import type { WorldZone } from '../../counseling/types';
 import { SHOP_TABS, WORLD_ZONES, koWith, zoneInfo } from '../data/zones';
 import { sleepAudio } from '../../meditation/sleepAudio';
 import { MYROOM_PICTURE } from '../../myroom/picture';
-import { ServiceTile } from '../../cafe/components/TablePanel';
-import { CAFE_ART } from '../../cafe/assets/art';
-import { CAFE_PRICE } from '../../cafe/table/useCafeTable';
-import type { CafeIntent } from '../../cafe/table/intent';
 
 /** Where the World's top bar ends (points from the screen top). A landscape sheet starts below it:
  *  from the top it ran its title into "2D / Prayers World". */
@@ -88,7 +84,8 @@ const Cta: React.FC<{ label: string; onPress: () => void }> = ({ label, onPress 
   </Pressable>
 );
 
-const Secondary: React.FC<{ label: string; onPress: () => void }> = ({ label, onPress }) => (
+/** The quiet second choice under a CTA (the cafe's "just look around" uses it too). */
+export const Secondary: React.FC<{ label: string; onPress: () => void }> = ({ label, onPress }) => (
   <Pressable
     accessibilityRole="button"
     accessibilityLabel={label}
@@ -154,9 +151,8 @@ export interface ZoneActions {
   coins(): void;
   /** 들어가기 → into My Room. */
   myroom(): void;
-  /** Into the coffee shop: for a coffee or a tarot reading (the barista seats them), or none = just
-   *  walk in and look around. */
-  cafe(intent?: CafeIntent): void;
+  /** Into the coffee shop. What the player came for is asked inside, at its door (CafeChoiceSheet). */
+  cafe(): void;
 }
 
 /** The entrance overlay of one door — what WORLD_ARRIVED (or Enter) opens. */
@@ -258,21 +254,8 @@ export const ZoneOverlay: React.FC<{
         </>,
       );
     case 'cafe':
-      return sheet(
-        t(info.label),
-        t('world.cafe.pick'),
-        <>
-          {/* Chosen out here, before the door (20-10): the barista then shows the player to a table,
-              and the reader is chosen sitting at it. */}
-          <View style={styles.cafeServices}>
-            <ServiceTile art={CAFE_ART.coffee} label={t('cafe.table.coffee')} note={t('world.cafe.coffeeNote')}
-              price={CAFE_PRICE.coffee} onPress={() => actions.cafe({ kind: 'coffee' })} testID="world-cafe-coffee" />
-            <ServiceTile art={CAFE_ART.tarot} label={t('cafe.table.tarot')} note={t('world.cafe.tarotNote')}
-              price={CAFE_PRICE.reading} onPress={() => actions.cafe({ kind: 'tarot' })} testID="world-cafe-tarot" />
-          </View>
-          <Secondary label={t('world.cafe.wander')} onPress={() => actions.cafe()} />
-        </>,
-      );
+      // Never opened: the cafe door goes straight in, and asks inside (PM 21-10) — CafeChoiceSheet.
+      return null;
   }
 };
 
@@ -356,7 +339,6 @@ export const MenuSheet: React.FC<{
 const CTA_INK = '#1A1330';
 
 const styles = StyleSheet.create({
-  cafeServices: { flexDirection: 'row', gap: spacing.sm },
   backdrop: { ...absoluteFill, backgroundColor: 'rgba(5,4,20,0.25)' },
   // No left/right here: Fabric's style merge drops an `undefined`, so `left: undefined` in the side
   // style could not take back a `left: 0` set here — the landscape sheet stood on the LEFT, under the

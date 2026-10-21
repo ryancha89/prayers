@@ -1,5 +1,4 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
-import type { CafeIntent } from '../features/cafe/table/intent';
 
 export type TabParamList = {
   Home: undefined;
@@ -93,10 +92,9 @@ export type RootStackParamList = {
   /**
    * The coffee shop (Afterglow), behind the world's sixth door: walk in, sit with Jiho, talk. The NAME
    * is load-bearing — App.tsx lists it as a Unity screen (`UNITY_SCREENS`), like MyRoom.
-   * `intent`: what the player chose at the door (coffee, a tarot reader) — the barista then walks
-   * them to a table. None = walk in and look around.
+   * No params: what the player came for is asked inside, at the cafe's door (PM 21-10).
    */
-  Cafe: { intent?: CafeIntent } | undefined;
+  Cafe: undefined;
   /** Terms and the privacy policy. Apple wants both reachable, and 5.1.1(v) wants the deletion
    *  above reachable too. */
   Legal: { doc: 'terms' | 'privacy' };
