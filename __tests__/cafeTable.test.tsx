@@ -685,6 +685,29 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
     expect(byTestID('cafe-moving')[0].props.children).toBe('Moving to the tarot table…');
   });
 
+  it('a seat refused mid-walk is the seat\u2019s busy line, not the tarot table\u2019s; the card keeps naming the walk', async () => {
+    await open();
+    // Tapped a chair (table3, CAFE_TAP), then "Sit here" by another before Unity's seating reached RN.
+    await sitBy('table1b');
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'table3', reason: '' } });
+    // Unity refuses the second CAFE_SIT, still walking to the first.
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'table3', reason: 'busy' } });
+    expect(shown()).toContain("That seat isn't free right now.");
+    expect(shown()).not.toContain('Someone is at the tarot table');
+    expect(shown()).not.toContain('tarot table');
+    expect(byTestID('cafe-seating').length).toBeGreaterThan(0);
+    expect(shown()).toContain('Heading to your seat…');
+    // A refusal without a seat leaves the card's seat alone.
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'tarot', reason: '' } });
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: '', reason: 'busy' } });
+    expect(shown()).toContain('Moving to the tarot table…');
+    // Seated (not moving), a busy is still not about the tarot table.
+    await seatAt('tarot');
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'talking', spot: 'tarot', reason: 'busy' } });
+    expect(shown()).toContain("That seat isn't free right now.");
+    expect(shown()).not.toContain('Someone is at the tarot table');
+  });
+
   it('the move to the tarot table can be cancelled: CAFE_STAND, and the table clears on Unity\u2019s exploring', async () => {
     await open();
     await sitBy('lounge');

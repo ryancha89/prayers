@@ -197,6 +197,10 @@ export const CafeScreen: React.FC = () => {
   // Ask for the cafe on the way in; close it on the way out. `lang` is read once, as in My Room.
   const tRef = useRef(t);
   tRef.current = t;
+  /** The table's stage as of the last render — whether a `busy` refusal answers the move to the tarot
+   *  table. Read from the render, not from the table's own ref, so it does not matter which of the two
+   *  listeners hears the refusal first. */
+  const tableStage = useRef('menu');
   useEffect(() => {
     const off = bridge.onEvent(e => {
       switch (e.type) {
@@ -213,14 +217,21 @@ export const CafeScreen: React.FC = () => {
           setPhase(p.phase);
           // Up from the floor, the Sit button's seat is no longer where they stand; Unity says it afresh.
           if (p.phase !== 'exploring') setNearSeat('');
-          if (p.phase === 'seating') setHeading(p.spot ?? '');
+          // The seat Unity is walking to, refusals included: a CAFE_SIT that lands mid-walk is refused
+          // with the seat already being walked to, and the card goes on naming that one.
+          if (p.phase === 'seating' && (p.spot || p.reason !== 'busy')) setHeading(p.spot ?? '');
           if (p.phase === 'talking') {
             setSaid('');
             setReply(null);
             setWaiting(false);
           }
-          // A move to the tarot table refused (taken), or the table taken on the way back: still seated.
-          if (p.phase !== 'exploring' && p.reason === 'busy') { say(tRef.current('cafe.move.busy')); break; }
+          // Refused while seated or walking. Only a refusal of the move to the tarot table (taken at once,
+          // or on the way — then the walk goes back) is about the tarot table; Unity also says
+          // seating/busy to a CAFE_SIT that lands while the player is already walking to another seat.
+          if (p.phase !== 'exploring' && p.reason === 'busy') {
+            say(tRef.current(tableStage.current === 'moving' ? 'cafe.move.busy' : 'cafe.seat.busy'));
+            break;
+          }
           if (p.phase === 'exploring') {
             setWaiting(false);
             if (SEAT_REASONS.has(p.reason)) say(tRef.current(`cafe.seat.${p.reason}` as TranslationKey));
@@ -248,6 +259,7 @@ export const CafeScreen: React.FC = () => {
   }, [bridge]);
 
   const table = useCafeTable(bridge, lang, t);
+  tableStage.current = table.state.stage;
   const atTable = table.state.seated;
   // Standing up from the table takes its panel's cover with it (the guest's panel reports its own).
   useEffect(() => {
