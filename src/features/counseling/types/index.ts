@@ -411,16 +411,20 @@ export type RNToUnityEvent =
   /** The cafe's follow camera, MYROOM_CAMERA's numbers: zoom 0..1 (0 = close; 0.5 = where the scene
    *  starts), yaw -1..1 (= ±180°), pitch -1..1 (+ = higher). Absolute, many a second. */
   | { type: 'CAFE_CAMERA'; payload: MyRoomCamera }
-  /** Sit with the guest at a spot id from CAFE_READY. Unity answers CAFE_PHASE seating → talking (or
-   *  back to exploring with a reason). `guided` (20-10, the choice made at the World door): the
-   *  barista meets the player at the door and walks them to the seat instead of a straight walk. */
+  /** Sit at a spot id from CAFE_READY. Unity answers CAFE_PHASE seating → talking (or back to
+   *  exploring with a reason). `guided`: the barista meets the player and walks them to the seat
+   *  instead of a straight walk (a table chosen from the list or a pin, 21-10). Sent while seated at
+   *  another table it MOVES the player there (picking Tarot away from the tarot table): refused as
+   *  CAFE_PHASE talking/busy with the player still seated, or seating/busy when the table was taken
+   *  on the way and they are walking back to their seat. */
   | { type: 'CAFE_SIT'; payload: { spot: string; guided?: boolean } }
   /** One message to the guest. Always answered by exactly one CAFE_REPLY. */
   | { type: 'CAFE_SAY'; payload: { text: string } }
   /** The next camera angle while seated. */
   | { type: 'CAFE_SHOT' }
-  /** A tap over the table, 0..1 of the view from its top-left (WORLD_TAP's convention): picks a card
-   *  while the deck is out, opens the fortune cookie. The embedded view gets no touch of its own. */
+  /** A tap over the view, 0..1 from its top-left (WORLD_TAP's convention). On foot it picks a table
+   *  pin (a guided CAFE_SIT there); seated it picks a card while the deck is out, or opens the fortune
+   *  cookie. The embedded view gets no touch of its own. */
   | { type: 'CAFE_TAP'; payload: { x: number; y: number } }
   /** Stand up from the table, or cancel the walk to it. */
   | { type: 'CAFE_STAND' }
@@ -589,6 +593,15 @@ export interface CafeInitPayload {
   presenceUrl?: string;
   gameToken?: string;
   name?: string;
+  /** The tables to suggest, best first (the World door's choice — table/intent.ts). Unity makes the
+   *  first free one's pin breathe; absent = no suggestion. */
+  suggest?: string[];
+}
+
+/** CAFE_TABLES' row: a seat id and whether somebody else (the shared room) sits there. */
+export interface CafeTableInfo {
+  spot: string;
+  taken: boolean;
 }
 
 /** Where the cafe visit is: on foot, walking to a table, or seated in conversation. */
@@ -827,8 +840,11 @@ export type UnityToRNEvent =
   /** The player came within reach of the guest (or left it) while on foot. Sent on a change only. */
   | { type: 'CAFE_NEAR'; payload: { near: boolean } }
   /** The visit's phase changed. `reason` says why a seating fell back to exploring: '' · unreachable ·
-   *  blocked · busy. */
+   *  blocked · busy. `busy` with talking / seating = a table move was refused (CAFE_SIT). */
   | { type: 'CAFE_PHASE'; payload: { phase: CafePhase; spot: string; reason: string } }
+  /** Which tables are taken by somebody else, in the scene's order: right after CAFE_READY and on a
+   *  change. The pins in the room show the same. */
+  | { type: 'CAFE_TABLES'; payload: { tables: CafeTableInfo[] } }
   /** The answer to one CAFE_SAY. With an `error`, `text` is Unity's English fallback — not shown. */
   | { type: 'CAFE_REPLY'; payload: { ok: boolean; text: string; error: CafeReplyError } }
   /** Spec 007: the player sat at a table → RN shows the table menu (coffee / tarot). */

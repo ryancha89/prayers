@@ -26,7 +26,7 @@ import {
 /** Stages that only say where things are, in a strip: the table (and the cards on it) stay free to
  *  touch. While picking and while the cookie waits, every touch outside the End button goes to Unity as
  *  CAFE_TAP (CafeScreen's TapLayer). */
-const STRIP_STAGES = new Set<TableStage>(['arriving', 'spreading', 'picking', 'reading', 'serving', 'cookie']);
+const STRIP_STAGES = new Set<TableStage>(['moving', 'arriving', 'spreading', 'picking', 'reading', 'serving', 'cookie']);
 /** `reading` is a strip while it waits (the seven are turning over above it, 20-10); with an error it
  *  takes the panel back, for the words and the retry. `presenting` before its first step is a strip too:
  *  the reading came back while the last cards were still turning. */
@@ -37,7 +37,7 @@ export const isStripStage = (stage: TableStage, error: TableError | null = null,
 const COMPACT_STAGES = new Set<TableStage>(['asking', 'reading', 'brewing']);   // `reading` here = its error
 
 const STRIP_ICON: Partial<Record<TableStage, IconName>> = {
-  arriving: 'sparkle', spreading: 'sparkle', picking: 'sparkle', reading: 'sparkle', presenting: 'sparkle', serving: 'coffee', cookie: 'gift',
+  moving: 'sparkle', arriving: 'sparkle', spreading: 'sparkle', picking: 'sparkle', reading: 'sparkle', presenting: 'sparkle', serving: 'coffee', cookie: 'gift',
 };
 
 const ERROR_COPY: Record<TableError, TranslationKey> = {
@@ -129,6 +129,8 @@ const StripText: React.FC<{ table: CafeTable }> = ({ table }) => {
   const t = useT();
   const s = table.state;
   switch (s.stage) {
+    case 'moving':
+      return <Text style={styles.stripLine} testID="cafe-moving">{t('cafe.move.tarot')}</Text>;
     case 'arriving':
       return <Text style={styles.stripLine}>{t('cafe.tarot.arriving', { name: s.consultant?.name ?? '' })}</Text>;
     case 'spreading':

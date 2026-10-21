@@ -15,7 +15,7 @@ import {
   type TarotConsultant,
   type TarotReading,
 } from '../api/cafeApi';
-import type { CafeIntent } from './intent';
+import { needsTarotMove, TAROT_TABLE, type CafeIntent } from './intent';
 
 /**
  * What the table sells, in Prayer Coins — mirrored from the contract so the confirmation can name
@@ -36,15 +36,19 @@ export const REVEAL_FALLBACK_MS = 30000;
 /**
  * Where the table is. One stage at a time, in the order the contract's flow walks them:
  *
- *   menu ─ tarot → consultants → arriving → asking ─(confirm 30)→ spreading → picking → reading
+ *   menu ─ tarot ─(away from the tarot table: moving)→ consultants → arriving → asking ─(confirm 30)→ spreading → picking → reading
  *        │                                                   → presenting (7 cards, overall, advice)
  *        │                                                   → followup ⟲ (confirm 10 each)
  *        └ coffee ─(confirm 30)→ brewing → serving → cookie → fortune → menu
  *
- * End (any tarot stage) and a finished fortune come back to `menu`, still seated.
+ * End (any tarot stage) and a finished fortune come back to `menu`, still seated. `moving` (21-10,
+ * PM: "if user select tarot consultation, should move to the tarot table") is the walk from another
+ * table to the tarot one; the readers open there, and a tarot table somebody else holds leaves the
+ * player at the menu where they sat.
  */
 export type TableStage =
   | 'menu'
+  | 'moving'
   | 'consultants'
   | 'arriving'
   | 'asking'
@@ -67,6 +71,8 @@ export const STEP_ADVICE = SPREAD_SIZE + 1;
 export interface TableState {
   /** CAFE_SEATED came and the player has not stood up since. Everything below needs it. */
   seated: boolean;
+  /** The table they sit at (CAFE_SEATED.spot). */
+  spot: string;
   stage: TableStage;
   consultants: TarotConsultant[] | null;
   consultantsFailed: boolean;
@@ -92,6 +98,7 @@ export interface TableState {
 
 const OFF: TableState = {
   seated: false,
+  spot: '',
   stage: 'menu',
   consultants: null,
   consultantsFailed: false,
@@ -158,9 +165,11 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
 
   const speak = (s: CafeTarotSpeak) => bridge.sendCafeTarotSpeak(s);
 
-  /** What the player chose at the door, served the moment they sit (once): the coffee's
-   *  confirmation, or the list of readers to choose from. Null = the menu, as before. */
+  /** What the player chose at the door, served the moment they first sit (once): the coffee's
+   *  confirmation, or — at the tarot table — the list of readers. Null = the menu, as before. */
   const arrival = useRef<CafeIntent | null>(null);
+  /** The seat ids the scene has (CAFE_READY): whether there is a tarot table to walk to. */
+  const spots = useRef<string[]>([]);
 
   /* ---- tarot --------------------------------------------------------------------------------- */
 
@@ -172,9 +181,19 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     patch(list ? { consultants: list } : { consultantsFailed: true });
   }, [patch]);
 
-  const openTarot = () => {
+  const listReaders = () => {
     patch({ stage: 'consultants', line: '', error: null });
     loadConsultants();
+  };
+
+  /** Tarot from the menu. Readings happen at the tarot table: from any other, the player gets up and
+   *  the barista walks them over (CAFE_SIT while seated = a move), and the readers open there. */
+  const openTarot = () => {
+    const s = ref.current;
+    if (!needsTarotMove(s.spot, spots.current)) { listReaders(); return; }
+    ref.current = { ...s, stage: 'moving', line: '', error: null };
+    patch({ stage: 'moving', line: '', error: null });
+    bridge.sendCafeSit(TAROT_TABLE, true);
   };
 
   const chooseConsultant = (c: TarotConsultant) => {
@@ -393,15 +412,28 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     const off = bridge.onEvent((e: UnityToRNEvent) => {
       const s = ref.current;
       switch (e.type) {
+        case 'CAFE_READY':
+          spots.current = Array.isArray(e.payload?.spots) ? e.payload.spots : [];
+          break;
         case 'CAFE_SEATED': {
-          if (s.seated) break;
-          const seated = { ...OFF, seated: true };
+          const spot = String(e.payload?.spot ?? '');
+          if (s.seated) {
+            // The end of a move: at the tarot table the readers open; back at the old seat (the tarot
+            // table was taken on the way) the menu, as it was.
+            if (s.stage !== 'moving') break;
+            ref.current = { ...s, spot, stage: 'menu' };
+            patch({ spot, stage: 'menu' });
+            if (spot === TAROT_TABLE) listReaders();
+            break;
+          }
+          const seated = { ...OFF, seated: true, spot };
           ref.current = seated;
           setState(seated);
           const want = arrival.current;
           arrival.current = null;
           if (want?.kind === 'coffee') askToPay('coffee');
-          else if (want?.kind === 'tarot') openTarot();
+          // Came for a reading and chose another table: the menu; Tarot there walks them over.
+          else if (want?.kind === 'tarot' && !needsTarotMove(spot, spots.current)) listReaders();
           break;
         }
         case 'CAFE_PHASE':
@@ -410,6 +442,10 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
             gen.current += 1;
             clearReveal();
             setState(OFF);
+          } else if (e.payload?.phase === 'talking' && e.payload.reason === 'busy' && s.stage === 'moving') {
+            // The tarot table is taken: still seated where they were, at the menu.
+            ref.current = { ...s, stage: 'menu' };
+            patch({ stage: 'menu' });
           }
           break;
         case 'CAFE_CONSULTANT_SEATED':
@@ -463,7 +499,7 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
 
   return {
     state,
-    /** The door's choice, for the next CAFE_SEATED (null clears it: the guided walk failed). */
+    /** The door's choice, for the first CAFE_SEATED of the visit (null clears it). */
     expect: (want: CafeIntent | null) => { arrival.current = want; },
     openTarot,
     loadConsultants,

@@ -306,6 +306,8 @@ describe('the cafe screen', () => {
       // Shared rooms: the dev presence socket, the account's Game-Token (none stored in this test)
       // and the display name.
       presenceUrl: 'ws://127.0.0.1:9090/ws', gameToken: '', name: '',
+      // No choice at the door: no table to suggest.
+      suggest: [],
     }]);
     expect(byTestID('cafe-veil').length).toBeGreaterThan(0);
     expect(byTestID('cafe-look')).toHaveLength(0);
@@ -314,27 +316,34 @@ describe('the cafe screen', () => {
     expect(byTestID('cafe-look').length).toBeGreaterThan(0);
   });
 
-  it('by the guest: the seats Unity named, worded, and a tap sits there', async () => {
+  it('on foot: the player chooses the table — worded, a taken one marked — and the barista walks them there', async () => {
     await render();
     fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar', 'lounge', 'roof'] } });
-    expect(byTestID('cafe-near')).toHaveLength(0);
-    fromUnity({ type: 'CAFE_NEAR', payload: { near: true } });
-    const near = byTestID('cafe-near')[0];
-    // Jiho, with Korean's comitative particle (지호와).
-    expect(near.findAll(n => n.props.children === '지호와 커피 한 잔 할까요?').length).toBeGreaterThan(0);
-    expect(byLabel('바에서 커피 마시기')).toBeDefined();
-    expect(byLabel('창가 라운지에서 이야기하기')).toBeDefined();
-    expect(byLabel('함께 앉기')).toBeDefined(); // an id this app has no words for
-    press('창가 라운지에서 이야기하기');
-    expect(posts('CAFE_SIT').map(p => p.payload)).toEqual([{ spot: 'lounge' }]);
+    // PM 21-10: nothing seats the player by itself; the tables are offered as soon as the cafe is up.
+    expect(posts('CAFE_SIT')).toHaveLength(0);
+    const chooser = byTestID('cafe-tables')[0];
+    expect(chooser.findAll(n => n.props.children === '앉을 테이블을 골라 주세요').length).toBeGreaterThan(0);
+    expect(byLabel('바')).toBeDefined();
+    expect(byLabel('창가 라운지')).toBeDefined();
+    expect(byLabel('테이블')).toBeDefined(); // an id this app has no words for
+    // Somebody in the shared room sits at the bar: shown as taken, as its pin is in the room.
+    fromUnity({ type: 'CAFE_TABLES', payload: { tables: [{ spot: 'bar', taken: true }, { spot: 'lounge', taken: false }, { spot: 'roof', taken: false }] } });
+    expect(byTestID('cafe-table-bar')[0].props.accessibilityState).toEqual({ disabled: true });
+    expect(byTestID('cafe-table-bar')[0].findAll(n => n.props.children === '사용 중').length).toBeGreaterThan(0);
+    press('창가 라운지');
+    expect(posts('CAFE_SIT').map(p => p.payload)).toEqual([{ spot: 'lounge', guided: true }]);
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'lounge', reason: '' } });
-    expect(byTestID('cafe-near')).toHaveLength(0);
+    expect(byTestID('cafe-tables')).toHaveLength(0);
+    expect(byTestID('cafe-seating').length).toBeGreaterThan(0);
     press('취소');
     expect(posts('CAFE_STAND')).toHaveLength(1);
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'exploring', spot: '', reason: 'blocked' } });
     expect(byTestID('cafe-note')[0].findAll(n => n.props.children === '길이 막혀 있어요. 다른 자리를 골라 보세요.').length).toBeGreaterThan(0);
-    // Back on foot, the seats wait for Unity's CAFE_NEAR again.
-    expect(byTestID('cafe-near')).toHaveLength(0);
+    // Back on foot: the tables again. A tap on the taken one is Unity's to refuse, and RN says so.
+    expect(byTestID('cafe-tables').length).toBeGreaterThan(0);
+    press('바');
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'exploring', spot: '', reason: 'busy' } });
+    expect(byTestID('cafe-note')[0].findAll(n => n.props.children === '지금은 그 자리에 앉을 수 없어요.').length).toBeGreaterThan(0);
   });
 
   it('seated: a message goes out as CAFE_SAY, the answer comes back in the panel, an error is worded', async () => {
