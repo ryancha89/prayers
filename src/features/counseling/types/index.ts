@@ -834,13 +834,15 @@ export type UnityToRNEvent =
   /** The cafe is on screen. `guest` is the persona at the counter (named from this app's roster),
    *  `spots` the seat ids CAFE_SIT takes, in the order to offer them. */
   | { type: 'CAFE_READY'; payload: { guest: string; spots: string[] } }
-  /** The player came within reach of the guest (or left it) while on foot. Sent on a change only. */
-  | { type: 'CAFE_NEAR'; payload: { near: boolean } }
+  /** On foot, the player walked up to a free seat (`near`, `spot` its id) or away from every one
+   *  (near false, spot ''). RN offers that seat as a Sit button. Sent on a change only. */
+  | { type: 'CAFE_NEAR'; payload: { near: boolean; spot?: string } }
   /** The visit's phase changed. `reason` says why a seating fell back to exploring: '' · unreachable ·
    *  blocked · busy. `busy` with talking / seating = a table move was refused (CAFE_SIT). */
   | { type: 'CAFE_PHASE'; payload: { phase: CafePhase; spot: string; reason: string } }
-  /** Which tables are taken by somebody else, in the scene's order: right after CAFE_READY and on a
-   *  change. The pins in the room show the same. */
+  /** Which seats are taken by somebody else, in the scene's order: right after CAFE_READY and on a
+   *  change. Nothing reads it since the table chooser went (21-10, sit anywhere): a taken seat is
+   *  refused `busy` when the player asks for it. */
   | { type: 'CAFE_TABLES'; payload: { tables: CafeTableInfo[] } }
   /** The answer to one CAFE_SAY. With an `error`, `text` is Unity's English fallback — not shown. */
   | { type: 'CAFE_REPLY'; payload: { ok: boolean; text: string; error: CafeReplyError } }

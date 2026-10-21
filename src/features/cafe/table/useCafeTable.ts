@@ -184,13 +184,14 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
   };
 
   /** Tarot from the menu. Readings happen at the tarot table: from any other, the player gets up and
-   *  the barista walks them over (CAFE_SIT while seated = a move), and the readers open there. */
+   *  walks over by themselves (CAFE_SIT while seated = a move; no barista escort since 21-10, PM:
+   *  "select anywhere and sit"), and the readers open there. */
   const openTarot = () => {
     const s = ref.current;
     if (!needsTarotMove(s.spot, spots.current)) { listReaders(); return; }
     ref.current = { ...s, stage: 'moving', line: '', error: null };
     patch({ stage: 'moving', line: '', error: null });
-    bridge.sendCafeSit(TAROT_TABLE, true);
+    bridge.sendCafeSit(TAROT_TABLE);
   };
 
   const chooseConsultant = (c: TarotConsultant) => {

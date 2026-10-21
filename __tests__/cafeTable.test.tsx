@@ -549,7 +549,7 @@ describe('the reader’s text', () => {
   });
 });
 
-/* ---- choosing the table (21-10) ------------------------------------------------------------------ */
+/* ---- sit anywhere (21-10) ------------------------------------------------------------------------ */
 
 describe('walked straight in: any free table, then coffee or tarot from its menu', () => {
   const ready = () => fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar', 'lounge', 'tarot'] } });
@@ -565,25 +565,51 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
     fromUnity({ type: 'CAFE_SEATED', payload: { spot } });
     await flush();
   };
-  const chipIds = () => byTestID('cafe-tables')[0]
-    .findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('cafe-table-') && typeof n.props.onPress === 'function')
-    .map(c => c.props.testID);
+  /** Walked up to `spot` with the stick: Unity names it (CAFE_NEAR) and the Sit button sends it. */
+  const sitBy = async (spot: string) => {
+    fromUnity({ type: 'CAFE_NEAR', payload: { near: true, spot } });
+    await press('Sit here');
+  };
 
-  it('the tables at once, in the scene’s order, none suggested; nothing seats the player by itself', async () => {
+  it('no chooser, no pins: the room, one line saying a tap on a seat will do; nothing seats the player by itself', async () => {
     await open();
-    // No sheet at the door (CAFE_INIT's exact payload is pinned in cafe.test.tsx).
+    // No sheet at the door (CAFE_INIT's exact payload is pinned in cafe.test.tsx), and no table card
+    // (PM 21-10: "just let user select anywhere and sit").
     expect(byTestID('cafe-choice')).toHaveLength(0);
+    expect(byTestID('cafe-tables')).toHaveLength(0);
     expect(types()).not.toContain('CAFE_SUGGEST');
-    expect(chipIds()).toEqual(['cafe-table-bar', 'cafe-table-lounge', 'cafe-table-tarot']);
-    expect(shown()).not.toContain('Suggested');
+    expect(shown()).toContain('Tap a seat to sit');
     expect(byTestID('cafe-look').length).toBeGreaterThan(0);
     expect(calls('CAFE_SIT')).toHaveLength(0);
   });
 
+  it('walked up to a seat, a Sit button offers it — the player walks there alone; the hint is gone after the first sit', async () => {
+    await open();
+    expect(byTestID('cafe-sit')).toHaveLength(0);
+    fromUnity({ type: 'CAFE_NEAR', payload: { near: true, spot: 'table3c' } });
+    expect(byTestID('cafe-sit').length).toBeGreaterThan(0);
+    expect(shown()).not.toContain('Tap a seat to sit');
+    fromUnity({ type: 'CAFE_NEAR', payload: { near: false, spot: '' } });
+    expect(byTestID('cafe-sit')).toHaveLength(0);
+    await sitBy('table3c');
+    // No barista escort: the plain walk, no `guided`.
+    expect(calls('CAFE_SIT')).toEqual([{ type: 'CAFE_SIT', payload: { spot: 'table3c' } }]);
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'table3c', reason: '' } });
+    expect(shown()).toContain('Heading to your seat…');
+    expect(shown()).not.toContain('barista');
+    await seatAt('table3c');
+    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    // Up again: no hint any more this visit, and no Sit button until Unity names a seat afresh.
+    fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'exploring', spot: '', reason: '' } });
+    await flush();
+    expect(shown()).not.toContain('Tap a seat to sit');
+    expect(byTestID('cafe-sit')).toHaveLength(0);
+  });
+
   it('any table, first sit: the menu — coffee is ordered from it, at whichever table', async () => {
     await open();
-    await press('Bar');
-    expect(calls('CAFE_SIT')).toEqual([{ type: 'CAFE_SIT', payload: { spot: 'bar', guided: true } }]);
+    await sitBy('bar');
+    expect(calls('CAFE_SIT')).toEqual([{ type: 'CAFE_SIT', payload: { spot: 'bar' } }]);
     await seatAt('bar');
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
     expect(byTestID('cafe-confirm')).toHaveLength(0);
@@ -595,9 +621,9 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
   it('at the tarot table: the menu first, and Tarot there opens the readers without a move', async () => {
     serve('cafe/tarot/consultants', ok(READERS));
     await open();
-    await press('Tarot table');
+    await sitBy('tarot');
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'tarot', reason: '' } });
-    expect(shown()).toContain('Following the barista to the tarot table');
+    expect(shown()).toContain('Moving to the tarot table');
     await seatAt('tarot');
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
     expect(byTestID('cafe-readers')).toHaveLength(0);
@@ -613,19 +639,19 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
   it('Tarot at the lounge walks the player to the tarot table, and the readers open on arrival', async () => {
     serve('cafe/tarot/consultants', ok(READERS));
     await open();
-    await press('Window lounge');
+    await sitBy('lounge');
     await seatAt('lounge');
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
     await press('Tarot Consultation');
     // PM 21-10: "if user select tarot consultation, should move to the tarot table".
-    expect(calls('CAFE_SIT').at(-1)).toEqual({ type: 'CAFE_SIT', payload: { spot: 'tarot', guided: true } });
+    expect(calls('CAFE_SIT').at(-1)).toEqual({ type: 'CAFE_SIT', payload: { spot: 'tarot' } });
     expect(sent.filter(x => x.url.includes('consultants'))).toHaveLength(0);
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'seating', spot: 'tarot', reason: '' } });
     expect(byTestID('cafe-moving').length).toBeGreaterThan(0);
     expect(byTestID('cafe-menu')).toHaveLength(0);
-    // Still the table's (no stick, no look layer, no chooser) while the player walks over.
+    // Still the table's (no stick, no look layer, no Sit button) while the player walks over.
     expect(byTestID('cafe-look')).toHaveLength(0);
-    expect(byTestID('cafe-tables')).toHaveLength(0);
+    expect(byTestID('cafe-sit')).toHaveLength(0);
     await seatAt('tarot');
     expect(byTestID('cafe-readers').length).toBeGreaterThan(0);
     await press('Luna');
@@ -634,10 +660,10 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
 
   it('the tarot table taken: a clear busy line, and the player stays at their table and its menu', async () => {
     await open();
-    await press('Bar');
+    await sitBy('bar');
     await seatAt('bar');
     await press('Tarot Consultation');
-    expect(calls('CAFE_SIT').at(-1)?.payload).toEqual({ spot: 'tarot', guided: true });
+    expect(calls('CAFE_SIT').at(-1)?.payload).toEqual({ spot: 'tarot' });
     // Refused before anybody stood up.
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'talking', spot: 'bar', reason: 'busy' } });
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
@@ -655,7 +681,7 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
   it('a repeated CAFE_READY and a second sit in the same visit: still the plain menu', async () => {
     await open();
     ready();
-    await press('Window lounge');
+    await sitBy('lounge');
     await seatAt('lounge');
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'exploring', spot: '', reason: '' } });

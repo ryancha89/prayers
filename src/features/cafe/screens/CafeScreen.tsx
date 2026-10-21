@@ -15,7 +15,7 @@ import type { RootStackParamList } from '../../../navigation/types';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { getCafeBridge, isNativeUnity, nativeUnityBridge, unityApiBase } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
-import type { CafePhase, CafeReplyError, CafeTableInfo, MyRoomCamera } from '../../counseling/types';
+import type { CafePhase, CafeReplyError, MyRoomCamera } from '../../counseling/types';
 import { getUserAuth, useAuthStore, validGameToken } from '../../auth/store/authStore';
 import { ensureGameToken } from '../../auth/api/session';
 import { presenceUrl } from '../../../shared/config/api';
@@ -31,7 +31,6 @@ import { ConfirmSheet } from '../components/ConfirmSheet';
 import { FortuneCard } from '../components/FortuneCard';
 import { Bubble, GhostButton, Medallion, PanelBackdrop } from '../components/CafeChrome';
 import { TAROT_TABLE } from '../table/tarotTable';
-import { ANY_TABLE, tableChips } from '../table/tableChips';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -46,11 +45,6 @@ export const CAFE_HOME: MyRoomCamera = { zoom: 0.5, yaw: 0, pitch: 0 };
  *  offered as "sit together" rather than as its raw id. */
 const SPOT_LABEL: Record<string, TranslationKey> = { bar: 'cafe.spot.bar', lounge: 'cafe.spot.lounge', tarot: 'cafe.spot.tarot' };
 export const spotLabel = (spot: string): TranslationKey => SPOT_LABEL[spot] ?? 'cafe.spot.any';
-/** The same seats as the table chooser's short names; `any` is the one chip of the dining tables. */
-const TABLE_LABEL: Record<string, TranslationKey> = {
-  bar: 'cafe.tables.bar', lounge: 'cafe.tables.lounge', tarot: 'cafe.tables.tarot', [ANY_TABLE]: 'cafe.tables.anyFree',
-};
-export const tableLabel = (spot: string): TranslationKey => TABLE_LABEL[spot] ?? 'cafe.tables.any';
 
 const SEAT_REASONS = new Set(['unreachable', 'blocked', 'busy']);
 const REPLY_ERRORS = new Set<CafeReplyError>(['no_session', 'no_chart', 'ticket', 'rate_limited', 'upstream', 'connection', 'busy']);
@@ -90,16 +84,19 @@ export function cafeCoveredPx(r: MeasuredRects, landscape: boolean) {
  *
  * UNITY IS THE CAFE, RN IS EVERYTHING YOU TOUCH, as in My Room. The scene was built standalone with
  * its own English IMGUI; while this screen hosts it, Unity's CafeEntry turns that off and this draws
- * the controls instead: the world's stick (WALK_INPUT), the follow camera's fingers (CAFE_CAMERA),
- * the table chooser (21-10: a tap on a table's pin in the room goes out as CAFE_TAP, the list under
- * it as CAFE_SIT; both guided by the barista), and once seated a conversation panel (CAFE_SAY →
- * CAFE_REPLY, CAFE_SHOT, CAFE_STAND). The words are this app's, in six languages;
- * the guest's answers come from the server the consultation rooms use, through Unity.
+ * the controls instead: the world's stick (WALK_INPUT), the follow camera's fingers (CAFE_CAMERA), a
+ * Sit button for the seat the player walked up to (CAFE_NEAR → CAFE_SIT), and once seated a
+ * conversation panel (CAFE_SAY → CAFE_REPLY, CAFE_SHOT, CAFE_STAND). The words are this app's, in six
+ * languages; the guest's answers come from the server the consultation rooms use, through Unity.
  *
- * NOTHING IS ASKED AT THE DOOR (user, 21-10 — over the PM's "choice inside the shop" of the same day).
- * The World's door comes straight in; the pins and the table chips are there at once, none suggested.
- * The player sits at any free table and chooses there, from the table's menu: coffee at any table,
- * tarot at the tarot table (from another one, the barista walks them over first).
+ * SIT ANYWHERE (PM 21-10, Jeongmin: "just let user select anywhere and sit — after sitting the table,
+ * order coffee would be better"). Nothing is asked at the door and nothing is listed: no table card,
+ * no chips, no pins. The player is free in the room; a tap on any chair, stool, sofa or table goes out
+ * as CAFE_TAP (the look layer's short tap) and Unity walks them there by themselves — no barista
+ * escort. Walking up to a seat with the stick, Unity names it in CAFE_NEAR and a Sit button offers it.
+ * A one-line hint says so until the first sit of the visit. Seated, the table's menu opens (Order
+ * Coffee first): coffee at any table, tarot at the tarot table (from another one, the player walks
+ * over first).
  *
  * ONE UNITYVIEW AT A TIME: the world unmounts its host before navigating here (WorldScreen.leaveTo)
  * and mounts it again at the cafe's door (returnZone 'cafe') once this screen has gone.
@@ -124,10 +121,12 @@ export const CafeScreen: React.FC = () => {
 
   const [up, setUp] = useState(false);
   const [guest, setGuest] = useState('');
-  /** The tables and who holds them (CAFE_TABLES; before it, CAFE_READY's spots, all free). */
-  const [tables, setTables] = useState<CafeTableInfo[]>([]);
-  /** The table the barista is walking the player to (CAFE_PHASE seating). */
+  /** The seat the player is walking to (CAFE_PHASE seating). */
   const [heading, setHeading] = useState('');
+  /** The free seat the player stands by on foot (CAFE_NEAR), offered as the Sit button; '' = none. */
+  const [nearSeat, setNearSeat] = useState('');
+  /** Sat down once this visit: the "tap a seat" hint has done its job. */
+  const [hasSat, setHasSat] = useState(false);
   const [phase, setPhase] = useState<CafePhase>('exploring');
   /** The player's last message and the guest's answer (or what went wrong) — the panel's two lines. */
   const [said, setSaid] = useState('');
@@ -187,16 +186,12 @@ export const CafeScreen: React.FC = () => {
     openWithToken();
   };
 
-  /**
-   * CHOOSING A TABLE (21-10, PM: "could you let user select tables to sit down?"). On foot the player
-   * picks a table — its pin in the room (a tap on the look layer goes out as CAFE_TAP) or a row of the
-   * chooser — and the barista walks them there (CAFE_SIT guided); the table's menu opens as they sit.
-   * A taken table is refused `busy` and said so; nothing moves on its own.
-   */
-  const choose = (spot: string) => {
+  /** The Sit button: the seat Unity named in CAFE_NEAR, walked to unguided. A taken one is refused
+   *  `busy` and said so. */
+  const sitHere = () => {
+    if (!nearSeat) return;
     sfx.select();
-    say(t('cafe.guide.welcome'));
-    bridge.sendCafeSit(spot, true);
+    bridge.sendCafeSit(nearSeat);
   };
 
   // Ask for the cafe on the way in; close it on the way out. `lang` is read once, as in My Room.
@@ -205,23 +200,19 @@ export const CafeScreen: React.FC = () => {
   useEffect(() => {
     const off = bridge.onEvent(e => {
       switch (e.type) {
-        case 'CAFE_READY': {
-          const seatIds = Array.isArray(e.payload?.spots) ? e.payload.spots : [];
+        case 'CAFE_READY':
           setUp(true);
           setGuest(e.payload?.guest ?? '');
-          // All free until CAFE_TABLES (right behind) says otherwise; a repeated READY keeps what it said.
-          setTables(prev => seatIds.map(spot => ({ spot, taken: prev.find(x => x.spot === spot)?.taken ?? false })));
           break;
-        }
-        case 'CAFE_TABLES': {
-          const rows = Array.isArray(e.payload?.tables) ? e.payload.tables : [];
-          setTables(rows.filter(r => typeof r?.spot === 'string').map(r => ({ spot: r.spot, taken: r.taken === true })));
+        case 'CAFE_NEAR':
+          setNearSeat(e.payload?.near && typeof e.payload.spot === 'string' ? e.payload.spot : '');
           break;
-        }
         case 'CAFE_PHASE': {
           const p = e.payload;
           if (!p) break;
           setPhase(p.phase);
+          // Up from the floor, the Sit button's seat is no longer where they stand; Unity says it afresh.
+          if (p.phase !== 'exploring') setNearSeat('');
           if (p.phase === 'seating') setHeading(p.spot ?? '');
           if (p.phase === 'talking') {
             setSaid('');
@@ -261,6 +252,7 @@ export const CafeScreen: React.FC = () => {
   // Standing up from the table takes its panel's cover with it (the guest's panel reports its own).
   useEffect(() => {
     if (!atTable) insets.put('panel', null);
+    else setHasSat(true);
   }, [atTable, insets]);
 
   const exploring = phase === 'exploring' && !atTable;
@@ -271,7 +263,7 @@ export const CafeScreen: React.FC = () => {
     home: CAFE_HOME,
     send: c => bridge.sendCafeCamera(c),
     doubleTapHome: true,
-    // A tap on the room: Unity checks it against the table pins (a guided seat there).
+    // A tap on the room: Unity checks it against the furniture — a chair, stool, sofa or table is a seat.
     onTap: (x, y) => bridge.sendCafeTap(x, y),
   });
 
@@ -349,39 +341,30 @@ export const CafeScreen: React.FC = () => {
         <WorldJoystick visible={controlsOn && exploring} />
       </View>
 
-      {/* On foot: the tables, as the pins in the room show them, in the scene's order — a taken one
-          shown and refused. Above the stick, one row of chips so the room stays in view: the dining
-          floor's tables are one "any free table" chip (tableChips), each of them a pin in the room. */}
-      {up && exploring && tables.length > 0 && (
-        <View pointerEvents="box-none" style={[styles.promptWrap, { bottom: safe.bottom + (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait) }]} testID="cafe-tables">
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <Medallion icon="coffee" size={30} />
-              <View style={styles.grow}>
-                <Text style={styles.cardTitle} numberOfLines={1}>{t('cafe.tables.title')}</Text>
-                <Text style={styles.cardHint} numberOfLines={2}>{t('cafe.tables.hint')}</Text>
-              </View>
+      {/* On foot: the seat the player walked up to, offered — or, until the first sit, one line saying a
+          tap on any seat will do. Above the stick; nothing else covers the room. */}
+      {up && exploring && (nearSeat || !hasSat) && (
+        <View pointerEvents="box-none" style={[styles.promptWrap, { bottom: safe.bottom + (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait) }]}>
+          {nearSeat ? (
+            <Pressable testID="cafe-sit" onPress={sitHere} accessibilityRole="button" accessibilityLabel={t('cafe.sit')}
+              style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
+              <Icon name="coffee" size={18} color={INK} />
+              <Text style={styles.ctaText} numberOfLines={1}>{t('cafe.sit')}</Text>
+            </Pressable>
+          ) : (
+            <View pointerEvents="none" style={styles.hint} testID="cafe-hint">
+              <Text style={styles.hintText} numberOfLines={1}>{t('cafe.hint.tapSeat')}</Text>
             </View>
-            <View style={styles.chips}>
-              {tableChips(tables).map(row => (
-                <Pressable key={row.spot} testID={`cafe-table-${row.spot}`} onPress={() => choose(row.spot)} accessibilityRole="button"
-                  accessibilityLabel={t(tableLabel(row.spot))} accessibilityState={{ disabled: row.taken }}
-                  style={({ pressed }) => [styles.chip, row.taken && styles.chipTaken, pressed && styles.pressed]}>
-                  <Text style={styles.chipText} numberOfLines={1}>{t(tableLabel(row.spot))}</Text>
-                  {row.taken ? <Text style={styles.chipTag}>{t('cafe.tables.taken')}</Text> : null}
-                </Pressable>
-              ))}
-            </View>
-          </View>
+          )}
         </View>
       )}
 
-      {/* On the way to the table, behind the barista. */}
+      {/* On the way to the seat, by themselves. */}
       {phase === 'seating' && !atTable && (
         <View pointerEvents="box-none" style={[styles.promptWrap, { bottom: safe.bottom + (landscape ? PROMPT_LIFT.landscape : PROMPT_LIFT.portrait) }]} testID="cafe-seating">
           <View style={[styles.card, styles.row]}>
             <Medallion icon={heading === TAROT_TABLE ? 'sparkle' : 'coffee'} size={38} />
-            <Text style={[styles.cardLine, styles.grow]}>{t(heading === TAROT_TABLE ? 'cafe.guide.walking.tarot' : 'cafe.guide.walking.coffee')}</Text>
+            <Text style={[styles.cardLine, styles.grow]}>{t(heading === TAROT_TABLE ? 'cafe.move.tarot' : 'cafe.walking')}</Text>
             <GhostButton testID="cafe-cancel" label={t('cafe.cancel')} onPress={stand} />
           </View>
         </View>
@@ -515,17 +498,11 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   grow: { flex: 1 },
   cardLine: { ...typography.body, color: colors.textPrimary },
-  cardTitle: { fontFamily: SERIF, fontSize: 16, color: IVORY },
-  cardHint: { ...typography.caption, color: colors.textSecondary },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  chip: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill,
-    borderWidth: 1, borderColor: 'rgba(233,196,106,0.6)', backgroundColor: 'rgba(233,196,106,0.12)',
+  hint: {
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.xs, borderRadius: radius.pill,
+    backgroundColor: 'rgba(14,12,40,0.72)', borderWidth: 1, borderColor: HAIRLINE,
   },
-  chipTaken: { opacity: 0.5, borderColor: HAIRLINE, backgroundColor: 'transparent' },
-  chipText: { ...typography.caption, color: IVORY },
-  chipTag: { ...typography.caption, fontSize: 11, color: colors.textMuted },
+  hintText: { ...typography.caption, color: IVORY },
   cta: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs,
     paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.gold,
