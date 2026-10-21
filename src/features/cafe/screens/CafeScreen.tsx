@@ -41,11 +41,6 @@ export const CAFE_STALL_MS = 9000;
  *  scene's own framing, so this side needs no copy of the scene's numbers. */
 export const CAFE_HOME: MyRoomCamera = { zoom: 0.5, yaw: 0, pitch: 0 };
 
-/** The seat ids Unity's cafe has (CAFE_READY.spots) that this app has words for. Any other id is
- *  offered as "sit together" rather than as its raw id. */
-const SPOT_LABEL: Record<string, TranslationKey> = { bar: 'cafe.spot.bar', lounge: 'cafe.spot.lounge', tarot: 'cafe.spot.tarot' };
-export const spotLabel = (spot: string): TranslationKey => SPOT_LABEL[spot] ?? 'cafe.spot.any';
-
 const SEAT_REASONS = new Set(['unreachable', 'blocked', 'busy']);
 const REPLY_ERRORS = new Set<CafeReplyError>(['no_session', 'no_chart', 'ticket', 'rate_limited', 'upstream', 'connection', 'busy']);
 

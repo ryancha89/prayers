@@ -95,7 +95,7 @@ jest.mock('../src/features/counseling/components/UnityHost', () => {
 
 import { NativeUnityBridge } from '../src/features/counseling/bridge/NativeUnityBridge';
 import { nativeUnityBridge } from '../src/features/counseling/bridge';
-import { CAFE_HOME, CafeScreen, cafeCoveredPx, guestName, replyErrorKey, spotLabel } from '../src/features/cafe/screens/CafeScreen';
+import { CAFE_HOME, CafeScreen, cafeCoveredPx, guestName, replyErrorKey } from '../src/features/cafe/screens/CafeScreen';
 import { WorldScreen, worldTiming } from '../src/features/world/screens/WorldScreen';
 import { WORLD_ZONES, isWorldZone } from '../src/features/world/data/zones';
 import { LABEL_AT, LABEL_W } from '../src/features/world/components/WorldHubArt';
@@ -389,11 +389,9 @@ describe('the cafe screen', () => {
 });
 
 describe('the cafe’s pure parts', () => {
-  it('names the guest from the roster, words seats and errors, and frames the panel', () => {
+  it('names the guest from the roster, words errors, and frames the panel', () => {
     expect(guestName('dosa', 'en')).toBe('Jiho');
     expect(guestName('nobody', 'en')).toBe('nobody');
-    expect(spotLabel('bar')).toBe('cafe.spot.bar');
-    expect(spotLabel('roof')).toBe('cafe.spot.any');
     expect(replyErrorKey('ticket')).toBe('cafe.err.ticket');
     expect(replyErrorKey('something_new')).toBe('cafe.err.upstream');
     expect(CAFE_HOME).toEqual({ zoom: 0.5, yaw: 0, pitch: 0 });

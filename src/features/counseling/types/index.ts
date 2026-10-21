@@ -411,20 +411,23 @@ export type RNToUnityEvent =
   /** The cafe's follow camera, MYROOM_CAMERA's numbers: zoom 0..1 (0 = close; 0.5 = where the scene
    *  starts), yaw -1..1 (= ±180°), pitch -1..1 (+ = higher). Absolute, many a second. */
   | { type: 'CAFE_CAMERA'; payload: MyRoomCamera }
-  /** Sit at a spot id from CAFE_READY. Unity answers CAFE_PHASE seating → talking (or back to
-   *  exploring with a reason). `guided`: the barista meets the player and walks them to the seat
-   *  instead of a straight walk (a table chosen from the list or a pin, 21-10). Sent while seated at
-   *  another table it MOVES the player there (picking Tarot away from the tarot table): refused as
-   *  CAFE_PHASE talking/busy with the player still seated, or seating/busy when the table was taken
-   *  on the way and they are walking back to their seat. */
+  /** Sit at a spot id from CAFE_READY — the seat CAFE_NEAR offered (the Sit button), or the tarot
+   *  table for a move. Unity answers CAFE_PHASE seating → talking (or back to exploring with a reason);
+   *  the player walks there alone. `guided` (the barista leading the way) is still understood by Unity
+   *  but this app never sends it since sit-anywhere (21-10). Sent while seated at another table it
+   *  MOVES the player there (picking Tarot away from the tarot table): refused as CAFE_PHASE
+   *  talking/busy with the player still seated, or seating/busy when the table was taken on the way and
+   *  they are walking back to their seat. A CAFE_SIT that lands while already walking is refused
+   *  seating/busy too, naming the seat still being walked to. */
   | { type: 'CAFE_SIT'; payload: { spot: string; guided?: boolean } }
   /** One message to the guest. Always answered by exactly one CAFE_REPLY. */
   | { type: 'CAFE_SAY'; payload: { text: string } }
   /** The next camera angle while seated. */
   | { type: 'CAFE_SHOT' }
-  /** A tap over the view, 0..1 from its top-left (WORLD_TAP's convention). On foot it picks a table
-   *  pin (a guided CAFE_SIT there); seated it picks a card while the deck is out, or opens the fortune
-   *  cookie. The embedded view gets no touch of its own. */
+  /** A tap over the view, 0..1 from its top-left (WORLD_TAP's convention). On foot Unity tests it
+   *  against the furniture: a chair, stool or sofa is that seat, a table its nearest free chair, and
+   *  the player walks there alone (as a CAFE_SIT would). Seated it picks a card while the deck is out,
+   *  or opens the fortune cookie. The embedded view gets no touch of its own. */
   | { type: 'CAFE_TAP'; payload: { x: number; y: number } }
   /** Stand up from the table, or cancel the walk to it. */
   | { type: 'CAFE_STAND' }
@@ -838,7 +841,8 @@ export type UnityToRNEvent =
    *  (near false, spot ''). RN offers that seat as a Sit button. Sent on a change only. */
   | { type: 'CAFE_NEAR'; payload: { near: boolean; spot?: string } }
   /** The visit's phase changed. `reason` says why a seating fell back to exploring: '' · unreachable ·
-   *  blocked · busy. `busy` with talking / seating = a table move was refused (CAFE_SIT). */
+   *  blocked · busy. `busy` with talking / seating = a CAFE_SIT refused while seated or walking — the
+   *  move to the tarot table (taken at once, or on the way: walking back) or a seat asked for mid-walk. */
   | { type: 'CAFE_PHASE'; payload: { phase: CafePhase; spot: string; reason: string } }
   /** Which seats are taken by somebody else, in the scene's order: right after CAFE_READY and on a
    *  change. Nothing reads it since the table chooser went (21-10, sit anywhere): a taken seat is
