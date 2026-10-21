@@ -14,8 +14,8 @@ import { useBottomDock } from '../../../shared/layout/bottomDock';
 import { useMiniPlayerInset } from '../../../shared/layout/miniPlayerInset';
 
 /**
- * The journey, kept alive while the player looks at something else: 🚂 title, the station and the
- * guide, a thin progress line, play/pause. Tapping it goes back to the train.
+ * The paused journey's place, kept while the player looks at something else. The controls return
+ * to the train; narration belongs only to that screen.
  *
  * Mounted once, above the navigator (App.tsx), and told where it sits: above the tab bar on the
  * tabs, just above the home indicator elsewhere.
@@ -60,9 +60,8 @@ export const JourneyMiniPlayer: React.FC<{ aboveTabs: boolean; hidden: boolean; 
             {guide ? ` · ${guide.name}` : ''}
           </Text>
         </View>
-        {/* At a lock or an overlay (a title card, a choice) play cannot carry on — the answer lives
-            on the train, so go there. */}
-        <Pressable hitSlop={12} onPress={() => { sfx.tap(); if (s.moment === 'locked' || s.stage !== '') onOpen(); else s.toggle(); }}
+        {/* Return to the journey before starting its voice. */}
+        <Pressable hitSlop={12} onPress={() => { sfx.tap(); onOpen(); }}
           accessibilityRole="button" style={styles.play}>
           <Icon name={s.status === 'playing' ? 'pause' : 'play'} size={16} color={colors.bg} />
         </Pressable>

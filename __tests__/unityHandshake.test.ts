@@ -34,6 +34,39 @@ function bridgeWithView() {
 beforeEach(() => jest.useFakeTimers());
 afterEach(() => jest.useRealTimers());
 
+it('does not replay a journey queued before its view mounted into the next consultation', async () => {
+  const bridge = new NativeUnityBridge();
+  const posted: { type: string }[] = [];
+  const view = { postMessage: (_g: string, _m: string, message: string) => posted.push(JSON.parse(message)) };
+  bridge.openJourneyRoom({ journeyId: 'old-trip', counselorId: 'luna', lang: 'ko' });
+  bridge.registerView(view);
+  bridge.receiveFromUnity(JSON.stringify({ type: 'JOURNEY_READY' }));
+  bridge.closeJourneyRoom();
+  bridge.unregisterView(view);
+  posted.length = 0;
+
+  await bridge.openCounselingRoom(payload);
+  bridge.registerView(view);
+  bridge.receiveFromUnity(JSON.stringify({ type: 'UNITY_READY' }));
+  jest.advanceTimersByTime(10000);
+
+  expect(posted.some(e => e.type === 'SESSION_INIT')).toBe(true);
+  expect(posted.some(e => e.type === 'JOURNEY_INIT')).toBe(false);
+});
+
+it('ignores late journey readiness while waiting for the consultation', async () => {
+  const { bridge, inits } = bridgeWithView();
+  bridge.openJourneyRoom({ journeyId: 'old-trip', counselorId: 'luna', lang: 'ko' });
+  bridge.receiveFromUnity(JSON.stringify({ type: 'JOURNEY_READY' }));
+  await bridge.openCounselingRoom(payload);
+  expect(bridge.isReady).toBe(false);
+  const before = inits().length;
+  bridge.receiveFromUnity(JSON.stringify({ type: 'JOURNEY_READY' }));
+  expect(bridge.isReady).toBe(false);
+  jest.advanceTimersByTime(1500);
+  expect(inits().length).toBeGreaterThan(before);
+});
+
 it('says SESSION_INIT again when nobody answers', async () => {
   const { bridge, inits } = bridgeWithView();
 

@@ -1,8 +1,11 @@
+import { Platform } from 'react-native';
+import { SignInCancelledError } from './signInError';
+
 /**
  * Google Sign-In, behind a guarded require — same reasoning as appleSignIn.ts.
  *
- * The client ids belong to saju_front's Google Cloud project (1012229674984): one server, one user
- * table, so the same Google account lands on the same `google_oauth2` user row in both apps.
+ * The client ids belong to Google Cloud project 1012229674984. The server verifies the token
+ * and resolves a separate Prayers account in prayers_users.
  * Google only lets this package in once that project has an Android OAuth client for
  * `com.fortunetorch.prayers` with the signing key's SHA-1 — without it `signIn` rejects with
  * DEVELOPER_ERROR, which is a console setting, not a code bug.
@@ -25,7 +28,6 @@ let configured = false;
 
 function load(): GoogleModule | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require('@react-native-google-signin/google-signin') as GoogleModule;
     if (!mod?.GoogleSignin) return null;
     if (!configured) {
@@ -50,12 +52,15 @@ export function googleSignInAvailable(): boolean {
 export async function requestGoogleIdentity(): Promise<GoogleUser> {
   const google = load();
   if (!google) throw new Error('Google Sign-In is not in this build.');
-  await google.GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  if (Platform.OS === 'android') {
+    await google.GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  }
   // A previous session's account would be reused silently; signing out first shows the picker.
   await google.GoogleSignin.signOut().catch(() => null);
   const res = await google.GoogleSignin.signIn();
-  if (res.type !== 'success' || !res.data?.idToken) {
-    throw new Error('Google returned no id token — the sign-in was cancelled.');
+  if (res.type === 'cancelled') throw new SignInCancelledError();
+  if (!res.data?.idToken) {
+    throw new Error('Google returned no identity token. Please try signing in again.');
   }
   return res.data;
 }

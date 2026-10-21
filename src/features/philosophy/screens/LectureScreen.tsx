@@ -17,6 +17,7 @@ import { UnityHost } from '../../counseling/components/UnityHost';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useFollowCamera } from '../../world/components/useWorldCamera';
 import { ALL_ORIENTATIONS } from '../../coins/components/CoinShopSheet';
+import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'Lecture'>;
@@ -65,6 +66,12 @@ export const LectureScreen: React.FC = () => {
   const [playing, setPlaying] = useState(true);
   const [ended, setEnded] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const restartVoice = useRef(false);
+  const { active: audioActive, silence } = useScreenAudio(() => {
+    stopLine();
+    restartVoice.current = true;
+    setPlaying(false);
+  });
   const scroll = useRef<ScrollView>(null);
   // The portrait is framed, not cropped by `cover` across the whole screen: that zoomed a tall phone
   // onto one cheek. His head and shoulders fill the top two thirds, centred, the subtitles below.
@@ -148,6 +155,7 @@ export const LectureScreen: React.FC = () => {
   const indexRef = useRef(index);
   indexRef.current = index;
   const advance = useCallback(() => {
+    if (!audioActive.current) return;
     if (indexRef.current >= total) {
       setEnded(true);
       setPlaying(false);
@@ -155,12 +163,12 @@ export const LectureScreen: React.FC = () => {
       return;
     }
     setIndex(indexRef.current + 1);
-  }, [total, chapter.no, markDone]);
+  }, [total, chapter.no, markDone, audioActive]);
 
   // Whatever is current and wanted, play it. Changing the line or the chapter starts the new take.
   useEffect(() => {
     setAt(chapter.no, index);
-    if (!playing || ended) return;
+    if (!audioActive.current || !playing || ended) return;
     playLine(current.file, advance, () => setPlaying(false));
     // Only a change of line (or chapter) restarts the voice; pause/resume are handled below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -201,6 +209,7 @@ export const LectureScreen: React.FC = () => {
 
   const goChapter = useCallback(
     (no: number) => {
+      if (!audioActive.current) return;
       const next = chapterOf(lang, no);
       if (!next) return;
       stopLine();
@@ -211,7 +220,7 @@ export const LectureScreen: React.FC = () => {
       setIndex(0);
       scroll.current?.scrollTo({ y: 0, animated: false });
     },
-    [lang],
+    [lang, audioActive],
   );
 
   const toggle = () => {
@@ -226,7 +235,10 @@ export const LectureScreen: React.FC = () => {
       setPlaying(false);
     } else {
       setPlaying(true);
-      resumeLine(advance);
+      if (restartVoice.current) {
+        restartVoice.current = false;
+        playLine(current.file, advance, () => setPlaying(false));
+      } else resumeLine(advance);
     }
   };
 
@@ -289,7 +301,7 @@ export const LectureScreen: React.FC = () => {
         <View style={styles.top} pointerEvents="box-none">
           <Pressable
             style={styles.ring}
-            onPress={() => { sfx.back(); navigation.goBack(); }}
+            onPress={() => { silence(); sfx.back(); navigation.goBack(); }}
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={t('lecture.back')}>

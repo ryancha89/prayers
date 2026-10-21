@@ -58,6 +58,10 @@ export function landscapeBand(width: number, safe: { left: number; right: number
 }
 
 export interface ConsultationOverlayProps {
+  /** Earlier visits to this counselor's thread; current lines belong to the engine. */
+  history?: FlowState['transcript'];
+  /** Whose chart to ask about, offered alongside question entry rather than at the room door. */
+  questionControls?: React.ReactNode;
   state: FlowState;
   onTap(): void;
   onChoose(choice: PhaseChoice): void;
@@ -102,6 +106,8 @@ export interface ConsultationOverlayProps {
 }
 
 export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
+  history,
+  questionControls,
   state,
   onTap,
   onChoose,
@@ -178,6 +184,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   // indicator. Heights are shares of the window kept small on purpose: the room is told the band
   // covers the bottom (VIEW_INSETS, roomCoveredPx) and frames the counsellor in what is above it.
   const landscape = screen.landscape;
+  const showTranscript = state.screen === 'loop' || state.screen === 'questionBox';
   const report = (e: LayoutChangeEvent) => onPanelLayout?.(e.nativeEvent.layout);
 
   // Landscape height is the scarce thing — every line the band takes is a line less of the
@@ -253,9 +260,10 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
         onLayout={report}
         testID="consultation-panel"
       >
-        {state.screen === 'loop' && (
+        {showTranscript && (
           <Transcript
             state={state}
+            history={history}
             maxHeight={landscape ? screen.vh(0.18, 64, 100) : screen.vh(0.3, 140, 320)}
           />
         )}
@@ -266,12 +274,12 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
             the full-screen catcher, so a tap on the card — right where "tap to continue" is
             written — never reached it; only taps on the empty scene did. */}
         {/* Landscape: the name is a tab on top of the box, ZZZ's speech-box shape. */}
-        {landscape && !!state.line && state.screen !== 'loop' && !!state.speaker && (
+        {landscape && !!state.line && !showTranscript && !!state.speaker && (
           <View style={styles.nameTab} pointerEvents="none">
             <Text style={styles.speaker}>{counselorName || state.speaker}</Text>
           </View>
         )}
-        {!!state.line && state.screen !== 'loop' && (
+        {!!state.line && !showTranscript && (
           <Pressable style={styles.card} onPress={state.canTap ? onTap : undefined} disabled={!state.canTap}>
             {!landscape && !!state.speaker && (
               <Text style={styles.speaker}>{counselorName || state.speaker}</Text>
@@ -340,6 +348,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
 
         {(state.screen === 'questionBox' || state.screen === 'loop') && (
           <SafeAreaView edges={landscape ? [] : ['bottom']}>
+            {questionControls && <View style={{ marginBottom: spacing.sm }}>{questionControls}</View>}
             {/* ⚡ 티키타카 | 깊은 풀이 — the same segment SAVIS puts above its input, carried to the
                 server as the same `chat_mode`. The whole point is that a player who knows one app
                 knows the other. */}
@@ -474,46 +483,81 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   );
 };
 
-/** The free-chat transcript. A staged phase speaks one line through the card and
- *  moves on; a conversation has to stay readable.
- *
- *  It follows the voice. The engine reveals an answer chunk by chunk as each is
- *  spoken, so the newest bubble grows while the counselor talks — and every
- *  growth spurt changes the content size, which is the cue to scroll to the
- *  end. Without it the bubble grew below the fold and the player read the first
- *  sentence while hearing the fourth. */
-const Transcript: React.FC<{ state: FlowState; maxHeight: number }> = ({
+/** Follow the spoken answer only while the reader is at the bottom. Scrolling back through
+ * earlier readings must not be interrupted by the next spoken chunk or by a keyboard resize. */
+const Transcript: React.FC<{ state: FlowState; history?: FlowState['transcript']; maxHeight: number }> = ({
   state,
+  history = [],
   maxHeight,
 }) => {
+  const lang = useLang();
   const scroll = useRef<ScrollView>(null);
+  const follow = useRef(true);
+  const dragging = useRef(false);
+  const [readingHistory, setReadingHistory] = useState(false);
+  const latest = () => {
+    follow.current = true;
+    setReadingHistory(false);
+    scroll.current?.scrollToEnd({ animated: true });
+  };
   return (
-    <ScrollView
-      ref={scroll}
-      style={[styles.transcript, { maxHeight }]}
-      contentContainerStyle={styles.transcriptBody}
-      onContentSizeChange={() =>
-        scroll.current?.scrollToEnd({ animated: true })
-      }
-    >
-      {state.transcript.map((m, i) => (
-        <View
-          key={`${i}-${m.role}`}
-          style={[
-            styles.bubble,
-            m.role === 'user' ? styles.bubbleUser : styles.bubbleCounselor,
-          ]}
-        >
-          <Text
-            style={
-              m.role === 'user' ? styles.bubbleTextUser : styles.bubbleText
-            }
+    <View style={styles.transcript}>
+      <ScrollView
+        ref={scroll}
+        testID="consultation-transcript"
+        accessibilityLabel={ui('history.label', lang)}
+        style={[styles.transcript, { maxHeight }]}
+        contentContainerStyle={styles.transcriptBody}
+        showsVerticalScrollIndicator
+        indicatorStyle="white"
+        keyboardShouldPersistTaps="handled"
+        scrollEventThrottle={16}
+        onScrollBeginDrag={() => {
+          dragging.current = true;
+          follow.current = false;
+        }}
+        onScrollEndDrag={e => {
+          dragging.current = false;
+          const { contentSize, contentOffset, layoutMeasurement } = e.nativeEvent;
+          follow.current = contentSize.height - contentOffset.y - layoutMeasurement.height <= 32;
+        }}
+        onScroll={e => {
+          const { contentSize, contentOffset, layoutMeasurement } = e.nativeEvent;
+          const atBottom = contentSize.height - contentOffset.y - layoutMeasurement.height <= 32;
+          follow.current = !dragging.current && atBottom;
+          setReadingHistory(!atBottom);
+        }}
+        onLayout={() => {
+          if (follow.current) scroll.current?.scrollToEnd({ animated: false });
+        }}
+        onContentSizeChange={() => {
+          if (follow.current) scroll.current?.scrollToEnd({ animated: false });
+        }}
+      >
+        {[...history, ...state.transcript].map((m, i) => (
+          <View
+            key={`${i}-${m.role}`}
+            style={[
+              styles.bubble,
+              m.role === 'user' ? styles.bubbleUser : styles.bubbleCounselor,
+            ]}
           >
-            {m.text}
-          </Text>
-        </View>
-      ))}
-    </ScrollView>
+            <Text
+              style={
+                m.role === 'user' ? styles.bubbleTextUser : styles.bubbleText
+              }
+            >
+              {m.text}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+      {readingHistory && (
+        <Pressable testID="transcript-latest" style={styles.latest} onPress={latest} accessibilityRole="button">
+          <Text style={styles.latestText}>{ui('history.latest', lang)} ↓</Text>
+        </Pressable>
+      )}
+    </View>
   );
 };
 
@@ -681,6 +725,11 @@ const styles = StyleSheet.create({
 
   transcript: { flexShrink: 1 },
   transcriptBody: { gap: spacing.sm, paddingBottom: spacing.sm },
+  latest: {
+    alignSelf: 'center', backgroundColor: PLATE, borderColor: HAIRLINE, borderWidth: 1,
+    borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+  },
+  latestText: { ...typography.caption, color: colors.gold },
   // Chat bubbles over the live room (16-10, user: "유저 채팅부분 UI개선해줘"). The player's used to be
   // a flat #8B5CF6 slab as wide as hers — the loudest thing on screen, in a colour nothing else in
   // the room uses. Now it is narrower than hers, and each bubble has a "tail" corner on its speaker's side. No shadow: under a translucent bubble

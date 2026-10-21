@@ -2,8 +2,7 @@ import React from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
-import { compactNumber } from '../../../shared/utils/time';
-import { useT } from '../../../shared/i18n';
+import { useLang, useT } from '../../../shared/i18n';
 import { Badge } from '../../../shared/components/Badge';
 import { CounselorSummary } from '../types';
 import { GradientScrim } from '../../../shared/components/GradientScrim';
@@ -20,9 +19,10 @@ export const CounselorCard: React.FC<{
   onPress: () => void;
 }> = ({ counselor, onPress }) => {
   const t = useT();
-  // The real count from the server (Prayers::CounselorStats); absent until it answers, and for a
-  // counselor nobody has consulted yet — either way the line is not drawn.
-  const consultations = useCounselorStats(s => s.counts?.[counselor.id]);
+  const lang = useLang();
+  // A successful response omits counselors with no completed visits: those are zero, whereas a
+  // request that has not answered is unknown. Keep the exact total visible as it grows.
+  const consultations = useCounselorStats(s => s.counts == null ? null : (s.counts[counselor.id] ?? 0));
   // Coming-soon wins over NEW/TRENDING: those sell a counselor, and this one is not for sale
   // yet. A card badged NEW that opens nothing is the promise the badge should have withdrawn.
   const badge = counselor.comingSoon
@@ -78,9 +78,9 @@ export const CounselorCard: React.FC<{
           ))}
         </View>
 
-        {!!consultations && (
-          <Text style={styles.meta}>
-            {t('card.conversations', { count: compactNumber(consultations) })}
+        {consultations !== null && (
+          <Text style={styles.meta} testID={`counselor-count-${counselor.id}`}>
+            {t('card.conversations', { count: consultations.toLocaleString(lang) })}
           </Text>
         )}
       </View>

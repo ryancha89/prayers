@@ -143,6 +143,8 @@ interface JourneyState {
   play(): void;
   pause(): void;
   toggle(): void;
+  /** Leaving the journey stops speech immediately, including clips still being loaded. */
+  setScreenActive(active: boolean): void;
   seekBy(seconds: number): void;
   /** On to what comes next: the end of this part (a lock, a choice, the next part), or "later" at a lock. */
   next(): void;
@@ -194,6 +196,14 @@ let transitionTimer: ReturnType<typeof setTimeout> | null = null;
 let cueTimer: ReturnType<typeof setTimeout> | null = null;
 /** Bumped on every part change and stop: a load that lands late must not start talking. */
 let generation = 0;
+let screenActive = true;
+let resumeOnReturn: (() => void) | null = null;
+
+function deferWhileAway(work: () => void): boolean {
+  if (screenActive) return false;
+  resumeOnReturn = work;
+  return true;
+}
 /** Narration clips by `${chapter}:${part}`. */
 const urls = new Map<string, Promise<NarrationClip | null>>();
 const clipKey = (ci: number, pi: number) => `${ci}:${pi}`;
@@ -242,6 +252,18 @@ function partAt(ci: number, pi: number): JourneyPart | undefined {
   return partsOf(useJourneyPlayer.getState().content, chapterAt(ci)?.id)[pi];
 }
 
+/** Opening any paid station grants this person's whole journey. */
+function journeyOpened(content: JourneyContent | null): boolean {
+  return !!content?.chapters.some(c => c.parts?.some(p => p.momentId && p.unlocked));
+}
+
+/** The old free opening is personal reading too, so hold it behind the journey unlock. */
+function readingGate(ci: number): number {
+  const s = useJourneyPlayer.getState();
+  if (journeyOpened(s.content)) return -1;
+  return partsOf(s.content, chapterAt(ci)?.id).findIndex(p => p.momentId && !p.unlocked);
+}
+
 /** The part being told or locked at. */
 export function currentPart(s: Pick<JourneyState, 'journeyId' | 'content' | 'chapterIndex' | 'partIndex'>) {
   return partsOf(s.content, journeyOf(s.journeyId)?.chapters[s.chapterIndex]?.id)[s.partIndex];
@@ -263,6 +285,7 @@ export function teaserOf(s: Pick<JourneyState, 'journeyId' | 'content' | 'chapte
 
 function ensureUrl(ci: number, pi: number) {
   const s = useJourneyPlayer.getState();
+  if (pi === 0 && readingGate(ci) >= 0) return null;
   const part = partAt(ci, pi);
   // A locked part has no text to voice; its clip is asked for once the unlock brings the text.
   if (!part?.unlocked || part.text == null || !s.tone) return null;
@@ -292,7 +315,7 @@ function startLayer(which: 'bgm' | 'ambient', file: string | null, volume: numbe
     s.setNumberOfLoops?.(-1);
     s.setVolume?.(volume);
     // Loaded while the ride is paused (music switched back on mid-pause): the resume starts it.
-    if (useJourneyPlayer.getState().status === 'paused') return;
+    if (!screenActive || layers[which] !== s || useJourneyPlayer.getState().status === 'paused') return;
     s.play?.();
   });
   layers[which] = s;
@@ -528,6 +551,13 @@ function startStation(ci: number, gen: number) {
 
 /** Tell part `pi` of station `ci` — or, if it is locked, stop there. */
 async function startPart(ci: number, pi: number, gen: number) {
+  if (gen !== generation) return;
+  if (deferWhileAway(() => { startPart(ci, pi, gen); })) return;
+  const gate = pi === 0 ? readingGate(ci) : -1;
+  if (gate >= 0) {
+    lockAt(ci, gate);
+    return;
+  }
   const s = useJourneyPlayer.getState();
   const journey = journeyOf(s.journeyId);
   if (!journey) return;
@@ -558,12 +588,20 @@ async function startPart(ci: number, pi: number, gen: number) {
     sound?.release?.();
     return;
   }
+  if (deferWhileAway(() => { startPart(ci, pi, gen); })) {
+    sound?.release?.();
+    return;
+  }
 
   // The first station follows the boarding storyboard: let the counsellor finish the line they are
   // saying ("Shall we explore your first stop?") instead of talking over it (QA 30-09: cut by 0.2 s).
   if (ci === 0 && pi === 0) {
     await beatVoiceSettled();
     if (gen !== generation) { sound?.release?.(); return; }
+    if (deferWhileAway(() => { startPart(ci, pi, gen); })) {
+      sound?.release?.();
+      return;
+    }
   }
   releaseVoice();
   const text = part.text ?? '';
@@ -591,7 +629,7 @@ async function startPart(ci: number, pi: number, gen: number) {
     moment: part.momentId ? 'premium' : '', momentId: part.momentId, teaserSpeaking: false, reveal: null, revealBusy: false,
   });
   voice?.play?.((ok: boolean) => {
-    if (gen !== generation) return;
+    if (gen !== generation || !screenActive) return;
     if (ok) partEnded();
   });
   stopPoll();
@@ -607,6 +645,7 @@ function lockAt(ci: number, pi: number, opts: { silent?: boolean; stage?: Journe
     moment: 'locked', momentId: part?.momentId ?? null, unlocking: false, unlockError: null, teaserSpeaking: false,
   });
   if (opts.silent) return;
+  if (!screenActive) return;
   const teaser = teaserOf(useJourneyPlayer.getState());
   const id = part?.momentId ?? null;
   if (!teaser || !s.tone) return;
@@ -716,6 +755,7 @@ function travelSounds(final: boolean, gen: number) {
 /** The train runs to station `index`: the transition plays while its audio is loaded, then the
  *  train arrives (title card or straight in). */
 function travelTo(index: number) {
+  if (deferWhileAway(() => travelTo(index))) return;
   const journey = journeyOf(useJourneyPlayer.getState().journeyId);
   if (!journey || index < 0 || index >= journey.chapters.length) return;
   generation += 1;
@@ -774,6 +814,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
 
   async board(journeyId, counselorId, tone, lang, opts) {
     get().stop();
+    screenActive = true;
     generation += 1;
     const gen = generation;
     arrivalChimed = false;
@@ -802,13 +843,16 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     // The server's parts say what is unlocked; nothing cached on the phone is consulted for that.
     set({ content: result.content });
     if (result.coinBalance != null) useCoins.getState().setBalance(result.coinBalance);
-    startLayers(journeyOf(journeyId)!);
-    ensureUrl(0, 0);
-    if (opts?.platform) {
-      if (departPending) get().depart();
-      return;
-    }
-    arrive(0);
+    const begin = () => {
+      startLayers(journeyOf(journeyId)!);
+      ensureUrl(0, 0);
+      if (opts?.platform) {
+        if (departPending) get().depart();
+        return;
+      }
+      arrive(0);
+    };
+    if (!deferWhileAway(begin)) begin();
   },
 
   depart() {
@@ -825,6 +869,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
   },
 
   play() {
+    if (!screenActive) return;
     const s = get();
     if (s.status === 'done') return get().replay();
     // A lock or an overlay waits for its own button.
@@ -837,7 +882,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
       syncMouth(s.position);
       const gen = generation;
       voice?.play?.((ok: boolean) => {
-        if (gen === generation && ok) partEnded();
+        if (gen === generation && screenActive && ok) partEnded();
       });
     }
     stopPoll();
@@ -857,6 +902,30 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     const st = get().status;
     if (st === 'playing') get().pause();
     else get().play();
+  },
+
+  setScreenActive(active) {
+    if (screenActive === active) return;
+    screenActive = active;
+    if (active) {
+      const resume = resumeOnReturn;
+      resumeOnReturn = null;
+      resume?.();
+      return;
+    }
+    get().pause();
+    stopPoll();
+    clearCueTimer();
+    stopBeatVoice();
+    pauseLayers(true);
+    stopStationAmbience();
+    cancelJourneySfx({ silence: true });
+    const target = get().transitionTo;
+    if (get().status === 'transition' && target != null) {
+      if (transitionTimer) clearTimeout(transitionTimer);
+      resumeOnReturn = () => travelTo(target);
+    }
+    set({ teaserSpeaking: false });
   },
 
   seekBy(seconds) {
@@ -924,6 +993,11 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
   beginStation() {
     const s = get();
     if (s.stage !== 'title') return;
+    const gate = readingGate(s.chapterIndex);
+    if (gate >= 0) {
+      lockAt(s.chapterIndex, gate);
+      return;
+    }
     if (chapterAt(s.chapterIndex)?.interaction === 'pickCard') {
       set({ stage: 'pick', pickedCard: null });
       // The deal: a soft glitter in the cabin as the three cards rise (CardPick).
@@ -1008,6 +1082,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     const s = get();
     if (s.moment !== 'locked' || s.unlocking || !s.momentId || !s.journeyId || !s.counselorId || !s.tone) return;
     const { journeyId, counselorId, tone, lang, momentId: id, chapterIndex: ci, partIndex: pi } = s;
+    const startFromBeginning = !journeyOpened(s.content) && !s.heard.includes(`${ci}.0`);
     const chapter = chapterAt(ci);
     if (!chapter) return;
     const gen = generation;
@@ -1024,7 +1099,9 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     // The part is in the content from now on — even if the player has moved on meanwhile.
     const now = get();
     if (now.journeyId === journeyId && now.counselorId === counselorId && now.content) {
-      set({ content: result.parts.reduce((c, p) => withPart(c, chapter.id, p, result.summary), now.content) });
+      const opened = result.parts.reduce((c, p) => withPart(c, chapter.id, p, result.summary), now.content);
+      // The first unlock pays for this person's whole journey; later stations cost no more coins.
+      set({ content: { ...opened, momentPrice: 0 } });
     }
     result.parts.forEach(p => useSavedJourneys.getState().addUnlock(journeyId, counselorId, chapter.id, p, result.summary));
     noteMoment(journeyId, id, result.part.label);
@@ -1046,6 +1123,10 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
       cueTimer = null;
       if (g === generation) fireCue(cue);
     }, CUE_AFTER_UNLOCK_MS);
+    if (startFromBeginning) {
+      startStation(ci, g);
+      return;
+    }
     // A topic's first paid part opens on its card (mockup panel 15) before the voice goes on; the
     // card is then not raised a second time from the narration.
     const card = result.part.cards[0];
@@ -1062,6 +1143,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
   },
 
   stop() {
+    resumeOnReturn = null;
     generation += 1;
     stopPoll();
     if (transitionTimer) clearTimeout(transitionTimer);
@@ -1211,6 +1293,7 @@ export function journeyRecord(
   if (!journey || !s.content) return [];
   const all = s.status === 'done';
   return journey.chapters.flatMap((chapter, ci) => {
+    if (!journeyOpened(s.content) && partsOf(s.content, chapter.id).some(p => p.momentId)) return [];
     const parts = partsOf(s.content, chapter.id)
       .map((p, pi) => ({ p, key: `${ci}.${pi}` }))
       .filter(({ p, key }) => p.unlocked && !!p.text && (all || s.heard.includes(key)))

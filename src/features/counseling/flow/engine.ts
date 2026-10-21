@@ -674,9 +674,11 @@ export class ConsultationEngine {
   }
 
   dispose() {
-    this.clearTimer();
-    if (this.state.mic.state !== 'idle') this.stage.cancelMic();
     this.running = false;
+    this.clearTimer();
+    this.clearAnswerGuard();
+    this.stage.stopSpeak();
+    if (this.state.mic.state !== 'idle') this.stage.cancelMic();
     this.listeners.clear();
   }
 
@@ -806,6 +808,7 @@ export class ConsultationEngine {
       });
       // onCounselorLine is the whole beat: it feeds the history row, not the card.
       this.opts.onCounselorLine?.(text);
+      this.appendTranscript('counselor', text);
       // Warm the rest while the first is being said. The first cannot be warmed
       // by anyone — it is the only one the player waits on.
       this.readingWalk = { key: p.id, chunks, next: 1, shownAt: this.sched.now() };
@@ -838,7 +841,10 @@ export class ConsultationEngine {
       tone: '',
       emotion: 'neutral',
     });
-    if (body) this.opts.onCounselorLine?.(body);
+    if (body) {
+      this.opts.onCounselorLine?.(body);
+      this.appendTranscript('counselor', body);
+    }
 
     // Spoken with the SAME keys the line was resolved from, variant included,
     // so a recorded take and the text on screen can never drift apart.
@@ -1142,6 +1148,7 @@ export class ConsultationEngine {
 
     this.question = trimmed;
     this.opts.onUserLine?.(trimmed);
+    this.appendTranscript('user', trimmed);
     this.followQuestionTopic(trimmed);
     this.oraclePending = true;
     this.oracleError = null;

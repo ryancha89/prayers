@@ -1,0 +1,175 @@
+{
+  "source": "../luna_refined.blend",
+  "target": "Prayers / Unity 6000.0.56f1 / f_char_luna",
+  "before": {
+    "triangles": 101069,
+    "meshes": 107,
+    "material_slots": 115
+  },
+  "bones": 176,
+  "preserved_renderers": [
+    "Body_Geo",
+    "EBrows_Geo",
+    "Face_Geo",
+    "Mouth_Geo"
+  ],
+  "texture_limit": 1024,
+  "runtime_profiled": false,
+  "lods": {
+    "LOD0": {
+      "triangles": 44539,
+      "active_triangles": 43729,
+      "meshes": 10,
+      "active_skinned_renderers": 8,
+      "active_material_slots": 12,
+      "unique_materials": 10,
+      "per_mesh": {
+        "Body_Geo": {
+          "triangles": 5990,
+          "slots": 3
+        },
+        "Mouth_Geo": {
+          "triangles": 734,
+          "slots": 1
+        },
+        "EBrows_Geo": {
+          "triangles": 260,
+          "slots": 1
+        },
+        "Face_Geo": {
+          "triangles": 5066,
+          "slots": 1
+        },
+        "CO_Hair_Long": {
+          "triangles": 19561,
+          "slots": 1
+        },
+        "CO_Mobile_Jewelry": {
+          "triangles": 3668,
+          "slots": 2
+        },
+        "CO_Mobile_Cloth": {
+          "triangles": 6380,
+          "slots": 2
+        },
+        "CO_Lantern_Prop": {
+          "triangles": 770,
+          "slots": 1
+        },
+        "CO_Lantern_Core": {
+          "triangles": 40,
+          "slots": 1
+        },
+        "CO_Mobile_Sheer": {
+          "triangles": 2070,
+          "slots": 1
+        }
+      }
+    },
+    "LOD1": {
+      "triangles": 24568,
+      "active_triangles": 23758,
+      "meshes": 10,
+      "active_skinned_renderers": 8,
+      "active_material_slots": 12,
+      "unique_materials": 10,
+      "per_mesh": {
+        "Body_Geo": {
+          "triangles": 2814,
+          "slots": 3
+        },
+        "Mouth_Geo": {
+          "triangles": 734,
+          "slots": 1
+        },
+        "EBrows_Geo": {
+          "triangles": 260,
+          "slots": 1
+        },
+        "Face_Geo": {
+          "triangles": 5066,
+          "slots": 1
+        },
+        "CO_Hair_Long": {
+          "triangles": 9192,
+          "slots": 1
+        },
+        "CO_Mobile_Jewelry": {
+          "triangles": 1723,
+          "slots": 2
+        },
+        "CO_Mobile_Cloth": {
+          "triangles": 2998,
+          "slots": 2
+        },
+        "CO_Lantern_Prop": {
+          "triangles": 770,
+          "slots": 1
+        },
+        "CO_Lantern_Core": {
+          "triangles": 40,
+          "slots": 1
+        },
+        "CO_Mobile_Sheer": {
+          "triangles": 971,
+          "slots": 1
+        }
+      }
+    }
+  },
+  "textures": [
+    {
+      "name": "CO_NavyStarCloth_BaseColor.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "anime1_Base_M_BaseColor.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "CO_SkinGraft_BaseColor.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "CO_Hair_Brown_BaseColor.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "CO_SheerLavender_BaseColor.png",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "anime1_face_M_BaseColor.png",
+      "size": [
+        1024,
+        1024
+      ]
+    }
+  ],
+  "source_triangle_reduction_percent": 55.9,
+  "artifact_hashes": {
+    "Luna_Avatar.fbx": "f6598fe6bcd584a522af2c1b36529f6635ffe6c908b9ae272fbd2fd2247b1257",
+    "Luna_LOD1.fbx": "9dc26fff218f34fb31312b51856c657c6870230f750311d8578af6a6c910d14b",
+    "textures/CO_Hair_Brown_BaseColor.png": "c0c42066d32f2631ae964e32504713831257c24b0909a6fc463117b6dd08b47f",
+    "textures/CO_NavyStarCloth_BaseColor.png": "52b2348daa2aaf637d6cb2333360e781254afca4aae78f38b1d5a275a5e874f0",
+    "textures/CO_SheerLavender_BaseColor.png": "fc09c12af794390e15a4be4c788fe83b7499267e37e5ff1a6c4dac9959163df9",
+    "textures/CO_SkinGraft_BaseColor.png": "289c9ce957cf8f6c6df7cd789ccf32677b01c02dad53ecd2dcb05883da1b1d47",
+    "textures/anime1_Base_M_BaseColor.png": "f5ddc8cac532ad0ed982d32af6491c49409e10eb45488ab9b74481add91211df",
+    "textures/anime1_face_M_BaseColor.png": "f330a953b8d36602cf6627f614b52cacea1a8f32dab0618448db11f79df1e417"
+  }
+}

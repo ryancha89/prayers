@@ -64,6 +64,7 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
   if (!chapter || s.status === 'transition') return null;
   const parts = partsOf(s.content, chapter.id);
   const price = s.content?.momentPrice ?? null;
+  const unlockLabel = t(price === 0 ? 'journey.moment.continue' : 'journey.moment.unlock');
   const station = chapter.subtitle ? t(chapter.subtitle) : '';
 
   // ── The station's title card: "1. 사회운 (Social & Career)" ─────────────────────────────
@@ -164,14 +165,15 @@ export const JourneyStageOverlay: React.FC<{ journey: Journey }> = ({ journey })
           {/* The offer is what gives way to a short window; the buttons under it never do. */}
           <ScrollView style={styles.shrink} contentContainerStyle={styles.teaserBody} bounces={false}>
             <Text style={[styles.teaser, landscape && styles.teaserSide]}>{teaserOf(s)}</Text>
+            <Text style={styles.unlockScope}>{t('journey.moment.scope', { year: journey.year })}</Text>
           </ScrollView>
           <Pressable style={[styles.primary, styles.fixed, styles.wide, s.unlocking && styles.busy]} disabled={s.unlocking}
             onPress={() => { sfx.select(); s.unlock(); }} accessibilityRole="button"
-            accessibilityLabel={`${price ?? ''} ${t('journey.moment.unlock')}`}>
+            accessibilityLabel={`${price ? `${formatCoins(price)} PC · ` : ''}${unlockLabel}`}>
             {s.unlocking ? <ActivityIndicator color={INK} /> : (
               <>
-                {!!price && <><Icon name="coin" size={18} color={INK} /><Text style={styles.primaryText}>{price}</Text></>}
-                <Text style={styles.primaryText}>{t('journey.moment.unlock')}</Text>
+                {!!price && <Text style={styles.primaryText}>{formatCoins(price)} PC</Text>}
+                <Text style={[styles.primaryText, styles.unlockLabel]}>{unlockLabel}</Text>
               </>
             )}
           </Pressable>
@@ -323,6 +325,8 @@ const styles = StyleSheet.create({
   },
   lockBadgeSide: { width: 44, height: 44, borderRadius: 22 },
   teaserBody: { alignItems: 'center' },
+  unlockScope: { ...typography.caption, color: colors.gold, textAlign: 'center', marginTop: spacing.sm },
+  unlockLabel: { flexShrink: 1, textAlign: 'center', paddingVertical: spacing.sm },
   lockCard: { width: '86%', maxWidth: 420 },
   teaserSide: { ...typography.bodyStrong, lineHeight: 22 },
   wide: { alignSelf: 'stretch' },

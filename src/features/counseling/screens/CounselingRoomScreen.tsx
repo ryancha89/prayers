@@ -98,6 +98,7 @@ export const CounselingRoomScreen: React.FC = () => {
   const lang = useLang();
   const counselor = getLocalizedCounselor(params.counselorId, lang);
   const subject = useSubjectsStore(s => s.getById(params.subjectId));
+  const [questionSubjectId, setQuestionSubjectId] = useState(params.subjectId);
   const topic = useCounselingStore(s => s.topic);
 
   const chatMode = useChatModeStore(s => s.chatMode);
@@ -107,6 +108,11 @@ export const CounselingRoomScreen: React.FC = () => {
   const ensureSession = useConversationsStore(s => s.ensureSession);
   const appendMessage = useConversationsStore(s => s.appendMessage);
   const setLastTopicSummary = useConversationsStore(s => s.setLastTopicSummary);
+  // Snapshot before this visit records any lines. Live lines come from the engine so a growing
+  // answer keeps following its voice and is never duplicated by the persisted full answer.
+  const [previousMessages] = useState(() =>
+    useConversationsStore.getState().get(params.sessionId)?.messages ?? [],
+  );
 
   const turn = useRef(0);
   const exited = useRef(false);
@@ -453,6 +459,10 @@ export const CounselingRoomScreen: React.FC = () => {
         counselor={counselor ? { id: params.counselorId, name: counselor.name } : undefined}
       />
       <ConsultationOverlay
+        history={previousMessages}
+        questionControls={!pixel && subject ? (
+          <SubjectSwitcher initialId={questionSubjectId} onChange={setQuestionSubjectId} />
+        ) : undefined}
         voice={voice}
         counselorName={counselor.name}
         state={consultation.state}
@@ -509,9 +519,6 @@ export const CounselingRoomScreen: React.FC = () => {
               onPress={consultation.stand} />
           )}
         </View>
-        {/* Whose chart: me, or someone I am asking about (10-13). Unity rooms only — the pixel room
-            is told by the app and has no SUBJECT_SWITCH to hear. */}
-        {!pixel && subject && <SubjectSwitcher initialId={subject.id} />}
         {/* The counselor's voice on/off (10-15). Her lines play on Unity's Voice bus; VOICE_AUDIO
             mutes it, the line already playing included, and the subtitles carry on. Remembered
             (sound store) and replayed to every room on READY. The pixel room has no voice to mute. */}

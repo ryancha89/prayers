@@ -1,0 +1,34 @@
+{
+    "revision": "continuous crown hair v2",
+    "checks": [
+        {
+            "location": "Npc_luna.prefab",
+            "renderers": 8,
+            "triangles": 43729,
+            "materialSlots": 12,
+            "bones": 176
+        },
+        {
+            "location": "Assets/Scenes/ConsultationSolo04.unity/Npc_luna",
+            "renderers": 8,
+            "triangles": 43729,
+            "materialSlots": 12,
+            "bones": 176
+        },
+        {
+            "location": "Assets/Scenes/TrainJourney.unity/Npc_luna",
+            "renderers": 8,
+            "triangles": 43729,
+            "materialSlots": 12,
+            "bones": 176
+        },
+        {
+            "location": "Assets/Scenes/TrainJourney.unity/Npc_luna_Platform",
+            "renderers": 8,
+            "triangles": 43729,
+            "materialSlots": 12,
+            "bones": 176
+        }
+    ],
+    "passed": true
+}

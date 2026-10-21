@@ -129,18 +129,22 @@ it('the 3D pill beside the ticket pill opens the world (spec 004)', async () => 
   expect(mockNavigate).toHaveBeenCalledWith('World');
 });
 
-it('prints the real consultation count from the server, and nothing while it is unknown or zero', async () => {
+it('prints exact cumulative counts, including zero only after the server answers', async () => {
   const texts = () => tree.root.findAll(n => n.type === 'Text' as any)
     .map(n => [].concat(n.props.children).join(''));
   // Server silent: no card claims any count (the fake 960K is gone).
   await render();
-  expect(texts().some(t => t.endsWith('회 상담'))).toBe(false);
+  expect(texts().some(t => t.startsWith('누적 상담 '))).toBe(false);
   act(() => tree.unmount());
 
   mockServerCounts = { yuna: 1234, jiho: 7 };
   await render();
-  const counts = texts().filter(t => t.endsWith('회 상담'));
-  expect(counts).toEqual(expect.arrayContaining(['1.2K회 상담', '7회 상담']));
-  // YunJeong has no consultations yet: her card has no count line at all.
-  expect(counts).toHaveLength(2);
+  const counts = texts().filter(t => t.startsWith('누적 상담 '));
+  expect(counts).toEqual(expect.arrayContaining(['누적 상담 1,234회', '누적 상담 7회', '누적 상담 0회']));
+  // Store and language changes rerender the mounted cards without changing their hook order.
+  act(() => useCounselorStats.getState().setCounts({ yuna: 1235, jiho: 7 }));
+  expect(texts()).toContain('누적 상담 1,235회');
+  mockServerCounts = { yuna: 1235, jiho: 7 };
+  await act(async () => { useLanguageStore.setState({ lang: 'en' }); });
+  expect(texts()).toContain('1,235 consultations total');
 });

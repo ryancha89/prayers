@@ -9,6 +9,7 @@ import { absoluteFill, colors, radius, spacing, typography } from '../../../shar
 import { sfx } from '../../../shared/audio/sfx';
 import { MED, Threshold } from '../components/BreathStage';
 import { SleepSession, type SleepState } from '../sleepSession';
+import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
 
 /**
  * The sleep guide: thirty minutes of a spoken guide over quiet music, for someone already in bed.
@@ -101,10 +102,12 @@ export const SleepGuideScreen: React.FC = () => {
     setState(session.read());
   };
   const leave = () => {
+    session.stop();
     sfx.back();
     navigation.goBack();
   };
 
+  useScreenAudio(() => { session.stop(); setState(session.read()); });
   const { status } = state;
   const remainingMs = state.remainingSeconds * 1000;
 

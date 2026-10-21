@@ -49,4 +49,14 @@ describe('journeyRecord', () => {
   it('is empty before anything has played', () => {
     expect(journeyRecord({ journeyId: 'newyear-2027', content, heard: [], status: 'playing' })).toEqual([]);
   });
+
+  it('hides an old personal preview from the record until the journey is unlocked', () => {
+    const lockedContent = {
+      ...content,
+      chapters: content.chapters.map(c => ({ ...c, parts: c.parts?.map(p =>
+        p.momentId ? { ...p, unlocked: false, text: null, cards: [] } : p) })),
+    };
+    const rows = journeyRecord({ journeyId: 'newyear-2027', content: lockedContent, heard: ['0.0', '1.0'], status: 'playing' });
+    expect(rows.map(r => r.id)).toEqual(['intro']);
+  });
 });

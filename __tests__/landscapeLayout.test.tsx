@@ -15,7 +15,7 @@
  *     a remount reloads the cabin.
  */
 import React from 'react';
-import { Dimensions, ScrollView } from 'react-native';
+import { Dimensions, ScrollView, View } from 'react-native';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -49,8 +49,9 @@ jest.mock('../src/features/journey/player/beatVoice', () => ({
   sayBeatLine: jest.fn(),
   stopBeatVoice: jest.fn(),
 }));
+const mockNavigation = { navigate: jest.fn(), goBack: jest.fn(), replace: jest.fn(), addListener: () => () => {} };
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn(), replace: jest.fn(), addListener: () => () => {} }),
+  useNavigation: () => mockNavigation,
   useFocusEffect: () => {},
 }));
 // The embedded player as the room screens see it: present, and a real bridge to talk to. The host
@@ -471,6 +472,24 @@ const loop: FlowState = {
 };
 
 describe('the consultation overlay in landscape', () => {
+  it('offers the subject selector only while composing a question, not during dialogue or walking', async () => {
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    const renderState = (screen: FlowState['screen'], away = false) => (
+      <ConsultationOverlay state={{ ...loop, screen }} away={away}
+        questionControls={<View testID="question-subject-control" />}
+        onTap={() => {}} onChoose={() => {}} onSubmit={() => {}} onRetry={() => {}} onLeave={() => {}} />
+    );
+    await act(async () => { tree = ReactTestRenderer.create(renderState('dialogue')); });
+    expect(tree.root.findAllByProps({ testID: 'question-subject-control' })).toHaveLength(0);
+    for (const screen of ['questionBox', 'loop'] as const) {
+      await act(async () => { tree.update(renderState(screen)); });
+      expect(tree.root.findAllByProps({ testID: 'question-subject-control' }).length).toBeGreaterThan(0);
+    }
+    await act(async () => { tree.update(renderState('loop', true)); });
+    expect(tree.root.findAllByProps({ testID: 'question-subject-control' })).toHaveLength(0);
+    await act(async () => { tree.unmount(); });
+  });
+
   const overlay = (state: FlowState, onPanelLayout?: (r: unknown) => void) => (
     <ConsultationOverlay state={state} onTap={() => {}} onChoose={() => {}} onSubmit={() => {}} onRetry={() => {}}
       onLeave={() => {}} onChatMode={() => {}} panelTop={48} onPanelLayout={onPanelLayout} />

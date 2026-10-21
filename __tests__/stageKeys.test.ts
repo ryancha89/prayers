@@ -12,6 +12,20 @@ function capture() {
 }
 
 describe('stage keys', () => {
+  it('does not speak a late answer after its screen loses focus', () => {
+    const sendEvent = jest.fn();
+    let active = true;
+    const port = createStagePort({ sendEvent } as any, () => {}, undefined, () => active);
+    port.speakText('현재 답변', 'one');
+    expect(sendEvent).toHaveBeenCalledTimes(1);
+    active = false;
+    port.stopSpeak();
+    expect(sendEvent).toHaveBeenLastCalledWith({ type: 'STAGE_STOP_SPEAK' });
+    sendEvent.mockClear();
+    port.speakText('늦게 도착한 답변', 'two');
+    port.speakClip(['greeting'], '', 'three');
+    expect(sendEvent).not.toHaveBeenCalled();
+  });
   it('gives the same engine key a different Unity key in every room', () => {
     const a = capture();
     const b = capture();

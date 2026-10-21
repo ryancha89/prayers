@@ -24,7 +24,7 @@ import { ALL_ORIENTATIONS } from '../../coins/components/CoinShopSheet';
  * than taking the other person for the client. The player's avatar and the room do not change —
  * only whose chart the next turn is about.
  */
-export const SubjectSwitcher: React.FC<{ initialId: string }> = ({ initialId }) => {
+export const SubjectSwitcher: React.FC<{ initialId: string; onChange?(id: string): void }> = ({ initialId, onChange }) => {
   const t = useT();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const self = useSubjectsStore(s => s.self);
@@ -42,6 +42,7 @@ export const SubjectSwitcher: React.FC<{ initialId: string }> = ({ initialId }) 
     if (p.id === currentId) return;
     sfx.select();
     setCurrentId(p.id);
+    onChange?.(p.id);
     getUnityBridge().sendEvent({ type: 'SUBJECT_SWITCH', payload: roomSubjects(p, self) });
   };
 

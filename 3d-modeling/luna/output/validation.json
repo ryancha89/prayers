@@ -1,0 +1,15 @@
+{
+  "base": "source/luna_base.blend",
+  "blender": "5.1.2",
+  "tripo_generation_used": false,
+  "bones": 176,
+  "rig_unchanged": true,
+  "mesh_objects": 107,
+  "unweighted_vertices": {},
+  "invalid_groups": [],
+  "nonfinite_vertices": [],
+  "animation_clips_tested": [],
+  "runtime_ready": false,
+  "triangles_base": 101069,
+  "all_used_file_images_packed": true
+}

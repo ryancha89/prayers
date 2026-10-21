@@ -1,0 +1,17 @@
+{
+  "time": "2026-10-19T16:34:52.367142",
+  "bundle_id": "com.fortunetorch.prayers",
+  "device": "iPhone 17 Pro / iOS 26.1 Simulator",
+  "udid": "1FCEEC48-8918-458A-8433-8D62933D177A",
+  "unity_integration_passed": true,
+  "framework_build": "succeeded",
+  "app_build": "succeeded",
+  "app_framework_data_files_verified": 55,
+  "installed": true,
+  "launched": true,
+  "luna_room_visually_verified": true,
+  "screenshot": "previews/app-luna.png",
+  "device_builds_updated": false,
+  "store_published": false,
+  "separate_runtime_issue": "local remote voice bundle HTTP 404; embedded character assets displayed correctly"
+}
