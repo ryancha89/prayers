@@ -137,6 +137,17 @@ describe('apiHeaders', () => {
 
     expect(spy).not.toHaveBeenCalled();
   });
+
+  it('discards an in-flight token when the user logs out', async () => {
+    signedIn({ userAuth: 'pr_old', provider: 'apple' });
+    let respond!: (response: Response) => void;
+    globalThis.fetch = jest.fn(() => new Promise<Response>(resolve => { respond = resolve; }));
+    const pending = ensureGameToken();
+    signedOut();
+    respond({ ok: true, json: async () => ({ success: true, token: 'pgt_old' }) } as Response);
+    expect(await pending).toBeNull();
+    expect(useAuthStore.getState().gameToken).toBeNull();
+  });
 });
 
 describe('validGameToken', () => {

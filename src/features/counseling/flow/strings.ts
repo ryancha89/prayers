@@ -12,6 +12,8 @@ import type { Lang } from '../../../shared/i18n';
 type Bundle = Record<string, string>;
 
 const KO: Bundle = {
+  'history.label': '대화 이력',
+  'history.latest': '최근 대화로',
   'loop.intro': '더 궁금한 것이 있으신가요?',
   'loop.hello': '어서 오세요. 오늘은 어떤 이야기를 해볼까요?',
   'loop.placeholder': '무엇이든 물어보세요',
@@ -43,6 +45,8 @@ const KO: Bundle = {
 };
 
 const EN: Bundle = {
+  'history.label': 'Conversation history',
+  'history.latest': 'Latest messages',
   'loop.intro': 'Is there anything else you would like to ask?',
   'loop.hello': 'Welcome. What would you like to talk about today?',
   'loop.placeholder': 'Ask me anything',
@@ -74,6 +78,8 @@ const EN: Bundle = {
 };
 
 const JA: Bundle = {
+  'history.label': '会話履歴',
+  'history.latest': '最新の会話へ',
   'loop.intro': 'ほかに気がかりなことはありますか？',
   'loop.hello': 'いらっしゃい。今日はどんな話をしましょうか？',
   'loop.placeholder': '何でも聞いてください',
@@ -105,6 +111,8 @@ const JA: Bundle = {
 };
 
 const ZH_CN: Bundle = {
+  'history.label': '聊天记录',
+  'history.latest': '回到最新消息',
   'loop.intro': '还有别的想问吗？',
   'loop.hello': '欢迎。今天想聊点什么？',
   'loop.placeholder': '想问什么都可以',
@@ -136,6 +144,8 @@ const ZH_CN: Bundle = {
 };
 
 const ZH_TW: Bundle = {
+  'history.label': '聊天記錄',
+  'history.latest': '回到最新訊息',
   'loop.intro': '還有別的想問嗎？',
   'loop.hello': '歡迎。今天想聊點什麼？',
   'loop.placeholder': '想問什麼都可以',
@@ -167,6 +177,8 @@ const ZH_TW: Bundle = {
 };
 
 const VI: Bundle = {
+  'history.label': 'Lịch sử trò chuyện',
+  'history.latest': 'Tin nhắn mới nhất',
   'loop.intro': 'Con còn muốn hỏi gì nữa không?',
   'loop.hello': 'Chào con. Hôm nay con muốn nói chuyện gì?',
   'loop.placeholder': 'Hỏi gì cũng được',

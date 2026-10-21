@@ -21,6 +21,7 @@ import { startCoinPurchaseRecovery } from './features/coins/api/coinsApi';
 import { applyReminder } from './features/notifications/reminder';
 import { useAuthStore } from './features/auth/store/authStore';
 import { useJourneyPlayer } from './features/journey/player/journeyPlayer';
+import { stopLine } from './features/philosophy/lectureVoice';
 
 const queryClient = new QueryClient();
 
@@ -126,6 +127,8 @@ const syncAudioToRoute = () => {
   const route = navigationRef.isReady() ? navigationRef.getCurrentRoute() : undefined;
   const inUnity = !!route && UNITY_SCREENS.has(route.name);
   useCurrentRoute.setState({ name: route?.name ?? null });
+  if (route?.name !== 'Lecture') stopLine();
+  if (route?.name !== 'Journey') useJourneyPlayer.getState().setScreenActive(false);
 
   if (!inUnity && !(route && UNITY_SCENERY_SCREENS.has(route.name))) nativeUnityBridge.stopAllAudio();
 
@@ -142,8 +145,7 @@ const syncAudioToRoute = () => {
   else backgroundMusic.start('app');
 };
 
-// The journey keeps playing from the mini player on other screens, so its start/stop must hand the
-// speaker over even when no navigation happens.
+// The journey pauses when its screen is left; a playback-state change also updates the app bed.
 useJourneyPlayer.subscribe((st, prev) => {
   if (JOURNEY_SOUNDING.has(st.status) !== JOURNEY_SOUNDING.has(prev.status)) syncAudioToRoute();
 });

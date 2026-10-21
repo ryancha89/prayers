@@ -297,6 +297,7 @@ export const WorldScreen: React.FC = () => {
     counsel: c => leaveTo('counseling', () => openCounselor(navigation, c)),
     browse: () => navigation.popTo('Tabs', { screen: 'Home' }),
     meditate: () => leaveTo('meditation', () => navigation.navigate('MeditationRoom')),
+    sleep: () => leaveTo('meditation', () => navigation.navigate('SleepGuide')),
     journey: () =>
       leaveTo('journey', () => {
         if (journeyRunning) navigation.navigate('Journey');
@@ -305,7 +306,7 @@ export const WorldScreen: React.FC = () => {
     // The shop sheet floats over every screen (App.tsx): the world stays where it is under it.
     coins: () => useCoins.getState().openShop(),
     myroom: () => leaveTo('myroom', () => navigation.navigate('MyRoom')),
-    cafe: () => leaveTo('cafe', () => navigation.navigate('Cafe')),
+    cafe: intent => leaveTo('cafe', () => navigation.navigate('Cafe', intent ? { intent } : undefined)),
   };
 
   /**
@@ -333,11 +334,15 @@ export const WorldScreen: React.FC = () => {
       if (c) actions.counsel(c);
       else setOverlay('counseling');
     },
-    meditation: actions.meditate,
+    // Two sessions behind this door (the 10-minute meditation, the sleep guide): the choice opens over
+    // the world, as the counselling door's picker does, rather than dropping into one of them.
+    meditation: () => setOverlay('meditation'),
     journey: actions.journey,
     shop: () => leaveTo('shop', () => navigation.navigate('Tickets')),
     myroom: actions.myroom,
-    cafe: actions.cafe,
+    // Coffee or a reading is chosen out here (20-10), so the door opens onto that choice; the barista
+    // then shows the player to a table inside.
+    cafe: () => setOverlay('cafe'),
   };
   door.current = {
     wait: zone => {

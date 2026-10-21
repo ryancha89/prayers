@@ -35,6 +35,7 @@ import type { JourneyStatePayload } from '../../counseling/types';
 import type { BackgroundMedia } from '../types';
 import { useCabinCamera } from '../components/useCabinCamera';
 import { useScreen } from '../../../shared/device/screen';
+import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
 
 /** What shows while the 3D cabin loads: the station's night sky, the platform's own painting — not
@@ -98,6 +99,10 @@ function sentencesOf(text: string) {
  */
 export const JourneyScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
+  const { active: audioActive, silence } = useScreenAudio(
+    () => useJourneyPlayer.getState().setScreenActive(false),
+    () => useJourneyPlayer.getState().setScreenActive(true),
+  );
   const t = useT();
   const lang = useLang();
   const s = useJourneyPlayer();
@@ -250,6 +255,7 @@ export const JourneyScreen: React.FC = () => {
       openStoryboard();   // chapter 1 waits for the last line, "Shall we explore your first stop?"
     }
     const off = nativeUnityBridge.onEvent(e => {
+      if (!audioActive.current) return;
       if (e.type === 'JOURNEY_READY') setCabinUp(true);
       if (e.type === 'JOURNEY_BEAT') {
         const n = e.payload?.beat ?? 0;
@@ -301,10 +307,11 @@ export const JourneyScreen: React.FC = () => {
 
   const onPlatform = cabinUp && onPlatformTrip.current && !seated && (s.status === 'boarding' || s.status === 'platform');
   const board = useCallback(() => {
+    if (!audioActive.current) return;
     sfx.select();
     setEmbarking(true);
     nativeUnityBridge.sendJourneyBoard();
-  }, []);
+  }, [audioActive]);
   useEffect(() => {
     if (s.status !== 'platform' && s.status !== 'boarding') setEmbarking(false);
   }, [s.status]);
@@ -331,6 +338,8 @@ export const JourneyScreen: React.FC = () => {
   // showed for a few seconds before the platform's greeting (30-09).
   const storyShowing = unity && onPlatformTrip.current && !readingStarted.current
     && (!cabinUp || onPlatform || embarking || (seated && s.status !== 'playing'));
+  const preparing = s.status !== 'error' && (s.status === 'boarding'
+    || (storyShowing && !(onPlatform && !embarking && s.status === 'platform')));
   // The walk to the seat takes ~11 s (door hold, platform, aisle, sitting down). A cabin that never
   // answers must not strand the player on the platform: start the reading anyway.
   useEffect(() => {
@@ -420,7 +429,7 @@ export const JourneyScreen: React.FC = () => {
       <SafeAreaView style={styles.root}>
         <View style={styles.header}>
           <RingButton testID="journey-back" icon="back" size={RING_COMPACT} label={t('hud.back')}
-            onPress={() => { sfx.back(); navigation.goBack(); }} />
+            onPress={() => { silence(); sfx.back(); navigation.goBack(); }} />
         </View>
       </SafeAreaView>
     );
@@ -436,7 +445,7 @@ export const JourneyScreen: React.FC = () => {
       {s.status === 'boarding' && !onPlatform && (
         <View style={styles.boarding}>
           <ActivityIndicator color={colors.gold} />
-          <Text style={styles.boardingTitle}>{t('journey.boarding')}</Text>
+          <Text style={styles.boardingTitle}>{t('journey.preparing')}</Text>
           <Text style={styles.boardingSub}>{t('journey.boarding.sub', { year: journey.year })}</Text>
         </View>
       )}
@@ -631,6 +640,11 @@ export const JourneyScreen: React.FC = () => {
         </Pressable>
       </View>
 
+      {preparing && (
+        <Text style={styles.preparing} accessibilityLiveRegion="polite" testID="journey-preparing">
+          {t('journey.preparing')}
+        </Text>
+      )}
       <View style={storyShowing && styles.dimmed} pointerEvents={storyShowing ? 'none' : 'auto'}>
       <RailwayProgress
         chapters={journey.chapters}
@@ -737,6 +751,7 @@ const styles = StyleSheet.create({
   lineBoxSide: { minHeight: 0, marginTop: spacing.xs },
   lineSide: { fontSize: 16, lineHeight: 24 },
   controlsSide: { paddingHorizontal: spacing.lg, marginVertical: spacing.sm },
+  preparing: { ...typography.caption, color: colors.gold, textAlign: 'center', paddingHorizontal: spacing.md, marginBottom: spacing.sm },
   more: { position: 'absolute', right: spacing.lg, bottom: spacing.xs },
   lineBox: { minHeight: 76, justifyContent: 'center', paddingHorizontal: spacing.xl, marginTop: spacing.sm },
   line: { fontSize: 18, lineHeight: 27, fontWeight: '600', color: colors.textPrimary },

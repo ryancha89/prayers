@@ -8,12 +8,15 @@ import { useCounselorStats } from '../store/counselorStatsStore';
  *   { success: true, counts: { yuna: 37, yunjung: 5, … } }   — keyed by CARD id
  *
  * One consultation = one visit with a counselor that got at least one answer (the server's
- * Prayers::CounselorStats). A counselor nobody has consulted is absent. Null = no answer (offline,
+ * Prayers::CounselorStats). A counselor nobody has consulted is absent (displayed as zero). Null = no answer (offline,
  * signed out, a server without the route) — the caller keeps what it has.
  */
 export async function fetchCounselorStats(signal?: AbortSignal): Promise<Record<string, number> | null> {
   try {
-    const res = await authedFetch(`${apiBase()}/api/v1/prayers/counselors/stats`, { signal });
+    const res = await authedFetch(`${apiBase()}/api/v1/prayers/counselors/stats`, {
+      signal,
+      headers: { 'Cache-Control': 'no-cache' },
+    });
     if (!res?.ok) return null;
     const body: any = await res.json();
     if (body?.success !== true || !body.counts || typeof body.counts !== 'object') return null;

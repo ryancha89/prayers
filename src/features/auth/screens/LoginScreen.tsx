@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +19,7 @@ import {
 } from '../api/session';
 import { ensureGameToken } from '../api/session';
 import { ProviderLogo } from '../components/ProviderLogo';
+import { isSignInCancelled } from '../providers/signInError';
 
 /**
  * The first screen, and the only one that exists before there is an account.
@@ -38,6 +39,7 @@ import { ProviderLogo } from '../components/ProviderLogo';
 export const LoginScreen: React.FC = () => {
   const t = useT();
   const [busy, setBusy] = useState(false);
+  const inFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
   // Why, in a few words, under the plain line — on TestFlight too, where the plain line alone
   // told us nothing (10-17: Kakao "로그인하지 못했습니다" with no way to see which step refused).
@@ -48,6 +50,8 @@ export const LoginScreen: React.FC = () => {
   const canSubmitEmail = email.trim().length > 0 && password.length > 0;
 
   const run = async (work: () => Promise<unknown>, plainError = false) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     setError(null);
     setDetail(null);
@@ -55,13 +59,14 @@ export const LoginScreen: React.FC = () => {
       await work();
     } catch (e) {
       // Backing out of the Kakao / Google sheet is a choice, not a failure — no red line for it.
-      if (e instanceof Error && /cancel/i.test(e.message)) return;
+      if (isSignInCancelled(e)) return;
       // The provider's own message is kept in dev — "cancelled" and "no capability" are different
       // problems and a single generic line hides which one just happened.
       // The reviewer form always says the plain line: a wrong password is the only story there.
       setError(__DEV__ && !plainError && e instanceof Error ? e.message : t('login.error'));
       if (!__DEV__ && !plainError) setDetail(e instanceof Error ? e.message.slice(0, 120) : String(e).slice(0, 120));
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };
@@ -78,6 +83,8 @@ export const LoginScreen: React.FC = () => {
       <View style={styles.block}>
         {appleSignInAvailable() && (
           <Pressable
+            testID="login-apple"
+            accessibilityRole="button"
             style={[styles.button, styles.apple]}
             disabled={busy}
             onPress={() => run(async () => signInWithApple(await requestAppleIdentity()))}>
@@ -91,6 +98,7 @@ export const LoginScreen: React.FC = () => {
         {(kakaoWebSignInAvailable() || kakaoSignInAvailable()) && (
           <Pressable
             testID="login-kakao"
+            accessibilityRole="button"
             style={[styles.button, styles.kakao]}
             disabled={busy}
             // iOS goes through the server (the SDK's token exchange is refused, KOE009); Android keeps the SDK.
@@ -107,6 +115,7 @@ export const LoginScreen: React.FC = () => {
         {googleSignInAvailable() && (
           <Pressable
             testID="login-google"
+            accessibilityRole="button"
             style={[styles.button, styles.google]}
             disabled={busy}
             onPress={() => run(async () => signInWithGoogle(await requestGoogleIdentity()))}>
@@ -132,7 +141,7 @@ export const LoginScreen: React.FC = () => {
         )}
 
         {busy && <ActivityIndicator color={colors.violetSoft} style={styles.spinner} />}
-        {error && !emailOpen && <Text style={styles.error}>{error}</Text>}
+        {error && !emailOpen && <Text testID="login-error" accessibilityRole="alert" style={styles.error}>{error}</Text>}
         {detail && !emailOpen && <Text testID="login-error-detail" style={styles.errorDetail}>{detail}</Text>}
       </View>
 

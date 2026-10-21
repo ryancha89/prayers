@@ -15,6 +15,9 @@ import { CounselorHero } from '../components/CounselorHero';
 import { CounselorPreviewCarousel } from '../components/CounselorPreviewCarousel';
 import { useFavoritesStore } from '../store/favoritesStore';
 import { useCounselingStore } from '../../counseling/store/counselingStore';
+import { useSubjectsStore } from '../../subjects/store/subjectsStore';
+import { defaultTopicFor } from '../../counseling/topicsForCounselor';
+import type { CounselingTopic } from '../../counseling/types';
 import {
   checkConsultationReadiness,
   type ConsultationReadiness,
@@ -93,7 +96,10 @@ export const CounselorDetailScreen: React.FC = () => {
 
   const onStart = () => {
     begin(counselor, { focusMemoryId: params.focusMemoryId });
-    navigation.navigate('CounselingSubject');
+    const self = useSubjectsStore.getState().self;
+    useCounselingStore.getState().setSubject(self);
+    useCounselingStore.getState().setTopic(defaultTopicFor(counselor.characterId) as CounselingTopic);
+    navigation.navigate('UnityEntry', { counselorId: counselor.id, subjectId: self.id });
   };
 
   // The button carries the reason. "Coming soon" already worked this way and it is the right

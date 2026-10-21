@@ -133,6 +133,20 @@ function build() {
   return { sched, stage, engine };
 }
 
+test('disposing a room silences its take immediately and ignores late answers and timers', () => {
+  const { engine, sched, stage } = build();
+  const stop = jest.spyOn(stage, 'stopSpeak');
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('질문');
+  engine.dispose();
+  expect(stop).toHaveBeenCalled();
+  const spoken = stage.spoken.length;
+  engine.onOracleResult({ ok: true, followup: '', beats: [{ phaseId: 'P11', lines: ['늦은 답변'] }] });
+  sched.advance(300_000);
+  expect(stage.spoken).toHaveLength(spoken);
+});
+
 test('opens on the entrance beat and reaches the question box on its own', () => {
   const { sched, stage, engine } = build();
   engine.begin();
@@ -316,6 +330,17 @@ test('the free-chat loop takes over after the last reading beat', () => {
 
   expect(engine.getState().screen).toBe('loop');
   expect(engine.getState().suggestion).toBe('다음 질문');
+  // The initial question and every staged reading remain available when scrolling back.
+  const reading = engine.getState().transcript;
+  const questionAt = reading.findIndex(m => m.role === 'user' && m.text === '질문');
+  expect(questionAt).toBeGreaterThanOrEqual(0);
+  let previousAt = questionAt;
+  for (const text of ['하나', '둘', '셋', '넷']) {
+    const at = reading.findIndex(m => m.role === 'counselor' && m.text === text);
+    expect(at).toBeGreaterThan(previousAt);
+    expect(reading.filter(m => m.text === text)).toHaveLength(1);
+    previousAt = at;
+  }
 
   engine.submitQuestion('추가 질문');
   expect(stage.asks[stage.asks.length - 1].loop).toBe(true);
@@ -1593,7 +1618,9 @@ describe('티키타카', () => {
     // Straight into the chat: no reading phases staged, no laugh, just the question's own beat.
     expect(stage.phaseIds.slice(staged)).toEqual(['LOOP_ASK']);
     expect(engine.getState().screen).toBe('loop');
-    expect(engine.getState().transcript[0]).toEqual({ role: 'user', text: '이번 달 운세 어때?' });
+    expect(engine.getState().transcript.filter(m => m.role === 'user')).toEqual([
+      { role: 'user', text: '이번 달 운세 어때?' },
+    ]);
   });
 
   it('then keeps the conversation going turn by turn', () => {

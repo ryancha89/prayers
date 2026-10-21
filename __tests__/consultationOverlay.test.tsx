@@ -13,6 +13,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
+import { ScrollView } from 'react-native';
 import { ConsultationOverlay } from '../src/features/counseling/components/ConsultationOverlay';
 import type { FlowState } from '../src/features/counseling/flow/engine';
 
@@ -143,6 +144,52 @@ test('the loop shows the transcript and the follow-up pill', () => {
   expect(text).toContain('올해 재물운은?');
   expect(text).toContain('흐름이 좋습니다.');
   expect(text).toContain('다음은 무엇이 궁금하신가요?');
+});
+
+test.each(['questionBox', 'loop'] as const)('%s: scrolling back shows past visits and holds position while an answer grows', screen => {
+  const scrollToEnd = jest.spyOn(ScrollView.prototype, 'scrollToEnd').mockImplementation(() => {});
+  const history: FlowState['transcript'] = [
+    { role: 'user', text: '지난번 질문' },
+    { role: 'counselor', text: '지난번 답변' },
+  ];
+  const state: FlowState = { ...base, screen, canTap: false, transcript: [
+    { role: 'user', text: '오늘 질문' },
+    { role: 'counselor', text: '지금 읽는 답변' },
+  ] };
+  const render = (next: FlowState) => <ConsultationOverlay state={next} history={history}
+    onTap={noop} onChoose={noop} onSubmit={noop} onRetry={noop} onLeave={noop} />;
+  let tree!: ReactTestRenderer.ReactTestRenderer;
+  try {
+    ReactTestRenderer.act(() => { tree = ReactTestRenderer.create(render(state)); });
+    const transcript = () => tree.root.findByType(ScrollView);
+    const output = JSON.stringify(tree.toJSON());
+    expect(output.indexOf('지난번 질문')).toBeLessThan(output.indexOf('지난번 답변'));
+    expect(output.indexOf('지난번 답변')).toBeLessThan(output.indexOf('오늘 질문'));
+    ReactTestRenderer.act(() => transcript().props.onContentSizeChange(350, 1500));
+    expect(scrollToEnd).toHaveBeenCalled();
+    scrollToEnd.mockClear();
+    ReactTestRenderer.act(() => {
+      transcript().props.onScrollBeginDrag();
+      transcript().props.onScroll({ nativeEvent: {
+        contentSize: { height: 1500 }, contentOffset: { y: 100 }, layoutMeasurement: { height: 260 },
+      } });
+      tree.update(render({ ...state, transcript: [state.transcript[0], { role: 'counselor', text: '지금 읽는 답변이 더 길어집니다.' }] }));
+    });
+    ReactTestRenderer.act(() => {
+      transcript().props.onContentSizeChange(350, 1700);
+      transcript().props.onLayout();
+    });
+    expect(scrollToEnd).not.toHaveBeenCalled();
+    const latest = tree.root.findAllByProps({ testID: 'transcript-latest' })[0];
+    ReactTestRenderer.act(() => latest.props.onPress());
+    expect(scrollToEnd).toHaveBeenCalledWith({ animated: true });
+    scrollToEnd.mockClear();
+    ReactTestRenderer.act(() => transcript().props.onContentSizeChange(350, 1800));
+    expect(scrollToEnd).toHaveBeenCalled();
+  } finally {
+    ReactTestRenderer.act(() => tree?.unmount());
+    scrollToEnd.mockRestore();
+  }
 });
 
 test('an immersion beat with nothing to say draws nothing at all', () => {

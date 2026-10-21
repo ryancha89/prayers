@@ -30,6 +30,7 @@ export function createStagePort(
   onExit: () => void,
   /** The diary entry to pin on every ask of this session (spec 006). */
   currentFocus: () => string | undefined = () => undefined,
+  audible: () => boolean = () => true,
 ): StagePort {
   const nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const k = (cacheKey: string) => `${cacheKey}${KEY_SEP}${nonce}`;
@@ -41,6 +42,7 @@ export function createStagePort(
       bridge.sendEvent({ type: 'STAGE_THINKING', payload: { on } });
     },
     speakClip(locKeys: string[], topic: string, cacheKey: string, texts?: string[]) {
+      if (!audible()) return;
       bridge.sendEvent({
         type: 'STAGE_SPEAK',
         payload: { mode: 'clip', locKeys, topic, cacheKey: k(cacheKey), texts },
@@ -49,6 +51,7 @@ export function createStagePort(
     // The bubble shows "갑자일(甲子日)"; the voice says "갑자일" once (sajuGlyphs.spokenText). Both
     // the take and its warm-up strip the same way, or the prefetched take would not be the one asked for.
     speakText(text: string, cacheKey: string) {
+      if (!audible()) return;
       bridge.sendEvent({ type: 'STAGE_SPEAK', payload: { mode: 'tts', text: spokenText(text), cacheKey: k(cacheKey) } });
     },
     prefetchText(text: string, cacheKey: string) {

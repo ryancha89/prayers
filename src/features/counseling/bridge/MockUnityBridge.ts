@@ -195,9 +195,10 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, 
   }
 
   sendCafeCamera(camera: MyRoomCamera): void { this.cafeCamera = { ...camera }; }
-  sendCafeSit(spot: string): void { this.cafeCalls.push({ type: 'CAFE_SIT', payload: { spot } }); }
+  sendCafeSit(spot: string, guided = false): void { this.cafeCalls.push({ type: 'CAFE_SIT', payload: guided ? { spot, guided } : { spot } }); }
   sendCafeSay(text: string): void { this.cafeCalls.push({ type: 'CAFE_SAY', payload: { text } }); }
   sendCafeShot(): void { this.cafeCalls.push({ type: 'CAFE_SHOT' }); }
+  sendCafeTap(x: number, y: number): void { this.cafeCalls.push({ type: 'CAFE_TAP', payload: { x, y } }); }
   sendCafeStand(): void { this.cafeCalls.push({ type: 'CAFE_STAND' }); }
   sendCafeTarotStart(start: CafeTarotStart): void { this.cafeCalls.push({ type: 'CAFE_TAROT_START', payload: { ...start } }); }
   sendCafeTarotSpread(): void { this.cafeCalls.push({ type: 'CAFE_TAROT_SPREAD' }); }

@@ -10,7 +10,6 @@ import {
   signedIn,
   storeGameToken,
   validGameToken,
-  type AuthProvider,
 } from '../store/authStore';
 
 /**
@@ -169,10 +168,12 @@ export async function ensureGameToken(): Promise<string | null> {
     // Only a Prayers token (`pgt_`) is any use: the shared `/api/v1/game/token` kind resolves to no
     // Prayers account on the server, so storing one would 401 every call for a day.
     if (!res.ok || !body?.success || !body.token || !body.token.startsWith(PRAYERS_TOKEN_PREFIX)) {
-      if (__DEV__) devlog(`[auth] game/token refused (${res.status}) for ${uid}`);
+      if (__DEV__) devlog(`[auth] game/token refused (${res.status})`);
       return null;
     }
     const expires = Date.parse(body.expires_at ?? '');
+    // A logout or account switch can finish while this request is in flight.
+    if (getUserAuth() !== uid) return null;
     storeGameToken(body.token, Number.isFinite(expires) ? expires : Date.now() + 23 * 3600_000);
     return body.token;
   } catch {

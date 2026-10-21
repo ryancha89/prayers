@@ -12,6 +12,7 @@ import { holdScreenAwake } from '../../../shared/device/keepAwake';
 import { BREATH, CYCLE_MS, MeditationSession, SESSION_MS, breathSync, type Phase, type SessionState } from '../session';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { guideVoice } from '../guideVoice';
+import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
 import { useScreen } from '../../../shared/device/screen';
@@ -275,9 +276,7 @@ export const MeditationRoomScreen: React.FC = () => {
   // Leaving the tab pauses the breath. It is a tab now, so "leaving" is one tap and costs nothing —
   // but a session that kept counting down behind the counselor list would hand the player back four
   // minutes of silence they never sat through, and the music has already stopped by then anyway.
-  useEffect(
-    () =>
-      navigation.addListener('blur', () => {
+  const { silence } = useScreenAudio(() => {
         session.pause();
         stopAnimation(true);
         setState(session.read());
@@ -287,9 +286,7 @@ export const MeditationRoomScreen: React.FC = () => {
         // The route rule swaps the app's bed back in on the way out; this only makes sure the
         // meditation loop is not the thing still playing while it does.
         backgroundMusic.stop();
-      }),
-    [navigation, session, stopAnimation, tellRoom],
-  );
+  });
 
   useEffect(
     () => () => {
@@ -311,7 +308,7 @@ export const MeditationRoomScreen: React.FC = () => {
     startAnimation();
     tellRoom('breathing');
     backgroundMusic.start(meditationBed(lang));
-    // The spoken guide (English only, for now — see guideVoice.ts). A fresh start lets the bell ring
+    // The spoken guide (its own language where recorded, else English — see guideVoice.ts). A fresh start lets the bell ring
     // out first; Carry on picks the voice up at once, where it stopped.
     clearGuideTimer();
     if (fresh) guideTimer.current = setTimeout(() => guideVoice.play(lang), 1500);
@@ -331,6 +328,7 @@ export const MeditationRoomScreen: React.FC = () => {
   };
 
   const leave = () => {
+    silence();
     sfx.back();
     navigation.goBack();
   };

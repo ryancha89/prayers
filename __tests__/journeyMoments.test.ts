@@ -90,13 +90,12 @@ async function rideTo(id: string) {
   expect(player()).toMatchObject({ chapterIndex: IDX[id], stage: 'title', status: 'paused' });
 }
 
-/** Career: title → its free part → (8 s) its first lock. */
+/** An unopened journey locks before its opening; an owned journey may read that opening. */
 async function rideToCareerLock() {
   await rideTo('career');
   player().beginStation();
   await jest.advanceTimersByTimeAsync(100);
-  expect(player()).toMatchObject({ status: 'playing', partIndex: 0 });
-  await jest.advanceTimersByTimeAsync(8500);
+  if (player().status === 'playing') await jest.advanceTimersByTimeAsync(8500);
   expect(player()).toMatchObject({ moment: 'locked', momentId: 'career#0', stage: '' });
 }
 
@@ -115,6 +114,51 @@ afterEach(() => {
   player().stop();
   jest.restoreAllMocks();
   jest.useRealTimers();
+});
+
+describe('leaving the journey screen', () => {
+  it('pauses a playing narration without losing its place', async () => {
+    served = content(['career#0']);
+    await rideTo('career');
+    player().beginStation();
+    await jest.advanceTimersByTimeAsync(100);
+    expect(player().status).toBe('playing');
+    player().setScreenActive(false);
+    const position = player().position;
+    await jest.advanceTimersByTimeAsync(30_000);
+    expect(player()).toMatchObject({ status: 'paused', chapterIndex: IDX.career, partIndex: 0, position });
+    player().play();
+    expect(player().status).toBe('paused');
+    player().setScreenActive(true);
+    player().play();
+    expect(player().status).toBe('playing');
+  });
+
+  it('does not start a narration whose request finishes after leaving', async () => {
+    served = content(['career#0']);
+    await rideTo('career');
+    let resolve!: (value: null) => void;
+    (api.narrationUrl as jest.Mock).mockImplementation(() => new Promise(r => { resolve = r; }));
+    // Use a station whose voice has not already been prefetched.
+    player().goTo(IDX.wealth);
+    await jest.advanceTimersByTimeAsync(TRANSITION_MS + 50);
+    player().beginStation();
+    player().setScreenActive(false);
+    resolve(null);
+    await jest.advanceTimersByTimeAsync(100);
+    expect(player().status).not.toBe('playing');
+  });
+
+  it('does not arrive and start the next station while off screen', async () => {
+    await rideTo('career');
+    player().goTo(IDX.love);
+    player().setScreenActive(false);
+    await jest.advanceTimersByTimeAsync(TRANSITION_MS * 2);
+    expect(player().chapterIndex).toBe(IDX.career);
+    player().setScreenActive(true);
+    await jest.advanceTimersByTimeAsync(TRANSITION_MS + 50);
+    expect(player()).toMatchObject({ chapterIndex: IDX.love, stage: 'title' });
+  });
 });
 
 describe('reading the server (v2)', () => {
@@ -168,17 +212,21 @@ describe('reading the server (v2)', () => {
 });
 
 describe('the station flow', () => {
-  it('a numbered station waits on its title card, then reads — no card to pick (10-07)', async () => {
+  it('a numbered station locks before any personal opening is read or voiced', async () => {
     await rideTo('career');
     player().play();
     expect(player().status).toBe('paused');
+    (api.narrationUrl as jest.Mock).mockClear();
     player().beginStation();
     expect(player().stage).not.toBe('pick');
     await jest.advanceTimersByTimeAsync(100);
-    expect(player()).toMatchObject({ stage: '', status: 'playing', partIndex: 0, moment: '' });
+    expect(player()).toMatchObject({ stage: '', status: 'paused', partIndex: 1, moment: 'locked' });
+    expect(player().heard).not.toContain(`${IDX.career}.0`);
+    expect(currentPart(player())?.text).toBeNull();
+    expect((api.narrationUrl as jest.Mock).mock.calls.map(call => call[0])).toEqual(['Offer career#0']);
   });
 
-  it('the free part ends at the lock with the server teaser, no text, shot close', async () => {
+  it('the unopened reading shows only the server teaser, no text, shot close', async () => {
     await rideToCareerLock();
     const p = player();
     expect(p.status).toBe('paused');
@@ -238,7 +286,26 @@ describe('the station flow', () => {
 });
 
 describe('unlocking', () => {
+  it('the first unlock starts the withheld opening before any paid section or reveal card', async () => {
+    await rideToCareerLock();
+    player().play();
+    player().prev();
+    await jest.advanceTimersByTimeAsync(9000);
+    expect(player()).toMatchObject({ moment: 'locked', status: 'paused' });
+    expect(player().heard).not.toContain(`${IDX.career}.0`);
+    fetchMock.mockResolvedValueOnce(reply(200, unlockBody('career#0', 100, 400, [revealCard])));
+    await player().unlock();
+    await jest.advanceTimersByTimeAsync(100);
+    expect(player()).toMatchObject({ status: 'playing', partIndex: 0, stage: '', reveal: null });
+    expect(player().content?.momentPrice).toBe(0);
+    expect(player().heard).toContain(`${IDX.career}.0`);
+    await jest.advanceTimersByTimeAsync(8500);
+    expect(player()).toMatchObject({ status: 'playing', partIndex: 1, moment: 'premium' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('a topic #0: premium, the reveal card, then its part — the card is not raised twice', async () => {
+    served = content(['love#0']);
     fetchMock.mockResolvedValueOnce(reply(200, unlockBody('career#0', 100, 400, [revealCard])));
     await rideToCareerLock();
     const seq = player().cueSeq;
@@ -246,6 +313,7 @@ describe('unlocking', () => {
     expect(player()).toMatchObject({ moment: 'premium', stage: 'reveal', status: 'paused' });
     expect(player().reveal?.title).toBe('The turn');
     expect(useCoins.getState().balance).toBe(400);
+    expect(player().content?.momentPrice).toBe(0);
     expect(player().content?.summary.months.map(m => m.month)).toEqual([5]);
     expect(useSavedJourneys.getState().unlocksOf('newyear-2027')).toEqual(['career#0']);
     await jest.advanceTimersByTimeAsync(CUE_AFTER_UNLOCK_MS);
@@ -258,6 +326,7 @@ describe('unlocking', () => {
     // Then the second paid part's lock.
     await jest.advanceTimersByTimeAsync(4000);
     expect(player()).toMatchObject({ moment: 'locked', momentId: 'career#1' });
+    expect(player().content?.momentPrice).toBe(0);
   });
 
   it('INSUFFICIENT_COINS: stays locked, records nothing, the balance is the server\'s', async () => {
@@ -266,6 +335,7 @@ describe('unlocking', () => {
     await player().unlock();
     expect(player()).toMatchObject({ moment: 'locked', unlockError: 'insufficient', unlocking: false });
     expect(useCoins.getState().balance).toBe(30);
+    expect(player().content?.momentPrice).toBe(100);
     expect(player().content?.chapters[IDX.career].parts![1].unlocked).toBe(false);
     expect(useSavedJourneys.getState().unlocksOf('newyear-2027')).toEqual([]);
   });
@@ -274,7 +344,7 @@ describe('unlocking', () => {
     fetchMock.mockResolvedValueOnce(reply(200, unlockBody('career#0', 0, 500)));
     await rideToCareerLock();
     await player().unlock();
-    await jest.advanceTimersByTimeAsync(100);
+    await jest.advanceTimersByTimeAsync(8500);
     expect(player()).toMatchObject({ moment: 'premium', status: 'playing', partIndex: 1 });
   });
 
@@ -298,6 +368,7 @@ describe('unlocking', () => {
 
 describe('wealth branch', () => {
   it('the part chosen is offered first, the other one after it', async () => {
+    served = content(['career#0']);
     fetchMock.mockResolvedValueOnce(reply(200, unlockBody('wealth#1')));
     await rideTo('wealth');
     player().beginStation();
@@ -323,6 +394,7 @@ describe('monthly quarters', () => {
   }
 
   it('open in any order, each back to the list; a short wallet keeps the list up', async () => {
+    served = content(['career#0']);
     await toQuarters();
     fetchMock.mockResolvedValueOnce(reply(200, unlockBody('monthly#3')));
     await player().playQuarter(4);

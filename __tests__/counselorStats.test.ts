@@ -18,6 +18,7 @@ it('reads the counts by card id from prayers/counselors/stats, dropping junk and
   mockFetch.mockResolvedValue(answer(200, { success: true, counts: { yuna: 37, theo: '2', jiho: 0, x: 'nope' } }));
   await expect(fetchCounselorStats()).resolves.toEqual({ yuna: 37, theo: 2 });
   expect(mockFetch.mock.calls[0][0]).toBe('http://api/api/v1/prayers/counselors/stats');
+  expect(mockFetch.mock.calls[0][1].headers).toEqual({ 'Cache-Control': 'no-cache' });
 });
 
 it('is null when the server does not answer, and the store keeps what it had', async () => {

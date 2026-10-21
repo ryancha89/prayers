@@ -31,6 +31,17 @@ export function setApiBaseOverride(url: string | null) {
 
 export const stagingApiBase = STAGING_HOST;
 
+/**
+ * The Go presence server's WebSocket (saju_world_servergo `/ws`) — the Coffee Shop's shared rooms.
+ * Dev only for now: the dev Mac runs it on :9090 (`go run .`). There is no production host behind
+ * TLS yet, and iOS refuses a plain ws:// in a release build, so a release build gets '' and the
+ * cafe stays single-player until a wss:// host exists (then put it here).
+ */
+const DEV_PRESENCE = Platform.OS === 'android' ? 'ws://10.0.2.2:9090/ws' : 'ws://127.0.0.1:9090/ws';
+export function presenceUrl(): string {
+  return __DEV__ ? DEV_PRESENCE : '';
+}
+
 export function apiBase(): string {
   if (override) return override;
   return __DEV__ ? DEV_HOST : PROD_HOST;

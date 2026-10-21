@@ -10,7 +10,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 jest.mock('react-native-sound', () => null, { virtual: true });
 jest.mock('../src/features/auth/providers/appleSignIn', () => ({
-  appleSignInAvailable: () => false,
+  appleSignInAvailable: jest.fn(() => false),
   requestAppleIdentity: jest.fn(),
 }));
 jest.mock('../src/features/auth/providers/googleSignIn', () => ({
@@ -29,13 +29,49 @@ import { LoginScreen } from '../src/features/auth/screens/LoginScreen';
 import { getUserAuth, signedOut, useAuthStore } from '../src/features/auth/store/authStore';
 import { useLanguageStore } from '../src/shared/i18n';
 import { translations } from '../src/shared/i18n/translations';
+import { appleSignInAvailable, requestAppleIdentity } from '../src/features/auth/providers/appleSignIn';
+import { SignInCancelledError } from '../src/features/auth/providers/signInError';
 
 type FetchMock = jest.Mock<Promise<Response>, [string, RequestInit?]>;
 const realFetch = globalThis.fetch;
 
 beforeEach(() => {
+  jest.mocked(appleSignInAvailable).mockReturnValue(false);
+  jest.mocked(requestAppleIdentity).mockReset();
   signedOut();
   useLanguageStore.setState({ lang: 'en' });
+});
+
+it('opens only one Apple request on a double tap and quietly returns after cancellation', async () => {
+  jest.mocked(appleSignInAvailable).mockReturnValue(true);
+  let cancel!: (error: Error) => void;
+  jest.mocked(requestAppleIdentity).mockImplementation(() => new Promise((_resolve, reject) => { cancel = reject; }));
+  let r!: ReactTestRenderer.ReactTestRenderer;
+  await act(async () => { r = ReactTestRenderer.create(<LoginScreen />); });
+  await act(async () => {
+    const button = r.root.findByProps({ testID: 'login-apple' });
+    button.props.onPress();
+    button.props.onPress();
+  });
+  expect(requestAppleIdentity).toHaveBeenCalledTimes(1);
+  expect(r.root.findByProps({ testID: 'login-apple' }).props.disabled).toBe(true);
+  await act(async () => { cancel(new SignInCancelledError()); });
+  expect(r.root.findAllByProps({ testID: 'login-error' })).toHaveLength(0);
+  expect(r.root.findByProps({ testID: 'login-apple' }).props.disabled).toBe(false);
+  expect(getUserAuth()).toBeNull();
+  await act(async () => { r.unmount(); });
+});
+
+it('keeps the login screen and permits retry when Apple authentication fails', async () => {
+  jest.mocked(appleSignInAvailable).mockReturnValue(true);
+  jest.mocked(requestAppleIdentity).mockRejectedValue(new Error('Apple returned no identity token.'));
+  let r!: ReactTestRenderer.ReactTestRenderer;
+  await act(async () => { r = ReactTestRenderer.create(<LoginScreen />); });
+  await act(async () => { await r.root.findByProps({ testID: 'login-apple' }).props.onPress(); });
+  expect(r.root.findByProps({ testID: 'login-error' }).props.children).toMatch(/no identity token/);
+  expect(r.root.findByProps({ testID: 'login-apple' }).props.disabled).toBe(false);
+  expect(getUserAuth()).toBeNull();
+  await act(async () => { r.unmount(); });
 });
 afterEach(() => {
   (globalThis as unknown as { fetch: typeof realFetch }).fetch = realFetch;

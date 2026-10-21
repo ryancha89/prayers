@@ -20,6 +20,7 @@ import { useChatModeStore } from '../store/chatModeStore';
 import type { PhaseChoice } from '../flow/types';
 import { withCatCues, type CatCue } from '../pixel/cues';
 import type { ChatMode, UnityToRNEvent } from '../types';
+import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
 
 export interface UseConsultationOptions {
   /** The area the app already asked about — seeds the flow's topic. */
@@ -97,6 +98,11 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
   const [walkIn, setWalkIn] = useState(false);
   const [state, setState] = useState<FlowState>(() => emptyish());
   const engineRef = useRef<ConsultationEngine | null>(null);
+  const { active: audioActive } = useScreenAudio(() => {
+    engineRef.current?.hush();
+    engineRef.current?.cancelMic();
+    if (usesUnity) getUnityBridge().sendEvent({ type: 'STAGE_STOP_SPEAK' });
+  });
 
   // Held in a ref so the engine — created once — always calls the CURRENT
   // callbacks. Rebuilding the engine when a parent re-renders would restart the
@@ -106,7 +112,8 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
 
   const stage: StagePort = useMemo(() => {
     if (usesUnity) {
-      return createStagePort(getUnityBridge(), () => cbs.current.onFinished?.(), () => useCounselingStore.getState().currentFocus());
+      return createStagePort(getUnityBridge(), () => cbs.current.onFinished?.(),
+        () => useCounselingStore.getState().currentFocus(), () => audioActive.current);
     }
     const mock = createMockStagePort({
       onOracle: result => engineRef.current?.onOracleResult(result),

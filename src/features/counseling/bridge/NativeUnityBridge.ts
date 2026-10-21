@@ -147,10 +147,35 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
    *  actually went out (the dedupe key). */
   private viewInsets?: ViewInsetsPayload;
   private viewInsetsPosted = '';
+  private expectedReady: UnityToRNEvent['type'] | null = null;
+
+  /** Unity survives screen changes on iOS. Only the newly opened scene may keep pending work. */
+  private beginScene(readyEvent: UnityToRNEvent['type']): void {
+    this.expectedReady = readyEvent;
+    this.ready = false;
+    this.outbox = [];
+    this.streams.clear();
+    if (this.streamTimer) clearTimeout(this.streamTimer);
+    this.streamTimer = null;
+    this.clearInitRetry();
+    this.clearJourneyRetry();
+    this.clearMeditationRetry();
+    this.clearLectureRetry();
+    this.clearWorldRetry();
+    this.clearMyRoomRetry();
+    this.clearCafeRetry();
+    this.payload = undefined;
+    this.meditationPending = this.lecturePending = this.journeyPending = false;
+    this.worldPending = this.myRoomPending = this.cafePending = false;
+    this.lectureInit = this.journeyInit = this.worldInit = this.myRoomInit = this.cafeInit = undefined;
+    this.initSent = false;
+    this.viewInsetsPosted = '';
+  }
 
   /* ---- UnityBridge ---- */
 
   async openCounselingRoom(payload: UnitySessionPayload): Promise<void> {
+    this.beginScene('UNITY_READY');
     this.payload = payload;
     this.initSent = false;
     this.initTries = 0;
@@ -239,6 +264,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
    * `post` and flushed when it is — the same path SESSION_INIT already relies on.
    */
   openMeditationRoom(): void {
+    this.beginScene('MEDITATION_READY');
     this.meditationPending = true;
     this.meditationTries = 0;
     this.meditationState = undefined;
@@ -289,6 +315,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
    * for exactly the reasons openMeditationRoom gives — this room never sends UNITY_READY either.
    */
   openLectureRoom(init: LectureInitPayload): void {
+    this.beginScene('LECTURE_READY');
     this.lectureInit = init;
     this.lecturePending = true;
     this.lectureTries = 0;
@@ -334,6 +361,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
 
   /** Leaving the lecture room. Idempotent, and safe when Unity never booted. */
   closeLectureRoom(): void {
+    if (this.expectedReady !== 'LECTURE_READY') return;
     this.lecturePending = false;
     this.lectureState = undefined;
     this.clearLectureRetry();
@@ -348,6 +376,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
    * exactly the reasons openMeditationRoom gives — this room never sends UNITY_READY either.
    */
   openJourneyRoom(init: JourneyInitPayload): void {
+    this.beginScene('JOURNEY_READY');
     this.journeyInit = init;
     this.journeyPending = true;
     this.journeyTries = 0;
@@ -446,6 +475,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
    * run toggle of a previous visit are forgotten: a new visit starts on Unity's framing, walking.
    */
   openWorld(init: WorldInitPayload): void {
+    this.beginScene('WORLD_READY');
     this.worldInit = init;
     this.worldPending = true;
     this.worldTries = 0;
@@ -530,6 +560,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
 
   /** Leaving the world. Idempotent, and safe when Unity never booted. */
   closeWorld(): void {
+    if (this.expectedReady !== 'WORLD_READY') return;
     const wasOpen = this.worldPending || this.worldInit != null;
     this.worldPending = false;
     this.worldInit = undefined;
@@ -548,6 +579,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
    * overview: the last visit's orbit is forgotten.
    */
   openMyRoom(init: MyRoomInitPayload): void {
+    this.beginScene('MYROOM_READY');
     this.myRoomInit = init;
     this.myRoomPending = true;
     this.myRoomBookLate = false;
@@ -677,6 +709,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
 
   /** Leaving My Room. Idempotent, and safe when Unity never booted. */
   closeMyRoom(): void {
+    if (this.expectedReady !== 'MYROOM_READY') return;
     const wasOpen = this.myRoomPending || this.myRoomInit != null;
     this.myRoomPending = false;
     this.myRoomInit = undefined;
@@ -694,6 +727,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
    * gives — the cafe never sends UNITY_READY either. A new visit starts on the scene's own framing.
    */
   openCafe(init: CafeInitPayload): void {
+    this.beginScene('CAFE_READY');
     this.cafeInit = init;
     this.cafePending = true;
     this.cafeTries = 0;
@@ -734,9 +768,9 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   }
 
   /** Taps, not streams: posted at once (the buttons only show once the cafe is up). */
-  sendCafeSit(spot: string): void {
-    devlog(`[unity-bridge] CAFE_SIT ${spot}`);
-    this.post({ type: 'CAFE_SIT', payload: { spot } });
+  sendCafeSit(spot: string, guided = false): void {
+    devlog(`[unity-bridge] CAFE_SIT ${spot}${guided ? ' (guided)' : ''}`);
+    this.post({ type: 'CAFE_SIT', payload: guided ? { spot, guided } : { spot } });
   }
 
   sendCafeSay(text: string): void {
@@ -746,6 +780,10 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
 
   sendCafeShot(): void {
     this.post({ type: 'CAFE_SHOT' });
+  }
+
+  sendCafeTap(x: number, y: number): void {
+    if (this.view) this.post({ type: 'CAFE_TAP', payload: { x: unit(x), y: unit(y) } });
   }
 
   sendCafeStand(): void {
@@ -785,6 +823,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
 
   /** Leaving the cafe. Idempotent, and safe when Unity never booted. */
   closeCafe(): void {
+    if (this.expectedReady !== 'CAFE_READY') return;
     const wasOpen = this.cafePending || this.cafeInit != null;
     this.cafePending = false;
     this.cafeInit = undefined;
@@ -798,6 +837,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
 
   /** Leaving the journey. Idempotent, and safe when Unity never booted. */
   closeJourneyRoom(): void {
+    if (this.expectedReady !== 'JOURNEY_READY') return;
     this.journeyPending = false;
     this.journeyState = undefined;
     this.journeyVoice = undefined;
@@ -813,6 +853,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
 
   /** Leaving the meditation room. Idempotent, and safe when Unity never booted. */
   closeMeditationRoom(): void {
+    if (this.expectedReady !== 'MEDITATION_READY') return;
     this.meditationPending = false;
     this.meditationState = undefined;
     this.clearMeditationRetry();
@@ -823,6 +864,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   }
 
   async closeCounselingRoom(): Promise<void> {
+    if (this.expectedReady !== 'UNITY_READY') return;
     this.clearInitRetry();
     // Silence Unity NOW — the view unload that follows is asynchronous, and a
     // BGM outliving the room (or an error exit) is exactly the bug this guards.
@@ -920,6 +962,10 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       console.warn('[NativeUnityBridge] non-JSON message from Unity:', raw);
       return;
     }
+
+    // A late READY from the previous scene must not mark this one ready or stop its handshake.
+    if (this.expectedReady && event.type.endsWith('_READY') &&
+        event.type !== 'BRIDGE_READY' && event.type !== this.expectedReady) return;
 
     // Anything at all from the far side means the handshake does not need saying again — see
     // armInitRetry.
