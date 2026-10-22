@@ -449,6 +449,23 @@ export type RNToUnityEvent =
   | { type: 'CAFE_COFFEE_ORDER' }
   /** The paper strip inside the cookie (optional for Unity). */
   | { type: 'CAFE_COOKIE_FORTUNE'; payload: { text: string } }
+  /* Tree of Mind (spec 008, specs/008-tree-of-mind/contract.md): the garden. RN owns every word, the
+     clock and the rewards (the server's); Unity is the garden, the tree, the seated figure and the orb. */
+  /** Open the garden. Repeated until GARDEN_READY, like CAFE_INIT. Carries how the tree looks now. */
+  | { type: 'GARDEN_INIT'; payload: GardenInitPayload }
+  /** What the sitting is doing, on every change; replayed on GARDEN_READY. `sitting` = the figure sits
+   *  down and the camera moves in (answered by GARDEN_SEATED); `breathing` = the orb follows the
+   *  guide from `intoMs`; `done` = the orb settles and the figure opens its eyes; `garden` = back to
+   *  the tree with nobody breathing. */
+  | { type: 'GARDEN_STATE'; payload: GardenStatePayload }
+  /** The player's finger: down = breathing in (the orb swells), up = breathing out (the orb sends its
+   *  light up the tree). `inRhythm` on the up = that breath followed the guide (a brighter wave). */
+  | { type: 'GARDEN_TOUCH'; payload: { down: boolean; inRhythm?: boolean } }
+  /** The server's answer to a finished sitting: the tree takes its new size and glow. `levelUp` plays
+   *  the five-beat growth (answered by GARDEN_GROWN). */
+  | { type: 'GARDEN_GROW'; payload: GardenGrowPayload }
+  /** Leaving the garden. */
+  | { type: 'GARDEN_END' }
   /** A held direction key. x = right, y = forward, each in [-1, 1].
    *
    *  ONE MESSAGE PER PRESS: Unity keeps the last direction until told otherwise, so the press
@@ -722,6 +739,37 @@ export interface MyRoomItemAnchor {
   onScreen: boolean;
 }
 
+/** GARDEN_INIT. Mirrored by name in Unity's RNGardenInit. */
+export interface GardenInitPayload {
+  lang: string;
+  /** The tree's level, 1..10 (phase 1 draws 1-3; higher levels reuse the level-3 tree, larger). */
+  level: number;
+  /** 0..1 through the current level — how far the tree has grown toward the next. */
+  progress: number;
+  /** 0..1 — today's tree energy, as the canopy's glow. */
+  energy: number;
+  /** Day-master personalisation — a seam, always '' in phase 1. */
+  variant: string;
+}
+
+export type GardenStageState = 'garden' | 'sitting' | 'breathing' | 'done';
+
+/** GARDEN_STATE. The breath pattern rides along so Unity never hard-codes it. */
+export interface GardenStatePayload {
+  state: GardenStageState;
+  inMs: number;
+  outMs: number;
+  intoMs: number;
+}
+
+/** GARDEN_GROW. */
+export interface GardenGrowPayload {
+  level: number;
+  progress: number;
+  energy: number;
+  levelUp: boolean;
+}
+
 /** My Room's follow camera, as MYROOM_CAMERA carries it (MYROOM_HOME is where a visit starts). */
 export interface MyRoomCamera {
   zoom: number;
@@ -868,6 +916,12 @@ export type UnityToRNEvent =
   | { type: 'CAFE_COOKIE_OPENED'; payload?: Record<string, never> }
   /** The reader has walked away. */
   | { type: 'CAFE_CONSULTANT_LEFT'; payload?: Record<string, never> }
+  /** Tree of Mind: the garden is on screen (the tree, the figure under it). */
+  | { type: 'GARDEN_READY' }
+  /** The figure has sat down and the camera has arrived: RN starts the session's clock. */
+  | { type: 'GARDEN_SEATED' }
+  /** The level-up growth has played out: RN shows the new level. */
+  | { type: 'GARDEN_GROWN'; payload: { level: number } }
   /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
@@ -953,6 +1007,18 @@ export interface CafeBridge {
   sendCafeTarotEnd(): void;
   sendCafeCoffeeOrder(): void;
   sendCafeCookieFortune(text: string): void;
+  onEvent(handler: (event: UnityToRNEvent) => void): () => void;
+}
+
+/** Tree of Mind's half of the bridge (spec 008) — its own interface for the reason WorldBridge gives. */
+export interface GardenBridge {
+  openGarden(init: GardenInitPayload): void;
+  closeGarden(): void;
+  sendGardenState(payload: GardenStatePayload): void;
+  sendGardenTouch(down: boolean, inRhythm?: boolean): void;
+  sendGardenGrow(grow: GardenGrowPayload): void;
+  /** VIEW_INSETS: how much of the view the garden's UI covers. */
+  sendViewInsets(insets: ViewInsetsPayload): void;
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
 }
 

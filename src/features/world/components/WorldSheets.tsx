@@ -153,6 +153,8 @@ export interface ZoneActions {
   myroom(): void;
   /** Into the coffee shop. Nothing is asked at its door: the player picks a table, then coffee or tarot there. */
   cafe(): void;
+  /** Tree of Mind (spec 008): into the garden, offered behind the meditation door. */
+  garden(): void;
 }
 
 /** The entrance overlay of one door — what WORLD_ARRIVED (or Enter) opens. */
@@ -214,6 +216,9 @@ export const ZoneOverlay: React.FC<{
           {/* The two sessions Home offers, in Home's words: ten minutes of breathing, and the 30-minute
               sleep guide (hidden on a build without the sound module, as on Home). */}
           <SessionCard testID="world-med-breathe" icon="lotus" title={t('home.breathe')} note={t('home.meditation')} onPress={actions.meditate} />
+          {/* Tree of Mind (spec 008): its own garden scene, entered through this door until the World
+              has a door (and the reflected sprout) of its own — proposal §1, phase 3. */}
+          <SessionCard testID="world-med-garden" icon="sparkle" title={t('world.med.garden')} note={t('world.med.gardenNote')} onPress={actions.garden} />
           {sleepAudio.available() ? (
             <SessionCard testID="world-med-sleep" icon="moon" title={t('home.sleep')} note={t('home.sleepHint')} onPress={actions.sleep} />
           ) : null}

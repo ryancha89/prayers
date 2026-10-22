@@ -4,6 +4,10 @@ import {
   CafeRevealCard,
   CafeTarotSpeak,
   CafeTarotStart,
+  GardenBridge,
+  GardenGrowPayload,
+  GardenInitPayload,
+  GardenStatePayload,
   MyRoomAction,
   MyRoomBook,
   MyRoomBridge,
@@ -33,7 +37,7 @@ import {
  * Keep this the ONLY place that knows Unity is not yet real. UI code depends
  * solely on the `UnityBridge` interface (rule §52-7).
  */
-export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, CafeBridge {
+export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, CafeBridge, GardenBridge {
   private handlers = new Set<(e: UnityToRNEvent) => void>();
   private ready = false;
   private lastPayload?: UnitySessionPayload;
@@ -207,6 +211,25 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, 
   sendCafeTarotEnd(): void { this.cafeCalls.push({ type: 'CAFE_TAROT_END' }); }
   sendCafeCoffeeOrder(): void { this.cafeCalls.push({ type: 'CAFE_COFFEE_ORDER' }); }
   sendCafeCookieFortune(text: string): void { this.cafeCalls.push({ type: 'CAFE_COOKIE_FORTUNE', payload: { text } }); }
+
+  /* ---- GardenBridge (spec 008). Accepts every call; no garden loads, so GARDEN_READY never comes and
+     the screen draws its own orb over the garden picture — the whole no-Unity experience. ---- */
+
+  lastGardenInit?: GardenInitPayload;
+  gardenOpen = false;
+  gardenCalls: { type: string; payload?: unknown }[] = [];
+
+  openGarden(init: GardenInitPayload): void {
+    this.lastGardenInit = init;
+    this.gardenOpen = true;
+  }
+
+  closeGarden(): void { this.gardenOpen = false; }
+  sendGardenState(payload: GardenStatePayload): void { this.gardenCalls.push({ type: 'GARDEN_STATE', payload: { ...payload } }); }
+  sendGardenTouch(down: boolean, inRhythm?: boolean): void {
+    this.gardenCalls.push({ type: 'GARDEN_TOUCH', payload: down ? { down } : { down, inRhythm: !!inRhythm } });
+  }
+  sendGardenGrow(grow: GardenGrowPayload): void { this.gardenCalls.push({ type: 'GARDEN_GROW', payload: { ...grow } }); }
 
   onEvent(handler: (event: UnityToRNEvent) => void): () => void {
     this.handlers.add(handler);

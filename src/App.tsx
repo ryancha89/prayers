@@ -49,7 +49,9 @@ const navigationRef = createNavigationContainerRef<RootStackParamList>();
 // World (spec 004) since 02-10: the hub is a Unity scene like the rooms — same speaker rule, no mini
 // player over it, and above all no SESSION_END posted into it on arrival.
 // Cafe (16-10): the world's sixth door, a Unity scene like My Room.
-export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom', 'World', 'MyRoom', 'Cafe', 'Lecture']);
+// Garden (spec 008, Tree of Mind): a Unity scene too; its music starts with the breathing, like the
+// meditation room's, so the app's bed must be off on arrival and SESSION_END must not reach it.
+export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom', 'World', 'MyRoom', 'Cafe', 'Lecture', 'Garden']);
 /** Screens that host the Unity player but NOT as a room that owns the sound: the train journey
  *  (spec 003) draws its cabin in Unity while its own narration keeps playing. They must not tear
  *  Unity down (stopAllAudio → SESSION_END), and must not pause the journey either — which is why
