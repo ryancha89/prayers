@@ -19,6 +19,8 @@ import { chartFromFields, pillarsText } from '../../saju/chart';
 import { BirthPreview } from '../../saju/components/BirthPreview';
 import { column } from '../../../shared/device/screen';
 import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
+import { PrimaryButton } from '../../../shared/components/PrimaryButton';
+import { formatWhen } from '../planWhen';
 
 type Rt = RouteProp<RootStackParamList, 'ArchiveSection'>;
 
@@ -103,8 +105,9 @@ export const ArchiveSectionScreen: React.FC = () => {
       case 'goal':
         return [choiceLabel(m, 'status'), m.details.date].filter(Boolean).join(' · ');
       case 'wish':
-      case 'plan':
         return m.details.date ?? '';
+      case 'plan':
+        return formatWhen(m.details, t);
       case 'interest':
         return choiceLabel(m, 'level');
       case 'possession':
@@ -148,17 +151,23 @@ export const ArchiveSectionScreen: React.FC = () => {
             {t(`archive.cat.${category}` as TranslationKey)}
           </Text>
         </View>
-        <Pressable
-          hitSlop={12}
-          onPress={() => {
-            sfx.tap();
-            setEditingId(null);
-            setAdding(true);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={t('archive.add')}>
-          <Icon name="plus" size={22} color={colors.violetSoft} />
-        </Pressable>
+        {/* 기본정보 is the profile (10-22, "+버튼없애고 프로필 수정 버튼 한개로"): it is edited in the
+            profile form, so no + here — a spacer keeps the title where it was. */}
+        {category === 'profile' ? (
+          <View style={styles.headerSpacer} />
+        ) : (
+          <Pressable
+            hitSlop={12}
+            onPress={() => {
+              sfx.tap();
+              setEditingId(null);
+              setAdding(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t('archive.add')}>
+            <Icon name="plus" size={22} color={colors.violetSoft} />
+          </Pressable>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={[styles.scroll, column]} showsVerticalScrollIndicator={false}>
@@ -170,14 +179,30 @@ export const ArchiveSectionScreen: React.FC = () => {
               {self.birthTime ? ` ${self.birthTime}` : ''}
             </Text>
             <Text style={styles.linkedNote}>{t('archive.linked')}</Text>
-            <Pressable onPress={() => navigation.navigate('AddSubject', { subjectId: 'self' })} hitSlop={8}>
-              <Text style={styles.linkedEdit}>{t('archive.editProfile')}</Text>
-            </Pressable>
           </View>
         )}
         {/* The star sign, the animal and the pillars for the profile above (10-15, user: "이 화면에 표시"). */}
         {category === 'profile' && !!self.birthDate && (
           <BirthPreview birthDate={self.birthDate} birthTime={self.birthTime || undefined} birthPlace={self.birthPlace} />
+        )}
+        {/* MBTI on its own card under the chart (10-22, user: "이름 말고 따로 밑에 mbti란"). It is
+            the profile's field, so it is chosen in the profile form, not added here as an entry. */}
+        {category === 'profile' && (
+          <View style={styles.mbti} testID="archive-mbti">
+            <Text style={styles.mbtiLabel}>MBTI</Text>
+            {self.mbti ? (
+              <Text style={styles.mbtiValue}>{self.mbti}</Text>
+            ) : (
+              <Text style={styles.linkedNote}>{t('archive.mbtiEmpty')}</Text>
+            )}
+          </View>
+        )}
+        {/* The one way to change any of it, as a button under the cards (10-22, "프로필 수정 밑에 버튼으로"). */}
+        {category === 'profile' && (
+          <PrimaryButton
+            label={t('archive.editProfile')}
+            onPress={() => navigation.navigate('AddSubject', { subjectId: 'self' })}
+          />
         )}
 
         {adding && (
@@ -195,7 +220,7 @@ export const ArchiveSectionScreen: React.FC = () => {
           />
         )}
 
-        {sorted.length === 0 && !adding && <Text style={styles.empty}>{t('archive.empty')}</Text>}
+        {sorted.length === 0 && !adding && category !== 'profile' && <Text style={styles.empty}>{t('archive.empty')}</Text>}
 
         {sorted.map(m =>
           editingId === m.id ? (
@@ -275,7 +300,10 @@ const styles = StyleSheet.create({
   linked: { backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md, gap: spacing.xs },
   linkedText: { ...typography.bodyStrong, color: colors.textPrimary },
   linkedNote: { ...typography.caption, color: colors.textMuted },
-  linkedEdit: { ...typography.caption, color: colors.violetSoft },
+  headerSpacer: { width: 22 },
+  mbti: { backgroundColor: colors.card, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.xs },
+  mbtiLabel: { ...typography.bodyStrong, color: colors.textPrimary },
+  mbtiValue: { ...typography.h2, color: colors.violetSoft, letterSpacing: 2 },
   empty: { ...typography.body, color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.xxl },
   row: { flexDirection: 'row', gap: spacing.md, backgroundColor: colors.card, borderRadius: radius.md, padding: spacing.md },
   rowPressed: { backgroundColor: colors.cardPressed },

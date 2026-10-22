@@ -9,6 +9,7 @@ import { useArchiveStore } from '../../../archive/store/archiveStore';
 import type { ArchiveMemory } from '../../../archive/types';
 import { useDiaryStore } from '../diaryStore';
 import { formatDay } from '../text';
+import { formatWhen, scopeOf } from '../../../archive/planWhen';
 import { entryDay, entryTopics, isFavorite, moodColor } from '../stats';
 import { MoodFace } from './MoodFace';
 import { TopicChips } from './TopicChips';
@@ -41,7 +42,10 @@ export const DiaryRow: React.FC<{ memory: ArchiveMemory; onOpen(id: string): voi
       )}
       <View style={styles.body}>
         <View style={styles.meta}>
-          <Text style={styles.date}>{formatDay(entryDay(m), lang)}</Text>
+          {/* A month or year plan reads as one (2027년), not as its first day. */}
+          <Text style={styles.date}>
+            {m.category === 'plan' && scopeOf(m.details) !== 'day' ? formatWhen(m.details, t) : formatDay(entryDay(m), lang)}
+          </Text>
           {isFavorite(m) && <Icon name="heartFilled" size={12} color="#F87171" />}
         </View>
         <Text style={styles.excerpt} numberOfLines={2}>{m.content}</Text>

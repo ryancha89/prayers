@@ -8,7 +8,8 @@ import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import type { RootStackParamList } from '../../../navigation/types';
-import { COMPLETION_TARGET, useArchiveStore } from '../store/archiveStore';
+import { COMPLETION_TARGET, archiveProfileFacts, useArchiveStore } from '../store/archiveStore';
+import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { syncArchive } from '../api/memoriesApi';
 import Svg, { Circle } from 'react-native-svg';
 import { CATEGORIES, CATEGORY_ACCENT, CATEGORY_ICON, MOOD_ICON, type ArchiveCategory } from '../types';
@@ -42,7 +43,9 @@ export const ArchiveScreen: React.FC = () => {
   const markAnswered = useArchiveStore(s => s.markAnswered);
   const approveDiscovery = useArchiveStore(s => s.approveDiscovery);
   const dismissDiscovery = useArchiveStore(s => s.dismissDiscovery);
-  const completion = useArchiveStore(s => s.completion)();
+  // The profile's birth data and MBTI sit in 기본정보 without being archive entries.
+  const profileFacts = useSubjectsStore(s => archiveProfileFacts(s.self));
+  const completion = useArchiveStore(s => s.completion)({ profile: profileFacts });
   const lang = useLang();
   const savedJourneys = useSavedJourneys(x => x.journeys);
   const touchJourney = useSavedJourneys(x => x.touch);
@@ -59,15 +62,17 @@ export const ArchiveScreen: React.FC = () => {
 
   const question = questionFor(dayKey(), answered);
   const [answer, setAnswer] = useState('');
+  // Where the last answer went, so the card can say so and open it (10-22, "이거 보내도 뭐 어디에 저장되는거임?").
+  const [savedTo, setSavedTo] = useState<ArchiveCategory | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
 
   const counts = React.useMemo(() => {
-    const c: Partial<Record<ArchiveCategory, number>> = {};
+    const c: Partial<Record<ArchiveCategory, number>> = { profile: profileFacts };
     memories.forEach(m => {
       c[m.category] = (c[m.category] ?? 0) + 1;
     });
     return c;
-  }, [memories]);
+  }, [memories, profileFacts]);
 
   const recentDiary = memories.filter(m => m.category === 'diary').slice(0, 3);
   // The meter's two plain numbers, and the one piece to fill next: the first card in display order
@@ -84,6 +89,7 @@ export const ArchiveScreen: React.FC = () => {
     sfx.select();
     add({ category: question.category, content: answer.trim(), details: question.details, source: 'manual' });
     markAnswered(question.id);
+    setSavedTo(question.category);
     setAnswer('');
     syncArchive().catch(() => {});
   };
@@ -106,7 +112,7 @@ export const ArchiveScreen: React.FC = () => {
             <View style={styles.meterText}>
               <Text style={styles.meterLabel}>{t('archive.completion', { percent: completion })}</Text>
               <Text style={styles.meterStats}>
-                {t('archive.stats', { count: memories.length, filled, total: CATEGORIES.length })}
+                {t('archive.stats', { count: memories.length + profileFacts, filled, total: CATEGORIES.length })}
               </Text>
             </View>
           </View>
@@ -205,6 +211,9 @@ export const ArchiveScreen: React.FC = () => {
           {question ? (
             <>
               <Text style={styles.questionText}>{t(`archive.q.${question.id}` as TranslationKey)}</Text>
+              <Text style={styles.savesTo}>
+                {t('archive.question.savesTo', { category: t(`archive.cat.${question.category}` as TranslationKey) })}
+              </Text>
               {/* One line and its send button, as a chat's input: the answer is the only action. */}
               <View style={styles.inputRow}>
                 <TextInput
@@ -228,6 +237,19 @@ export const ArchiveScreen: React.FC = () => {
             </>
           ) : (
             <Text style={styles.questionText}>{t('archive.question.done')}</Text>
+          )}
+          {savedTo && (
+            <Pressable
+              testID="archive-question-saved"
+              onPress={() => openCategory(savedTo)}
+              style={styles.savedRow}
+              accessibilityRole="button">
+              <Icon name={CATEGORY_ICON[savedTo]} size={16} color={CATEGORY_ACCENT[savedTo]} />
+              <Text style={[styles.savedText, styles.grow]}>
+                {t('archive.question.savedTo', { category: t(`archive.cat.${savedTo}` as TranslationKey) })}
+              </Text>
+              <Text style={styles.savedView}>{t('archive.question.view')} ›</Text>
+            </Pressable>
           )}
         </View>
 
@@ -287,14 +309,19 @@ export const ArchiveScreen: React.FC = () => {
                   <View style={[styles.cellTile, { backgroundColor: `${accent}24` }]}>
                     <Icon name={CATEGORY_ICON[c]} size={22} color={accent} testID={`archive-cell-icon-${c}`} />
                   </View>
-                  <Text style={[styles.cellCount, n > 0 && { color: accent }]}>{t('archive.count', { count: n })}</Text>
+                  {c !== 'profile' && (
+                    <Text style={[styles.cellCount, n > 0 && { color: accent }]}>{t('archive.count', { count: n })}</Text>
+                  )}
                 </View>
                 <Text style={styles.cellTitle} numberOfLines={2}>
                   {t(`archive.cat.${c}` as TranslationKey)}
                 </Text>
-                <View style={styles.cellTrack}>
-                  <View style={[styles.cellFill, { width: `${share * 100}%`, backgroundColor: accent }]} />
-                </View>
+                {/* No count and no bar for 기본정보: the profile is filled in, not collected (10-22). */}
+                {c !== 'profile' && (
+                  <View style={styles.cellTrack}>
+                    <View style={[styles.cellFill, { width: `${share * 100}%`, backgroundColor: accent }]} />
+                  </View>
+                )}
               </Pressable>
             );
           })}
@@ -395,6 +422,13 @@ const styles = StyleSheet.create({
   questionHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   questionLabel: { ...typography.tiny, color: colors.violetSoft, textTransform: 'uppercase', letterSpacing: 0.6 },
   skipText: { ...typography.caption, color: colors.textMuted },
+  savesTo: { ...typography.caption, color: colors.textMuted },
+  savedRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: colors.bgElevated, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+  },
+  savedText: { ...typography.caption, color: colors.textPrimary },
+  savedView: { ...typography.caption, color: colors.violetSoft },
   questionText: { ...typography.h2, color: colors.textPrimary, lineHeight: 27 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   questionInput: {

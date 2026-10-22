@@ -457,6 +457,7 @@ export const CounselingRoomScreen: React.FC = () => {
         // Not under the coin card: its own 대화하기 sat on top of the card's 충전하기 (10-17).
         visible={consultation.walking && !coinPrompt}
         counselor={counselor ? { id: params.counselorId, name: counselor.name } : undefined}
+        stood={consultation.stood}
       />
       <ConsultationOverlay
         history={previousMessages}
