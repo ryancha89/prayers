@@ -8,6 +8,7 @@ import {
   GardenBridge,
   GardenGrowPayload,
   GardenInitPayload,
+  GardenIslandPayload,
   GardenStatePayload,
   LectureInitPayload,
   LectureStatePayload,
@@ -21,6 +22,7 @@ import {
   MyRoomCamera,
   MyRoomDragPhase,
   MyRoomInitPayload,
+  MyRoomItem,
   MyRoomLayout,
   MyRoomOwned,
   RNToUnityEvent,
@@ -72,7 +74,7 @@ const MEDITATION_RETRY_MS = 1500;
 const MEDITATION_MAX_TRIES = 4;
 
 /** Absolute-state messages sent while a finger moves: coalesced (see NativeUnityBridge.postStream). */
-const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'CAFE_CAMERA', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
+const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'GARDEN_DRAG', 'CAFE_CAMERA', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
 /** ~30 a second per type: smooth under Unity's own easing, a quarter of what a thumb produced. */
 const STREAM_MS = 33;
 /** The scenes' own handshake events. Not every `*_READY` is one: CAFE_DECK_READY is a step inside the
@@ -156,6 +158,9 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   private gardenTries = 0;
   /** The last GARDEN_STATE, replayed on GARDEN_READY: Sit can be pressed while the garden still loads. */
   private gardenState?: GardenStatePayload;
+  /** Phase 2: the island and its decor as last sent, replayed on GARDEN_READY. */
+  private gardenIsland?: GardenIslandPayload;
+  private gardenLayout?: MyRoomItem[] | null;
   private outbox: RNToUnityEvent[] = [];
   /** The latest VIEW_INSETS any Unity-hosting screen reported, and the JSON of the last one that
    *  actually went out (the dedupe key). */
@@ -185,6 +190,8 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.lectureInit = this.journeyInit = this.worldInit = this.myRoomInit = this.cafeInit = undefined;
     this.gardenInit = undefined;
     this.gardenState = undefined;
+    this.gardenIsland = undefined;
+    this.gardenLayout = undefined;
     this.initSent = false;
     this.viewInsetsPosted = '';
   }
@@ -909,6 +916,47 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     if (this.view) this.post({ type: 'GARDEN_GROW', payload: grow });
   }
 
+  /** The island (phase 2). Posted at once when there is a view, remembered for GARDEN_READY. */
+  sendGardenIsland(island: GardenIslandPayload): void {
+    this.gardenIsland = island;
+    if (this.view) this.post({ type: 'GARDEN_ISLAND', payload: island });
+  }
+
+  /** The saved decor layout. Posted at once when there is a view, remembered for GARDEN_READY. */
+  sendGardenLayout(items: MyRoomItem[] | null): void {
+    this.gardenLayout = items;
+    if (this.view) this.post({ type: 'GARDEN_LAYOUT', payload: { layout: { items } } });
+  }
+
+  /* Decor edit mode: only meaningful once the garden is up (Decorate waits for GARDEN_READY), so these
+     post straight through, as My Room's do. A drag's `move` is a stream; `begin` and `end` are posted. */
+  sendGardenEdit(on: boolean, cancel?: boolean): void {
+    this.post({ type: 'GARDEN_EDIT', payload: cancel ? { on, cancel: true } : { on } });
+  }
+
+  sendGardenTap(x: number, y: number): void {
+    if (this.view) this.post({ type: 'GARDEN_TAP', payload: { x: unit(x), y: unit(y) } });
+  }
+
+  sendGardenDrag(phase: MyRoomDragPhase, x: number, y: number): void {
+    if (!this.view) return;
+    const event = { type: 'GARDEN_DRAG' as const, payload: { phase, x: unit(x), y: unit(y) } };
+    if (phase === 'move') this.postLive(event);
+    else this.post(event);
+  }
+
+  sendGardenRotate(step: 1 | -1): void {
+    this.post({ type: 'GARDEN_ROTATE', payload: { step } });
+  }
+
+  sendGardenAdd(item: string): void {
+    this.post({ type: 'GARDEN_ADD', payload: { item } });
+  }
+
+  sendGardenRemove(): void {
+    this.post({ type: 'GARDEN_REMOVE', payload: {} });
+  }
+
   /** Leaving the garden. Idempotent, and safe when Unity never booted. */
   closeGarden(): void {
     if (this.expectedReady !== 'GARDEN_READY') return;
@@ -1242,6 +1290,8 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       // have been pressed while the garden was still loading.
       this.replayViewInsets();
       if (this.gardenState) this.post({ type: 'GARDEN_STATE', payload: this.gardenState });
+      if (this.gardenIsland) this.post({ type: 'GARDEN_ISLAND', payload: this.gardenIsland });
+      if (this.gardenLayout !== undefined) this.post({ type: 'GARDEN_LAYOUT', payload: { layout: { items: this.gardenLayout } } });
       this.ready = true;
       this.everReady = true;
       this.clearInitRetry();

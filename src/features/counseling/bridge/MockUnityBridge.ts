@@ -7,6 +7,7 @@ import {
   GardenBridge,
   GardenGrowPayload,
   GardenInitPayload,
+  GardenIslandPayload,
   GardenStatePayload,
   MyRoomAction,
   MyRoomBook,
@@ -14,6 +15,7 @@ import {
   MyRoomCamera,
   MyRoomDragPhase,
   MyRoomInitPayload,
+  MyRoomItem,
   MyRoomLayout,
   MyRoomOwned,
   RNToUnityEvent,
@@ -230,6 +232,14 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, 
     this.gardenCalls.push({ type: 'GARDEN_TOUCH', payload: down ? { down } : { down, inRhythm: !!inRhythm } });
   }
   sendGardenGrow(grow: GardenGrowPayload): void { this.gardenCalls.push({ type: 'GARDEN_GROW', payload: { ...grow } }); }
+  sendGardenIsland(island: GardenIslandPayload): void { this.gardenCalls.push({ type: 'GARDEN_ISLAND', payload: island }); }
+  sendGardenLayout(items: MyRoomItem[] | null): void { this.gardenCalls.push({ type: 'GARDEN_LAYOUT', payload: { layout: { items } } }); }
+  sendGardenEdit(on: boolean, cancel?: boolean): void { this.gardenCalls.push({ type: 'GARDEN_EDIT', payload: cancel ? { on, cancel } : { on } }); }
+  sendGardenTap(x: number, y: number): void { this.gardenCalls.push({ type: 'GARDEN_TAP', payload: { x, y } }); }
+  sendGardenDrag(phase: MyRoomDragPhase, x: number, y: number): void { this.gardenCalls.push({ type: 'GARDEN_DRAG', payload: { phase, x, y } }); }
+  sendGardenRotate(step: 1 | -1): void { this.gardenCalls.push({ type: 'GARDEN_ROTATE', payload: { step } }); }
+  sendGardenAdd(item: string): void { this.gardenCalls.push({ type: 'GARDEN_ADD', payload: { item } }); }
+  sendGardenRemove(): void { this.gardenCalls.push({ type: 'GARDEN_REMOVE' }); }
 
   onEvent(handler: (event: UnityToRNEvent) => void): () => void {
     this.handlers.add(handler);

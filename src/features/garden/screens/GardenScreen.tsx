@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/Text';
@@ -43,6 +43,9 @@ import {
   type GardenStep,
 } from '../gardenFlow';
 import { DrawnGarden, DrawnOrb, EnergyRing, GARDEN, GardenButton } from '../components/GardenChrome';
+import { DecorateBar, PlotPanel, ShopPanel } from '../components/IslandPanels';
+import { useIsland } from '../useIsland';
+import { SKIES, seedKey, skyKey } from '../island';
 
 /**
  * Tree of Mind — phase 1 (spec 008, Saju/Docs/TreeOfMind-Design-Proposal.html §2 and §6).
@@ -137,6 +140,14 @@ export const GardenScreen: React.FC = () => {
   const orb = useRef(new Animated.Value(0)).current;
   const orbLoop = useRef<Animated.CompositeAnimation | null>(null);
 
+  // Phase 2: the island round the tree (plots, seeds, decor, sky) — useIsland owns its state and calls.
+  const island = useIsland({
+    bridge,
+    garden,
+    setGarden: g => setGarden(g),
+    onEditing: on => setStep(on ? 'editing' : 'garden'),
+  });
+
   const tellStage = useCallback(
     (state: GardenStageState) => {
       const sync = breathSync(state === 'breathing' ? session.elapsed() : 0);
@@ -157,7 +168,10 @@ export const GardenScreen: React.FC = () => {
     setGarden(res.garden);
     setDurations(res.durations);
     bridge.openGarden(gardenInit(lang, res.garden));
+    island.init({ catalog: res.catalog, ownedDecor: res.ownedDecor, layout: res.layout });
     setStep('garden');
+    // island.init is stable (useCallback on the bridge).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bridge, lang, setStep]);
 
   useEffect(() => {
@@ -369,8 +383,40 @@ export const GardenScreen: React.FC = () => {
     bridge.sendGardenTouch(false, inRhythm);
   };
 
+  // ── The island under the finger (phase 2): a tap picks a plot (GARDEN_PLOT_TAP comes back); in decor
+  // edit mode a tap selects a piece and a drag moves it — the embedded view gets no touch of its own. ──
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const drag = useRef({ x0: 0, y0: 0, moving: false });
+  const unitOf = (x: number, y: number) => ({ x: x / Math.max(1, viewRef.current.width), y: y / Math.max(1, viewRef.current.height) });
+  const editPan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: e => {
+        drag.current = { x0: e.nativeEvent.pageX, y0: e.nativeEvent.pageY, moving: false };
+      },
+      onPanResponderMove: e => {
+        const { x0, y0 } = drag.current;
+        const { pageX, pageY } = e.nativeEvent;
+        if (!drag.current.moving && Math.hypot(pageX - x0, pageY - y0) > 8) {
+          drag.current.moving = true;
+          const a = unitOf(x0, y0);
+          bridge.sendGardenDrag('begin', a.x, a.y);
+        }
+        if (drag.current.moving) { const u = unitOf(pageX, pageY); bridge.sendGardenDrag('move', u.x, u.y); }
+      },
+      onPanResponderRelease: e => {
+        const u = unitOf(e.nativeEvent.pageX, e.nativeEvent.pageY);
+        if (drag.current.moving) bridge.sendGardenDrag('end', u.x, u.y);
+        else bridge.sendGardenTap(u.x, u.y);
+        drag.current.moving = false;
+      },
+    }),
+  ).current;
+
   // ── Render ──────────────────────────────────────────────────────────────────────────────────
   const bandHeight = landscape ? screen.vh(0.36, 128, 170) : screen.vh(0.32, 220, 300);
+  const panelHeight = landscape ? screen.vh(0.7, 220, 360) : screen.vh(0.55, 300, 520);
   const running = step === 'sitting' || step === 'breathing';
   const g = garden;
   const levelLine = g ? t('garden.levelLine', { level: g.level, stem: g.stem, element: t(elementKey(g.element)) }) : '';
@@ -403,10 +449,17 @@ export const GardenScreen: React.FC = () => {
         </Pressable>
       )}
 
+      {step === 'garden' && !island.panel && (
+        <Pressable testID="garden-island-tap" style={styles.fill} accessibilityLabel={t('garden.plot.pick')}
+          onPress={e => { const u = unitOf(e.nativeEvent.pageX, e.nativeEvent.pageY); bridge.sendGardenTap(u.x, u.y); }} />
+      )}
+      {step === 'editing' && <View testID="garden-edit-touch" style={styles.fill} {...editPan.panHandlers} />}
+
       <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']} pointerEvents="box-none">
         <View style={styles.header} onLayout={insets.track('header')} pointerEvents="box-none">
           <View style={styles.side}>
-            <RingButton testID="garden-back" icon="back" size={RING_COMPACT} label={t('hud.back')} onPress={leave} />
+            <RingButton testID="garden-back" icon="back" size={RING_COMPACT} label={t('hud.back')}
+              onPress={step === 'editing' ? () => { sfx.back(); island.endEdit(true); } : leave} />
           </View>
           <View style={styles.headerMid} pointerEvents="none">
             {g && !running && step !== 'growing' && (
@@ -433,6 +486,30 @@ export const GardenScreen: React.FC = () => {
             ) : null}
           </View>
         </View>
+
+        {/* Phase 2 HUD: today's energy, the shop, decorate, and the free unlocks (sky at 5, rain at 6). */}
+        {step === 'garden' && g && island.catalog && (
+          <View style={styles.hud} pointerEvents="box-none">
+            <View style={styles.hudPill} testID="garden-energy">
+              <Text style={styles.hudText} numberOfLines={1}>{t('garden.energyToday', { n: g.today.energy })}</Text>
+            </View>
+            <View style={styles.hudButtons}>
+              <HudButton testID="garden-open-shop" label={t('garden.shop')} onPress={() => { island.setError(null); island.setPanel({ kind: 'shop' }); }} />
+              <HudButton testID="garden-open-decorate" label={t('garden.decorate')} onPress={() => { sfx.select(); island.startEdit(); }} />
+            </View>
+            {(g.unlocks.time_of_day || g.unlocks.rain) && (
+              <View style={styles.hudButtons}>
+                {g.unlocks.time_of_day && SKIES.map(sky => (
+                  <HudButton key={sky} testID={`garden-sky-${sky}`} label={t(skyKey(sky))} on={island.env.sky === sky}
+                    onPress={() => island.setEnv(e => ({ ...e, sky }))} />
+                ))}
+                {g.unlocks.rain && (
+                  <HudButton testID="garden-rain" label={t('garden.rain')} on={island.env.rain} onPress={() => island.setEnv(e => ({ ...e, rain: !e.rain }))} />
+                )}
+              </View>
+            )}
+          </View>
+        )}
 
         <View style={styles.grow} pointerEvents="box-none" />
 
@@ -504,6 +581,8 @@ export const GardenScreen: React.FC = () => {
               </View>
               {tick ? <Text style={styles.small}>{t('garden.result.breaths', { n: tick.breaths, sync: tick.inRhythm })}</Text> : null}
               {resultNoteKey(finished.reward.percent) ? <Text style={styles.line}>{t(resultNoteKey(finished.reward.percent)!)}</Text> : null}
+              {finished.matured.map(m => <Text key={m.id} style={styles.line}>{t('garden.result.matured', { name: t(seedKey(m.species)) })}</Text>)}
+              {finished.drop ? <Text style={styles.line} testID="garden-drop">{t('garden.result.drop', { name: t(seedKey(finished.drop.species)) })}</Text> : null}
               {finished.levelUp ? (
                 <GardenButton testID="garden-grow" label={t('garden.result.grow')} onPress={seeGrowth} />
               ) : (
@@ -521,10 +600,49 @@ export const GardenScreen: React.FC = () => {
             </View>
           )}
         </View>
+        {/* Phase 2 sheets over the bottom of the garden: the shop, a plot, decor edit mode. */}
+        {g && island.catalog && (step === 'garden' && island.panel || step === 'editing') ? (
+          <View style={styles.sheet} pointerEvents="box-none">
+            {step === 'editing' ? (
+              <DecorateBar left={island.left} selected={island.selected} valid={island.valid}
+                reason={island.reason ? t(island.reason) : island.error ? t(island.error) : null} busy={island.busy}
+                onAdd={item => { sfx.tap(); bridge.sendGardenAdd(item); }}
+                onRotate={() => { sfx.tap(); bridge.sendGardenRotate(1); }}
+                onRemove={() => { sfx.tap(); bridge.sendGardenRemove(); }}
+                onDone={() => { sfx.select(); island.done(); }}
+                onCancel={() => { sfx.back(); island.endEdit(true); }} />
+            ) : island.panel?.kind === 'plot' && g.plots[island.panel.index - 1] ? (
+              <PlotPanel plot={g.plots[island.panel.index - 1]} garden={g} catalog={island.catalog} busy={island.busy}
+                error={island.error ? t(island.error) : null} maxHeight={panelHeight}
+                onBuy={el => { sfx.select(); island.buyLand(g.plots[(island.panel as { index: number }).index - 1].index, el); }}
+                onPlant={() => { island.setTab('seeds'); island.setPanel({ kind: 'shop' }); }}
+                onClose={() => island.setPanel(null)} />
+            ) : (
+              <ShopPanel tab={island.tab} garden={g} catalog={island.catalog} ownedDecor={island.ownedDecor}
+                effects={{ orb: island.layout.orb, music: island.layout.music }} plantingSeed={island.plantingSeed}
+                busy={island.busy} error={island.error ? t(island.error) : null} maxHeight={panelHeight}
+                onTab={island.setTab}
+                onBuySeed={id => { sfx.select(); island.buyOneSeed(id); }}
+                onBuyDecor={id => { sfx.select(); island.buyOneDecor(id); }}
+                onUseEffect={(kind, id) => { sfx.tap(); island.chooseEffect(kind, id); }}
+                onPlantPick={id => { sfx.tap(); island.setPlantingSeed(id); }}
+                onPlant={(seedId, plot) => { sfx.select(); island.plant(seedId, plot); }}
+                onPlot={index => { sfx.tap(); island.setError(null); island.setPanel({ kind: 'plot', index }); }}
+                onClose={() => island.setPanel(null)} />
+            )}
+          </View>
+        ) : null}
       </SafeAreaView>
     </View>
   );
 };
+
+const HudButton: React.FC<{ label: string; onPress: () => void; on?: boolean; testID?: string }> = ({ label, onPress, on, testID }) => (
+  <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} accessibilityState={on != null ? { selected: on } : undefined}
+    onPress={() => { sfx.tap(); onPress(); }} style={({ pressed }) => [styles.hudButton, on && styles.hudButtonOn, pressed && styles.pressedHud]}>
+    <Text style={[styles.hudText, on && styles.hudTextOn]} numberOfLines={1}>{label}</Text>
+  </Pressable>
+);
 
 const Reward: React.FC<{ text: string; gold?: boolean }> = ({ text, gold }) => (
   <View style={[styles.reward, gold && styles.rewardGold]}>
@@ -590,6 +708,15 @@ const styles = StyleSheet.create({
   },
   clock: { fontFamily: SERIF, fontSize: 14, letterSpacing: 1.5, color: GARDEN.dew, fontVariant: ['tabular-nums'] },
   orbBox: { ...absoluteFill, alignItems: 'center', justifyContent: 'center' },
+  hud: { gap: spacing.sm, marginTop: spacing.sm, alignItems: 'flex-end' },
+  hudButtons: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', justifyContent: 'flex-end' },
+  hudPill: { paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radius.pill, backgroundColor: 'rgba(14,31,26,0.72)' },
+  hudButton: { paddingHorizontal: spacing.md, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: 'rgba(14,31,26,0.78)', borderWidth: 1, borderColor: 'rgba(242,207,122,0.5)' },
+  hudButtonOn: { backgroundColor: GARDEN.sap },
+  hudText: { ...typography.tiny, color: GARDEN.mist },
+  hudTextOn: { color: '#1B2A1F' },
+  pressedHud: { transform: [{ scale: 0.97 }] },
+  sheet: { position: 'absolute', left: spacing.md, right: spacing.md, bottom: spacing.md },
   rewards: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
   reward: { paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.pill, backgroundColor: 'rgba(127,211,168,0.16)' },
   rewardGold: { backgroundColor: 'rgba(242,207,122,0.18)' },

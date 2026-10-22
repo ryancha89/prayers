@@ -11,7 +11,7 @@ import type { GardenInitPayload } from '../counseling/types';
  * the figure sitting down in Unity, the server's finish, the growth playing out. Each wait has a
  * fallback here, so a garden without the player (or a player that never answers) still runs the loop.
  */
-export type GardenStep = 'loading' | 'error' | 'garden' | 'sitting' | 'breathing' | 'finishing' | 'result' | 'growing' | 'levelUp';
+export type GardenStep = 'loading' | 'error' | 'garden' | 'sitting' | 'breathing' | 'finishing' | 'result' | 'growing' | 'levelUp' | 'editing';
 
 /** No GARDEN_READY after this: stay on the drawn garden, as every room does. */
 export const READY_FALLBACK_MS = 8000;
@@ -25,7 +25,7 @@ export const ENERGY_GLOW_FULL = 300;
 
 export const energyGlow = (todayEnergy: number): number => Math.max(0, Math.min(1, todayEnergy / ENERGY_GLOW_FULL));
 
-export function gardenInit(lang: string, g: Garden): GardenInitPayload {
+export function gardenInit(lang: string, g: Pick<Garden, 'level' | 'levelXp' | 'levelSpan' | 'today' | 'variant'>): GardenInitPayload {
   return { lang, level: g.level, progress: levelProgress(g), energy: energyGlow(g.today.energy), variant: g.variant ?? '' };
 }
 

@@ -466,6 +466,20 @@ export type RNToUnityEvent =
   | { type: 'GARDEN_GROW'; payload: GardenGrowPayload }
   /** Leaving the garden. */
   | { type: 'GARDEN_END' }
+  /* Phase 2, the island (TreeOfMind-Growth.html §3.3–3.6). The server's garden, forwarded; the decor layout
+     in My Room's wire shape; decor edit mode with My Room's payloads. */
+  /** The island as the server has it: plots, seeds in the ground, free unlocks, the chosen sky and orb.
+   *  Remembered and replayed on GARDEN_READY. */
+  | { type: 'GARDEN_ISLAND'; payload: GardenIslandPayload }
+  /** The saved decor layout (`items: null` = none). Remembered and replayed on GARDEN_READY. */
+  | { type: 'GARDEN_LAYOUT'; payload: { layout: { items: MyRoomItem[] | null } } }
+  | { type: 'GARDEN_EDIT'; payload: { on: boolean; cancel?: boolean } }
+  /** A tap, 0..1 from the view's top-left: editing = select a piece; otherwise a plot → GARDEN_PLOT_TAP. */
+  | { type: 'GARDEN_TAP'; payload: { x: number; y: number } }
+  | { type: 'GARDEN_DRAG'; payload: { phase: MyRoomDragPhase; x: number; y: number } }
+  | { type: 'GARDEN_ROTATE'; payload: { step: 1 | -1 } }
+  | { type: 'GARDEN_ADD'; payload: { item: string } }
+  | { type: 'GARDEN_REMOVE'; payload: Record<string, never> }
   /** A held direction key. x = right, y = forward, each in [-1, 1].
    *
    *  ONE MESSAGE PER PRESS: Unity keeps the last direction until told otherwise, so the press
@@ -762,6 +776,16 @@ export interface GardenStatePayload {
   intoMs: number;
 }
 
+/** GARDEN_ISLAND. Mirrored by name in Unity's GardenIslandState.Receive (read with JsonTree). */
+export interface GardenIslandPayload {
+  plots: { index: number; level: number; owned: boolean; unlocked: boolean; element: string | null }[];
+  /** Seeds in the ground (packets are not sent). `progress` = grown / need. */
+  seeds: { id: number; species: string; element: string; status: 'growing' | 'mature'; plot: number; progress: number }[];
+  unlocks: { time_of_day: boolean; rain: boolean; fireflies: boolean; companion: boolean; seasons: boolean };
+  env: { sky: 'night' | 'dusk' | 'day'; rain: boolean };
+  orb: string | null;
+}
+
 /** GARDEN_GROW. */
 export interface GardenGrowPayload {
   level: number;
@@ -922,6 +946,12 @@ export type UnityToRNEvent =
   | { type: 'GARDEN_SEATED' }
   /** The level-up growth has played out: RN shows the new level. */
   | { type: 'GARDEN_GROWN'; payload: { level: number } }
+  /** A plot of the island was tapped (not editing): RN opens its sheet. */
+  | { type: 'GARDEN_PLOT_TAP'; payload: { index: number } }
+  /** Decor edit mode's selection ('' = none). */
+  | { type: 'GARDEN_SELECT'; payload: { uid: string; item: string } }
+  /** Decor edit mode's working layout, and whether it may be saved (MYROOM_LAYOUT_CHANGED's shape). */
+  | { type: 'GARDEN_LAYOUT_CHANGED'; payload: { layout: { items: MyRoomItem[] | null }; valid: boolean; reason: string; uid: string } }
   /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
@@ -1017,6 +1047,16 @@ export interface GardenBridge {
   sendGardenState(payload: GardenStatePayload): void;
   sendGardenTouch(down: boolean, inRhythm?: boolean): void;
   sendGardenGrow(grow: GardenGrowPayload): void;
+  /** Phase 2: the island state and the decor layout (both remembered for GARDEN_READY). */
+  sendGardenIsland(island: GardenIslandPayload): void;
+  sendGardenLayout(items: MyRoomItem[] | null): void;
+  /** Decor edit mode. */
+  sendGardenEdit(on: boolean, cancel?: boolean): void;
+  sendGardenTap(x: number, y: number): void;
+  sendGardenDrag(phase: MyRoomDragPhase, x: number, y: number): void;
+  sendGardenRotate(step: 1 | -1): void;
+  sendGardenAdd(item: string): void;
+  sendGardenRemove(): void;
   /** VIEW_INSETS: how much of the view the garden's UI covers. */
   sendViewInsets(insets: ViewInsetsPayload): void;
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
