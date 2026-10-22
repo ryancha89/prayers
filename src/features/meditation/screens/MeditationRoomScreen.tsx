@@ -16,7 +16,7 @@ import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
 import { useScreen } from '../../../shared/device/screen';
-import { BottomFade, MED, PaceLine, Threshold, Vignette } from '../components/BreathStage';
+import { ArtWait, BottomFade, MED, PaceLine, Vignette } from '../components/BreathStage';
 import { SERIF } from '../../../shared/components/hud/Hud';
 
 /**
@@ -367,11 +367,12 @@ export const MeditationRoomScreen: React.FC = () => {
           MEDITATION_READY never came. The same screen with the art on top loads the room fine. */}
       {isNativeUnity() && <UnityHost style={styles.unity} />}
       {isNativeUnity() ? (
-        // While the room loads: a threshold — dusk, one lantern breathing, the room's name — not the
-        // 2D concept art, whose girl is not the one in the room and whose crop was a strip in
-        // landscape (13-10). It lifts the moment the room answers, as the camera starts gliding in.
+        // While the room loads: the room's picture of the girl (ArtWait). From 13-10 it was a lone
+        // lantern on dusk (the threshold); 22-10 the PM's screenshot of that same wait on the sleep
+        // guide asked for the girl, so both rooms wait on her picture. It lifts the moment the room
+        // answers, as the camera starts gliding in.
         <Animated.View style={[styles.art, { opacity: artOut }]} pointerEvents="none">
-          <Threshold title={t('med.title')} pulse={pulse} />
+          <ArtWait source={ROOM_ART} testID="med-art" title={t('med.title')} pulse={pulse} width={view.width} height={view.height} />
         </Animated.View>
       ) : (
         // Without the embedded player (Expo, Jest, a build without Unity) the art IS the room.
