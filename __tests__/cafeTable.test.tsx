@@ -127,9 +127,11 @@ const render = async () => {
   await act(async () => { tree = ReactTestRenderer.create(<CafeScreen />); });
   fromUnity({ type: 'CAFE_READY', payload: { guest: 'dosa', spots: ['bar'] } });
 };
+/** Seated, then the menu opened from the seated strip (a sit alone just sits, PM 22-10). */
 const sit = async () => {
   await render();
   fromUnity({ type: 'CAFE_SEATED', payload: { spot: 'table_2' } });
+  await press('Menu');
 };
 
 beforeEach(async () => {
@@ -174,8 +176,13 @@ describe('a tarot reading at the table', () => {
     await render();
     expect(byTestID('cafe-look').length).toBeGreaterThan(0);
     fromUnity({ type: 'CAFE_SEATED', payload: { spot: 'table_2' } });
-    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    // A sit just sits (PM 22-10: "need just sitting not ordering anything"): a strip, no services yet.
+    expect(byTestID('cafe-seated').length).toBeGreaterThan(0);
+    expect(byTestID('cafe-menu')).toHaveLength(0);
+    expect(shown()).not.toContain('Order Coffee');
     expect(byTestID('cafe-look')).toHaveLength(0);
+    await press('Menu');
+    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
     // A CAFE_PHASE talking from the same sit must not raise the guest's panel over the table.
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'talking', spot: 'table_2', reason: '' } });
     expect(byTestID('cafe-panel')).toHaveLength(0);
@@ -284,7 +291,9 @@ describe('a tarot reading at the table', () => {
     expect(byTestID('cafe-farewell')[0].props.children).toBe(
       'Thank you for visiting. I hope the cards have given you some clarity. See you again!',
     );
-    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    // Back to just sitting, the goodbye as its line.
+    expect(byTestID('cafe-seated').length).toBeGreaterThan(0);
+    expect(byTestID('cafe-menu')).toHaveLength(0);
   });
 
   it('a sent question stays on the table as the player\u2019s words; cancelled, Begin asks to pay for it again', async () => {
@@ -378,7 +387,7 @@ describe('a tarot reading at the table', () => {
     await act(async () => { release(); });
     await flush();
     expect(calls('CAFE_TAROT_REVEAL')).toHaveLength(reveals);
-    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    expect(byTestID('cafe-seated').length).toBeGreaterThan(0);
   });
 
   it('standing up (CAFE_PHASE exploring) clears the table and gives the stick back', async () => {
@@ -386,6 +395,18 @@ describe('a tarot reading at the table', () => {
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'exploring', spot: '', reason: '' } });
     expect(byTestID('cafe-menu')).toHaveLength(0);
     expect(byTestID('cafe-look').length).toBeGreaterThan(0);
+  });
+
+  it('Just sit folds the menu back into the seated strip; Leave works from both', async () => {
+    await sit();
+    await press('Just sit');
+    expect(byTestID('cafe-menu')).toHaveLength(0);
+    expect(byTestID('cafe-seated').length).toBeGreaterThan(0);
+    expect(shown()).toContain('Take your time');
+    expect(types()).toEqual([]);
+    await press('Leave the table');
+    expect(types()).toEqual(['CAFE_STAND']);
+    expect(byTestID('cafe-seated')).toHaveLength(0);
   });
 
   it('Leave the table stands the player up', async () => {
@@ -432,7 +453,7 @@ describe('coffee and a fortune cookie', () => {
     expect(byTestID('cafe-fortune-text')[0].props.children).toBe('A kind word finds you today.');
     await press('Close');
     expect(byTestID('cafe-fortune')).toHaveLength(0);
-    expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    expect(byTestID('cafe-seated').length).toBeGreaterThan(0);
   });
 
   it('409 REQUEST_IN_PROGRESS (iOS re-sent the slow POST) is waited out with the same request_id, not shown as a failure', async () => {
@@ -537,10 +558,12 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
     ready();
     await flush();
   };
-  const seatAt = async (spot: string) => {
+  /** Seated at `spot`, menu opened (`open` false: just sitting, the strip). */
+  const seatAt = async (spot: string, open = true) => {
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'talking', spot, reason: '' } });
     fromUnity({ type: 'CAFE_SEATED', payload: { spot } });
     await flush();
+    if (open) await press('Menu');
   };
   /** Walked up to `spot` with the stick: Unity names it (CAFE_NEAR) and the Sit button sends it. */
   const sitBy = async (spot: string) => {
@@ -629,7 +652,7 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
     // Still the table's (no stick, no look layer, no Sit button) while the player walks over.
     expect(byTestID('cafe-look')).toHaveLength(0);
     expect(byTestID('cafe-sit')).toHaveLength(0);
-    await seatAt('tarot');
+    await seatAt('tarot', false);
     expect(byTestID('cafe-readers').length).toBeGreaterThan(0);
     await press('Luna');
     expect(calls('CAFE_TAROT_START')).toHaveLength(1);
@@ -654,7 +677,8 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
     // Walking back now: the strip says where to, not "Moving to the tarot table…".
     expect(byTestID('cafe-moving')[0].props.children).toBe('Returning to your seat…');
     expect(shown()).not.toContain('Moving to the tarot table…');
-    await seatAt('bar');
+    // Back from a move: the menu it was made from, still open.
+    await seatAt('bar', false);
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
     expect(byTestID('cafe-readers')).toHaveLength(0);
     // The next move starts as a move to the tarot table again.

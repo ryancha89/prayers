@@ -92,6 +92,10 @@ export interface TableState {
   /** The table they sit at (CAFE_SEATED.spot). */
   spot: string;
   stage: TableStage;
+  /** `menu` with the services showing. Closed, the player just sits: a strip with Menu and Leave, and
+   *  the room in view (PM 22-10: "need just sitting not ordering anything"). Closed on every sit and
+   *  when a coffee or a reading is over; the moves and errors that land on `menu` keep it as it was. */
+  menuOpen: boolean;
   /** `moving`, but back to the seat the player came from: the tarot table was taken on the way
    *  (CAFE_PHASE seating/busy). The strip says so instead of "Moving to the tarot table…". */
   returning: boolean;
@@ -121,6 +125,7 @@ const OFF: TableState = {
   seated: false,
   spot: '',
   stage: 'menu',
+  menuOpen: false,
   returning: false,
   consultants: null,
   consultantsFailed: false,
@@ -383,7 +388,7 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     patch({ stage: 'menu', error: null, line: '' });
   };
 
-  const closeFortune = () => patch({ stage: 'menu', fortune: null, line: '' });
+  const closeFortune = () => patch({ stage: 'menu', menuOpen: false, fortune: null, line: '' });
 
   /* ---- shared -------------------------------------------------------------------------------- */
 
@@ -545,6 +550,8 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     cancelMove,
     loadConsultants,
     backToMenu: () => patch({ stage: 'menu', line: '' }),
+    openMenu: () => patch({ menuOpen: true, line: '' }),
+    closeMenu: () => patch({ menuOpen: false, line: '' }),
     chooseConsultant,
     submitQuestion,
     next,

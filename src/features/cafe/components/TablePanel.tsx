@@ -80,6 +80,29 @@ export const TablePanel: React.FC<{
 
   if (!s.seated || s.stage === 'fortune') return null;
 
+  // Just sitting: a strip, the room in view, the services one tap away (PM 22-10). What the reader
+  // said on leaving stays as its line until the menu is opened.
+  if (s.stage === 'menu' && !s.menuOpen) {
+    return (
+      <View pointerEvents="box-none" onLayout={onLayout}
+        style={[styles.stripDock, { bottom: bottomPad, left: safe.left + spacing.md, right: safe.right + spacing.md }]}>
+        <View pointerEvents="box-none" style={styles.strip} testID="cafe-seated">
+          <Medallion icon="coffee" size={34} />
+          {/* The line over the buttons: beside them it had a third of the strip and read "Take your ti…" (sim 22-10). */}
+          <View pointerEvents="box-none" style={[styles.grow, styles.seatedCol]}>
+            <Text style={styles.stripLine} numberOfLines={3} testID={s.line ? 'cafe-farewell' : undefined}>
+              {s.line || t('cafe.table.seated')}
+            </Text>
+            <View style={styles.menuActions}>
+              <GoldButton label={t('cafe.table.menu')} icon="menu" onPress={table.openMenu} testID="cafe-open-menu" />
+              <GhostButton label={t('cafe.table.leave')} icon="stand" onPress={table.leaveTable} testID="cafe-leave-table" />
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   if (isStripStage(s.stage, s.error, s.step)) {
     return (
       <View pointerEvents="box-none" onLayout={onLayout}
@@ -267,7 +290,8 @@ const Waiting: React.FC<{ icon: IconName; text: string }> = ({ icon, text }) => 
   </View>
 );
 
-/** Seated, nothing ordered yet — or the reader just said goodbye, which is the line above the menu. */
+/** The services, opened from the seated strip — or put back by a move that did not happen, whose line
+ *  sits above them. */
 const Menu: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) => {
   const s = table.state;
   return (
@@ -283,7 +307,10 @@ const Menu: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) => {
         <ServiceTile art={CAFE_ART.tarot} label={t('cafe.table.tarot')} note={t('cafe.table.tarotNote')}
           price={CAFE_PRICE.reading} onPress={table.openTarot} testID="cafe-order-tarot" />
       </View>
-      <GhostButton label={t('cafe.table.leave')} icon="stand" onPress={table.leaveTable} testID="cafe-leave-table" style={styles.selfStart} />
+      <View style={styles.menuActions}>
+        <GhostButton label={t('cafe.table.justSit')} icon="close" onPress={table.closeMenu} testID="cafe-close-menu" />
+        <GhostButton label={t('cafe.table.leave')} icon="stand" onPress={table.leaveTable} testID="cafe-leave-table" />
+      </View>
     </ScrollView>
   );
 };
@@ -538,6 +565,8 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
   },
   stripLine: { ...typography.body, color: colors.textPrimary },
+  menuActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  seatedCol: { gap: spacing.sm },
   pickCol: { gap: 6 },
   pickRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   slots: { flexDirection: 'row', gap: 4, flex: 1 },
