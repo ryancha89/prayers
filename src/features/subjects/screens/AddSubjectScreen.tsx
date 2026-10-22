@@ -55,6 +55,7 @@ export const AddSubjectScreen: React.FC = () => {
   const [birthTime, setBirthTime] = useState(existing?.birthTime ?? '');
   const [gender, setGender] = useState<CounselingSubject['gender']>(existing?.gender);
   const [birthPlace, setBirthPlace] = useState<string | undefined>(existing?.birthPlace);
+  const [mbti, setMbti] = useState<string | undefined>(existing?.mbti);
   const [placeQuery, setPlaceQuery] = useState('');
   const lang = useLang();
   // The birthplace search is for births in Korea — offered to Korean players, or whoever already has one.
@@ -72,6 +73,7 @@ export const AddSubjectScreen: React.FC = () => {
       birthTime: birthTime.trim() || undefined,
       birthPlace,
       gender,
+      mbti,
     };
     if (existing) updateSubject(existing.id, patch);
     else addSubject(patch);
@@ -234,6 +236,24 @@ export const AddSubjectScreen: React.FC = () => {
             </Pressable>
           ))}
         </View>
+        {/* Optional (10-22): never part of `complete`. Tapping the chosen type again clears it. */}
+        <View style={styles.field} testID="mbti">
+          <Text style={styles.label}>{t('addSubject.mbti')}</Text>
+          <View style={styles.mbtiGrid}>
+            {MBTI_TYPES.map(m => (
+              <Pressable
+                key={m}
+                testID={`mbti-${m}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: mbti === m }}
+                onPress={() => { sfx.select(); setMbti(mbti === m ? undefined : m); }}
+                style={[styles.mbtiOption, mbti === m && styles.genderOptionActive]}>
+                <Text style={[styles.mbtiLabel, mbti === m && styles.genderLabelActive]}>{m}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.hint}>{t('addSubject.mbtiHint')}</Text>
+        </View>
         {/* The star sign, the animal and the pillars, live as the date is typed (10-15). */}
         <BirthPreview birthDate={birthDate.trim()} birthTime={birthTime.trim() || undefined} birthPlace={birthPlace} />
         <MiniPlayerSpacer />
@@ -257,6 +277,14 @@ export const AddSubjectScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
+
+/** The 16 types in the usual table order: four rows of four. */
+const MBTI_TYPES = [
+  'ISTJ', 'ISFJ', 'INFJ', 'INTJ',
+  'ISTP', 'ISFP', 'INFP', 'INTP',
+  'ESTP', 'ESFP', 'ENFP', 'ENTP',
+  'ESTJ', 'ESFJ', 'ENFJ', 'ENTJ',
+];
 
 const Field: React.FC<{
   label: string;
@@ -318,6 +346,19 @@ const styles = StyleSheet.create({
   genderOptionActive: { borderColor: colors.violet, backgroundColor: colors.violetDim },
   genderLabel: { ...typography.body, color: colors.textSecondary },
   genderLabelActive: { color: colors.violetSoft },
+  mbtiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  mbtiOption: {
+    // Four to a row: a quarter of the width less its share of the three gaps.
+    width: '22.5%',
+    flexGrow: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  mbtiLabel: { ...typography.body, color: colors.textSecondary },
   hint: { ...typography.caption, color: colors.textMuted, lineHeight: 18 },
   summerHint: { color: colors.violetSoft },
   placeChosen: {

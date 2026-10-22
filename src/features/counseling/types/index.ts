@@ -15,6 +15,8 @@ export interface CounselingSubject {
   /** A `KOREA_PLACES` name (saju/data/koreaPlaces.ts): the hour is corrected to that place's sun.
    *  Absent = Seoul, as before (10-17). */
   birthPlace?: string;
+  /** One of the 16 types, e.g. `INFP` (10-22). Optional — absent means not given. */
+  mbti?: string;
   relationship?: string;
   isUser: boolean;
 }

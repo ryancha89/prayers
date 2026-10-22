@@ -71,8 +71,8 @@ export const MyInfoScreen: React.FC = () => {
           <Field
             label={t('addSubject.gender')}
             value={self.gender ? t(self.gender === 'male' ? 'addSubject.male' : 'addSubject.female') : '—'}
-            last
           />
+          <Field label="MBTI" value={self.mbti ?? '—'} last />
         </View>
 
         {!ready || !chart ? (

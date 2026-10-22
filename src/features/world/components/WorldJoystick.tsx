@@ -23,8 +23,8 @@ import { GoldKnob, starPoints } from '../../../shared/components/Ornaments';
  */
 /** The touch zone (the parent places it bottom-left). */
 export const STICK_ZONE = { width: 220, height: 220 };
-const RING = 132;
-const KNOB = 52;
+const RING = 106; // 132 × 0.8 (10-22, "조이스틱 20% 축소")
+const KNOB = 42; // 52 × 0.8
 const RADIUS = (RING - KNOB) / 2 + 4;
 /** Below this share of the radius the stick is at rest — a resting thumb must not creep. */
 const DEAD = 0.12;

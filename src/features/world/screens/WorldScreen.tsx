@@ -449,10 +449,9 @@ export const WorldScreen: React.FC = () => {
         <View
           pointerEvents="box-none"
           style={[styles.buttons, { right: safe.right + spacing.lg, bottom: safe.bottom + spacing.lg }]}>
+          {/* Run is the row's size (10-22, "뛰기를 다른 아이콘이랑 크기 같게"), right above Menu. */}
           {!loadingWorld && (
-            <View style={styles.run}>
-              <RingButton testID="world-run" icon="run" size={RUN} label={t('world.run')} active={run} onPress={toggleRun} />
-            </View>
+            <RingButton testID="world-run" icon="run" size={ROUND} label={t('world.run')} active={run} onPress={toggleRun} />
           )}
           <View style={styles.round3}>
             <RingButton testID="world-map" icon="map" size={ROUND} caption label={t('world.map')} onPress={openSheet('map')} />
@@ -489,8 +488,7 @@ export const WorldScreen: React.FC = () => {
   );
 };
 
-/** My Room's sizes: the run ring, and the round buttons of a row. */
-const RUN = 54;
+/** The round buttons of a row — run included. */
 const ROUND = 46;
 /** What the top row keeps on its right: the coin pill (about 96 pt at four digits), a gap, Home. */
 const TOP_RIGHT = 96 + spacing.sm + HUD_ICON;
@@ -505,7 +503,5 @@ const styles = StyleSheet.create({
   topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   stick: { position: 'absolute' },
   buttons: { position: 'absolute', alignItems: 'flex-end', gap: spacing.md },
-  // Run sits over Menu, centred on it as My Room centres it over share.
-  run: { marginRight: (ROUND - RUN) / 2 },
   round3: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
 });

@@ -59,6 +59,8 @@ export interface Consultation {
   ready: boolean;
   /** The room is up and the player is on their feet — draw the walk controls, not the reading. */
   walking: boolean;
+  /** Walking after 일어서기, not before the first sit — the walk's Talk prompt reads 앉기. */
+  stood: boolean;
   /** The 일어서기 button can show: a walk-in room, someone in the chair, no answer on its way. */
   canStand: boolean;
   /** Out of the chair (10-17): her voice and the mic stop, the room goes back to walking; the
@@ -195,6 +197,8 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
     // `ready && !seated` is the whole of "walking": a seated room sets seated true before ready,
     // so this is false there, and a walk-in room flips it the moment the player sits.
     walking: ready && !seated,
+    // On foot AFTER the conversation began — only 일어서기 gets there; the walk-in never has begun.
+    stood: ready && !seated && begun.current,
     canStand: usesUnity && walkIn && ready && seated && begun.current && !state.pending,
     stand: useCallback(() => {
       engineRef.current?.hush();
