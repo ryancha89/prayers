@@ -23,7 +23,7 @@ export function islandPayload(g: Garden, env: { sky: Sky; rain: boolean }, orb: 
       .map(s => ({ id: s.id, species: s.species, element: s.element, status: s.status as 'growing' | 'mature', plot: s.plot!,
                    progress: Math.max(0, Math.min(1, s.grown / s.need)) })),
     unlocks: { ...g.unlocks },
-    env: { sky: g.unlocks.time_of_day ? env.sky : 'night', rain: g.unlocks.rain && env.rain },
+    env: { sky: g.unlocks.time_of_day ? env.sky : 'day', rain: g.unlocks.rain && env.rain },
     orb,
   };
 }

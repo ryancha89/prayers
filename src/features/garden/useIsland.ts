@@ -42,7 +42,7 @@ export function useIsland(opts: {
   const [catalog, setCatalog] = useState<GardenCatalog | null>(null);
   const [ownedDecor, setOwnedDecor] = useState<Record<string, number>>({});
   const [layout, setLayout] = useState<GardenLayoutState>({ items: null, orb: null, music: null, version: 0 });
-  const [env, setEnv] = useState<{ sky: Sky; rain: boolean }>({ sky: 'night', rain: false });
+  const [env, setEnv] = useState<{ sky: Sky; rain: boolean }>({ sky: 'day', rain: false });
   const [panel, setPanel] = useState<Panel>(null);
   const [tab, setTab] = useState<ShopTab>('seeds');
   const [busy, setBusy] = useState(false);

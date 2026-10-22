@@ -43,11 +43,11 @@ beforeEach(() => fetchMock.mockReset());
 const g = (): Garden => readGarden(SERVER_GARDEN)!;
 
 it('reads the island and tells Unity only the seeds in the ground, with growth as 0..1', () => {
-  const island = islandPayload(g(), { sky: 'day', rain: true }, 'orb_moonlight');
+  const island = islandPayload(g(), { sky: 'night', rain: true }, 'orb_moonlight');
   expect(island.seeds.map(s => [s.id, s.progress])).toEqual([[1, 0.5], [2, 0], [3, 0]]);
   expect(island.plots[0]).toEqual({ index: 1, level: 2, owned: true, unlocked: true, element: 'water' });
-  // The sky waits for the level-5 unlock; the rain is open.
-  expect(island.env).toEqual({ sky: 'night', rain: true });
+  // Golden day until the level-5 unlock (art direction 22-10); the rain is open.
+  expect(island.env).toEqual({ sky: 'day', rain: true });
   expect(island.orb).toBe('orb_moonlight');
   expect(g().collection).toEqual(['ginkgo']);
 });
