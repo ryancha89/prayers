@@ -804,8 +804,8 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.post({ type: 'CAFE_TAROT_SPREAD' });
   }
 
-  sendCafeTarotReveal(cards: CafeRevealCard[]): void {
-    this.post({ type: 'CAFE_TAROT_REVEAL', payload: { cards } });
+  sendCafeTarotReveal(cards: CafeRevealCard[], stepwise?: boolean): void {
+    this.post({ type: 'CAFE_TAROT_REVEAL', payload: stepwise ? { cards, stepwise } : { cards } });
   }
 
   sendCafeTarotSpeak(speak: CafeTarotSpeak): void {

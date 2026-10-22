@@ -440,7 +440,7 @@ export type RNToUnityEvent =
   /** Paid: spread the 78 cards face down and let the player pick. Answered by CAFE_DECK_READY. */
   | { type: 'CAFE_TAROT_SPREAD' }
   /** The server's reading is in: flip the seven, with the names for the faces. */
-  | { type: 'CAFE_TAROT_REVEAL'; payload: { cards: CafeRevealCard[] } }
+  | { type: 'CAFE_TAROT_REVEAL'; payload: { cards: CafeRevealCard[]; stepwise?: boolean } }
   /** The reader says a line (TTS + lip sync); `slot` highlights the card being explained. */
   | { type: 'CAFE_TAROT_SPEAK'; payload: CafeTarotSpeak }
   /** The reader stands and walks away; the table is cleared. */
@@ -947,7 +947,8 @@ export interface CafeBridge {
   sendCafeStand(): void;
   sendCafeTarotStart(start: CafeTarotStart): void;
   sendCafeTarotSpread(): void;
-  sendCafeTarotReveal(cards: CafeRevealCard[]): void;
+  /** `stepwise`: the cards stay face down and each turns over when the reader speaks about it. */
+  sendCafeTarotReveal(cards: CafeRevealCard[], stepwise?: boolean): void;
   sendCafeTarotSpeak(speak: CafeTarotSpeak): void;
   sendCafeTarotEnd(): void;
   sendCafeCoffeeOrder(): void;

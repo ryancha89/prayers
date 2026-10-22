@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT, type TranslationKey } from '../../../shared/i18n';
@@ -34,6 +34,9 @@ export const ConfirmSheet: React.FC<{
   const balance = useCoins(s => s.balance);
   const price = CAFE_PRICE[paid];
   const short = balance != null && balance < price;
+  // Sent from the composer, the keyboard stayed up over the sheet: Pay/Cancel sat under it and the
+  // scrim took every other touch, so nothing could be pressed (sim 21-10).
+  useEffect(() => { Keyboard.dismiss(); }, []);
   return (
     <View style={styles.scrim} testID="cafe-confirm">
       <View style={styles.card}>

@@ -183,6 +183,27 @@ export function createReading(req: {
   );
 }
 
+/**
+ * Have the server synthesise a line the reader is about to say, so Unity's own request for it
+ * (CafeTarot.Say → prayers/tts, same text/preset/lang) is served from the permanent TtsCache instead
+ * of waiting several seconds per card behind the Next button. A request for a line still being
+ * synthesised waits on the server's GET_LOCK rather than synthesising twice. `tts/url` answers
+ * with a link, not the PCM, so the warm-up does not drag the audio over the wire. Best effort.
+ */
+export async function warmVoice(text: string, preset: string, lang: Lang): Promise<void> {
+  if (!text.trim()) return;
+  try {
+    const res = await authedFetch(`${apiBase()}/api/v1/prayers/tts/url`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, preset: preset || undefined, lang }),
+    });
+    if (!res?.ok) devlog(`[cafe] voice warm-up refused: HTTP ${res?.status ?? '-'}`);
+  } catch (e) {
+    devlog(`[cafe] voice warm-up failed: ${String(e)}`);
+  }
+}
+
 export function askFollowup(req: {
   readingId: string;
   requestId: string;

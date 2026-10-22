@@ -202,7 +202,7 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, 
   sendCafeStand(): void { this.cafeCalls.push({ type: 'CAFE_STAND' }); }
   sendCafeTarotStart(start: CafeTarotStart): void { this.cafeCalls.push({ type: 'CAFE_TAROT_START', payload: { ...start } }); }
   sendCafeTarotSpread(): void { this.cafeCalls.push({ type: 'CAFE_TAROT_SPREAD' }); }
-  sendCafeTarotReveal(cards: CafeRevealCard[]): void { this.cafeCalls.push({ type: 'CAFE_TAROT_REVEAL', payload: { cards } }); }
+  sendCafeTarotReveal(cards: CafeRevealCard[], stepwise?: boolean): void { this.cafeCalls.push({ type: 'CAFE_TAROT_REVEAL', payload: stepwise ? { cards, stepwise } : { cards } }); }
   sendCafeTarotSpeak(speak: CafeTarotSpeak): void { this.cafeCalls.push({ type: 'CAFE_TAROT_SPEAK', payload: { ...speak } }); }
   sendCafeTarotEnd(): void { this.cafeCalls.push({ type: 'CAFE_TAROT_END' }); }
   sendCafeCoffeeOrder(): void { this.cafeCalls.push({ type: 'CAFE_COFFEE_ORDER' }); }

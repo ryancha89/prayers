@@ -63,7 +63,7 @@ import { useCoins } from '../src/features/coins/store/coinStore';
 import { useAuthStore } from '../src/features/auth/store/authStore';
 import { COUNSELOR_AVATAR_ART } from '../src/features/counselors/assets';
 import { readerPortrait } from '../src/features/cafe/table/portrait';
-import { CAFE_PRICE, MOVE_ANSWER_MS, MOVE_WALK_MS, REVEAL_FALLBACK_MS } from '../src/features/cafe/table/useCafeTable';
+import { CAFE_PRICE, MOVE_ANSWER_MS, MOVE_WALK_MS } from '../src/features/cafe/table/useCafeTable';
 import { IN_PROGRESS_WAIT_MS, isRetryable } from '../src/features/cafe/api/cafeApi';
 import type { UnityToRNEvent } from '../src/features/counseling/types';
 
@@ -236,22 +236,19 @@ describe('a tarot reading at the table', () => {
     fromUnity({ type: 'CAFE_CARDS_CHOSEN', payload: { cards: DEALT as never } });
     await flush();
     expect(shown()).toContain('You were not charged');
-    // The seven turned over the moment they were chosen (spec step 4), before any reading — names unknown yet.
-    expect(calls('CAFE_TAROT_REVEAL').map(c => c.payload)).toEqual([{ cards: DEALT.map(c => ({ ...c, name: '' })) }]);
+    // The seven stay face down while the server reads them: nothing is turned before the reading.
+    expect(calls('CAFE_TAROT_REVEAL')).toHaveLength(0);
     await press('Try again');
     const [first, second] = posted('cafe/tarot/readings').map(p => p.body);
     expect(first).toEqual({ request_id: expect.stringMatching(UUID), consultant_id: 'luna', question: 'Will I move this year?', cards: DEALT, lang: 'en' });
     expect(second.request_id).toBe(first.request_id);
     expect(useCoins.getState().balance).toBe(70);
 
-    expect(calls('CAFE_TAROT_REVEAL').map(c => c.payload).at(-1)).toEqual(
-      { cards: READING.cards.map(c => ({ id: c.id, orientation: c.orientation, name: c.name })) },
+    // Stepwise: Unity turns each card over when the reader comes to it (its SPEAK), so the reading
+    // starts at once with the first card.
+    expect(calls('CAFE_TAROT_REVEAL').map(c => c.payload)).toEqual(
+      [{ cards: READING.cards.map(c => ({ id: c.id, orientation: c.orientation, name: c.name })), stepwise: true }],
     );
-    // The reading waits for the LAST card to be face up, not the first.
-    expect(shown()).toContain('Turning the cards over…');
-    fromUnity({ type: 'CAFE_CARD_REVEALED', payload: { slot: 0 } });
-    expect(shown()).toContain('Turning the cards over…');
-    fromUnity({ type: 'CAFE_CARD_REVEALED', payload: { slot: 6 } });
     expect(shown()).toContain('Card 1 of 7 · Pos 0');
     expect(speaks().at(-1)).toEqual({ slot: 0, text: 'Card 0. Meaning 0', mood: 'explain' });
     for (let i = 1; i < 7; i++) await press('Next');
@@ -337,26 +334,6 @@ describe('a tarot reading at the table', () => {
     expect(byLabel('Try again')).toBeUndefined();
     await press('End');
     expect(calls('CAFE_TAROT_END')).toHaveLength(1);
-  });
-
-  it('the reading arriving after all seven are face up starts at once', async () => {
-    let release!: () => void;
-    serve('cafe/tarot/readings', { ...ok(READING), wait: new Promise<void>(r => { release = r; }) });
-    await toChosen();
-    fromUnity({ type: 'CAFE_CARD_REVEALED', payload: { slot: 6 } });
-    expect(shown()).toContain('Reading the cards…');
-    await act(async () => { release(); });
-    await flush();
-    expect(shown()).toContain('Card 1 of 7');
-  });
-
-  it('starts narrating even if Unity never reports a flip', async () => {
-    jest.useFakeTimers();
-    serve('cafe/tarot/readings', ok(READING));
-    await toChosen();
-    expect(shown()).toContain('Turning the cards over…');
-    act(() => { jest.advanceTimersByTime(REVEAL_FALLBACK_MS); });
-    expect(shown()).toContain('Card 1 of 7');
   });
 
   it('while picking, only the End button takes a touch: everything else reaches the cards', async () => {

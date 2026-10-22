@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Image, KeyboardAvoidingView, LayoutChangeEvent, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../shared/components/Text';
 import { Icon, type IconName } from '../../../shared/components/Icon';
@@ -67,6 +67,16 @@ export const TablePanel: React.FC<{
   const landscape = screen.landscape;
   const s = table.state;
   const bottomPad = safe.bottom + spacing.sm;
+  // KeyboardAvoidingView compares the keyboard's SCREEN y with its own frame relative to its parent —
+  // the dock, which sideways starts under the top row (and upright sits at the bottom). Without the
+  // dock's own screen top as the offset it under-measured the overlap and the composer stayed under
+  // the keyboard (sim 21-10, landscape follow-up).
+  const dockRef = useRef<View>(null);
+  const [dockTop, setDockTop] = useState(0);
+  const layoutDock = (e: LayoutChangeEvent) => {
+    onLayout(e);
+    dockRef.current?.measureInWindow((_x, y) => { if (Number.isFinite(y)) setDockTop(y); });
+  };
 
   if (!s.seated || s.stage === 'fortune') return null;
 
@@ -97,9 +107,9 @@ export const TablePanel: React.FC<{
   return (
     // Measured on the dock, not the panel: the dock is a child of the cafe's stage, so its frame is in
     // the UnityView's coordinates; the panel's own onLayout would be relative to the dock (y = 0).
-    <View pointerEvents="box-none" onLayout={onLayout}
+    <View ref={dockRef} pointerEvents="box-none" onLayout={layoutDock}
       style={landscape ? [styles.sideDock, { top: sideTop, width: screen.sidePanel }] : styles.bottomDock}>
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} pointerEvents="box-none" style={landscape ? styles.grow : undefined}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={dockTop} pointerEvents="box-none" style={landscape ? styles.grow : undefined}>
       <View
         testID="cafe-table"
         style={[
@@ -217,6 +227,8 @@ const Body: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) => {
               </View>
             ) : null}
           </Lines>
+          <GhostButton label={t('cafe.tarot.again')} icon="sparkle" onPress={table.askAnother} style={styles.selfStart}
+            testID="cafe-again" />
           <Composer
             key="followup"
             initial=""
@@ -491,7 +503,7 @@ const Composer: React.FC<{
     <View style={styles.inputRow}>
       <TextInput
         testID={`${testID}-input`}
-        style={[styles.input, { maxHeight: screen.vh(0.12, 64, 110) }]}
+        style={[styles.input, { maxHeight: screen.vh(0.12, 64, 110) }, !draft && styles.inputEmpty]}
         value={draft}
         onChangeText={setDraft}
         placeholder={placeholder}
@@ -584,6 +596,9 @@ const styles = StyleSheet.create({
   errorText: { ...typography.body, color: colors.textPrimary },
   errorButtons: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
+  // Empty, the box is one line tall like the send pill beside it: a long placeholder wrapped in the
+  // narrow side column and stood the box taller than the pill (sim 21-10).
+  inputEmpty: { height: 46 },
   input: {
     flex: 1, ...typography.body, color: colors.textPrimary, minHeight: 46,
     paddingHorizontal: spacing.lg, paddingTop: 13, paddingBottom: 13, borderRadius: 23,

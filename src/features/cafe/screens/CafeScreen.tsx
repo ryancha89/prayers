@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -147,6 +147,14 @@ export const CafeScreen: React.FC = () => {
     noteTimer.current = setTimeout(() => setNote(null), NOTE_MS);
   }, []);
   useEffect(() => () => { if (noteTimer.current) clearTimeout(noteTimer.current); }, []);
+
+  // Typing, a tap anywhere off the panel puts the keyboard away (the room behind takes no touch then).
+  const [typing, setTyping] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setTyping(true));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setTyping(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const insets = useViewInsets({
     send: unity ? i => nativeUnityBridge.sendViewInsets(i) : undefined,
@@ -376,6 +384,9 @@ export const CafeScreen: React.FC = () => {
           </View>
         </View>
       )}
+
+      {/* Typing: a tap off the panels puts the keyboard away. Under both panels, over the room. */}
+      {typing && <Pressable style={StyleSheet.absoluteFill} onPress={Keyboard.dismiss} accessible={false} testID="cafe-dismiss-keyboard" />}
 
       {/* Seated: the conversation. Bottom panel upright, right-hand panel sideways. */}
       {talking && (
