@@ -172,7 +172,7 @@ async function toChosen() {
 /* ---- the tarot ------------------------------------------------------------------------------ */
 
 describe('a tarot reading at the table', () => {
-  it('seated: the menu replaces the stick, the look layer and the guest panel', async () => {
+  it('seated: the menu replaces the stick and the guest panel; the look layer stays while just sitting', async () => {
     await render();
     expect(byTestID('cafe-look').length).toBeGreaterThan(0);
     fromUnity({ type: 'CAFE_SEATED', payload: { spot: 'table_2' } });
@@ -180,9 +180,11 @@ describe('a tarot reading at the table', () => {
     expect(byTestID('cafe-seated').length).toBeGreaterThan(0);
     expect(byTestID('cafe-menu')).toHaveLength(0);
     expect(shown()).not.toContain('Order Coffee');
-    expect(byTestID('cafe-look')).toHaveLength(0);
+    // Just sitting the follow camera stays on the player and the fingers still turn it (22-10).
+    expect(byTestID('cafe-look').length).toBeGreaterThan(0);
     await press('Menu');
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
+    expect(byTestID('cafe-look').length).toBeGreaterThan(0);
     // A CAFE_PHASE talking from the same sit must not raise the guest's panel over the table.
     fromUnity({ type: 'CAFE_PHASE', payload: { phase: 'talking', spot: 'table_2', reason: '' } });
     expect(byTestID('cafe-panel')).toHaveLength(0);

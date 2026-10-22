@@ -273,13 +273,18 @@ export const CafeScreen: React.FC = () => {
   const exploring = phase === 'exploring' && !atTable;
   const talking = phase === 'talking' && !atTable;
   const controlsOn = !unity || up;
+  // Seated with nothing on the table the follow camera stays on the player and the fingers still turn it
+  // (22-10, "ngồi mà camera vẫn không follow nhân vật"); a reading or a coffee has its own shots.
+  const lookAround = controlsOn && (exploring || seatedLook(table.state));
   const look = useFollowCamera({
-    enabled: controlsOn && exploring,
+    enabled: lookAround,
     home: CAFE_HOME,
     send: c => bridge.sendCafeCamera(c),
     doubleTapHome: true,
     // A tap on the room: Unity checks it against the furniture — a chair, stool, sofa or table is a seat.
-    onTap: (x, y) => bridge.sendCafeTap(x, y),
+    onTap: (x, y) => {
+      if (exploring) bridge.sendCafeTap(x, y);
+    },
   });
 
   const name = useMemo(() => (guest ? guestName(guest, lang) : ''), [guest, lang]);
@@ -327,7 +332,7 @@ export const CafeScreen: React.FC = () => {
       )}
 
       {/* The look-around layer: transparent, over the Unity view, under every control. */}
-      {controlsOn && exploring && <View style={StyleSheet.absoluteFill} testID="cafe-look" {...look} />}
+      {lookAround && <View style={StyleSheet.absoluteFill} testID="cafe-look" {...look} />}
 
       {/* At the table the cards and the cookie are Unity's, but the touch is this screen's: the embedded
           view gets none (sim QA 20-10, not one card could be picked). Under the top row and the strip. */}
@@ -455,6 +460,8 @@ export const CafeScreen: React.FC = () => {
 };
 
 /** The table stages whose touches belong to the 3D table: choosing the seven, opening the cookie. */
+/** Just sitting: seated at the menu (open or closed), nothing served or read — the camera follows. */
+export const seatedLook = (s: { seated: boolean; stage: string }) => s.seated && s.stage === 'menu';
 export const tapsToUnity = (s: { seated: boolean; stage: string }) => s.seated && (s.stage === 'picking' || s.stage === 'cookie');
 
 /** Further than this (points) between finger down and up, and it was not a tap. */
