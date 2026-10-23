@@ -31,6 +31,7 @@ import { ConfirmSheet } from '../components/ConfirmSheet';
 import { FortuneCard } from '../components/FortuneCard';
 import { Bubble, GhostButton, Medallion, PanelBackdrop } from '../components/CafeChrome';
 import { TAROT_TABLE } from '../table/tarotTable';
+import { CardsGesture, drag, newGesture, pinch, toHalfViews } from '../table/cardsZoom';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -336,7 +337,13 @@ export const CafeScreen: React.FC = () => {
 
       {/* At the table the cards and the cookie are Unity's, but the touch is this screen's: the embedded
           view gets none (sim QA 20-10, not one card could be picked). Under the top row and the strip. */}
-      {tapsToUnity(table.state) && <TapLayer onTap={(x, y) => bridge.sendCafeTap(x, y)} />}
+      {/* Choosing: pinch to zoom into the 78, drag across them. */}
+      {tapsToUnity(table.state) && (
+        <TapLayer
+          onTap={(x, y) => bridge.sendCafeTap(x, y)}
+          onZoom={table.state.stage === 'picking' ? g => bridge.sendCafeZoom(g) : undefined}
+        />
+      )}
 
       {/* Top row: the way back to the world on the left, the place's name beside it. */}
       <View
@@ -467,26 +474,68 @@ export const tapsToUnity = (s: { seated: boolean; stage: string }) => s.seated &
 /** Further than this (points) between finger down and up, and it was not a tap. */
 const TAP_SLOP = 12;
 
+type Finger = { pageX: number; pageY: number };
+
 /** A transparent layer over the Unity view that hands each tap on as 0..1 of the view from its
- *  top-left (CAFE_TAP, WORLD_TAP's convention). A drag is not a tap. */
-export const TapLayer: React.FC<{ onTap: (x: number, y: number) => void }> = ({ onTap }) => {
+ *  top-left (CAFE_TAP, WORLD_TAP's convention). A drag is not a tap. With `onZoom` (choosing the
+ *  seven) two fingers pinch the spread in and out and one finger drags across it once it is zoomed
+ *  (PM 23-10) — sent as gestures (cardsZoom.ts); Unity owns the zoom. Kept on a layer of its own
+ *  for the reason useFollowCamera gives: the embedded view never sees a touch. */
+export const TapLayer: React.FC<{ onTap: (x: number, y: number) => void; onZoom?: (g: CardsGesture) => void }> = ({ onTap, onZoom }) => {
   const size = useRef({ w: 0, h: 0 });
-  const down = useRef<{ x: number; y: number } | null>(null);
+  /** The layer's top-left on the page: a second finger only comes with page coordinates. */
+  const origin = useRef({ x: 0, y: 0 });
+  const down = useRef<{ x: number; y: number; moved: boolean; two: boolean } | null>(null);
+  /** The gesture under way: a pinch (from its fingers' spread) or a drag (from where it began). */
+  const gesture = useRef<{ id: number; dist: number; mid: { x: number; y: number } } | { id: number; x: number; y: number } | null>(null);
+  const unit = (f: Finger) =>
+    toHalfViews((f.pageX - origin.current.x) / Math.max(1, size.current.w), (f.pageY - origin.current.y) / Math.max(1, size.current.h));
+  const two = ([a, b]: Finger[]) => {
+    const pa = unit(a), pb = unit(b);
+    return { dist: Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY), mid: { x: (pa.x + pb.x) / 2, y: (pa.y + pb.y) / 2 } };
+  };
   return (
     <View
       style={StyleSheet.absoluteFill}
       testID="cafe-tap"
       onLayout={e => { size.current = { w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height }; }}
       onStartShouldSetResponder={() => true}
-      onResponderGrant={e => { down.current = { x: e.nativeEvent.locationX, y: e.nativeEvent.locationY }; }}
+      onResponderGrant={e => {
+        const t = e.nativeEvent;
+        origin.current = { x: t.pageX - t.locationX, y: t.pageY - t.locationY };
+        down.current = { x: t.pageX, y: t.pageY, moved: false, two: t.touches.length >= 2 };
+        gesture.current = null;
+      }}
+      onResponderMove={e => {
+        const d = down.current;
+        const touches = e.nativeEvent.touches as Finger[];
+        if (!d || !onZoom) return;
+        if (touches.length >= 2) {
+          d.two = true;
+          const now = two(touches);
+          // A second finger landing: a new gesture, from where the camera is.
+          if (!gesture.current || !('dist' in gesture.current)) gesture.current = { id: newGesture(), ...now };
+          else onZoom(pinch(gesture.current.id, gesture.current, now));
+          return;
+        }
+        const f = touches[0] ?? e.nativeEvent;
+        if (!d.moved && Math.hypot(f.pageX - d.x, f.pageY - d.y) <= TAP_SLOP) return;
+        d.moved = true;
+        // One finger (or the one left over after a pinch): a drag, from here.
+        const at = unit(f);
+        if (!gesture.current || 'dist' in gesture.current) gesture.current = { id: newGesture(), ...at };
+        else onZoom(drag(gesture.current.id, at.x - gesture.current.x, at.y - gesture.current.y));
+      }}
       onResponderRelease={e => {
         const d = down.current;
         down.current = null;
+        gesture.current = null;
         const { w, h } = size.current;
-        const { locationX: x, locationY: y } = e.nativeEvent;
-        if (!d || w <= 0 || h <= 0 || Math.hypot(x - d.x, y - d.y) > TAP_SLOP) return;
-        onTap(x / w, y / h);
+        const { pageX, pageY } = e.nativeEvent;
+        if (!d || d.two || d.moved || w <= 0 || h <= 0 || Math.hypot(pageX - d.x, pageY - d.y) > TAP_SLOP) return;
+        onTap((pageX - origin.current.x) / w, (pageY - origin.current.y) / h);
       }}
+      onResponderTerminate={() => { down.current = null; gesture.current = null; }}
     />
   );
 };

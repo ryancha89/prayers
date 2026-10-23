@@ -5,6 +5,7 @@ import {
   CafeRevealCard,
   CafeTarotSpeak,
   CafeTarotStart,
+  CardsGesture,
   LectureInitPayload,
   LectureStatePayload,
   MeditationStatePayload,
@@ -68,7 +69,7 @@ const MEDITATION_RETRY_MS = 1500;
 const MEDITATION_MAX_TRIES = 4;
 
 /** Absolute-state messages sent while a finger moves: coalesced (see NativeUnityBridge.postStream). */
-const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'CAFE_CAMERA', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
+const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'CAFE_CAMERA', 'CAFE_ZOOM', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
 /** ~30 a second per type: smooth under Unity's own easing, a quarter of what a thumb produced. */
 const STREAM_MS = 33;
 /** The scenes' own handshake events. Not every `*_READY` is one: CAFE_DECK_READY is a step inside the
@@ -787,6 +788,14 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
 
   sendCafeTap(x: number, y: number): void {
     if (this.view) this.post({ type: 'CAFE_TAP', payload: { x: unit(x), y: unit(y) } });
+  }
+
+  /** The pinch / drag over the 78 while choosing: cumulative per gesture, so streamed like CAFE_CAMERA. */
+  sendCafeZoom(g: CardsGesture): void {
+    const clamp = (v: number, lo: number, hi: number, or: number) => (Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : or);
+    if (this.view) {
+      this.postLive({ type: 'CAFE_ZOOM', payload: { gesture: Math.trunc(g.gesture) || 0, scale: clamp(g.scale, 0.1, 10, 1), x: clamp(g.x, -4, 4, 0), y: clamp(g.y, -4, 4, 0) } });
+    }
   }
 
   sendCafeStand(): void {

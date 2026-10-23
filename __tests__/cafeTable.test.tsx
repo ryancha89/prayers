@@ -370,10 +370,36 @@ describe('a tarot reading at the table', () => {
     const layer = byTestID('cafe-tap')[0];
     act(() => layer.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 400, height: 800 } } }));
     expect(layer.props.onStartShouldSetResponder()).toBe(true);
-    const touch = (x: number, y: number) => ({ nativeEvent: { locationX: x, locationY: y } });
+    const touch = (x: number, y: number, ...more: [number, number][]) => ({
+      nativeEvent: { locationX: x, locationY: y, pageX: x, pageY: y, touches: [[x, y], ...more].map(([px, py]) => ({ pageX: px, pageY: py })) },
+    });
     act(() => { layer.props.onResponderGrant(touch(100, 200)); layer.props.onResponderRelease(touch(103, 202)); });
     act(() => { layer.props.onResponderGrant(touch(100, 200)); layer.props.onResponderRelease(touch(180, 200)); });
     expect(calls('CAFE_TAP').map(c => c.payload)).toEqual([{ x: 103 / 400, y: 202 / 800 }]);
+
+    // Two fingers spread to twice their distance: a pinch gesture of scale 2 (Unity zooms on the cards), no pick.
+    act(() => {
+      layer.props.onResponderGrant(touch(150, 400));
+      layer.props.onResponderMove(touch(150, 400, [250, 400]));
+      layer.props.onResponderMove(touch(100, 400, [300, 400]));
+      layer.props.onResponderRelease(touch(100, 400));
+    });
+    const pinched = calls('CAFE_ZOOM').map(c => c.payload as { gesture: number; scale: number; x: number; y: number });
+    expect(pinched).toHaveLength(1);
+    expect(pinched[0]).toMatchObject({ scale: 2, x: 0, y: 0 });
+    // Then one finger drags: a new gesture, its travel in half-views (+y up).
+    act(() => {
+      layer.props.onResponderGrant(touch(200, 400));
+      layer.props.onResponderMove(touch(220, 400));
+      layer.props.onResponderMove(touch(260, 440));
+      layer.props.onResponderRelease(touch(260, 440));
+    });
+    const dragged = calls('CAFE_ZOOM').at(-1)!.payload as { gesture: number; scale: number; x: number; y: number };
+    expect(dragged.gesture).not.toBe(pinched[0].gesture);
+    expect(dragged.scale).toBe(1);
+    expect(dragged.x).toBeCloseTo(40 / 200);
+    expect(dragged.y).toBeCloseTo(-40 / 400);
+    expect(calls('CAFE_TAP')).toHaveLength(1);
     serve('cafe/tarot/readings', ok(READING));
     fromUnity({ type: 'CAFE_CARDS_CHOSEN', payload: { cards: DEALT as never } });
     expect(byTestID('cafe-tap')).toHaveLength(0);

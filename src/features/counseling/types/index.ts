@@ -431,6 +431,11 @@ export type RNToUnityEvent =
    *  the player walks there alone (as a CAFE_SIT would). Seated it picks a card while the deck is out,
    *  or opens the fortune cookie. The embedded view gets no touch of its own. */
   | { type: 'CAFE_TAP'; payload: { x: number; y: number } }
+  /** Pinch / drag over the 78 while choosing (23-10): one touch gesture, cumulative since it began — the
+   *  fingers' spread `scale` (1 = a drag) and travel (x, y) in half-views, +y up (cafe/table/cardsZoom.ts).
+   *  Unity owns the zoom (about the cards' centre) and its limits; a new `gesture` starts from where the
+   *  last left off. Dropped outside the deal and the pick; every other shot starts unzoomed. */
+  | { type: 'CAFE_ZOOM'; payload: CardsGesture }
   /** Stand up from the table, or cancel the walk to it. */
   | { type: 'CAFE_STAND' }
   /** Leaving the cafe. */
@@ -937,6 +942,17 @@ export interface MyRoomBridge {
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
 }
 
+/** CAFE_ZOOM's payload (cafe/table/cardsZoom.ts). */
+export interface CardsGesture {
+  /** Which touch gesture: changes whenever a finger lands or lifts. */
+  gesture: number;
+  /** How far the fingers spread since the gesture began: 1 = unchanged (a drag), 2 = twice apart. */
+  scale: number;
+  /** How far they moved since it began, in half-views of the view, +x right, +y up. */
+  x: number;
+  y: number;
+}
+
 /** The coffee shop's half of the bridge — its own interface for the reason WorldBridge gives. */
 export interface CafeBridge {
   openCafe(init: CafeInitPayload): void;
@@ -946,6 +962,7 @@ export interface CafeBridge {
   sendCafeSay(text: string): void;
   sendCafeShot(): void;
   sendCafeTap(x: number, y: number): void;
+  sendCafeZoom(gesture: CardsGesture): void;
   sendCafeStand(): void;
   sendCafeTarotStart(start: CafeTarotStart): void;
   sendCafeTarotSpread(): void;

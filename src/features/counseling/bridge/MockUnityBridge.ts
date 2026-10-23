@@ -4,6 +4,7 @@ import {
   CafeRevealCard,
   CafeTarotSpeak,
   CafeTarotStart,
+  CardsGesture,
   MyRoomAction,
   MyRoomBook,
   MyRoomBridge,
@@ -199,6 +200,7 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, 
   sendCafeSay(text: string): void { this.cafeCalls.push({ type: 'CAFE_SAY', payload: { text } }); }
   sendCafeShot(): void { this.cafeCalls.push({ type: 'CAFE_SHOT' }); }
   sendCafeTap(x: number, y: number): void { this.cafeCalls.push({ type: 'CAFE_TAP', payload: { x, y } }); }
+  sendCafeZoom(gesture: CardsGesture): void { this.cafeCalls.push({ type: 'CAFE_ZOOM', payload: { ...gesture } }); }
   sendCafeStand(): void { this.cafeCalls.push({ type: 'CAFE_STAND' }); }
   sendCafeTarotStart(start: CafeTarotStart): void { this.cafeCalls.push({ type: 'CAFE_TAROT_START', payload: { ...start } }); }
   sendCafeTarotSpread(): void { this.cafeCalls.push({ type: 'CAFE_TAROT_SPREAD' }); }
