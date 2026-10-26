@@ -11,6 +11,7 @@ import { useT } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import type { RootStackParamList } from '../../../navigation/types';
 import { hasBirthData, useSubjectsStore } from '../../subjects/store/subjectsStore';
+import { charactersFor, effectiveCharacter } from '../../character/characters';
 import { SajuChartPanel, useSajuChart } from '../../saju/components/SajuChartPanel';
 import { column } from '../../../shared/device/screen';
 import { zodiacOf } from '../../saju/zodiac';
@@ -29,6 +30,13 @@ export const MyInfoScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const t = useT();
   const self = useSubjectsStore(s => s.self);
+  // The body actually walked: the gender decides (playerGender), the stored pick only stands in
+  // without one. Showing the stored pick read "Female" beside "Gender: Male" (QA 26-10).
+  const storedCharacter = useSubjectsStore(s => s.playerCharacter);
+  const character = effectiveCharacter(self.gender, storedCharacter);
+  const characterLabel = character
+    ? `${t(character.gender === 'male' ? 'character.male' : 'character.female')}${charactersFor(character.gender).length > 1 ? ` ${character.n}` : ''}`
+    : undefined;
   const ready = hasBirthData(self);
   const chart = useSajuChart(self.birthDate, self.birthTime, self.birthPlace);
   const zodiac = zodiacOf(self.birthDate);
@@ -72,7 +80,18 @@ export const MyInfoScreen: React.FC = () => {
             label={t('addSubject.gender')}
             value={self.gender ? t(self.gender === 'male' ? 'addSubject.male' : 'addSubject.female') : '—'}
           />
-          <Field label="MBTI" value={self.mbti ?? '—'} last />
+          <Field label="MBTI" value={self.mbti ?? '—'} />
+          {/* The body in the 3D world — its own screen, not the profile form (26-10). */}
+          <Pressable
+            testID="myinfo-character"
+            accessibilityRole="button"
+            onPress={() => { sfx.tap(); navigation.navigate('CharacterSelect'); }}>
+            <Field
+              label={t('character.row')}
+              value={`${characterLabel ?? '—'}  ›`}
+              last
+            />
+          </Pressable>
         </View>
 
         {!ready || !chart ? (

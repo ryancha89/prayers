@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CounselingSubject } from '../../counseling/types';
+import { defaultCharacterFor } from '../../character/characters';
 
 /** Saved people the user can ask about (spec §14, §15). */
 
@@ -22,8 +23,19 @@ const SELF_DEFAULT: CounselingSubject = {
 export const hasBirthData = (s?: CounselingSubject): boolean =>
   !!s && !!s.birthDate && !!s.gender;
 
+export type PlayerGender = 'male' | 'female';
+/** A character id from features/character/characters.ts — chosen after the profile (CharacterSelectScreen). */
+export type PlayerCharacter = string;
+
 interface SubjectsState {
   self: CounselingSubject;
+  /**
+   * The player's own character, picked on the screen after ProfileSetup. Undefined until picked,
+   * which is what puts that screen up — so an account from before 26-10 is asked once too.
+   * Separate from `self.gender` on purpose: gender reads the chart, this only picks a body.
+   */
+  playerCharacter?: PlayerCharacter;
+  setPlayerCharacter: (c: PlayerCharacter) => void;
   /**
    * The player chose "later" at first run.
    *
@@ -52,6 +64,8 @@ export const useSubjectsStore = create<SubjectsState>()(
       self: SELF_DEFAULT,
       profileDeferred: false,
       deferProfile: () => set({ profileDeferred: true }),
+      playerCharacter: undefined,
+      setPlayerCharacter: c => set({ playerCharacter: c }),
       subjects: [
         // Gender is part of the seed because it is part of a usable subject: without it these two
         // would sit in the picker looking complete and then send the player to a form.
@@ -66,7 +80,17 @@ export const useSubjectsStore = create<SubjectsState>()(
       updateSubject: (id, patch) =>
         set(state =>
           id === 'self'
-            ? { self: { ...state.self, ...patch }, profileDeferred: false }
+            ? {
+                self: { ...state.self, ...patch },
+                profileDeferred: false,
+                // The character follows the gender (26-10): CHANGING the gender moves an existing
+                // pick to the new gender's default, so the two can never disagree. Only an existing
+                // one — the FIRST gender (ProfileSetup's "Get started") must leave it unset, or the
+                // character screen right after it is skipped (that bug shipped for an hour, 26-10).
+                ...(patch.gender && state.playerCharacter && patch.gender !== state.self.gender
+                  ? { playerCharacter: defaultCharacterFor(patch.gender).id }
+                  : {}),
+              }
             : {
                 subjects: state.subjects.map(s => (s.id === id ? { ...s, ...patch } : s)),
               },
@@ -84,6 +108,7 @@ export const useSubjectsStore = create<SubjectsState>()(
         self: state.self,
         subjects: state.subjects,
         profileDeferred: state.profileDeferred,
+        playerCharacter: state.playerCharacter,
       }),
     },
   ),

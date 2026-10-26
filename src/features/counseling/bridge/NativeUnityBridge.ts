@@ -6,6 +6,7 @@ import {
   CafeTarotSpeak,
   CafeTarotStart,
   CardsGesture,
+  CharacterInitPayload,
   LectureInitPayload,
   LectureStatePayload,
   MeditationStatePayload,
@@ -102,6 +103,13 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   private lectureRetry: ReturnType<typeof setTimeout> | null = null;
   private lectureTries = 0;
   private lectureState?: LectureStatePayload;
+  /** The character preview (26-10): the lecture room's open-until-answered rule, plus the camera
+   *  switch, remembered so a CHARACTER_READY that lands after the tap still gets it. */
+  private characterInit?: CharacterInitPayload;
+  private characterPending = false;
+  private characterRetry: ReturnType<typeof setTimeout> | null = null;
+  private characterTries = 0;
+  private characterTracking = false;
   /** The train journey cabin: the same open-until-answered rule as the meditation room. */
   private journeyInit?: JourneyInitPayload;
   private journeyPending = false;
@@ -165,11 +173,13 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.clearJourneyRetry();
     this.clearMeditationRetry();
     this.clearLectureRetry();
+    this.clearCharacterRetry();
     this.clearWorldRetry();
     this.clearMyRoomRetry();
     this.clearCafeRetry();
     this.payload = undefined;
-    this.meditationPending = this.lecturePending = this.journeyPending = false;
+    this.meditationPending = this.lecturePending = this.journeyPending = this.characterPending = false;
+    this.characterInit = undefined;
     this.worldPending = this.myRoomPending = this.cafePending = false;
     this.lectureInit = this.journeyInit = this.worldInit = this.myRoomInit = this.cafeInit = undefined;
     this.initSent = false;
@@ -371,6 +381,67 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.clearLectureRetry();
     try {
       if (this.view) this.post({ type: 'LECTURE_END' });
+    } catch {}
+    this.ready = false;
+  }
+
+  /**
+   * Open the character preview (the character screen's 3D pane). Posts directly and repeats until
+   * CHARACTER_READY, as the lecture room does — this scene never sends UNITY_READY either.
+   */
+  openCharacterPreview(init: CharacterInitPayload): void {
+    this.beginScene('CHARACTER_READY');
+    this.characterInit = init;
+    this.characterPending = true;
+    this.characterTries = 0;
+    devlog('[unity-bridge] CHARACTER_INIT');
+    this.post({ type: 'CHARACTER_INIT', payload: init });
+    this.armCharacterRetry();
+  }
+
+  private armCharacterRetry(): void {
+    this.clearCharacterRetry();
+    this.characterRetry = setTimeout(() => {
+      this.characterRetry = null;
+      if (!this.characterPending || !this.view || !this.characterInit) return;
+      if (this.characterTries >= MEDITATION_MAX_TRIES) {
+        devlog(`[unity-bridge] no CHARACTER_READY after ${this.characterTries} retries — staying on the card art`);
+        return;
+      }
+      this.characterTries += 1;
+      devlog(`[unity-bridge] CHARACTER_INIT (retry ${this.characterTries})`);
+      this.post({ type: 'CHARACTER_INIT', payload: this.characterInit });
+      this.armCharacterRetry();
+    }, MEDITATION_RETRY_MS);
+  }
+
+  private clearCharacterRetry(): void {
+    if (this.characterRetry !== null) {
+      clearTimeout(this.characterRetry);
+      this.characterRetry = null;
+    }
+  }
+
+  /** The player tapped another card. Remembered, so a late READY shows the right body. */
+  setCharacterPreview(init: CharacterInitPayload): void {
+    this.characterInit = init;
+    if (this.view) this.post({ type: 'CHARACTER_SET', payload: init });
+  }
+
+  /** The camera switch. Remembered and replayed on CHARACTER_READY. */
+  setFaceTracking(on: boolean): void {
+    this.characterTracking = on;
+    if (this.view) this.post({ type: 'CHARACTER_TRACKING', payload: { on } });
+  }
+
+  /** Leaving the character screen. Idempotent, and safe when Unity never booted. */
+  closeCharacterPreview(): void {
+    if (this.expectedReady !== 'CHARACTER_READY') return;
+    this.characterPending = false;
+    this.characterTracking = false;
+    this.clearCharacterRetry();
+    try {
+      if (this.view) this.post({ type: 'CHARACTER_END' });
     } catch {}
     this.ready = false;
   }
@@ -923,6 +994,11 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       this.post({ type: 'LECTURE_INIT', payload: this.lectureInit });
       this.armLectureRetry();
     }
+    if (this.characterPending && this.characterInit) {
+      devlog('[unity-bridge] CHARACTER_INIT (view registered)');
+      this.post({ type: 'CHARACTER_INIT', payload: this.characterInit });
+      this.armCharacterRetry();
+    }
     if (this.journeyPending && this.journeyInit) {
       devlog('[unity-bridge] JOURNEY_INIT (view registered)');
       this.post({ type: 'JOURNEY_INIT', payload: this.journeyInit });
@@ -1038,6 +1114,10 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
         devlog('[unity-bridge] LECTURE_INIT (bridge ready)');
         this.post({ type: 'LECTURE_INIT', payload: this.lectureInit });
       }
+      if (this.characterPending && this.characterInit) {
+        devlog('[unity-bridge] CHARACTER_INIT (bridge ready)');
+        this.post({ type: 'CHARACTER_INIT', payload: this.characterInit });
+      }
       if (this.journeyPending && this.journeyInit) {
         devlog('[unity-bridge] JOURNEY_INIT (bridge ready)');
         this.post({ type: 'JOURNEY_INIT', payload: this.journeyInit });
@@ -1059,6 +1139,16 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     // The meditation room's equivalent of UNITY_READY for TRANSPORT purposes only: it proves the
     // player is listening, so nothing after it needs queueing. It does NOT start anything — the
     // screen decides what to do with it.
+    if (event.type === 'CHARACTER_READY') {
+      this.characterPending = false;
+      this.clearCharacterRetry();
+      if (this.characterInit) this.post({ type: 'CHARACTER_SET', payload: this.characterInit });
+      if (this.characterTracking) this.post({ type: 'CHARACTER_TRACKING', payload: { on: true } });
+      this.replayViewInsets();
+      this.ready = true;
+      this.everReady = true;
+      this.clearInitRetry();
+    }
     if (event.type === 'LECTURE_READY') {
       this.lecturePending = false;
       this.clearLectureRetry();

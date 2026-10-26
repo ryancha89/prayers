@@ -8,6 +8,7 @@ import { useLang, useT } from '../../../shared/i18n';
 import { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { roomSubjects } from '../bridge/subjectPayload';
+import { playerCharacter } from '../bridge/playerGender';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useCounselingStore } from '../store/counselingStore';
 import { defaultTopicFor } from '../topicsForCounselor';
@@ -104,6 +105,8 @@ export const UnityEntryScreen: React.FC = () => {
       // The ACCOUNT, not the device. Unity forwards this as the User-Auth header, so the reading
       // the room fetches belongs to whoever is signed in — and follows them to their next phone.
       auth: getUserAuth() ?? '',
+      playerGender: useSubjectsStore.getState().self.gender,
+      playerCharacter: playerCharacter(),
     });
 
     return unsub;

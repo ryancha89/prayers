@@ -363,6 +363,44 @@ export const CounselingRoomScreen: React.FC = () => {
     });
   }, [onExit, exitTo]);
 
+  // The counselor's face follows the AI reply (26-10, #timeline-truongthinh): each scene's tone is
+  // already mapped to an emotion by the engine (TONE_PERFORMANCE) for the drawn stage; the Unity
+  // room gets the same value as FACE_EXPRESSION. Sent on CHANGE only — an undirected reply stays
+  // `neutral` and sends nothing, so the room's own [Beat] cues keep the face in that case.
+  // The player's face onto hers (26-10, "cả camera lẫn theo AI"): the iPhone camera through ARKit,
+  // her face on bones until the artist's blendshapes land. Off when the room closes; an "unsupported"
+  // answer (no camera, simulator) turns the switch back off.
+  const faceCamAvailable = !pixel && isNativeUnity();
+  const [faceCam, setFaceCam] = useState(false);
+  const toggleFaceCam = useCallback(() => {
+    setFaceCam(on => {
+      const next = !on;
+      getUnityBridge().sendEvent({ type: 'ROOM_FACE_TRACKING', payload: { on: next } });
+      return next;
+    });
+  }, []);
+  useEffect(() => {
+    if (!faceCamAvailable) return;
+    const off = getUnityBridge().onEvent(e => {
+      if (e.type === 'CHARACTER_TRACKING' && e.payload?.state === 'unsupported') setFaceCam(false);
+    });
+    return () => {
+      off();
+      getUnityBridge().sendEvent({ type: 'ROOM_FACE_TRACKING', payload: { on: false } });
+    };
+  }, [faceCamAvailable]);
+
+  const emotion = consultation.state.emotion;
+  const sentEmotion = useRef<string>('neutral');
+  useEffect(() => {
+    if (pixel || !isNativeUnity() || emotion === sentEmotion.current) return;
+    sentEmotion.current = emotion;
+    getUnityBridge().sendEvent({
+      type: 'FACE_EXPRESSION',
+      payload: { target: 'counselor', emotion, intensity: 1, hold: 0 },
+    });
+  }, [emotion, pixel]);
+
   // …and the room can also say NOTHING at all, which the block above does not cover.
   //
   // Measured on the simulator: after a JS reload, SESSION_INIT went out and no BRIDGE_READY or
@@ -527,6 +565,16 @@ export const CounselingRoomScreen: React.FC = () => {
             room shows what is left; the pill opens the shop. */}
         <View style={styles.topRight} pointerEvents="box-none">
           <CoinPill />
+          {faceCamAvailable && (
+            <RingButton
+              testID="room-face-cam"
+              icon="camera"
+              size={RING_COMPACT}
+              active={faceCam}
+              label={t(faceCam ? 'character.cameraOff' : 'character.cameraOn')}
+              onPress={toggleFaceCam}
+            />
+          )}
           <RingButton
             testID="room-sound"
             icon={voiceOn ? 'speaker' : 'speakerOff'}

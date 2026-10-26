@@ -13,6 +13,7 @@ import type { RootStackParamList } from '../../../navigation/types';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { getMyRoomBridge, isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
+import { playerCharacter, playerGender } from '../../counseling/bridge/playerGender';
 import { CoinPill } from '../../coins/components/CoinPill';
 import { useMyRoomCamera } from '../components/useMyRoomCamera';
 import { WorldJoystick } from '../../world/components/WorldJoystick';
@@ -179,7 +180,11 @@ export const MyRoomScreen: React.FC = () => {
   const initFor = (): MyRoomInitPayload => {
     const cached = useMyRoomStore.getState().current();
     sentLayout.current = cached?.layout ?? null;
-    return { lang, book: bookRef.current, layout: cached?.layout ?? null, owned: cached?.owned ?? null };
+    return {
+      lang, book: bookRef.current, layout: cached?.layout ?? null, owned: cached?.owned ?? null,
+      playerGender: playerGender(),
+      playerCharacter: playerCharacter(),
+    };
   };
   useEffect(() => {
     if (sameBook(bookRef.current, book)) return;

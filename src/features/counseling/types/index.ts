@@ -124,6 +124,10 @@ export interface UnitySessionPayload {
   /** The signed-in Prayers account uid (`pr_…`; `dev-…` in a dev build). Unity sends it as
    *  User-Auth and exchanges it for its own `pgt_` token at `/api/v1/prayers/game/token`. */
   auth?: string;
+  /** The account holder's gender: which body the player walks (Unity PlayerBody). Absent = Theo. */
+  playerGender?: 'male' | 'female';
+  /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
+  playerCharacter?: string;
 }
 
 /* ---- Stage commands (bridge v2) ----------------------------------------
@@ -311,6 +315,22 @@ export type RNToUnityEvent =
   | { type: 'LECTURE_STATE'; payload: LectureStatePayload }
   /** Leaving the lecture room. */
   | { type: 'LECTURE_END' }
+  /** Open the character preview behind the character screen (26-10). Repeated until CHARACTER_READY. */
+  | { type: 'CHARACTER_INIT'; payload: CharacterInitPayload }
+  /** Swap the previewed body as the player taps a card. */
+  | { type: 'CHARACTER_SET'; payload: CharacterInitPayload }
+  /** Turn the camera-driven face on or off (ARKit on device). */
+  | { type: 'CHARACTER_TRACKING'; payload: { on: boolean } }
+  /** The face follows the AI reply (26-10, #timeline-truongthinh): the emotion of the line being
+   *  spoken, mapped from the server's tone by TONE_PERFORMANCE. `target` is a role ("counselor",
+   *  "player", "" = every face); `hold` 0 = keep it until the next one. Faces without ARKit
+   *  blendshapes ignore it. */
+  | { type: 'FACE_EXPRESSION'; payload: FaceExpressionPayload }
+  /** The player's face (iPhone camera, ARKit) onto the counselor in the room (26-10). States come
+   *  back as CHARACTER_TRACKING {state}, as on the character screen. */
+  | { type: 'ROOM_FACE_TRACKING'; payload: { on: boolean } }
+  /** Leaving the character screen: camera off, preview gone. */
+  | { type: 'CHARACTER_END' }
   /** The listener turning the camera round him (drag) and in/out (pinch), as WORLD_CAMERA: zoom 0..1
    *  (0 = close), yaw −1..1 (±180° round him), pitch −1..1 (+ = higher). Unity eases toward it;
    *  a double-tap sends the home framing. */
@@ -577,6 +597,10 @@ export interface WorldInitPayload {
   spawn: WorldSpot | null;
   /** Coming back out of a room: stand the player at that door. Wins over `spawn`. */
   zone?: WorldZone;
+  /** The account holder's gender: which body the player walks (Unity PlayerBody). Absent = Theo. */
+  playerGender?: 'male' | 'female';
+  /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
+  playerCharacter?: string;
 }
 
 export interface MyRoomInitPayload {
@@ -589,6 +613,10 @@ export interface MyRoomInitPayload {
   layout?: MyRoomLayout | null;
   /** What the account owns. null/absent = not known yet (Unity treats it as the starter set). */
   owned?: MyRoomOwned | null;
+  /** The account holder's gender: which body the player walks (Unity PlayerBody). Absent = Theo. */
+  playerGender?: 'male' | 'female';
+  /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
+  playerCharacter?: string;
 }
 
 /** CAFE_INIT. Mirrored by name in Unity's RNCafeInit. */
@@ -603,6 +631,10 @@ export interface CafeInitPayload {
   presenceUrl?: string;
   gameToken?: string;
   name?: string;
+  /** The account holder's gender: which body the player walks (Unity PlayerBody). Absent = Theo. */
+  playerGender?: 'male' | 'female';
+  /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
+  playerCharacter?: string;
 }
 
 /** CAFE_TABLES' row: a seat id and whether somebody else (the shared room) sits there. */
@@ -736,6 +768,17 @@ export interface MyRoomCamera {
   pitch: number;
 }
 
+/** The body the character preview shows — the same two fields every *_INIT carries. */
+export interface CharacterInitPayload {
+  lang: string;
+  playerGender?: 'male' | 'female';
+  playerCharacter?: string;
+}
+
+/** Where face tracking is (Unity CameraFaceSource): `unsupported` on the simulator and on phones
+ *  without a TrueDepth camera, `no_face` while the player is out of frame. */
+export type FaceTrackingState = 'off' | 'starting' | 'tracking' | 'no_face' | 'unsupported';
+
 export interface LectureInitPayload {
   lang: string;
   chapter: number;
@@ -799,6 +842,10 @@ export type UnityToRNEvent =
   | { type: 'MEDITATION_READY' }
   /** The lecture room is on screen — the lecture screen fades its portrait out over it. */
   | { type: 'LECTURE_READY' }
+  /** The character preview is on screen — the character screen fades its card art out over it. */
+  | { type: 'CHARACTER_READY' }
+  /** The face-tracking state changed (see FaceTrackingState). */
+  | { type: 'CHARACTER_TRACKING'; payload: { state: FaceTrackingState } }
   /** The train cabin is on screen (spec 003) — the journey screen fades its SVG window out. */
   | { type: 'JOURNEY_READY' }
   /** The platform walk is over and the player is in the cabin seat: start the reading. */
@@ -976,6 +1023,13 @@ export interface CafeBridge {
 }
 
 /* ---- Bridge abstraction (spec §39). Keep Unity behind this interface. ---- */
+export interface FaceExpressionPayload {
+  target: 'counselor' | 'player' | '';
+  emotion: CounselorEmotion;
+  intensity: number;
+  hold: number;
+}
+
 export interface UnityBridge {
   openCounselingRoom(payload: UnitySessionPayload): Promise<void>;
   sendEvent(event: RNToUnityEvent): void;

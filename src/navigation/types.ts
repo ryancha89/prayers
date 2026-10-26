@@ -99,6 +99,11 @@ export type RootStackParamList = {
    *  above reachable too. */
   Legal: { doc: 'terms' | 'privacy' };
   ProfileSetup: undefined;
+  /** First run, after ProfileSetup: pick the body you walk in the 3D world. Same split as
+   *  ProfileSetup/AddSubject — the gate and the in-app edit are different routes. */
+  CharacterSetup: undefined;
+  /** The same picker opened from My Info. */
+  CharacterSelect: undefined;
   /** A recorded lecture series (the Schopenhauer 12강), opened at a chapter and line. Not a
    *  consultation: free, pre-recorded, nothing sent. The NAME is load-bearing — App.tsx silences the
    *  app's bed on it (`SELF_SCORED_SCREENS`), as for the meditation room. */

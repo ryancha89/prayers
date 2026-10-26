@@ -15,6 +15,7 @@ import type { RootStackParamList } from '../../../navigation/types';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { getCafeBridge, isNativeUnity, nativeUnityBridge, unityApiBase } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
+import { playerCharacter, playerGender } from '../../counseling/bridge/playerGender';
 import type { CafePhase, CafeReplyError, MyRoomCamera } from '../../counseling/types';
 import { getUserAuth, useAuthStore, validGameToken } from '../../auth/store/authStore';
 import { ensureGameToken } from '../../auth/api/session';
@@ -172,6 +173,8 @@ export const CafeScreen: React.FC = () => {
       presenceUrl: presenceUrl(),
       gameToken: validGameToken() ?? '',
       name: useAuthStore.getState().displayName ?? '',
+      playerGender: playerGender(),
+      playerCharacter: playerCharacter(),
     }),
     [lang],
   );
