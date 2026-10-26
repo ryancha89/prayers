@@ -17,6 +17,7 @@ import {
   SPREAD_SIZE,
   STEP_ADVICE,
   STEP_OVERALL,
+  canChangeReader,
   inTarot,
   type CafeTable,
   type TableError,
@@ -142,7 +143,9 @@ export const TablePanel: React.FC<{
             : { height: panelH + safe.bottom, paddingBottom: bottomPad, paddingLeft: safe.left + spacing.md, paddingRight: safe.right + spacing.md },
         ]}>
         <PanelBackdrop side={landscape} />
-        {s.consultant && inTarot(s) && <ReaderHead reader={s.consultant} onEnd={table.end} />}
+        {s.consultant && inTarot(s) && (
+          <ReaderHead reader={s.consultant} onEnd={table.end} onChange={canChangeReader(s) ? table.changeReader : undefined} />
+        )}
         <Body table={table} t={t} />
       </View>
     </KeyboardAvoidingView>
@@ -389,16 +392,20 @@ export const ReaderRow: React.FC<{ reader: TarotConsultant; onPress: () => void;
   </Pressable>
 );
 
-const ReaderHead: React.FC<{ reader: TarotConsultant; onEnd: () => void }> = ({ reader, onEnd }) => (
+const ReaderHead: React.FC<{ reader: TarotConsultant; onEnd: () => void; onChange?: () => void }> = ({ reader, onEnd, onChange }) => {
+  const t = useT();
+  return (
   <View style={styles.headRow}>
     <ReaderFace reader={reader} size={42} glow />
     <View style={styles.grow}>
       <Text style={styles.guest} numberOfLines={1}>{reader.name}</Text>
       {reader.title ? <Text style={styles.readerTitle} numberOfLines={1}>{reader.title}</Text> : null}
     </View>
+    {onChange && <GhostButton label={t('cafe.tarot.change')} icon="people" onPress={onChange} testID="cafe-tarot-change" />}
     <EndButton onPress={onEnd} />
   </View>
-);
+  );
+};
 
 const EndButton: React.FC<{ onPress: () => void }> = ({ onPress }) => {
   const t = useT();

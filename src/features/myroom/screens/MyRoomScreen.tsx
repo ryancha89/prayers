@@ -16,6 +16,7 @@ import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewI
 import { CoinPill } from '../../coins/components/CoinPill';
 import { useMyRoomCamera } from '../components/useMyRoomCamera';
 import { WorldJoystick } from '../../world/components/WorldJoystick';
+import { ROUND } from '../../world/screens/WorldScreen';
 import type { MyRoomAction, MyRoomItemAnchor, MyRoomNearItem } from '../../counseling/types';
 import { ItemPrompt, MYROOM_LIFT } from '../components/ItemPrompt';
 import { itemName, themeName } from '../names';
@@ -80,9 +81,9 @@ export function myRoomCoveredPx(r: MeasuredRects) {
   };
 }
 
-/** The bottom row's height (the 편집 pill), and the run button's size. */
+/** The bottom row's height (the 편집 pill). Run and exit are the world's round buttons (ROUND): 23-10,
+ *  "버튼 크기도 월드맵이랑 같게" — they were 54 and 44. */
 const ROW = 40;
-const RUN = 54;
 
 /**
  * My Room (개인실) — the world's fifth door (02-10: "my room xài room hôm qua của tôi đi"), walkable
@@ -508,8 +509,8 @@ export const MyRoomScreen: React.FC = () => {
       {/* Run, over exit: MYROOM_RUN, never WORLD_RUN (that would set the WORLD's run for the way
           back). Gold while on. */}
       {walkOn && !atBook && (
-        <View pointerEvents="box-none" style={[styles.run, { right: safe.right + spacing.lg - (RUN - ROW - 4) / 2, bottom: bottomPad + ROW + spacing.lg }]}>
-          <RingButton testID="myroom-run" icon="run" size={RUN} label={t('world.run')} active={running} onPress={toggleRun} />
+        <View pointerEvents="box-none" style={[styles.run, { right: safe.right + spacing.lg, bottom: bottomPad + ROUND + spacing.md }]}>
+          <RingButton testID="myroom-run" icon="run" size={ROUND} label={t('world.run')} active={running} onPress={toggleRun} />
         </View>
       )}
 
@@ -557,7 +558,7 @@ export const MyRoomScreen: React.FC = () => {
           <Motto text={t('myroom.motto')} width={Math.max(0, Math.min(260, screen.width - 2 * (spacing.lg + pillW + spacing.md) - safe.left - safe.right))} />
         </View>
         {/* Out to the world from anywhere in the room (10-15) — not only at the door or in ☰. */}
-        <RingButton testID="myroom-exit" icon="exit" size={ROW + 4} label={t('myroom.back')} onPress={toWorld} />
+        <RingButton testID="myroom-exit" icon="exit" size={ROUND} label={t('myroom.back')} onPress={toWorld} />
       </View>
       )}
 

@@ -389,6 +389,17 @@ export const WorldScreen: React.FC = () => {
     bridge.sendWorldRun(on);
   };
 
+  // A run tap from a second finger while the stick is held reaches the stick, not the button (see
+  // WorldJoystick); it is hit-tested here against the button's window rect.
+  const runRef = useRef<View>(null);
+  const runRect = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const measureRun = () => runRef.current?.measureInWindow((x, y, w, h) => { runRect.current = { x, y, w, h }; });
+  const tapWhileSteering = (px: number, py: number) => {
+    const r = runRect.current;
+    const slop = 8;
+    if (r && px >= r.x - slop && px <= r.x + r.w + slop && py >= r.y - slop && py <= r.y + r.h + slop) toggleRun();
+  };
+
   const lookOn = hostOn && worldUp && !overlay && !sheet && !entering;
   const camera = useWorldCamera(lookOn);
   // While a door is being walked through, nothing is drawn over the world.
@@ -442,7 +453,7 @@ export const WorldScreen: React.FC = () => {
       <View
         pointerEvents="box-none"
         style={[styles.stick, { left: safe.left + spacing.xs, bottom: safe.bottom + spacing.xs }]}>
-        <WorldJoystick visible={!busy && !loadingWorld} />
+        <WorldJoystick visible={!busy && !loadingWorld} onOtherTouch={tapWhileSteering} />
       </View>
 
       {!busy && (
@@ -451,7 +462,9 @@ export const WorldScreen: React.FC = () => {
           style={[styles.buttons, { right: safe.right + spacing.lg, bottom: safe.bottom + spacing.lg }]}>
           {/* Run is the row's size (10-22, "뛰기를 다른 아이콘이랑 크기 같게"), right above Menu. */}
           {!loadingWorld && (
-            <RingButton testID="world-run" icon="run" size={ROUND} label={t('world.run')} active={run} onPress={toggleRun} />
+            <View ref={runRef} onLayout={measureRun}>
+              <RingButton testID="world-run" icon="run" size={ROUND} label={t('world.run')} active={run} onPress={toggleRun} />
+            </View>
           )}
           <View style={styles.round3}>
             <RingButton testID="world-map" icon="map" size={ROUND} caption label={t('world.map')} onPress={openSheet('map')} />
@@ -488,8 +501,8 @@ export const WorldScreen: React.FC = () => {
   );
 };
 
-/** The round buttons of a row — run included. */
-const ROUND = 46;
+/** The round buttons of a row — run included. My Room's run and exit match it. */
+export const ROUND = 46;
 /** What the top row keeps on its right: the coin pill (about 96 pt at four digits), a gap, Home. */
 const TOP_RIGHT = 96 + spacing.sm + HUD_ICON;
 

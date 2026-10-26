@@ -53,11 +53,26 @@ function arc(c: number, r: number, a0: number, a1: number) {
   return `M ${p(a0)} A ${r} ${r} 0 0 1 ${p(a1)}`;
 }
 
-export const WorldJoystick: React.FC<{ visible: boolean }> = ({ visible }) => {
+/**
+ * TWO FINGERS (10-23, "이동중에 달리기 누르면 달려야해"): the stick keeps its touch (it refuses to hand
+ * it over), so RN routes every later finger to it too — a run tap while steering never reached the
+ * button, and PanResponder's dx/dy average all fingers, so the second one also yanked the knob. The
+ * stick now follows only its own finger (by identifier) and hands any other finger's touch-down to
+ * `onOtherTouch` (window coordinates), for the screen to hit-test its buttons.
+ */
+export const WorldJoystick: React.FC<{ visible: boolean; onOtherTouch?: (pageX: number, pageY: number) => void }> = ({ visible, onOtherTouch }) => {
   const knob = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const sent = useRef({ x: 0, y: 0 });
-  /** Where the ring sits (zone-local centre): its corner at rest, under the thumb in use. */
-  const [origin, setOrigin] = useState(REST_AT);
+  /** Where the ring sits (zone-local centre). Fixed in the corner (10-22, "움직이면 안되는데 아래
+   *  고정되어야함"): it used to jump under the thumb, which put it mid-screen in landscape. */
+  const origin = REST_AT;
+  /** Where the touch began, relative to the ring's centre — the drag is added to it, so the knob
+   *  goes where the finger is even when the touch did not start dead centre. */
+  const start = useRef({ x: 0, y: 0 });
+  /** The steering finger, and where it went down (window coordinates). */
+  const finger = useRef<{ id: string; x: number; y: number } | null>(null);
+  const other = useRef(onOtherTouch);
+  other.current = onOtherTouch;
   /** Steering angle for the gold arc (radians, screen space), null at rest. */
   const [heading, setHeading] = useState<number | null>(null);
 
@@ -79,7 +94,6 @@ export const WorldJoystick: React.FC<{ visible: boolean }> = ({ visible }) => {
     } else {
       knob.setValue({ x: 0, y: 0 });
     }
-    setOrigin(REST_AT);
     send(0, 0);
   };
 
@@ -90,20 +104,37 @@ export const WorldJoystick: React.FC<{ visible: boolean }> = ({ visible }) => {
         onMoveShouldSetPanResponder: () => true,
         onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: e => {
-          // The ring moves under the thumb, kept fully inside the zone.
-          const r = RING / 2;
-          const x = Math.max(r, Math.min(STICK_ZONE.width - r, e.nativeEvent.locationX ?? REST_AT.x));
-          const y = Math.max(r, Math.min(STICK_ZONE.height - r - TAIL, e.nativeEvent.locationY ?? REST_AT.y));
-          setOrigin({ x, y });
+          const n = e.nativeEvent;
+          finger.current = { id: String(n.identifier), x: n.pageX, y: n.pageY };
+          start.current = {
+            x: (e.nativeEvent.locationX ?? REST_AT.x) - REST_AT.x,
+            y: (e.nativeEvent.locationY ?? REST_AT.y) - REST_AT.y,
+          };
         },
-        onPanResponderMove: (_e, g) => {
-          const v = stickVector(g.dx, g.dy);
+        // Every touch-down while the stick is held, its own first one included.
+        onPanResponderStart: e => {
+          for (const t of e.nativeEvent.changedTouches) {
+            if (String(t.identifier) !== finger.current?.id) other.current?.(t.pageX, t.pageY);
+          }
+        },
+        onPanResponderMove: e => {
+          const f = finger.current;
+          const t = f && e.nativeEvent.touches.find(x => String(x.identifier) === f.id);
+          if (!f || !t) return;
+          const v = stickVector(start.current.x + t.pageX - f.x, start.current.y + t.pageY - f.y);
           knob.setValue({ x: v.kx, y: v.ky });
           setHeading(v.x === 0 && v.y === 0 ? null : Math.atan2(v.ky, v.kx));
           send(v.x, v.y);
         },
-        onPanResponderRelease: () => release(),
-        onPanResponderTerminate: () => release(),
+        // The steering finger lifting stops the walk even while another finger is still down.
+        onPanResponderEnd: e => {
+          if (e.nativeEvent.changedTouches.some(t => String(t.identifier) === finger.current?.id)) {
+            finger.current = null;
+            release();
+          }
+        },
+        onPanResponderRelease: () => { finger.current = null; release(); },
+        onPanResponderTerminate: () => { finger.current = null; release(); },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

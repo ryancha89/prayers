@@ -147,6 +147,11 @@ const OFF: TableState = {
 /** Stages with a reader at (or on the way to) the table — the ones End is offered in. */
 const TAROT_STAGES = new Set<TableStage>(['arriving', 'asking', 'spreading', 'picking', 'reading', 'presenting', 'followup']);
 export const inTarot = (s: TableState) => s.seated && TAROT_STAGES.has(s.stage);
+/** Another reader can be asked for (10-23, "상담끝나거나 시작전에 상담사 변경가능해야함"): seated with
+ *  this one before any question (nothing paid), or once a reading is over — never mid-reading. */
+export const canChangeReader = (s: TableState) =>
+  s.seated && !s.busy && !s.confirm && !s.pending &&
+  ((s.stage === 'asking' && !s.question) || s.stage === 'followup');
 
 type Translate = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
@@ -363,6 +368,25 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     }));
   };
 
+  /** Another reader: this one says goodbye and walks out, and the list opens at the same table.
+   *  Unity takes the next CAFE_TAROT_START even while the last reader is still leaving. */
+  const changeReader = () => {
+    if (!canChangeReader(ref.current)) return;
+    gen.current += 1;
+    endIntent();
+    const farewell = tRef.current('cafe.tarot.farewell');
+    speak({ text: farewell, mood: 'warm' });
+    bridge.sendCafeTarotEnd();
+    setState(prev => ({
+      ...OFF,
+      seated: prev.seated,
+      spot: prev.spot,
+      consultants: prev.consultants,
+      stage: 'consultants',
+    }));
+    if (!ref.current.consultants) loadConsultants();
+  };
+
   /* ---- coffee -------------------------------------------------------------------------------- */
 
   const runCoffee = async () => {
@@ -558,6 +582,7 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     submitFollowup,
     askAnother,
     end,
+    changeReader,
     orderCoffee: () => askToPay('coffee'),
     askReading: () => askToPay('reading'),
     cancelCoffee,
