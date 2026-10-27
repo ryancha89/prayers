@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Animated, Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/Text';
@@ -13,6 +13,7 @@ import { useSubjectsStore, type PlayerGender } from '../../subjects/store/subjec
 import { charactersFor, effectiveCharacter } from '../characters';
 import { useCharacterView } from '../useCharacterView';
 import { HAIR_COLORS, knownHair } from '../hairColors';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import type { FaceTrackingState } from '../../counseling/types';
@@ -145,6 +146,27 @@ export const CharacterSelectScreen: React.FC = () => {
     setStep(to);
   };
   const stepIndex = STEPS.indexOf(step);
+  // Loading the character (27-10, "nếu nặng cũng nên có loading nhân vật"): opening the creator goes
+  // through the shared scene transition (the picked character's card, the creator's own tips); a card
+  // switch mounts a new body in Unity, whose first frame is the heavy part — an indicator over the
+  // stage from the tap until Unity's CHARACTER_BODY (never under 350 ms, never over 6 s).
+  const [bodyLoading, setBodyLoading] = useState(false);
+  const bodySince = useRef(0);
+  const bodyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firstPick = useRef(true);
+  const stopBodyLoading = (afterMs = 0) => {
+    if (bodyTimer.current) clearTimeout(bodyTimer.current);
+    bodyTimer.current = setTimeout(() => { bodyTimer.current = null; setBodyLoading(false); }, afterMs);
+  };
+  useEffect(() => {
+    if (!native || !picked) return;
+    if (firstPick.current) { firstPick.current = false; return; }
+    setBodyLoading(true);
+    bodySince.current = Date.now();
+    stopBodyLoading(6000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picked]);
+  useEffect(() => () => { if (bodyTimer.current) clearTimeout(bodyTimer.current); }, []);
   const toggleShot = () => {
     sfx.tap();
     view.set({ yaw: view.current.current.yaw, zoom: zoomed ? 0 : 1 });
@@ -158,7 +180,12 @@ export const CharacterSelectScreen: React.FC = () => {
   };
   useEffect(() => {
     if (!native) return undefined;
+    beginSceneTransition('creator', { art: options.find(c => c.id === picked)?.art });
     const off = nativeUnityBridge.onEvent(e => {
+      if (e.type === 'CHARACTER_BODY') {
+        stopBodyLoading(Math.max(0, bodySince.current + 350 - Date.now()));
+        return;
+      }
       if (e.type === 'CHARACTER_READY') {
         Animated.timing(artOut, { toValue: 0, duration: 450, useNativeDriver: true }).start();
       } else if (e.type === 'CHARACTER_TRACKING') {
@@ -252,6 +279,14 @@ export const CharacterSelectScreen: React.FC = () => {
         ) : null}
         {/* The turntable: under the controls, so they keep their taps. */}
         <View style={StyleSheet.absoluteFill} testID="character-turntable" {...view.handlers} />
+        {bodyLoading ? (
+          <View pointerEvents="none" style={[styles.bodyLoading, { top: Math.round(screenH * TOP_COVER), height: bandH }]} testID="character-body-loading">
+            <View style={styles.bodyLoadingCard}>
+              <ActivityIndicator color={colors.violetSoft} />
+              <Text style={styles.bodyLoadingText}>{t('character.loadingBody')}</Text>
+            </View>
+          </View>
+        ) : null}
 
         <SafeAreaView edges={['top', 'left', 'right']} style={styles.topBar} pointerEvents="box-none" onLayout={measure('top')}>
           <View style={styles.header}>
@@ -456,6 +491,13 @@ const styles = StyleSheet.create({
   soonHint: { color: colors.violetSoft },
   // ── the creator (native) ──
   stage: { flex: 1, backgroundColor: '#13101c' },
+  bodyLoading: { position: 'absolute', left: 0, right: 0, alignItems: 'center', justifyContent: 'center' },
+  bodyLoadingCard: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.lg,
+    backgroundColor: 'rgba(19,16,28,0.78)',
+  },
+  bodyLoadingText: { ...typography.caption, color: colors.textPrimary },
   stageArt: { position: 'absolute', left: 0, right: 0, alignItems: 'center', justifyContent: 'center' },
   topBar: { position: 'absolute', top: 0, left: 0, right: 0 },
   overlayLine: { ...typography.caption, color: colors.violetSoft, paddingHorizontal: spacing.lg, textAlign: 'center' },

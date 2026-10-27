@@ -18,7 +18,7 @@ import { MYROOM_PICTURE } from '../../features/myroom/picture';
  *
  * Without the embedded player (Expo, Jest, the mock) nothing is shown: there is no load to cover.
  */
-export type ScenePlace = 'world' | 'myroom' | 'cafe' | 'meditation' | 'sleep' | 'journey' | 'lecture' | 'counsel';
+export type ScenePlace = 'world' | 'myroom' | 'cafe' | 'meditation' | 'sleep' | 'journey' | 'lecture' | 'counsel' | 'creator';
 
 export interface PlaceDef {
   art: ImageSourcePropType;
@@ -70,6 +70,12 @@ export const PLACES: Record<ScenePlace, PlaceDef> = {
     art: require('../../features/philosophy/assets/schopenhauer_shot_front.jpg'),
     title: 'transition.lecture.title', intro: 'transition.lecture.intro', ready: 'LECTURE_READY',
     tips: [],
+  },
+  creator: {
+    // replaced by the picked character's card art
+    art: require('../../features/character/assets/basic_female.png'),
+    title: 'transition.creator.title', intro: 'transition.creator.intro', ready: 'CHARACTER_READY',
+    tips: ['transition.tip.creator.turn', 'transition.tip.character'],
   },
   counsel: {
     // replaced by the counselor's own card art when one is given

@@ -864,6 +864,8 @@ export type UnityToRNEvent =
   | { type: 'LECTURE_READY' }
   /** The character preview is on screen — the character screen fades its card art out over it. */
   | { type: 'CHARACTER_READY' }
+  /** The creator's body for `id` is mounted AND drawn (27-10): a card switch's indicator waits for it. */
+  | { type: 'CHARACTER_BODY'; payload: { id: string } }
   /** The face-tracking state changed (see FaceTrackingState). */
   | { type: 'CHARACTER_TRACKING'; payload: { state: FaceTrackingState } }
   /** The train cabin is on screen (spec 003) — the journey screen fades its SVG window out. */

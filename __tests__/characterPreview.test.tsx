@@ -136,3 +136,27 @@ it('no gender, no pick: the creator opens on the first card, never on a body tha
   await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
   expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerCharacter: 'xb_f01' }));
 });
+
+it('opening the creator goes through the shared scene transition, as the creator', async () => {
+  const { useSceneTransition } = require('../src/shared/transition/sceneTransition');
+  expect(useSceneTransition.getState().active?.place).toBe('creator');
+});
+
+it('a card switch shows "preparing your character" until Unity has drawn the new body; a hair change does not', async () => {
+  jest.useFakeTimers();
+  try {
+    act(() => tree.unmount());
+    useSubjectsStore.setState({ self: { id: 'self', displayName: 'Linh', birthDate: '2002-11-12', isUser: true }, playerCharacter: undefined });
+    await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
+    const loading = () => tree.root.findAll(n => n.props.testID === 'character-body-loading').length > 0;
+    expect(loading()).toBe(false);                       // the first body rides the scene transition
+    await act(async () => byId('character-xb_m01').props.onPress());
+    expect(loading()).toBe(true);
+    expect(texts()).toContain('Preparing your character…');
+    await act(async () => mockListeners.forEach(l => l({ type: 'CHARACTER_BODY', payload: { id: 'xb_m01' } } as never)));
+    act(() => { jest.advanceTimersByTime(400); });
+    expect(loading()).toBe(false);
+  } finally {
+    jest.useRealTimers();
+  }
+});
