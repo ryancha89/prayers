@@ -1,7 +1,7 @@
 import { apiBase } from '../../../shared/config/api';
 import { apiHeaders, authedFetch } from '../../auth/api/headers';
 import { devlog } from '../../../shared/devlog';
-import { isLang } from '../../../shared/i18n';
+import { isLang, useLanguageStore } from '../../../shared/i18n';
 import type { Lang } from '../../../shared/i18n';
 import type { ChatMode } from '../types';
 
@@ -113,6 +113,52 @@ export async function saveAccountLanguage(lang: Lang): Promise<boolean> {
     const res = await authedFetch(`${BASE()}/api/v1/prayers/settings`, {
       method: 'POST',
       body: JSON.stringify({ language: lang }),
+    });
+    if (!res || !res.ok) return false;
+    return (await res.json())?.success === true;
+  } catch {
+    return false;
+  }
+}
+
+/** The player's own character as the ACCOUNT remembers it (27-10; settings row, next to language). */
+export interface AccountCharacter {
+  playerCharacter: string | null;
+  /** "#RRGGBB", "" = the model's own colour, null = never saved. */
+  playerHair: string | null;
+  creatorSeen: boolean;
+}
+
+/** `null` = no answer (signed out, offline) — the caller keeps its local copy. */
+export async function fetchAccountCharacter(signal?: AbortSignal): Promise<AccountCharacter | null> {
+  try {
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/settings`, { signal });
+    if (!res || !res.ok) return null;
+    const s = (await res.json())?.settings;
+    // A server from before 27-10 has no such fields: "no answer", not "no character" — so nothing is
+    // pushed to it either (its POST would clear the language, see saveAccountCharacter).
+    if (!s || !('creator_seen' in s)) return null;
+    return {
+      playerCharacter: typeof s.player_character === 'string' && s.player_character ? s.player_character : null,
+      playerHair: typeof s.player_hair === 'string' ? s.player_hair : null,
+      creatorSeen: s.creator_seen === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Remember the character on the account. Partial POST: the language is left as it is. Best effort. */
+export async function saveAccountCharacter(c: { playerCharacter: string; playerHair: string; creatorSeen: boolean }): Promise<boolean> {
+  try {
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/settings`, {
+      method: 'POST',
+      // `language` rides along: a server from before 27-10 replaces the whole row on POST and would
+      // otherwise set the account's language to null.
+      body: JSON.stringify({
+        language: useLanguageStore.getState().lang,
+        player_character: c.playerCharacter, player_hair: c.playerHair, creator_seen: c.creatorSeen,
+      }),
     });
     if (!res || !res.ok) return false;
     return (await res.json())?.success === true;

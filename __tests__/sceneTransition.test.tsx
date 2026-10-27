@@ -35,7 +35,7 @@ it('shows the place, its line and a tip, and stays up until that place is READY 
   act(() => beginSceneTransition('cafe'));
   expect(texts()).toContain('Coffee Shop');
   expect(texts()).toContain('A warm cup, an empty chair, and a card waiting to be turned.');
-  expect(texts()).toContain('Tip');
+  expect(texts().some(s => s.startsWith('Tip'))).toBe(true);   // the one-line tip: 'Tip · …'
   emit('WORLD_READY');                                  // another place's READY: not this one
   expect(useSceneTransition.getState().active).not.toBeNull();
   emit('CAFE_READY');

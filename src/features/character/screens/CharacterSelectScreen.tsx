@@ -11,6 +11,7 @@ import { sfx } from '../../../shared/audio/sfx';
 import { column } from '../../../shared/device/screen';
 import { useSubjectsStore, type PlayerGender } from '../../subjects/store/subjectsStore';
 import { charactersFor, effectiveCharacter } from '../characters';
+import { saveCharacterToAccount } from '../characterSync';
 import { useCharacterView } from '../useCharacterView';
 import { HAIR_COLORS, knownHair } from '../hairColors';
 import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
@@ -226,6 +227,7 @@ export const CharacterSelectScreen: React.FC = () => {
     setPlayerHair(hair);
     setPlayerCharacter(picked);
     setCreatorSeen();
+    saveCharacterToAccount();
     if (onboarding) return; // the navigator drops this screen once a character is stored
     navigation.goBack();
   };

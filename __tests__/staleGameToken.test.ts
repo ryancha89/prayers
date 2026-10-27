@@ -27,6 +27,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 jest.mock('../src/features/settings/languageSync', () => ({ syncAccountLanguage: () => {} }));
+jest.mock('../src/features/character/characterSync', () => ({ syncAccountCharacter: () => {}, saveCharacterToAccount: () => {} }));
 
 import { authedFetch } from '../src/features/auth/api/headers';
 import { signInAsDeveloper } from '../src/features/auth/api/session';

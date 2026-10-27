@@ -26,6 +26,7 @@ export const SceneTransitionOverlay: React.FC = () => {
   const pulse = useRef(new Animated.Value(0)).current;
   // What is on screen: kept through the fade-out after `active` has cleared.
   const [shown, setShown] = useState(active);
+  const [copyH, setCopyH] = useState(0);
 
   useEffect(() => {
     if (!active) {
@@ -79,18 +80,28 @@ export const SceneTransitionOverlay: React.FC = () => {
       testID="scene-transition"
       pointerEvents={active ? 'auto' : 'none'}
       style={[StyleSheet.absoluteFill, styles.root, { opacity: fade }]}>
-      <Image source={shown.art ?? place.art} style={{ width, height }} resizeMode="cover" blurRadius={2} />
-      {/* darker toward the words: two layers make a cheap gradient without a native module */}
+      <Image source={shown.art ?? place.art} style={{ width, height }} resizeMode="cover" />
+      {/* Only behind the words (user 27-10: the dark panel was "to… che nhiều cái"): a band sized to
+          the copy itself, with a soft step above it, so the place's picture stays visible. */}
       <View style={[StyleSheet.absoluteFill, styles.wash]} />
-      <View style={[styles.lowerWash, { height: height * 0.55 }]} />
-      <View style={[styles.copy, { paddingBottom: insets.bottom + spacing.xl }]}>
+      {copyH > 0 ? (
+        <>
+          <View style={[styles.band, { height: copyH + 36, bottom: 0, opacity: 0.62 }]} />
+          <View style={[styles.band, { height: 40, bottom: copyH + 36, opacity: 0.28 }]} />
+        </>
+      ) : null}
+      <View
+        style={[styles.copy, { paddingBottom: insets.bottom + spacing.lg }]}
+        onLayout={e => setCopyH(Math.round(e.nativeEvent.layout.height))}>
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.intro}>
+        <Text style={styles.intro} numberOfLines={2}>
           {shown.name ? t(place.intro).replace('{name}', shown.name) : t(place.intro).replace('{name}', title)}
         </Text>
-        <View style={styles.rule} />
-        <Text style={styles.tipLabel}>{t('transition.tipLabel')}</Text>
-        <Text style={styles.tip}>{t(shown.tip)}</Text>
+        {/* The tip is one small line (user 27-10: "hint text ít mà bé thôi, tầm 1 dòng") */}
+        <Text style={styles.tip} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+          <Text style={styles.tipLabel}>{t('transition.tipLabel')} · </Text>
+          {t(shown.tip)}
+        </Text>
         <View style={styles.dots}>
           {[0, 1, 2].map(i => (
             <Animated.View key={i} style={[styles.dot, dot(i)]} />
@@ -103,14 +114,13 @@ export const SceneTransitionOverlay: React.FC = () => {
 
 const styles = StyleSheet.create({
   root: { backgroundColor: '#13101c', zIndex: 1000, elevation: 1000 },
-  wash: { backgroundColor: 'rgba(19,16,28,0.28)' },
-  lowerWash: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(12,10,20,0.72)' },
-  copy: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.xl, gap: spacing.sm },
-  title: { fontFamily: SERIF, fontSize: 30, color: '#F3E9D7', letterSpacing: 0.5 },
-  intro: { ...typography.body, color: 'rgba(243,233,215,0.85)', lineHeight: 22 },
-  rule: { height: 1, width: 48, backgroundColor: 'rgba(233,196,106,0.6)', marginVertical: spacing.sm },
-  tipLabel: { ...typography.caption, color: colors.gold, letterSpacing: 1.5, textTransform: 'uppercase' },
-  tip: { ...typography.body, color: 'rgba(243,233,215,0.92)', lineHeight: 22 },
-  dots: { flexDirection: 'row', gap: 8, marginTop: spacing.lg, alignSelf: 'center' },
+  wash: { backgroundColor: 'rgba(19,16,28,0.10)' },
+  band: { position: 'absolute', left: 0, right: 0, backgroundColor: 'rgb(12,10,20)' },
+  copy: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.xl, gap: spacing.xs },
+  title: { fontFamily: SERIF, fontSize: 24, color: '#F3E9D7', letterSpacing: 0.4 },
+  intro: { ...typography.caption, color: 'rgba(243,233,215,0.85)', lineHeight: 18 },
+  tipLabel: { color: colors.gold },
+  tip: { ...typography.caption, color: 'rgba(243,233,215,0.78)', marginTop: spacing.sm },
+  dots: { flexDirection: 'row', gap: 8, marginTop: spacing.sm, alignSelf: 'center' },
   dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#F3E9D7' },
 });

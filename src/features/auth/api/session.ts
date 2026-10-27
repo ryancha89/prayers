@@ -3,6 +3,7 @@ import { devlog } from '../../../shared/devlog';
 // Reconciled at the API layer, not inside the store: importing it there would close a cycle
 // (authStore -> languageSync -> prayersServer -> auth/api/headers -> authStore).
 import { syncAccountLanguage } from '../../settings/languageSync';
+import { syncAccountCharacter } from '../../character/characterSync';
 import {
   getUserAuth,
   PRAYERS_UID_PREFIX,
@@ -72,6 +73,7 @@ export async function signInWithApple(appleResponse: unknown) {
   signedIn({ userAuth, provider: 'apple', displayName });
   await ensureGameToken();
   void syncAccountLanguage();
+  void syncAccountCharacter();
   return userAuth;
 }
 
@@ -80,6 +82,7 @@ export async function signInWithGoogle(googleResponse: unknown) {
   signedIn({ userAuth, provider: 'google', displayName });
   await ensureGameToken();
   void syncAccountLanguage();
+  void syncAccountCharacter();
   return userAuth;
 }
 
@@ -88,6 +91,7 @@ export async function signInWithKakao(kakaoResponse: unknown) {
   signedIn({ userAuth, provider: 'kakao', displayName });
   await ensureGameToken();
   void syncAccountLanguage();
+  void syncAccountCharacter();
   return userAuth;
 }
 
@@ -97,6 +101,7 @@ export async function signInWithKakaoTicket(ticket: string) {
   signedIn({ userAuth, provider: 'kakao', displayName });
   await ensureGameToken();
   void syncAccountLanguage();
+  void syncAccountCharacter();
   return userAuth;
 }
 
@@ -113,6 +118,7 @@ export async function signInAsReviewer(email: string, password: string) {
   signedIn({ userAuth, provider: 'reviewer', displayName });
   await ensureGameToken();
   void syncAccountLanguage();
+  void syncAccountCharacter();
   return userAuth;
 }
 
@@ -136,6 +142,7 @@ export function signInAsDeveloper(uid?: string) {
       ).join('');
   signedIn({ userAuth: id, provider: 'dev', displayName: 'Developer' });
   void syncAccountLanguage();
+  void syncAccountCharacter();
   return id;
 }
 

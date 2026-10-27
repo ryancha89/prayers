@@ -18,6 +18,7 @@ import type { CounselingSubject } from '../../counseling/types';
 import { column } from '../../../shared/device/screen';
 import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
 import { fetchSajuProfile, saveSajuProfile } from '../../counseling/api/prayersServer';
+import { saveCharacterToAccount } from '../../character/characterSync';
 
 /**
  * The birth-data form, for a new person OR for one that already exists — including `self`, the
@@ -87,6 +88,8 @@ export const AddSubjectScreen: React.FC = () => {
         birthTime: patch.birthTime,
         gender: patch.gender,
       });
+      // a new gender swaps the body (subjectsStore) — keep the account's copy in step
+      saveCharacterToAccount();
     }
     if (onboarding) return; // the navigator swaps the whole stack once `self` has data
     navigation.goBack();
