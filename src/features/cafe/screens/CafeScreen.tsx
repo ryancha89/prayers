@@ -33,6 +33,7 @@ import { FortuneCard } from '../components/FortuneCard';
 import { Bubble, GhostButton, Medallion, PanelBackdrop } from '../components/CafeChrome';
 import { TAROT_TABLE } from '../table/tarotTable';
 import { CardsGesture, drag, newGesture, pinch, toHalfViews } from '../table/cardsZoom';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -107,6 +108,8 @@ export function cafeCoveredPx(r: MeasuredRects, landscape: boolean) {
  * stays on its veil with the way back, which is the whole no-Unity experience.
  */
 export const CafeScreen: React.FC = () => {
+  // The shared loading screen (picture, intro, tip) until this place's READY — sceneTransition.ts.
+  useEffect(() => { beginSceneTransition('cafe'); }, []);
   const navigation = useNavigation<Nav>();
   const t = useT();
   const lang = useLang();

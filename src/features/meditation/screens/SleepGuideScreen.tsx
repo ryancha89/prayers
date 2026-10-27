@@ -15,6 +15,7 @@ import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets } from '../../counseling/bridge/viewInsets';
 import { useScreen } from '../../../shared/device/screen';
 import { meditationCoveredPx } from './MeditationRoomScreen';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 /**
  * The sleep guide: thirty minutes of a spoken guide over quiet music, for someone already in bed.
@@ -57,6 +58,8 @@ const clock = (ms: number) => {
 };
 
 export const SleepGuideScreen: React.FC = () => {
+  // The shared loading screen (picture, intro, tip) until this place's READY — sceneTransition.ts.
+  useEffect(() => { beginSceneTransition('sleep'); }, []);
   const t = useT();
   const lang = useLang();
   const navigation = useNavigation();

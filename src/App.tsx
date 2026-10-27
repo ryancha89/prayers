@@ -17,6 +17,7 @@ import { preload as preloadSfx } from './shared/audio/sfx';
 import { create } from 'zustand';
 import { JourneyMiniPlayer } from './features/journey/components/JourneyMiniPlayer';
 import { CoinShopSheet } from './features/coins/components/CoinShopSheet';
+import { SceneTransitionOverlay } from './shared/transition/SceneTransitionOverlay';
 import { startCoinPurchaseRecovery } from './features/coins/api/coinsApi';
 import { applyReminder } from './features/notifications/reminder';
 import { useAuthStore } from './features/auth/store/authStore';
@@ -185,6 +186,8 @@ const App: React.FC = () => {
         />
         {/* One coin shop for the whole app: the header pills and the journey's locks open it. */}
         <CoinShopSheet />
+        {/* One loading screen into every 3D place: picture, intro, tip, until the place is READY. */}
+        <SceneTransitionOverlay />
         {/* Overlay splash: the home screen is already mounted beneath, so the
             final fade lands directly on the main screen (storyboard 4.0s). */}
         {!splashDone && <SplashScreen onDone={onSplashDone} />}

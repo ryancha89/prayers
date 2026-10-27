@@ -19,6 +19,8 @@ import { CounselingTopic, UnityToRNEvent } from '../types';
 import { fetchCoins } from '../../coins/api/coinsApi';
 import { useCoins } from '../../coins/store/coinStore';
 import { useScreen } from '../../../shared/device/screen';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
+import { COUNSELOR_CARD_ART } from '../../counselors/assets';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'UnityEntry'>;
@@ -34,6 +36,12 @@ export const UnityEntryScreen: React.FC = () => {
   const t = useT();
   const lang = useLang();
   const counselor = getLocalizedCounselor(params.counselorId, lang);
+  // The shared loading screen into the room: the counselor's own card art and name, until the room's
+  // UNITY_READY (sceneTransition.ts). Every way into a room comes through here.
+  useEffect(() => {
+    beginSceneTransition('counsel', { art: counselor ? COUNSELOR_CARD_ART[counselor.id] : undefined, name: counselor?.name });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const getSubject = useSubjectsStore(s => s.getById);
   const subject = getSubject(params.subjectId);
   const storedTopic = useCounselingStore(s => s.topic);

@@ -18,6 +18,7 @@ import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useFollowCamera } from '../../world/components/useWorldCamera';
 import { ALL_ORIENTATIONS } from '../../coins/components/CoinShopSheet';
 import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'Lecture'>;
@@ -49,6 +50,8 @@ const SHOT_LINES = 4;
  * painted portrait covers it until LECTURE_READY, then fades. No room, no harm: the portrait stays.
  */
 export const LectureScreen: React.FC = () => {
+  // The shared loading screen (picture, intro, tip) until this place's READY — sceneTransition.ts.
+  useEffect(() => { beginSceneTransition('lecture'); }, []);
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Rt>();
   const t = useT();

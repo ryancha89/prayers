@@ -21,6 +21,7 @@ import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewI
 import { useScreen } from '../../../shared/device/screen';
 import { ArtWait, BottomFade, MED, PaceLine, Vignette } from '../components/BreathStage';
 import { SERIF } from '../../../shared/components/hud/Hud';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 /**
  * The meditation room: ten minutes, music and text, no guided voice (decided 15-09).
@@ -97,6 +98,8 @@ const SESSION_ART = {
 };
 
 export const MeditationRoomScreen: React.FC = () => {
+  // The shared loading screen (picture, intro, tip) until this place's READY — sceneTransition.ts.
+  useEffect(() => { beginSceneTransition('meditation'); }, []);
   const t = useT();
   const lang = useLang();
   // The guide waits for the bell to ring out on a fresh start; this is that wait, so a Pause or a

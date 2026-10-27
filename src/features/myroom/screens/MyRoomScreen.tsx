@@ -44,6 +44,7 @@ import { useDecorate } from '../edit/useDecorate';
 import { skinList, swapCandidates } from '../edit/decorate';
 import { unreadCount, useInbox } from '../inbox/inboxStore';
 import type { InboxLink } from '../inbox/lines';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 /** How long the picture may say "Loading" before it offers a retry: past the bridge's last INIT retry. */
 export const MYROOM_STALL_MS = 9000;
@@ -121,6 +122,8 @@ const ROW = 40;
  * the gestures go to the mock bridge, so the whole path in and out of the room can be walked.
  */
 export const MyRoomScreen: React.FC = () => {
+  // The shared loading screen (picture, intro, tip) until this place's READY — sceneTransition.ts.
+  useEffect(() => { beginSceneTransition('myroom'); }, []);
   const navigation = useNavigation<Nav>();
   const t = useT();
   const lang = useLang();

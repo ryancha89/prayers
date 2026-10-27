@@ -37,6 +37,7 @@ import { useCabinCamera } from '../components/useCabinCamera';
 import { useScreen } from '../../../shared/device/screen';
 import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 /** What shows while the 3D cabin loads: the station's night sky, the platform's own painting — not
  *  the drawn 2D window, which flashed up for a moment before every 3D journey (29-09). */
@@ -98,6 +99,8 @@ function sentencesOf(text: string) {
  * a view that belongs to the player. Only the sentence being said is on screen, never the reading.
  */
 export const JourneyScreen: React.FC = () => {
+  // The shared loading screen (picture, intro, tip) until this place's READY — sceneTransition.ts.
+  useEffect(() => { beginSceneTransition('journey'); }, []);
   const navigation = useNavigation<Nav>();
   const { active: audioActive, silence } = useScreenAudio(
     () => useJourneyPlayer.getState().setScreenActive(false),

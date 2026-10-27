@@ -30,6 +30,7 @@ import { useSoundStore } from '../../../shared/audio/store';
 import { ProfileSheet, useMyRoomLevel, usePlayerName } from '../../myroom/components/ProfileSheet';
 import { fetchAttendance } from '../../tickets/api/attendance';
 import type { CounselorSummary } from '../../counselors/types';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -101,6 +102,8 @@ export function worldCoveredPx(r: MeasuredRects, landscape: boolean) {
  * path out of the world can be walked.
  */
 export const WorldScreen: React.FC = () => {
+  // The shared loading screen (picture, intro, tip) until this place's READY — sceneTransition.ts.
+  useEffect(() => { beginSceneTransition('world'); }, []);
   const navigation = useNavigation<Nav>();
   const t = useT();
   const lang = useLang();
