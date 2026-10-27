@@ -36,6 +36,14 @@ interface SubjectsState {
    */
   playerCharacter?: PlayerCharacter;
   setPlayerCharacter: (c: PlayerCharacter) => void;
+  /** The hair colour picked in the creator (27-10): "#RRGGBB", or "" for the model's own. Unity's
+   *  HairTint reads it on every body that can be recoloured. */
+  playerHair: string;
+  setPlayerHair: (hex: string) => void;
+  /** Has this account been through the 3D creator (27-10)? A pick made on the old card screen does
+   *  not count: those accounts are shown the creator once more on their next launch. */
+  creatorSeen: boolean;
+  setCreatorSeen: () => void;
   /**
    * The player chose "later" at first run.
    *
@@ -66,6 +74,10 @@ export const useSubjectsStore = create<SubjectsState>()(
       deferProfile: () => set({ profileDeferred: true }),
       playerCharacter: undefined,
       setPlayerCharacter: c => set({ playerCharacter: c }),
+      playerHair: '',
+      setPlayerHair: hex => set({ playerHair: hex }),
+      creatorSeen: false,
+      setCreatorSeen: () => set({ creatorSeen: true }),
       subjects: [
         // Gender is part of the seed because it is part of a usable subject: without it these two
         // would sit in the picker looking complete and then send the player to a form.
@@ -109,6 +121,8 @@ export const useSubjectsStore = create<SubjectsState>()(
         subjects: state.subjects,
         profileDeferred: state.profileDeferred,
         playerCharacter: state.playerCharacter,
+        playerHair: state.playerHair,
+        creatorSeen: state.creatorSeen,
       }),
     },
   ),

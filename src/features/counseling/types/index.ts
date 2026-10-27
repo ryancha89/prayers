@@ -45,6 +45,11 @@ export type CounselorEmotion =
   | 'concerned'
   | 'surprised';
 
+/** What a 3D face can show: the five above plus three the drawn stage has no art for. The Unity
+ *  room's FaceExpressions table names all eight (`sad`, `gentle`, `serious` were already there for
+ *  its own [Beat] cues). Picked per tone by `faceForTone`. */
+export type FaceEmotion = CounselorEmotion | 'sad' | 'gentle' | 'serious';
+
 export type CounselorAnimation = 'talk' | 'thinking' | 'nod' | 'smile' | 'concern';
 
 export type CounselorCamera = 'default' | 'closeUp';
@@ -128,6 +133,8 @@ export interface UnitySessionPayload {
   playerGender?: 'male' | 'female';
   /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
   playerCharacter?: string;
+  /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
+  playerHair?: string;
 }
 
 /* ---- Stage commands (bridge v2) ----------------------------------------
@@ -321,6 +328,11 @@ export type RNToUnityEvent =
   | { type: 'CHARACTER_SET'; payload: CharacterInitPayload }
   /** Turn the camera-driven face on or off (ARKit on device). */
   | { type: 'CHARACTER_TRACKING'; payload: { on: boolean } }
+  /** The creator's view (27-10): `yaw` degrees the body is turned on its turntable (the running
+   *  angle, not a delta), `zoom` 0 whole body … 1 face. Unity eases toward it. Streamed. */
+  | { type: 'CHARACTER_VIEW'; payload: CharacterViewPayload }
+  /** The creator's "start" (27-10): Unity turns the body once round (~1.2 s); RN commits after. */
+  | { type: 'CHARACTER_CONFIRM' }
   /** The face follows the AI reply (26-10, #timeline-truongthinh): the emotion of the line being
    *  spoken, mapped from the server's tone by TONE_PERFORMANCE. `target` is a role ("counselor",
    *  "player", "" = every face); `hold` 0 = keep it until the next one. Faces without ARKit
@@ -601,6 +613,8 @@ export interface WorldInitPayload {
   playerGender?: 'male' | 'female';
   /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
   playerCharacter?: string;
+  /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
+  playerHair?: string;
 }
 
 export interface MyRoomInitPayload {
@@ -617,6 +631,8 @@ export interface MyRoomInitPayload {
   playerGender?: 'male' | 'female';
   /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
   playerCharacter?: string;
+  /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
+  playerHair?: string;
 }
 
 /** CAFE_INIT. Mirrored by name in Unity's RNCafeInit. */
@@ -635,6 +651,8 @@ export interface CafeInitPayload {
   playerGender?: 'male' | 'female';
   /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
   playerCharacter?: string;
+  /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
+  playerHair?: string;
 }
 
 /** CAFE_TABLES' row: a seat id and whether somebody else (the shared room) sits there. */
@@ -773,6 +791,8 @@ export interface CharacterInitPayload {
   lang: string;
   playerGender?: 'male' | 'female';
   playerCharacter?: string;
+  /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
+  playerHair?: string;
 }
 
 /** Where face tracking is (Unity CameraFaceSource): `unsupported` on the simulator and on phones
@@ -989,6 +1009,10 @@ export interface MyRoomBridge {
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
 }
 
+/** CHARACTER_VIEW's payload: degrees turned, 0 whole body … 1 face, and — measured — the share of
+ *  the screen height RN's top bar and bottom panel cover (absent = Unity's own .12 / .30). */
+export interface CharacterViewPayload { yaw: number; zoom: number; top?: number; bottom?: number }
+
 /** CAFE_ZOOM's payload (cafe/table/cardsZoom.ts). */
 export interface CardsGesture {
   /** Which touch gesture: changes whenever a finger lands or lifts. */
@@ -1025,7 +1049,7 @@ export interface CafeBridge {
 /* ---- Bridge abstraction (spec §39). Keep Unity behind this interface. ---- */
 export interface FaceExpressionPayload {
   target: 'counselor' | 'player' | '';
-  emotion: CounselorEmotion;
+  emotion: FaceEmotion;
   intensity: number;
   hold: number;
 }

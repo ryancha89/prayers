@@ -8,7 +8,7 @@ import { useLang, useT } from '../../../shared/i18n';
 import { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { roomSubjects } from '../bridge/subjectPayload';
-import { playerCharacter } from '../bridge/playerGender';
+import { playerCharacter, playerHair } from '../bridge/playerGender';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useCounselingStore } from '../store/counselingStore';
 import { defaultTopicFor } from '../topicsForCounselor';
@@ -107,6 +107,7 @@ export const UnityEntryScreen: React.FC = () => {
       auth: getUserAuth() ?? '',
       playerGender: useSubjectsStore.getState().self.gender,
       playerCharacter: playerCharacter(),
+      playerHair: playerHair(),
     });
 
     return unsub;

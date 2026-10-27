@@ -83,7 +83,7 @@ export async function forgetLocalData() {
   // keeps its state in memory after the row is gone and the previous person's saved people would
   // stay on screen until the app restarts — the exact moment they must not be there.
   // playerCharacter too: left set, the next account on this phone skipped its character screen.
-  useSubjectsStore.setState({ self: EMPTY_SELF, subjects: [], profileDeferred: false, playerCharacter: undefined });
+  useSubjectsStore.setState({ self: EMPTY_SELF, subjects: [], profileDeferred: false, playerCharacter: undefined, playerHair: '', creatorSeen: false });
   useConversationsStore.setState({ byId: {}, order: [] });
   useFavoritesStore.setState({ ids: [] });
   // The 아카이브 and the diary (spec 006) too: left in memory, the next person would see these

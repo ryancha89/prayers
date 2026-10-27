@@ -19,7 +19,7 @@ import { CueTester } from '../components/CueTester';
 import { useCounselingStore } from '../store/counselingStore';
 import { useChatModeStore } from '../store/chatModeStore';
 import { useArchiveStore } from '../../archive/store/archiveStore';
-import { counselorAI, toneForCharacter } from '../api/counselorAI';
+import { counselorAI, faceForTone, toneForCharacter } from '../api/counselorAI';
 import { getUnityBridge, isNativeUnity } from '../bridge';
 import { CounselorStage } from '../components/CounselorStage';
 import { UnityHost } from '../components/UnityHost';
@@ -390,16 +390,22 @@ export const CounselingRoomScreen: React.FC = () => {
     };
   }, [faceCamAvailable]);
 
-  const emotion = consultation.state.emotion;
-  const sentEmotion = useRef<string>('neutral');
+  // While the question is with the server (15-20 s) she is thinking it over, whatever face the
+  // last scene left her with; the answer's first scene takes over when it lands.
+  const face = consultation.state.pending
+    ? { emotion: 'thinking' as const, intensity: 0.7 }
+    : faceForTone(consultation.state.tone, consultation.state.emotion);
+  const { emotion, intensity } = face;
+  const sentFace = useRef<string>('neutral@1');
   useEffect(() => {
-    if (pixel || !isNativeUnity() || emotion === sentEmotion.current) return;
-    sentEmotion.current = emotion;
+    const key = `${emotion}@${intensity}`;
+    if (pixel || !isNativeUnity() || key === sentFace.current) return;
+    sentFace.current = key;
     getUnityBridge().sendEvent({
       type: 'FACE_EXPRESSION',
-      payload: { target: 'counselor', emotion, intensity: 1, hold: 0 },
+      payload: { target: 'counselor', emotion, intensity, hold: 0 },
     });
-  }, [emotion, pixel]);
+  }, [emotion, intensity, pixel]);
 
   // …and the room can also say NOTHING at all, which the block above does not cover.
   //

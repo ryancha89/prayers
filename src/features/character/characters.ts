@@ -7,12 +7,10 @@ import type { PlayerGender } from '../subjects/store/subjectsStore';
  * Resources/PlayerBodyCatalog.asset (`characters`). The FIRST entry of each gender is that gender's
  * default: what a new profile gets, and what Unity mounts when no id matches.
  *
- * Xuân's characters (26-10, textured, Drive 1DXqs0SSg8u7eYRcx9rvUYrbT-DwR_tLz): the card and the
- * 3D model on the character screen are hers. ⚠️ They are not rigged and have no ARKit shapes yet, so
- * in the World each one WALKS a Microsoft Rocketbox stand-in (Unity PlayerBodyCatalog: `preview` =
- * Xuân's model, `body` = Rocketbox) — the user's call, "thay card, giữ Rocketbox". When Thịnh's
- * rigs land, swap `body` in Unity; the ids here stay. Her ReFemale (hanbok) is NOT here: it is Yuna's
- * remake, so a player could have picked a counsellor's body (26-10).
+ * Xuân's characters (26-10, textured, Drive 1DXqs0SSg8u7eYRcx9rvUYrbT-DwR_tLz). Since 27-10 they are
+ * auto-rigged (Unity XuanRigPlayer: xb_m01 on Theo's skeleton, xb_f01 on Go Yunjung's) and are what
+ * the player walks everywhere and sees on the creator; they have no ARKit shapes. Her ReFemale
+ * (hanbok) is NOT here: it is Yuna's remake, so a player could have picked a counsellor's body (26-10).
  */
 export interface PlayerCharacterDef {
   id: string;

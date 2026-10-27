@@ -71,7 +71,9 @@ export type RootStackParamList = {
    * roster already knows how to hold "a counselor you can enter". The NAME is load-bearing —
    * App.tsx silences the app's bed on it (`SELF_SCORED_SCREENS`).
    */
-  MeditationRoom: undefined;
+  /** `fromDoor`: entered through the World's door (27-10) — the room offers its two sessions
+   *  (breathing here, or the sleep guide) instead of opening straight onto the breathing. */
+  MeditationRoom: { fromDoor?: boolean } | undefined;
   /**
    * The 30-minute sleep guide: voice + music, pure RN, no Unity. The NAME is load-bearing too —
    * App.tsx silences the app's bed on it (`SELF_SCORED_SCREENS`).

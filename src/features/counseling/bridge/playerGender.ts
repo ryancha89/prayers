@@ -19,3 +19,8 @@ export const playerCharacter = (): string | undefined => {
   const s = useSubjectsStore.getState();
   return effectiveCharacter(s.self.gender, s.playerCharacter)?.id;
 };
+
+/** The creator's hair colour ("#RRGGBB"), sent beside `playerCharacter`. Undefined for the model's
+ *  own: JSON drops the field and Unity's JsonUtility reads a missing string as "" — the same "own
+ *  hair" — so payloads from before the creator are unchanged. */
+export const playerHair = (): string | undefined => useSubjectsStore.getState().playerHair || undefined;

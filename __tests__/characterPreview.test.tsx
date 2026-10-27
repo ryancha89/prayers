@@ -26,6 +26,8 @@ const mockBridge = {
   openCharacterPreview: jest.fn(),
   setCharacterPreview: jest.fn(),
   setFaceTracking: jest.fn(),
+  setCharacterView: jest.fn(),
+  confirmCharacter: jest.fn(),
   closeCharacterPreview: jest.fn(),
 };
 jest.mock('../src/features/counseling/bridge', () => ({
@@ -48,6 +50,8 @@ beforeEach(async () => {
   useSubjectsStore.setState({
     self: { id: 'self', displayName: 'Linh', birthDate: '2002-11-12', gender: 'female', isUser: true },
     playerCharacter: undefined,
+    playerHair: '',
+    creatorSeen: false,
   });
   await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
 });
@@ -64,19 +68,71 @@ it('opens the preview on the profile’s default, and swaps it on a card tap', a
     expect.objectContaining({ playerCharacter: 'xb_m01' }));
 });
 
-it('the camera switch asks Unity for tracking and shows what Unity says', async () => {
-  await act(async () => byId('character-camera').props.onPress());
-  expect(mockBridge.setFaceTracking).toHaveBeenLastCalledWith(true);
-  expect(texts()).toContain('Starting the camera…');
-  await act(async () => mockListeners.forEach(l => l({ type: 'CHARACTER_TRACKING', payload: { state: 'unsupported' } })));
-  expect(texts().some(s => s.startsWith("Face tracking isn't available"))).toBe(true);
-  // Unsupported flips the switch back: the button offers "on" again, and a tap asks again.
-  expect(texts()).toContain('Turn camera on');
-  await act(async () => byId('character-camera').props.onPress());
-  expect(mockBridge.setFaceTracking).toHaveBeenLastCalledWith(true);
+it('the camera is coming soon: shown, disabled, and it never asks Unity for tracking', async () => {
+  const cam = tree.root.find(n => n.props.testID === 'character-camera' && 'disabled' in n.props);
+  expect(cam.props.disabled).toBe(true);
+  expect(texts()).toContain('Turn camera on · Coming soon');
+  expect(mockBridge.setFaceTracking).not.toHaveBeenCalled();
 });
 
 it('closes the preview on the way out', async () => {
   act(() => tree.unmount());
   expect(mockBridge.closeCharacterPreview).toHaveBeenCalledTimes(1);
+});
+
+it('one character for her gender: no step to "choose" it — hair (face shot) → done, then the turn, then the store', async () => {
+  jest.useFakeTimers();
+  try {
+    expect(tree.root.findAll(n => n.props.testID === 'character-step-look')).toHaveLength(0);
+    // the first step is the hair, framed on the face
+    expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0.8 });
+    const next = () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress);
+    await act(async () => byId('character-hair-C46A86').props.onPress());
+    expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(
+      expect.objectContaining({ playerCharacter: 'xb_f01', playerHair: '#C46A86' }));
+    await act(async () => next().props.onPress());
+    expect(texts()).toContain('This is you in Prayers');
+    expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0 });
+    // the last press: Unity's turn first, the store only after it
+    const start = tree.root.find(n => n.props.label === 'Start' && !!n.props.onPress);
+    await act(async () => start.props.onPress());
+    expect(mockBridge.confirmCharacter).toHaveBeenCalledTimes(1);
+    expect(useSubjectsStore.getState().playerCharacter).toBeUndefined();
+    await act(async () => { jest.advanceTimersByTime(1300); });
+    expect(useSubjectsStore.getState().playerCharacter).toBe('xb_f01');
+    expect(useSubjectsStore.getState().playerHair).toBe('#C46A86');
+    // an account that picked on the old card screen is shown the creator once; this ends that
+    expect(useSubjectsStore.getState().creatorSeen).toBe(true);
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+it('no gender yet: both characters, so the character step comes first', async () => {
+  act(() => tree.unmount());
+  useSubjectsStore.setState({ self: { id: 'self', displayName: 'Linh', birthDate: '2002-11-12', isUser: true } });
+  await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
+  expect(tree.root.findAll(n => n.props.testID === 'character-step-look').length).toBeGreaterThan(0);
+  expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0 });
+});
+
+it('the back arrow steps back before it leaves', async () => {
+  await act(async () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress).props.onPress());
+  expect(byId('character-back')).toBeTruthy();
+  await act(async () => byId('character-back').props.onPress());
+  expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: 0.8 }));
+});
+
+it('the gesture hint is up until a finger turns the body — a step setting its shot is not a touch', async () => {
+  // the hair step sent its face shot on mount; the hint must still be there
+  expect(mockBridge.setCharacterView).toHaveBeenCalled();
+  expect(texts()).toContain('Drag to turn · pinch to see the face');
+});
+
+it('no gender, no pick: the creator opens on the first card, never on a body that is not offered', async () => {
+  act(() => tree.unmount());
+  mockBridge.openCharacterPreview.mockClear();
+  useSubjectsStore.setState({ self: { id: 'self', displayName: 'Linh', birthDate: '2002-11-12', isUser: true }, playerCharacter: undefined });
+  await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
+  expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerCharacter: 'xb_f01' }));
 });

@@ -619,24 +619,11 @@ describe('the World screen', () => {
     }
   });
 
-  it('명상의 방: through the door, Home’s two sessions — the 10-minute meditation and the sleep guide', async () => {
+  it('명상의 방: through the door, straight into the room — its two sessions are chosen in there', async () => {
     await render();
     throughDoor('meditation');
-    // The door opens onto the choice, over the world, not into one of the two.
-    expect(overlayOpen('meditation')).toBe(true);
-    expect(mockNavigate).not.toHaveBeenCalled();
-    expect(byLabel('잠시 쉬어가기')).toBeDefined();
-    expect(byLabel('수면 가이드')).toBeDefined();
-    press('수면 가이드');
-    expect(mockNavigate).toHaveBeenCalledWith('SleepGuide');
-
-    mockNavigate.mockClear();
-    act(() => tree!.unmount());
-    tree = null;
-    await render();
-    await cardOf('meditation');
-    press('잠시 쉬어가기');
-    expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
+    expect(overlayOpen('meditation')).toBe(false);
+    expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom', { fromDoor: true });
   });
 
   it('운세 여행의 방: boards the 2027 journey, or resumes the one under way', async () => {

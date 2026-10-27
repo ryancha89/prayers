@@ -66,8 +66,11 @@ export const RootNavigator: React.FC = () => {
   const needsProfile = !hasBirthData(self) && !deferred;
   // Then the character, once (26-10). Keyed on having picked one, like the profile is keyed on data,
   // so an account from before this screen existed is asked on its next launch too.
+  // 27-10: and once more for accounts that picked on the old card screen, so everyone meets the 3D
+  // creator — `creatorSeen` is stored when the creator commits.
   const playerCharacter = useSubjectsStore(s => s.playerCharacter);
-  const needsCharacter = !needsProfile && !playerCharacter;
+  const creatorSeen = useSubjectsStore(s => s.creatorSeen);
+  const needsCharacter = !needsProfile && (!playerCharacter || !creatorSeen);
 
   return (
   <Stack.Navigator
@@ -99,7 +102,9 @@ export const RootNavigator: React.FC = () => {
     <Stack.Screen name="Notifications" component={NotificationsScreen} />
     <Stack.Screen name="Library" component={LibraryScreen} />
     <Stack.Screen name="MyInfo" component={MyInfoScreen} />
-    <Stack.Screen name="CharacterSelect" component={CharacterSelectScreen} />
+    {/* The creator turns its body with a one-finger drag over the whole screen: iOS 26's full-screen
+        pop gesture took that drag as "back" and threw the edits away (review 27-10), as on the 3D rooms. */}
+    <Stack.Screen name="CharacterSelect" component={CharacterSelectScreen} options={{ gestureEnabled: false }} />
     <Stack.Screen name="Tickets" component={TicketsScreen} />
     <Stack.Screen name="Attendance" component={AttendanceScreen} />
     <Stack.Screen name="JourneyProfile" component={JourneyProfileScreen} />

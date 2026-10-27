@@ -7,6 +7,7 @@ import {
   CafeTarotStart,
   CardsGesture,
   CharacterInitPayload,
+  CharacterViewPayload,
   LectureInitPayload,
   LectureStatePayload,
   MeditationStatePayload,
@@ -70,7 +71,7 @@ const MEDITATION_RETRY_MS = 1500;
 const MEDITATION_MAX_TRIES = 4;
 
 /** Absolute-state messages sent while a finger moves: coalesced (see NativeUnityBridge.postStream). */
-const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'CAFE_CAMERA', 'CAFE_ZOOM', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
+const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'CAFE_CAMERA', 'CAFE_ZOOM', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK', 'CHARACTER_VIEW']);
 /** ~30 a second per type: smooth under Unity's own easing, a quarter of what a thumb produced. */
 const STREAM_MS = 33;
 /** The scenes' own handshake events. Not every `*_READY` is one: CAFE_DECK_READY is a step inside the
@@ -110,6 +111,9 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   private characterRetry: ReturnType<typeof setTimeout> | null = null;
   private characterTries = 0;
   private characterTracking = false;
+  /** The creator's last view: Unity's stage resets to (0, whole body) when the scene starts, so a
+   *  view sent before CHARACTER_READY (the first step's own shot) must be sent again after it. */
+  private characterView?: CharacterViewPayload;
   /** The train journey cabin: the same open-until-answered rule as the meditation room. */
   private journeyInit?: JourneyInitPayload;
   private journeyPending = false;
@@ -428,6 +432,23 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     if (this.view) this.post({ type: 'CHARACTER_SET', payload: init });
   }
 
+  /** The creator's drag and pinch: turn the body, whole body ↔ face, plus the share of the screen
+   *  RN's overlay covers (Unity frames the body between). Streamed (latest wins), remembered, and
+   *  replayed on CHARACTER_READY: sent on mount, the first step's shot (the hair step's face) arrived
+   *  before the scene and Unity's Start reset it to the whole body (review 27-10). */
+  setCharacterView(view: CharacterViewPayload): void {
+    const yaw = Number.isFinite(view.yaw) ? view.yaw : 0;
+    const zoom = Number.isFinite(view.zoom) ? Math.min(1, Math.max(0, view.zoom)) : 0;
+    const frac = (v?: number) => (v != null && Number.isFinite(v) ? Math.min(0.6, Math.max(0, v)) : undefined);
+    this.characterView = { yaw, zoom, top: frac(view.top), bottom: frac(view.bottom) };
+    if (this.view) this.postLive({ type: 'CHARACTER_VIEW', payload: this.characterView });
+  }
+
+  /** The creator's "this is me" moment. Fire and forget: nothing waits for an answer. */
+  confirmCharacter(): void {
+    if (this.view) this.post({ type: 'CHARACTER_CONFIRM' });
+  }
+
   /** The camera switch. Remembered and replayed on CHARACTER_READY. */
   setFaceTracking(on: boolean): void {
     this.characterTracking = on;
@@ -439,6 +460,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     if (this.expectedReady !== 'CHARACTER_READY') return;
     this.characterPending = false;
     this.characterTracking = false;
+    this.characterView = undefined;
     this.clearCharacterRetry();
     try {
       if (this.view) this.post({ type: 'CHARACTER_END' });
@@ -1144,6 +1166,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       this.clearCharacterRetry();
       if (this.characterInit) this.post({ type: 'CHARACTER_SET', payload: this.characterInit });
       if (this.characterTracking) this.post({ type: 'CHARACTER_TRACKING', payload: { on: true } });
+      if (this.characterView) this.post({ type: 'CHARACTER_VIEW', payload: this.characterView });
       this.replayViewInsets();
       this.ready = true;
       this.everReady = true;

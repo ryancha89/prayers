@@ -3,7 +3,7 @@
  * FACE_EXPRESSION {target: counselor} whenever the engine's emotion for the spoken scene changes,
  * and nothing while an undirected reply stays neutral (the room's own [Beat] cues own the face then).
  */
-const mockEmotion = { value: 'neutral' };
+const mockEmotion = { value: 'neutral', tone: '', pending: false };
 const mockListeners: Array<(e: { type: string; payload?: unknown }) => void> = [];
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -39,8 +39,8 @@ jest.mock('../src/features/counseling/hooks/useConsultationEngine', () => ({
     walking: false,
     state: {
       phaseId: 'P02', screen: 'none', speaker: '', line: '', choices: [], canTap: false, inputEnabled: false,
-      notice: null, report: null, tone: '', get emotion() { return mockEmotion.value; }, transcript: [], suggestion: '', topic: '',
-      finished: false, pending: false, speaking: false, mic: { state: 'idle', level: 0, error: '', offered: false },
+      notice: null, report: null, get tone() { return mockEmotion.tone; }, get emotion() { return mockEmotion.value; }, transcript: [], suggestion: '', topic: '',
+      finished: false, get pending() { return mockEmotion.pending; }, speaking: false, mic: { state: 'idle', level: 0, error: '', offered: false },
     },
     remember: () => {},
     micAvailable: false,
@@ -67,9 +67,9 @@ it('sends the emotion on change only, to the counselor', () => {
   mockEmotion.value = 'neutral';
   act(() => tree.update(<CounselingRoomScreen />));
 
-  expect(faces()).toEqual([
-    { target: 'counselor', emotion: 'happy', intensity: 1, hold: 0 },
-    { target: 'counselor', emotion: 'concerned', intensity: 1, hold: 0 },
+  expect(faces()).toEqual([                          // no tone on these scenes: the default 0.8
+    { target: 'counselor', emotion: 'happy', intensity: 0.8, hold: 0 },
+    { target: 'counselor', emotion: 'concerned', intensity: 0.8, hold: 0 },
     { target: 'counselor', emotion: 'neutral', intensity: 1, hold: 0 },
   ]);
   act(() => tree.unmount());
@@ -87,4 +87,23 @@ it('the camera switch drives the counselor face, and an unsupported camera turns
   expect(cam().props.active).toBe(false);
   act(() => tree.unmount());
   expect(mockSent.filter(e => e.type === 'ROOM_FACE_TRACKING').pop()).toEqual({ type: 'ROOM_FACE_TRACKING', payload: { on: false } });
+});
+
+it('a 3D face gets the finer face and strength for its tone, and thinks while the question is out', () => {
+  mockSent.length = 0;
+  let tree!: ReactTestRenderer.ReactTestRenderer;
+  act(() => { tree = ReactTestRenderer.create(<CounselingRoomScreen />); });
+  const step = (tone: string, value: string, pending = false) => {
+    Object.assign(mockEmotion, { tone, value, pending });
+    act(() => tree.update(<CounselingRoomScreen />));
+  };
+  step('sad', 'concerned');          // the drawn stage folds sad into concerned; the face does not
+  step('reassuring', 'happy');       // a soft smile, not the grin
+  step('reassuring', 'happy', true); // the next question is out: thinking
+  step('positive', 'happy');         // the engine's emotion stands, at the tone's strength
+  step('disagree', 'concerned');
+  step('agree', 'happy');            // same emotion as `positive`, lighter: sent again
+  expect(faces().map(f => { const p = f as { emotion: string; intensity: number }; return `${p.emotion}@${p.intensity}`; }))
+    .toEqual(['sad@0.9', 'gentle@0.9', 'thinking@0.7', 'happy@0.8', 'serious@0.8', 'happy@0.55']);
+  act(() => tree.unmount());
 });

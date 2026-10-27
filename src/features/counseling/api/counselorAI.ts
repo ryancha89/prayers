@@ -12,6 +12,7 @@ import {
   CounselorResponse,
   CounselorScene,
   ChatMode,
+  FaceEmotion,
 } from '../types';
 
 /**
@@ -379,6 +380,45 @@ export function performanceForTone(tone: string): {
   animation: CounselorAnimation;
 } {
   return TONE_PERFORMANCE[tone] ?? { emotion: 'neutral', animation: 'talk' };
+}
+
+/**
+ * The 3D face is finer than the drawn stage. TONE_PERFORMANCE folds `sad` into `concerned` and
+ * `reassuring` into `happy` because the drawn set has no other art; a Unity face has a sad, a
+ * gentle and a serious face, so a scene with one of these tones gets that instead.
+ *  - `reassuring`, `bless`, `heart`: a soft smile. The full `happy` grin on "it will be all right"
+ *    reads as laughing at the worry.
+ *  - `disagree`, `emphasis`: the brows come down — she is pressing a point, not worried about it.
+ *
+ * And HOW MUCH (27-10, "biểu cảm … hợp lý hơn"): every tone used to send intensity 1, so "agree"
+ * grinned as wide as "good news" and an analysis frowned like suspense. Strong for the moments a
+ * reading turns on (good news, surprise, sad, suspense), lighter for the ones that only colour a
+ * sentence (agree, analysis, emphasis). A tone missing here keeps the engine's emotion at 0.8.
+ */
+const TONE_FACE: Record<string, { emotion?: FaceEmotion; intensity: number }> = {
+  positive: { intensity: 0.8 },
+  good_news: { intensity: 1 },
+  reveal: { intensity: 0.85 },
+  agree: { intensity: 0.55 },
+  reassuring: { emotion: 'gentle', intensity: 0.9 },
+  bless: { emotion: 'gentle', intensity: 1 },
+  heart: { emotion: 'gentle', intensity: 1 },
+  negative: { intensity: 0.75 },
+  concerned: { intensity: 0.95 },
+  sad: { emotion: 'sad', intensity: 0.9 },
+  disagree: { emotion: 'serious', intensity: 0.8 },
+  emphasis: { emotion: 'serious', intensity: 0.55 },
+  thinking: { intensity: 0.8 },
+  analysis: { intensity: 0.6 },
+  suspense: { intensity: 1 },
+  surprised: { intensity: 1 },
+};
+
+/** The face for a scene: which emotion, how strongly. Neutral is always 1 (it is the absence). */
+export function faceForTone(tone: string, emotion: CounselorEmotion): { emotion: FaceEmotion; intensity: number } {
+  const row = TONE_FACE[tone];
+  const face = row?.emotion ?? emotion;
+  return { emotion: face, intensity: face === 'neutral' ? 1 : row?.intensity ?? 0.8 };
 }
 
 /**

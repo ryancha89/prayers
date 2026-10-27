@@ -52,6 +52,7 @@ jest.mock('../src/features/journey/player/beatVoice', () => ({
 const mockNavigation = { navigate: jest.fn(), goBack: jest.fn(), replace: jest.fn(), addListener: () => () => {} };
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => mockNavigation,
+  useRoute: () => ({ params: undefined }),
   useFocusEffect: () => {},
 }));
 // The embedded player as the room screens see it: present, and a real bridge to talk to. The host

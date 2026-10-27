@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Image, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { HAIRLINE, IVORY, PLATE, RING_COMPACT, RingButton } from '../../../shared/components/hud/Hud';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../navigation/types';
+import { sleepAudio } from '../sleepAudio';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLang, useT } from '../../../shared/i18n';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
@@ -85,6 +88,14 @@ const clock = (ms: number) => {
 
 const ROOM_ART = require('../assets/room.jpg');
 
+/** The two sessions offered when the player walks in through the World's door (27-10, "vào thẳng
+ *  phòng rồi chọn"): each with a frame of this room (cropped from MeditationLandscapePhotographer's
+ *  close / idle portraits, Docs/RoomPhotos/MeditationRoom/landscape/cards), 240 px. */
+const SESSION_ART = {
+  breathe: require('../assets/card_breathe.jpg'),
+  sleep: require('../assets/card_sleep.jpg'),
+};
+
 export const MeditationRoomScreen: React.FC = () => {
   const t = useT();
   const lang = useLang();
@@ -95,7 +106,9 @@ export const MeditationRoomScreen: React.FC = () => {
     if (guideTimer.current) clearTimeout(guideTimer.current);
     guideTimer.current = null;
   };
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const params = useRoute().params as RootStackParamList['MeditationRoom'];
+  const fromDoor = params?.fromDoor === true;
   // Landscape: the ring, the clock and the button move into a panel on the right, so the girl in the
   // room keeps the left of the screen. Same tree, other styles: rotating mid-breath keeps the session,
   // its animations and the UnityHost exactly as they were.
@@ -431,9 +444,28 @@ export const MeditationRoomScreen: React.FC = () => {
                 styles.plate,
                 { opacity: arrive, transform: [{ translateY: arrive.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] },
               ]}>
-              <Text style={styles.plateTitle}>{t('med.title')}</Text>
-              <Text style={styles.plateLine}>{t('med.meta')}</Text>
-              <Action label={t('med.start')} onPress={begin} />
+              {fromDoor ? (
+                // Walked in from the World: the room's two sessions, chosen here, in the room.
+                <View style={[styles.choices, landscape && styles.choicesRow]}>
+                  <Choice testID="med-choice-breathe" art={SESSION_ART.breathe} title={t('home.breathe')} note={t('home.meditation')} compact={landscape} onPress={begin} />
+                  {sleepAudio.available() ? (
+                    <Choice
+                      testID="med-choice-sleep"
+                      art={SESSION_ART.sleep}
+                      title={t('home.sleep')}
+                      note={t('home.sleepHint')}
+                      compact={landscape}
+                      onPress={() => { silence(); navigation.replace('SleepGuide'); }}
+                    />
+                  ) : null}
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.plateTitle}>{t('med.title')}</Text>
+                  <Text style={styles.plateLine}>{t('med.meta')}</Text>
+                  <Action label={t('med.start')} onPress={begin} />
+                </>
+              )}
             </Animated.View>
           )}
         </View>
@@ -441,6 +473,24 @@ export const MeditationRoomScreen: React.FC = () => {
     </View>
   );
 };
+
+/** One of the door's two sessions: a frame of the room, its name and what it costs. */
+const Choice: React.FC<{ art: number; title: string; note: string; onPress: () => void; compact?: boolean; testID?: string }> = ({
+  art, title, note, onPress, compact, testID,
+}) => (
+  <Pressable
+    testID={testID}
+    accessibilityRole="button"
+    accessibilityLabel={title}
+    onPress={() => { sfx.select(); onPress(); }}
+    style={({ pressed }) => [styles.choice, compact && styles.choiceCompact, pressed && styles.actionPressed]}>
+    <Image source={art} style={compact ? styles.choiceArtCompact : styles.choiceArt} resizeMode="cover" accessibilityIgnoresInvertColors />
+    <View style={styles.choiceText}>
+      <Text style={styles.choiceTitle} numberOfLines={1}>{title}</Text>
+      <Text style={styles.choiceNote} numberOfLines={1}>{note}</Text>
+    </View>
+  </Pressable>
+);
 
 /** The only control on the screen. `quiet` is the running state: still reachable, no longer asking
  *  to be looked at. */
@@ -485,6 +535,19 @@ const styles = StyleSheet.create({
   band: { justifyContent: 'flex-end', alignItems: 'center', paddingBottom: spacing.md },
   // The words of the state, over the floor's fade (BottomFade) — no box: the room is the surface.
   plate: { alignItems: 'center', gap: spacing.sm, maxWidth: 440 },
+  choices: { gap: spacing.sm, alignSelf: 'stretch', paddingHorizontal: spacing.lg },
+  choicesRow: { flexDirection: 'row' },
+  choice: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md, minWidth: 300,
+    padding: spacing.sm, borderRadius: radius.md,
+    borderWidth: 1, borderColor: 'rgba(233,196,106,0.3)', backgroundColor: 'rgba(20,16,28,0.55)',
+  },
+  choiceCompact: { flex: 1, minWidth: 0 },
+  choiceArt: { width: 64, height: 64, borderRadius: radius.sm },
+  choiceArtCompact: { width: 44, height: 44, borderRadius: radius.sm },
+  choiceText: { flex: 1, gap: 2 },
+  choiceTitle: { fontFamily: SERIF, fontSize: 17, color: MED.paper },
+  choiceNote: { fontSize: 12, color: MED.ash },
   plateTitle: { fontFamily: SERIF, fontSize: 24, color: MED.paper, letterSpacing: 0.4, textAlign: 'center' },
   plateLine: { fontFamily: SERIF, fontSize: 14, color: MED.ash, letterSpacing: 1.2, textAlign: 'center', marginBottom: spacing.xs },
   // While breathing: one word, quiet, and the rhythm under it.

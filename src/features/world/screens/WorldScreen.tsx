@@ -14,7 +14,7 @@ import { WorldJoystick } from '../components/WorldJoystick';
 import { DoorCard, DoorTitle } from '../components/DoorCard';
 import { getWorldBridge, isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
-import { playerCharacter, playerGender } from '../../counseling/bridge/playerGender';
+import { playerCharacter, playerHair, playerGender } from '../../counseling/bridge/playerGender';
 import type { WorldInitPayload, WorldZone } from '../../counseling/types';
 import { CoinPill } from '../../coins/components/CoinPill';
 import { useCoins } from '../../coins/store/coinStore';
@@ -206,7 +206,7 @@ export const WorldScreen: React.FC = () => {
     const open = () => {
       if (cancelled) return;
       const { position, returnZone } = useWorldStore.getState();
-      const init: WorldInitPayload = { lang, spawn: position, playerGender: playerGender(), playerCharacter: playerCharacter() };
+      const init: WorldInitPayload = { lang, spawn: position, playerGender: playerGender(), playerCharacter: playerCharacter(), playerHair: playerHair() };
       if (returnZone) init.zone = returnZone;
       bridge.openWorld(init);
     };
@@ -297,7 +297,9 @@ export const WorldScreen: React.FC = () => {
   const actions: ZoneActions = {
     counsel: c => leaveTo('counseling', () => openCounselor(navigation, c)),
     browse: () => navigation.popTo('Tabs', { screen: 'Home' }),
-    meditate: () => leaveTo('meditation', () => navigation.navigate('MeditationRoom')),
+    // Through the door (27-10, "vào thẳng phòng rồi chọn"): into the room, where the two sessions
+    // are offered — the choice no longer opens over the world.
+    meditate: () => leaveTo('meditation', () => navigation.navigate('MeditationRoom', { fromDoor: true })),
     sleep: () => leaveTo('meditation', () => navigation.navigate('SleepGuide')),
     journey: () =>
       leaveTo('journey', () => {
@@ -335,9 +337,8 @@ export const WorldScreen: React.FC = () => {
       if (c) actions.counsel(c);
       else setOverlay('counseling');
     },
-    // Two sessions behind this door (the 10-minute meditation, the sleep guide): the choice opens over
-    // the world, as the counselling door's picker does, rather than dropping into one of them.
-    meditation: () => setOverlay('meditation'),
+    // Straight in, like the cafe (27-10): the room itself offers its two sessions.
+    meditation: actions.meditate,
     journey: actions.journey,
     shop: () => leaveTo('shop', () => navigation.navigate('Tickets')),
     myroom: actions.myroom,
@@ -345,10 +346,11 @@ export const WorldScreen: React.FC = () => {
     // once the player has sat down.
     cafe: actions.cafe,
   };
-  /** A door's overlay — except the cafe's, which has none any more: every way of reaching that door
+  /** A door's overlay — except the cafe's and the meditation room's, which have none any more: every way of reaching that door
    *  (Unity silent at the door, Map while loading, the drawn hub) goes in instead. */
   const openOverlay = (zone: WorldZone) => {
     if (zone === 'cafe') actions.cafe();
+    else if (zone === 'meditation') actions.meditate();
     else setOverlay(zone);
   };
   door.current = {

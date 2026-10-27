@@ -65,9 +65,9 @@ it('is the drawn hub: no UnityView, its doors open the overlays, and Map arrives
 
   // A door drawn on the hub.
   press('명상의 방');
-  expect(open('meditation')).toBe(true);
-  press('명상 시작하기');
-  expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
+  // Straight into the room (27-10): the two sessions are chosen there, not over the world.
+  expect(open('meditation')).toBe(false);
+  expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom', { fromDoor: true });
   expect(useWorldStore.getState().returnZone).toBe('meditation');
 
   // Map → the mock walks there instantly and answers WORLD_ARRIVED.
