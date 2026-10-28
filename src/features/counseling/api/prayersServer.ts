@@ -1,7 +1,7 @@
 import { apiBase } from '../../../shared/config/api';
 import { apiHeaders, authedFetch } from '../../auth/api/headers';
 import { devlog } from '../../../shared/devlog';
-import { isLang, useLanguageStore } from '../../../shared/i18n';
+import { isLang } from '../../../shared/i18n';
 import type { Lang } from '../../../shared/i18n';
 import type { ChatMode } from '../types';
 
@@ -148,17 +148,16 @@ export async function fetchAccountCharacter(signal?: AbortSignal): Promise<Accou
   }
 }
 
-/** Remember the character on the account. Partial POST: the language is left as it is. Best effort. */
+/** Remember the character on the account. Partial POST: the language is left as it is. Best effort.
+ *  ⚠️ Only for a server that reported the fields (characterSync checks): a server from before 27-10
+ *  replaces the whole row on POST and would set the account's language to null. */
 export async function saveAccountCharacter(c: { playerCharacter: string; playerHair: string; creatorSeen: boolean }): Promise<boolean> {
   try {
     const res = await authedFetch(`${BASE()}/api/v1/prayers/settings`, {
       method: 'POST',
-      // `language` rides along: a server from before 27-10 replaces the whole row on POST and would
-      // otherwise set the account's language to null.
-      body: JSON.stringify({
-        language: useLanguageStore.getState().lang,
-        player_character: c.playerCharacter, player_hair: c.playerHair, creator_seen: c.creatorSeen,
-      }),
+      // No `language`: sending it raced the sign-in language sync and could write the device's over the
+      // account's (QA 28-10).
+      body: JSON.stringify({ player_character: c.playerCharacter, player_hair: c.playerHair, creator_seen: c.creatorSeen }),
     });
     if (!res || !res.ok) return false;
     return (await res.json())?.success === true;

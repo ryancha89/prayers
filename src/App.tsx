@@ -21,6 +21,7 @@ import { SceneTransitionOverlay } from './shared/transition/SceneTransitionOverl
 import { startCoinPurchaseRecovery } from './features/coins/api/coinsApi';
 import { applyReminder } from './features/notifications/reminder';
 import { useAuthStore } from './features/auth/store/authStore';
+import { syncAccountCharacter } from './features/character/characterSync';
 import { useJourneyPlayer } from './features/journey/player/journeyPlayer';
 import { stopLine } from './features/philosophy/lectureVoice';
 
@@ -159,6 +160,8 @@ const App: React.FC = () => {
   // credited) is credited once someone is signed in — the server needs whose wallet it is.
   const signedIn = useAuthStore(s => s.userAuth);
   useEffect(() => (signedIn ? startCoinPurchaseRecovery() : undefined), [signedIn]);
+  // The character is reconciled whenever someone is signed in: at launch, and on every sign-in.
+  useEffect(() => { if (signedIn) void syncAccountCharacter(); }, [signedIn]);
   // The check-in reminder's 14-day window rolls forward on every launch.
   useEffect(() => { void applyReminder(); }, []);
   const onSplashDone = useCallback(() => {
