@@ -250,6 +250,10 @@ export const WorldScreen: React.FC = () => {
     const offFocus = navigation.addListener('focus', () => {
       if (hostUp.current || waiting) return;
       waiting = true;
+      // The world reloads from scratch on the way back too (My Room, the cafe…), so it gets the same
+      // loading screen as the first open (29-10): beginning it only on mount let the return show the
+      // room's last frame and the black fade. Here, not at the remount, so the fallback path has it too.
+      beginSceneTransition('world');
       timer = setTimeout(remount, HOST_REMOUNT_FALLBACK_MS);
     });
     const offEnd = navigation.addListener('transitionEnd', (e: { data?: { closing?: boolean } }) => {

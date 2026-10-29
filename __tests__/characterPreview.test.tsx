@@ -198,3 +198,20 @@ it('opens on the stored outfit, and a colour the palette dropped falls back to t
   await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
   expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerOutfit: '' }));
 });
+
+it('the header fits a 375-pt SE: the title truncates to one line and the camera pill is capped', () => {
+  // Jest has no layout engine, so the rules that keep the row on screen are pinned instead
+  // (29-10: back + "Choose your character" + "Turn camera on · Coming soon" ≈ 430 pt vs 343).
+  const { StyleSheet } = require('react-native');
+  const title = tree.root.find(n => n.props.testID === 'character-title' && n.type === Text);
+  expect(title.props.numberOfLines).toBe(1);
+  expect(StyleSheet.flatten(title.props.style).flexShrink).toBeGreaterThan(0);
+  const cam = tree.root.find(n => n.props.testID === 'character-camera' && 'disabled' in n.props);
+  const pill = StyleSheet.flatten(typeof cam.props.style === 'function' ? cam.props.style({ pressed: false }) : cam.props.style);
+  expect(pill.flexShrink).toBeGreaterThan(0);
+  expect(pill.maxWidth).toBe('50%');
+  const label = cam.findAll(n => n.type === Text)[0];
+  expect(label.props.numberOfLines).toBe(1);
+  // The whole name is still read out, truncated or not.
+  expect(cam.props.accessibilityLabel).toBe('Turn camera on · Coming soon');
+});

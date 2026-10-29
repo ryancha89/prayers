@@ -338,7 +338,7 @@ export const CharacterSelectScreen: React.FC = () => {
                 <Icon name="back" size={28} />
               </Pressable>
             )}
-            <Text style={styles.headerTitle}>{t('character.title')}</Text>
+            <Text style={styles.headerTitle} numberOfLines={1} testID="character-title">{t('character.title')}</Text>
             {/* Coming soon (27-10): the tracked face's lines sat over the character's own face, and
                 the face shot is the creator's. The switch stays visible, disabled, so the feature is
                 announced; CAMERA_READY flips it back on with the code below untouched. */}
@@ -348,8 +348,9 @@ export const CharacterSelectScreen: React.FC = () => {
               accessibilityState={{ checked: cameraOn, disabled: !CAMERA_READY }}
               disabled={!CAMERA_READY}
               onPress={toggleCamera}
-              style={[styles.pill, cameraOn && styles.cardOn, !CAMERA_READY && styles.pillOff]}>
-              <Text style={[styles.pillLabel, cameraOn && styles.labelOn, !CAMERA_READY && styles.pillLabelOff]}>
+              accessibilityLabel={CAMERA_READY ? undefined : `${t('character.cameraOn')} · ${t('character.soon')}`}
+              style={[styles.pill, styles.headerPill, cameraOn && styles.cardOn, !CAMERA_READY && styles.pillOff]}>
+              <Text style={[styles.pillLabel, cameraOn && styles.labelOn, !CAMERA_READY && styles.pillLabelOff]} numberOfLines={1}>
                 {CAMERA_READY ? t(cameraOn ? 'character.cameraOff' : 'character.cameraOn') : `${t('character.cameraOn')} · ${t('character.soon')}`}
               </Text>
             </Pressable>
@@ -421,7 +422,7 @@ export const CharacterSelectScreen: React.FC = () => {
             <Icon name="back" size={28} />
           </Pressable>
         )}
-        <Text style={styles.headerTitle}>{t('character.title')}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{t('character.title')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -481,7 +482,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
-  headerTitle: { ...typography.h3, color: colors.textPrimary },
+  // Back, title and the camera pill share one row: on a 375-pt SE the English title and "Turn camera
+  // on · Coming soon" came to ~430 pt against 343 (29-10). Both give way now, the title twice as
+  // readily, each truncating to one line; the pill is capped at half the row, so neither leaves it.
+  headerTitle: { ...typography.h3, color: colors.textPrimary, flexShrink: 1, marginHorizontal: spacing.sm },
   headerSpacer: { width: 28 },
   scroll: { padding: spacing.xl, gap: spacing.lg },
   intro: { ...typography.body, color: colors.textSecondary, lineHeight: 22 },
@@ -537,6 +541,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1.5, borderColor: 'transparent',
   },
   pillLabel: { ...typography.caption, color: colors.textPrimary },
+  headerPill: { flexShrink: 0.5, maxWidth: '50%' },
   pillOff: { opacity: 0.55 },
   pillLabelOff: { color: colors.textMuted },
   panel: {

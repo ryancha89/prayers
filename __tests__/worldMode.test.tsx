@@ -126,6 +126,7 @@ import { useCoins } from '../src/features/coins/store/coinStore';
 import { useJourneyPlayer } from '../src/features/journey/player/journeyPlayer';
 import { NEWYEAR_2027 } from '../src/features/journey/data/journeys';
 import { useLanguageStore } from '../src/shared/i18n';
+import { useSceneTransition } from '../src/shared/transition/sceneTransition';
 import type { ViewInsetsPayload, WorldInitPayload } from '../src/features/counseling/types';
 
 const { mockPosted } = jest.requireMock('../src/features/counseling/bridge') as {
@@ -589,7 +590,10 @@ describe('the World screen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('MyRoom');
     fire('blur');
     mockPosted.length = 0;
+    // The room's own transition has come and gone; the way back gets the world's (29-10).
+    useSceneTransition.setState({ active: null });
     fire('focus');
+    expect(useSceneTransition.getState().active?.place).toBe('world');
     expect(mockHost.mounts).toBe(1);
     fire('transitionEnd', { data: { closing: false } });
     expect(mockHost.mounts).toBe(2);
