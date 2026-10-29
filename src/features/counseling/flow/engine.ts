@@ -410,6 +410,16 @@ export interface EngineOptions {
    *  it, and read as a script when there is no table. Leaving the chat still says goodbye through
    *  P20. */
   chatFirst?: boolean;
+  /** Whether a question may be sent now — the room's coin check. Consulted by EVERY way a question
+   *  goes out (typed, the suggestion chip, a spoken take): the mic used to skip the room's own
+   *  check and reach v2 with no coins (29-10). False = the question is not sent; the caller has
+   *  already shown why. */
+  canAsk?: () => boolean;
+  /** Asked when an answer fails: resolves true when the failure was the wallet (v2 answers a
+   *  coin shortfall 200 `ticketInsufficient`, which Unity forwards as `upstream`). The caller shows
+   *  its coin card; the engine then shows the coin notice instead of "cannot gather the reading",
+   *  and no failure line in the chat. */
+  coinsShort?: () => Promise<boolean>;
 }
 
 /** How long a chat-first room waits for the recall before greeting without it. The fetch is free
@@ -451,6 +461,8 @@ export class ConsultationEngine {
    *  untagged, and for every reading from the embedded room — v2 speaks cues, not scenes. */
   private beatScenes: Record<string, CounselorScene[]> = {};
   private oraclePending = false;
+  /** A failed reading is held (still pending) while `coinsShort` asks the wallet. */
+  private checkingCoins = false;
   private oracleError: OracleResultPayload['error'] | null = null;
   private followup = '';
   private reportData: ReportView | null = null;
@@ -1125,14 +1137,15 @@ export class ConsultationEngine {
     else this.advance();
   }
 
-  /** The P05 question, or a follow-up turn once the loop is open. */
-  submitQuestion(text: string) {
+  /** The P05 question, or a follow-up turn once the loop is open. False when nothing was sent. */
+  submitQuestion(text: string): boolean {
     const trimmed = (text ?? '').trim();
-    if (!this.running || !trimmed) return;
+    if (!this.running || !trimmed) return false;
+    if (this.opts.canAsk && !this.opts.canAsk()) return false;
 
     if (this.inLoop) {
       this.askLoop(trimmed);
-      return;
+      return true;
     }
 
     // 티키타카 (26-09): the first question is answered like every later one — a short reply in the
@@ -1143,7 +1156,7 @@ export class ConsultationEngine {
       this.question = trimmed;
       this.openLoop({ intro: false });
       this.askLoop(trimmed);
-      return;
+      return true;
     }
 
     this.question = trimmed;
@@ -1155,6 +1168,7 @@ export class ConsultationEngine {
     this.stage.askOracle({ question: trimmed, topic: this.topic, scope: this.scope });
     this.patch({ inputEnabled: false });
     this.advance();
+    return true;
   }
 
   leave() {
@@ -1269,7 +1283,8 @@ export class ConsultationEngine {
       this.restoreCutOff();
       return;
     }
-    this.submitQuestion(text);
+    // Refused (no coins): nothing was asked, so she gets back the answer the mic cut off.
+    if (!this.submitQuestion(text)) this.restoreCutOff();
   }
 
   /**
@@ -1375,13 +1390,16 @@ export class ConsultationEngine {
    *  patch, so relocalize() can rebuild it without knowing why it was shown. */
   private noticeView(): NoticeView {
     const key =
-      this.oracleError === 'no_chart'
+      this.oracleError === 'ticket'
+        ? null
+        : this.oracleError === 'no_chart'
         ? 'consult_no_chart_body'
         : this.oracleError === 'upstream'
           ? 'consult_upstream_body'
           : 'consult_disconnect_body';
     return {
-      body: loc(key, this.lang, ''),
+      // Out of coins: the room's coin card says it; the notice under it only waits for the Retry.
+      body: key ? loc(key, this.lang, '') : ui('notice.coins', this.lang),
       retryLabel: loc('consult_retry', this.lang, 'Retry'),
       leaveLabel: loc('consult_leave_room', this.lang, 'Leave'),
     };
@@ -1392,6 +1410,7 @@ export class ConsultationEngine {
   /** Re-asks the SAME question — the flow still holds topic, scope and text. */
   retry() {
     if (this.pendingRetryIndex < 0) return;
+    if (this.opts.canAsk && !this.opts.canAsk()) return;
     this.oraclePending = true;
     this.oracleError = null;
     this.stage.askOracle({ question: this.question, topic: this.topic, scope: this.scope });
@@ -1434,7 +1453,23 @@ export class ConsultationEngine {
       this.onLoopResult(payload);
       return;
     }
-    if (!this.oraclePending) return;
+    if (!this.oraclePending || this.checkingCoins) return;
+    if (!payload.ok && this.opts.coinsShort) {
+      // Still pending while the wallet is asked: the cover phases keep waiting (their poll reads
+      // oraclePending), so the notice that follows is the right one from its first frame.
+      this.checkingCoins = true;
+      void this.opts.coinsShort().catch(() => false).then(short => {
+        this.checkingCoins = false;
+        if (!this.running || !this.oraclePending) return;
+        this.applyReading(short ? { ...payload, error: 'ticket' } : payload);
+      });
+      return;
+    }
+    this.applyReading(payload);
+  }
+
+  /** The staged reading's result, taken in (a failure already classified). */
+  private applyReading(payload: OracleResultPayload) {
     this.oraclePending = false;
     this.oracleError = payload.ok ? null : (payload.error ?? 'connection');
     this.followup = payload.followup ?? '';
@@ -1621,10 +1656,15 @@ export class ConsultationEngine {
         suggestion: this.followup,
         pending: false,
       });
-      this.appendTranscript(
-        'counselor',
-        loc('consult_disconnect_body', this.lang, ''),
-      );
+      const failLine = () => this.appendTranscript('counselor', loc('consult_disconnect_body', this.lang, ''));
+      // A coin shortfall is the coin card's to say, not "connection lost" in her voice (29-10).
+      if (!payload.ok && this.opts.coinsShort) {
+        void this.opts.coinsShort().catch(() => false).then(short => {
+          if (!short && this.running) failLine();
+        });
+      } else {
+        failLine();
+      }
       return;
     }
     this.followup = payload.followup ?? '';

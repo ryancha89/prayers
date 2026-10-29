@@ -220,6 +220,10 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, 
     this.handlers.clear();
   }
 
+  readyRoom(): { walkIn?: boolean } | null {
+    return this.ready ? {} : null;
+  }
+
   /** Test/mock helper — lets the mock room raise Unity → RN events. */
   emitToRN(event: UnityToRNEvent): void {
     this.handlers.forEach(h => h(event));

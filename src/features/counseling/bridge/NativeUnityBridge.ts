@@ -164,11 +164,14 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   private viewInsets?: ViewInsetsPayload;
   private viewInsetsPosted = '';
   private expectedReady: UnityToRNEvent['type'] | null = null;
+  /** The counseling room's UNITY_READY payload, once it came; cleared by the next scene. */
+  private roomReadyPayload: { walkIn?: boolean } | null = null;
 
   /** Unity survives screen changes on iOS. Only the newly opened scene may keep pending work. */
   private beginScene(readyEvent: UnityToRNEvent['type']): void {
     this.expectedReady = readyEvent;
     this.ready = false;
+    this.roomReadyPayload = null;
     this.outbox = [];
     this.streams.clear();
     if (this.streamTimer) clearTimeout(this.streamTimer);
@@ -975,8 +978,13 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     // BGM outliving the room (or an error exit) is exactly the bug this guards.
     if (this.view) this.post({ type: 'SESSION_END' });
     this.ready = false;
+    this.roomReadyPayload = null;
     this.outbox = [];
     this.payload = undefined;
+  }
+
+  readyRoom(): { walkIn?: boolean } | null {
+    return this.expectedReady === 'UNITY_READY' ? this.roomReadyPayload : null;
   }
 
   get isReady(): boolean {
@@ -1266,6 +1274,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     if (event.type === 'UNITY_READY') {
       this.ready = true;
       this.everReady = true;
+      this.roomReadyPayload = { ...(event.payload ?? {}) };
       // The room is up: nothing may re-open it now.
       this.clearInitRetry();
       if (!this.initSent && this.payload) this.sendInit('unity ready');

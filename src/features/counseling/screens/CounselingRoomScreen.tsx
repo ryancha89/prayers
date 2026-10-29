@@ -192,8 +192,38 @@ export const CounselingRoomScreen: React.FC = () => {
     else setCatGesture(g => ({ name: cue.gesture, seq: (g?.seq ?? 0) + 1 }));
   }, []);
 
+  // Coins are asked for at the question, not at the door (16-10, user: "질문할때 없으면 유도해야해").
+  // A question the wallet cannot pay for is not sent: it stays in the box and the purchase card
+  // comes up over the room. The balance is re-read after every answer — each turn spends — so the
+  // check is against what the server holds now, not what it held when the player walked in.
+  //
+  // The check lives in the engine's `canAsk` since 29-10, so a spoken question (MIC_RESULT goes
+  // straight to the engine) and the suggestion chip are held to it too; a spoken one used to reach
+  // v2 with no coins and come back as "cannot gather the reading". `coinsShort` covers the refusal
+  // the check did not foresee (a 20-coin 깊은 풀이 turn on 10 coins, a stale balance): the coin card,
+  // not the upstream line.
+  const [coinPrompt, setCoinPrompt] = useState(false);
+  const canAsk = useCallback((): boolean => {
+    const balance = useCoins.getState().balance;
+    if (balance != null && balance < CONSULT_COST) {
+      setCoinPrompt(true);
+      return false;
+    }
+    return true;
+  }, []);
+  const coinsShort = useCallback(async (): Promise<boolean> => {
+    const r = await fetchCoins();
+    if (!r) return false;
+    useCoins.getState().setBalance(r.balance);
+    const short = r.balance < CONSULT_COST;
+    if (short) setCoinPrompt(true);
+    return short;
+  }, []);
+
   const consultation = useConsultationEngine({
     topic,
+    canAsk,
+    coinsShort,
     voice,
     pixel,
     onCue,
@@ -247,32 +277,22 @@ export const CounselingRoomScreen: React.FC = () => {
     },
   });
 
-  // Coins are asked for at the question, not at the door (16-10, user: "질문할때 없으면 유도해야해").
-  // A question the wallet cannot pay for is not sent: it stays in the box and the purchase card
-  // comes up over the room. The balance is re-read after every answer — each turn spends — so the
-  // check is against what the server holds now, not what it held when the player walked in. A
-  // refusal the check did not foresee (a 20-coin 깊은 풀이 turn on 10 coins) shows the same card.
-  const [coinPrompt, setCoinPrompt] = useState(false);
+  // A typed question the wallet cannot pay for stays in the box (`ask` returns false).
   const ask = useCallback(
     (text: string): boolean => {
-      const balance = useCoins.getState().balance;
-      if (balance != null && balance < CONSULT_COST) {
-        setCoinPrompt(true);
-        return false;
-      }
+      if (!canAsk()) return false;
       consultation.submit(text);
       return true;
     },
-    [consultation],
+    [consultation, canAsk],
   );
+  // After every answer the balance is re-read. A failure is the engine's to ask about
+  // (`coinsShort`), which opens the card itself.
   useEffect(() => {
     return getUnityBridge().onEvent(e => {
-      if (e.type !== 'ORACLE_RESULT') return;
-      const failed = !e.payload?.ok;
+      if (e.type !== 'ORACLE_RESULT' || !e.payload?.ok) return;
       fetchCoins().then(r => {
-        if (!r) return;
-        useCoins.getState().setBalance(r.balance);
-        if (failed && r.balance < CONSULT_COST) setCoinPrompt(true);
+        if (r) useCoins.getState().setBalance(r.balance);
       });
     });
   }, []);

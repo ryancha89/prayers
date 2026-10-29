@@ -51,6 +51,10 @@ export interface UseConsultationOptions {
   /** Pin the answer style instead of reading the player's stored choice (and the room then hides
    *  the switch). */
   fixedChatMode?: ChatMode;
+  /** The room's coin check, for every way a question goes out — see `EngineOptions.canAsk`. */
+  canAsk?: () => boolean;
+  /** Whether a failed answer was the wallet — see `EngineOptions.coinsShort`. */
+  coinsShort?: () => Promise<boolean>;
 }
 
 export interface Consultation {
@@ -144,6 +148,8 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
       onUserLine: text => cbs.current.onUserLine?.(text),
       onDiscoveries: found => cbs.current.onDiscoveries?.(found),
       onFinished: () => cbs.current.onFinished?.(),
+      canAsk: () => cbs.current.canAsk?.() ?? true,
+      coinsShort: () => cbs.current.coinsShort?.() ?? Promise.resolve(false),
     });
     engineRef.current = engine;
     const unsubscribe = engine.subscribe(setState);
@@ -167,21 +173,31 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
   useEffect(() => {
     // A pixel room has no player; anything on the channel belongs to some other room.
     if (isPixel) return;
-    return getUnityBridge().onEvent((e: UnityToRNEvent) => {
-      if (e.type === 'UNITY_READY') {
-        // Order matters: mark the hold BEFORE lifting the veil, or the begin effect below runs
-        // for one render with seated still true and the counselor opens on an empty chair — the
-        // exact race this whole signal exists to close.
-        if (e.payload?.walkIn) { setSeated(false); setWalkIn(true); }
-        setReady(true);
-      } else if (e.type === 'UNITY_SEATED') setSeated(true);
+    const roomUp = (payload?: { walkIn?: boolean }) => {
+      // Order matters: mark the hold BEFORE lifting the veil, or the begin effect below runs
+      // for one render with seated still true and the counselor opens on an empty chair — the
+      // exact race this whole signal exists to close.
+      if (payload?.walkIn) { setSeated(false); setWalkIn(true); }
+      setReady(true);
+    };
+    const off = getUnityBridge().onEvent((e: UnityToRNEvent) => {
+      if (e.type === 'UNITY_READY') roomUp(e.payload);
+      else if (e.type === 'UNITY_SEATED') setSeated(true);
       else if (e.type === 'UNITY_STOOD') setSeated(false);
       else if (e.type === 'ORACLE_RESULT') engineRef.current?.onOracleResult(e.payload);
       else if (e.type === 'SPEAK_DONE') engineRef.current?.onSpeakDone(engineKey(e.payload.cacheKey));
       else if (e.type === 'MIC_STATE') engineRef.current?.onMicState(e.payload.state, e.payload.level);
       else if (e.type === 'MIC_RESULT') engineRef.current?.onMicResult(e.payload);
     });
-  }, [isPixel]);
+    // The READY may have come before this room mounted (29-10): on re-entry with a living Unity
+    // view, UnityEntry hears it and only then navigates here, and the room sat out its 30 s
+    // deadline waiting for a second one. Asked after subscribing, so no READY falls in between.
+    if (usesUnity) {
+      const already = getUnityBridge().readyRoom?.();
+      if (already) roomUp(already);
+    }
+    return off;
+  }, [isPixel, usesUnity]);
 
   // Begin once, when the stage is actually there to be staged.
   const begun = useRef(false);

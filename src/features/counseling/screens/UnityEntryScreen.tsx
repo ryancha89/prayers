@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, spacing, typography } from '../../../shared/theme';
+import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
 import { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
@@ -20,6 +20,8 @@ import { fetchCoins } from '../../coins/api/coinsApi';
 import { useCoins } from '../../coins/store/coinStore';
 import { useScreen } from '../../../shared/device/screen';
 import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
+import { ROOM_BLOCK_LINE, roomBlock } from '../roomAvailability';
+import { sfx } from '../../../shared/audio/sfx';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Rt = RouteProp<RootStackParamList, 'UnityEntry'>;
@@ -35,14 +37,21 @@ export const UnityEntryScreen: React.FC = () => {
   const t = useT();
   const lang = useLang();
   const counselor = getLocalizedCounselor(params.counselorId, lang);
+  const getSubject = useSubjectsStore(s => s.getById);
+  const subject = getSubject(params.subjectId);
+  // A room that cannot be opened from this phone — the thread's saved person is not on it, or the
+  // counsellor has no room — says so with a way back (29-10). It used to return quietly under the
+  // loading veil: an endless spinner.
+  const blocked = roomBlock(counselor, subject);
   // The shared loading screen into the room: the shared picture and the counselor's name, until the room's
-  // UNITY_READY (sceneTransition.ts). Every way into a room comes through here.
+  // UNITY_READY (sceneTransition.ts). Every way into a room comes through here. Not for a room that will
+  // not open, nor for a pixel counsellor (Nabi): his room is drawn by the app and never sends
+  // UNITY_READY, so the veil held the player for the whole MAX_MS (29-10).
   useEffect(() => {
+    if (blocked || isPixelCounselor(counselor?.characterId)) return;
     beginSceneTransition('counsel', { name: counselor?.name });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const getSubject = useSubjectsStore(s => s.getById);
-  const subject = getSubject(params.subjectId);
   const storedTopic = useCounselingStore(s => s.topic);
   // Every way into the room comes through here, so the fallback belongs here and not in the
   // callers. Resuming an old conversation never set a topic at all — it leaned on whatever the
@@ -69,7 +78,7 @@ export const UnityEntryScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!counselor || !subject) return;
+    if (!counselor || !subject || blocked) return;
     const sessionId = `session_${counselor.id}_${subject.id}`;
 
     const goToRoom = () => {
@@ -119,7 +128,30 @@ export const UnityEntryScreen: React.FC = () => {
     });
 
     return unsub;
-  }, [counselor, subject, topic, navigation, params.resuming, lang]);
+  }, [counselor, subject, blocked, topic, navigation, params.resuming, lang]);
+
+  if (blocked) {
+    const back = () => {
+      sfx.back();
+      if (navigation.canGoBack()) navigation.goBack();
+      else navigation.navigate('Tabs', { screen: 'Home' });
+    };
+    return (
+      <View style={styles.container} testID="unity-entry-blocked">
+        <View style={[styles.orb, landscape && styles.orbSide, { backgroundColor: counselor?.accent ?? colors.violet }]} />
+        <Text style={styles.title}>{t('unity.cantOpen')}</Text>
+        <Text style={styles.subtitle}>{t(ROOM_BLOCK_LINE[blocked])}</Text>
+        <Pressable
+          testID="unity-entry-back"
+          onPress={back}
+          accessibilityRole="button"
+          accessibilityLabel={t('unity.noTickets.back')}
+          style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
+          <Text style={styles.backText}>{t('unity.noTickets.back')}</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -150,4 +182,10 @@ const styles = StyleSheet.create({
   spinner: { marginBottom: spacing.lg },
   title: { ...typography.h3, color: colors.textPrimary },
   subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center', paddingHorizontal: spacing.xxl },
+  back: {
+    marginTop: spacing.xl, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm,
+    borderRadius: radius.pill, borderWidth: 1, borderColor: colors.violetSoft,
+  },
+  backText: { ...typography.bodyStrong, color: colors.textPrimary },
+  pressed: { opacity: 0.7 },
 });

@@ -1071,6 +1071,11 @@ export interface UnityBridge {
   sendEvent(event: RNToUnityEvent): void;
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
   closeCounselingRoom(): Promise<void>;
+  /** The UNITY_READY payload of the room opened last, when it has already arrived — null while
+   *  it has not (or another scene was opened since). A room screen that mounts after the handshake
+   *  (re-entry: UnityEntry heard the READY and only then navigated) asks this instead of waiting
+   *  for a READY that has come and gone (29-10). Optional: test doubles may omit it. */
+  readyRoom?(): { walkIn?: boolean } | null;
   /** Report how much of the UnityView the app's UI covers (VIEW_INSETS). Deduplicated, and
    *  remembered for the room's READY message. */
   sendViewInsets(insets: ViewInsetsPayload): void;

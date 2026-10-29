@@ -13,6 +13,9 @@ import { ConversationRow } from '../components/ConversationRow';
 import { syncConversationsFromServer } from '../syncConversations';
 import { column } from '../../../shared/device/screen';
 import { MiniPlayerSpacer } from '../../../shared/layout/miniPlayerInset';
+import { useSubjectsStore } from '../../subjects/store/subjectsStore';
+import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
+import { ROOM_BLOCK_LINE, roomBlock } from '../../counseling/roomAvailability';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -50,6 +53,17 @@ export const ConversationsScreen: React.FC = () => {
     }, [pull]),
   );
 
+  // A row whose saved person is not on this phone (people live on the device; the server only knows
+  // the id) or whose counsellor has no room cannot be opened: the row says why and does not take the
+  // tap, rather than leading to a room that never comes (29-10). Same rule as UnityEntryScreen.
+  const self = useSubjectsStore(s => s.self);
+  const subjects = useSubjectsStore(s => s.subjects);
+  const blockOf = (counselorId: string, subjectId?: string) => {
+    const id = subjectId ?? 'self';
+    const subject = id === 'self' ? self : subjects.find(x => x.id === id);
+    return roomBlock(getLocalizedCounselor(counselorId, lang), subject);
+  };
+
   const resume = (counselorId: string, subjectId?: string) => {
     navigation.navigate('UnityEntry', {
       counselorId,
@@ -81,12 +95,16 @@ export const ConversationsScreen: React.FC = () => {
           }
           ListHeaderComponent={<Text style={styles.sub}>{t('conv.recent')}</Text>}
           ListFooterComponent={<MiniPlayerSpacer />}
-          renderItem={({ item }) => (
-            <ConversationRow
-              conversation={item}
-              onPress={() => resume(item.counselorId, item.subjectId)}
-            />
-          )}
+          renderItem={({ item }) => {
+            const blocked = blockOf(item.counselorId, item.subjectId);
+            return (
+              <ConversationRow
+                conversation={item}
+                unavailable={blocked ? t(ROOM_BLOCK_LINE[blocked]) : undefined}
+                onPress={() => resume(item.counselorId, item.subjectId)}
+              />
+            );
+          }}
         />
       )}
     </SafeAreaView>

@@ -12,6 +12,8 @@ import type { Lang } from '../../../shared/i18n';
 type Bundle = Record<string, string>;
 
 const KO: Bundle = {
+  // 29-10: the notice under the coin card when a reading failed for want of coins.
+  'notice.coins': 'Prayer Coins가 부족해서 답을 드리지 못했어요. 충전한 뒤 다시 시도해 주세요.',
   'history.label': '대화 이력',
   'history.latest': '최근 대화로',
   'loop.intro': '더 궁금한 것이 있으신가요?',
@@ -45,6 +47,7 @@ const KO: Bundle = {
 };
 
 const EN: Bundle = {
+  'notice.coins': 'Not enough Prayer Coins for an answer. Top up, then try again.',
   'history.label': 'Conversation history',
   'history.latest': 'Latest messages',
   'loop.intro': 'Is there anything else you would like to ask?',
@@ -78,6 +81,7 @@ const EN: Bundle = {
 };
 
 const JA: Bundle = {
+  'notice.coins': 'Prayer Coinsが足りず、お答えできませんでした。チャージしてからもう一度お試しください。',
   'history.label': '会話履歴',
   'history.latest': '最新の会話へ',
   'loop.intro': 'ほかに気がかりなことはありますか？',
@@ -111,6 +115,7 @@ const JA: Bundle = {
 };
 
 const ZH_CN: Bundle = {
+  'notice.coins': 'Prayer Coins 不足，无法回答。请充值后再试。',
   'history.label': '聊天记录',
   'history.latest': '回到最新消息',
   'loop.intro': '还有别的想问吗？',
@@ -144,6 +149,7 @@ const ZH_CN: Bundle = {
 };
 
 const ZH_TW: Bundle = {
+  'notice.coins': 'Prayer Coins 不足，無法回答。請儲值後再試。',
   'history.label': '聊天記錄',
   'history.latest': '回到最新訊息',
   'loop.intro': '還有別的想問嗎？',
@@ -177,6 +183,7 @@ const ZH_TW: Bundle = {
 };
 
 const VI: Bundle = {
+  'notice.coins': 'Không đủ Prayer Coins để trả lời. Hãy nạp thêm rồi thử lại.',
   'history.label': 'Lịch sử trò chuyện',
   'history.latest': 'Tin nhắn mới nhất',
   'loop.intro': 'Con còn muốn hỏi gì nữa không?',
