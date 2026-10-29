@@ -50,6 +50,24 @@ test('the privacy policy says the three things a reviewer looks for', () => {
   expect(text).toContain('delete');
 });
 
+test('the privacy policy declares every permission Info.plist asks for', () => {
+  // Until 28-10 the policy said "no photos, no microphone or camera access" while the app asked for
+  // all three. Reading the plist keeps the two from drifting apart again.
+  const fs = require('fs') as typeof import('fs');
+  const path = require('path') as typeof import('path');
+  const plist = fs.readFileSync(path.join(__dirname, '../ios/prayers/Info.plist'), 'utf8');
+  const text = docFor('privacy', 'en').sections.flatMap(s => s.body).join(' ').toLowerCase();
+  const declared: Record<string, string> = {
+    NSCameraUsageDescription: 'camera',
+    NSMicrophoneUsageDescription: 'microphone',
+    NSPhotoLibraryUsageDescription: 'photos',
+  };
+  for (const [key, word] of Object.entries(declared)) {
+    if (plist.includes(`<key>${key}</key>`)) expect(text).toContain(word);
+  }
+  expect(text).not.toMatch(/no photos|no microphone|no camera/);
+});
+
 test('the terms do not promise a provider the app does not offer', () => {
   // saju_front's document names KakaoTalk and Google. Copying it over would have been a false
   // declaration; this test is what stops that copy-paste coming back.
