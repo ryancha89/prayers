@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { Icon } from '../../../shared/components/Icon';
@@ -25,6 +25,11 @@ function paidOf(content: JourneyContent | null | undefined, chapterId: string): 
  * 해금"): the dots alone were 8 pt and nobody found out they could be tapped, so the ride read as a
  * fixed order in which 사회운 had to be bought before 재물운. Nothing was ever withheld from travel —
  * this only makes the jump visible.
+ *
+ * COMPACT when the stations are closer than a chip is wide (29-10, SE 3 sideways: the side panel gave
+ * eight stations ~30 pt each and the chips piled on each other): only the current station keeps its
+ * name; the rest are their dot, with a small lock under it where something is still for sale. Every
+ * dot stays a button.
  */
 export const RailwayProgress: React.FC<{
   chapters: Chapter[];
@@ -41,12 +46,31 @@ export const RailwayProgress: React.FC<{
   const current = Math.min(chapters.length - 1, chapters.filter(c => c.at < currentIndex).length - (chapters.some(c => c.at === currentIndex) ? 0 : 1));
   const last = chapters.length - 1;
   const fill = last > 0 ? Math.min(1, (current + Math.min(1, progress)) / last) : 0;
+  const [width, setWidth] = useState(0);
+  const compact = width > 0 && last > 0 && width / last < STOP_W + 4;
   return (
-    <View style={styles.wrap}>
+    <View style={styles.wrap} onLayout={e => setWidth(e.nativeEvent.layout.width)} testID="railway">
       <View style={styles.track}>
         <View style={styles.rail} />
         <View style={[styles.railLit, { width: `${fill * 100}%` }]} />
       </View>
+      {compact && chapters[current] ? (() => {
+        // The one name, centred on its dot but kept inside the rail's margins (the wrap's 32 pt).
+        const c = chapters[current];
+        const paid = content ? paidOf(content, c.id) : 'free';
+        const left = Math.max(-32, Math.min(width + 32 - NAME_W, (current / last) * width - NAME_W / 2));
+        return (
+          <Pressable key="now" onPress={() => onStation?.(c.at)} style={[styles.nowName, { left }]}
+            accessibilityRole="button" accessibilityLabel={t(c.title)} testID="railway-now">
+            <View style={[styles.chip, styles.chipNow, paid === 'open' && styles.chipOpen, styles.chipSolid]}>
+              {paid === 'locked' || paid === 'partial' ? (
+                <Icon name="lock" size={9} color={paid === 'partial' ? colors.gold : colors.textMuted} />
+              ) : null}
+              <Text numberOfLines={1} style={[styles.label, styles.labelNow]}>{t(c.title)}</Text>
+            </View>
+          </Pressable>
+        );
+      })() : null}
       {chapters.map((c, i) => {
         const state = i < current ? 'past' : i === current ? 'now' : 'ahead';
         const paid = content ? paidOf(content, c.id) : 'free';
@@ -61,6 +85,13 @@ export const RailwayProgress: React.FC<{
             <View style={styles.dotBox}>
               <View style={[styles.dot, state === 'past' && styles.dotPast, state === 'now' && styles.dotNow]} />
             </View>
+            {compact ? (
+              state !== 'now' && (paid === 'locked' || paid === 'partial') ? (
+                <View style={styles.lockOnly} testID="railway-lock">
+                  <Icon name="lock" size={9} color={paid === 'partial' ? colors.gold : colors.textMuted} />
+                </View>
+              ) : null
+            ) : (
             <View style={[styles.chip, state === 'now' && styles.chipNow, paid === 'open' && styles.chipOpen]}>
               {paid === 'locked' || paid === 'partial' ? (
                 <Icon name="lock" size={9} color={paid === 'partial' ? colors.gold : colors.textMuted} />
@@ -69,6 +100,7 @@ export const RailwayProgress: React.FC<{
                 {t(c.title)}
               </Text>
             </View>
+            )}
           </Pressable>
         );
       })}
@@ -77,6 +109,8 @@ export const RailwayProgress: React.FC<{
 };
 
 const STOP_W = 52;
+/** The compact rail's one name chip. */
+const NAME_W = 110;
 
 const styles = StyleSheet.create({
   // Wide enough that the end stations' chips (52 pt, centred on the dot) are not cut by the screen.
@@ -107,6 +141,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
   chipNow: { borderColor: colors.gold, backgroundColor: 'rgba(233,196,106,0.14)' },
+  // Compact: the current station's name, wider than a slot, laid over the row under the dots.
+  nowName: { position: 'absolute', top: 18, width: NAME_W, alignItems: 'center', zIndex: 1 },
+  lockOnly: { marginTop: 5, height: 22, justifyContent: 'center' },
+  // Opaque, so a neighbour's lock under it does not show through.
+  chipSolid: { backgroundColor: '#2A2440' },
   chipOpen: { borderColor: 'rgba(233,196,106,0.5)' },
   label: { ...typography.tiny, color: colors.textSecondary, flexShrink: 1 },
   labelNow: { color: colors.gold },
