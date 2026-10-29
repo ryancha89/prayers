@@ -86,6 +86,8 @@ export function myRoomCoveredPx(r: MeasuredRects) {
 /** The bottom row's height (the 편집 pill). Run and exit are the world's round buttons (ROUND): 23-10,
  *  "버튼 크기도 월드맵이랑 같게" — they were 54 and 44. */
 const ROW = 40;
+/** Narrower than this between 편집 and the exit, the motto is left out rather than squeezed under them. */
+export const MOTTO_MIN = 140;
 
 /**
  * My Room (개인실) — the world's fifth door (02-10: "my room xài room hôm qua của tôi đi"), walkable
@@ -436,6 +438,7 @@ export const MyRoomScreen: React.FC = () => {
     setTopEnd(y + height);
   };
   const bottomPad = safe.bottom + spacing.sm;
+  const mottoW = Math.max(0, Math.min(260, screen.width - 2 * (spacing.lg + pillW + spacing.md) - safe.left - safe.right));
 
   return (
     <WorldSheetTop.Provider value={topEnd}>
@@ -564,9 +567,13 @@ export const MyRoomScreen: React.FC = () => {
           onPress={startDecorate}
           onLayout={e => setPillW(Math.max(76, Math.round(e.nativeEvent.layout.width)))}
         />
-        <View style={styles.mottoBox} pointerEvents="none">
-          <Motto text={t('myroom.motto')} width={Math.max(0, Math.min(260, screen.width - 2 * (spacing.lg + pillW + spacing.md) - safe.left - safe.right))} />
-        </View>
+        {/* Only where it fits between the two buttons: on an SE the Vietnamese 편집 label left it no
+            room and the motto ran under the pill (29-10, device screenshot). */}
+        {mottoW >= MOTTO_MIN ? (
+          <View style={styles.mottoBox} pointerEvents="none">
+            <Motto text={t('myroom.motto')} width={mottoW} />
+          </View>
+        ) : null}
         {/* Out to the world from anywhere in the room (10-15) — not only at the door or in ☰. */}
         <RingButton testID="myroom-exit" icon="exit" size={ROUND} label={t('myroom.back')} onPress={toWorld} />
       </View>
