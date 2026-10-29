@@ -59,6 +59,8 @@ export async function refreshCoins(): Promise<void> {
   if (r) useCoins.getState().setWallet(r.balance, r.products);
 }
 
+/** 'invalid' is the server's final no (422 PURCHASE_INVALID: the receipt does not verify); 'failed'
+ *  is anything that can still succeed later — no answer, a 5xx, a 401 before a token refresh. */
 type ConfirmResult = { ok: true; coinsAdded: number; balance: number } | { ok: false; error: 'invalid' | 'failed' };
 
 async function confirmCoinPurchase(input: StoreConfirmInput): Promise<ConfirmResult> {
@@ -73,7 +75,10 @@ export type BuyCoinsResult =
   | { ok: true; coinsAdded: number; balance: number }
   /** 'awaiting' (29-10): the store took the money and the server has not confirmed it yet — the
    *  purchase is held and retried (below). Never "try again": that is how players paid twice. */
-  | { ok: false; reason: 'cancelled' | 'pending' | 'invalid' | 'unavailable' | 'failed' | 'awaiting' };
+  /** 'unverified' (29-10): the store took the money and the server refused the receipt for good
+   *  (422). Not held — retrying cannot change that answer — and not finished either: the store keeps
+   *  the transaction for re-delivery and for support to reconcile. */
+  | { ok: false; reason: 'cancelled' | 'pending' | 'invalid' | 'unavailable' | 'failed' | 'awaiting' | 'unverified' };
 
 /** Buys started and not yet answered, per product: a second tap from another mounted shop must not
  *  open a second store sheet for the same pack. */
@@ -97,7 +102,10 @@ const buying = new Set<string>();
 export async function buyCoins(productId: string, opts: { dev?: boolean } = {}): Promise<BuyCoinsResult> {
   if (buying.has(productId) || useCoins.getState().awaiting.includes(productId)) return { ok: false, reason: 'awaiting' };
   const dev = opts.dev ?? devPurchases();
+  // A sign-out while the store sheet is up must not leave this buy writing into the next account.
+  const at = session;
   buying.add(productId);
+  useCoins.getState().clearNotice(productId);
   try {
     const r = await buyWithStore<ConfirmResult>({ productId, dev, confirm: confirmCoinPurchase, accepted: c => c.ok });
     if (!r.ok && r.reason !== 'refused') return { ok: false, reason: r.reason };
@@ -105,13 +113,21 @@ export async function buyCoins(productId: string, opts: { dev?: boolean } = {}):
     if (!confirmed.ok) {
       // The store charged (only a store buy carries `purchase`; the dev platform takes no money).
       if (!r.ok && r.purchase) {
-        holdForConfirm(r.purchase);
+        // 29-10: a 422 used to be held too, so the pack spun "payment received" forever and every
+        // launch held it again. Only an answer that can change is worth asking again.
+        if (confirmed.error === 'invalid') {
+          devlog(`[coins] server refused the receipt for ${productId} ${r.purchase.transactionId ?? ''} - left unfinished for support`);
+          return { ok: false, reason: 'unverified' };
+        }
+        if (at === session) holdForConfirm(r.purchase);
         return { ok: false, reason: 'awaiting' };
       }
       return { ok: false, reason: confirmed.error };
     }
-    useCoins.getState().setBalance(confirmed.balance);
-    noteCoins(confirmed.coinsAdded, confirmed.balance);
+    if (at === session) {
+      useCoins.getState().setBalance(confirmed.balance);
+      noteCoins(confirmed.coinsAdded, confirmed.balance);
+    }
     return confirmed;
   } finally {
     buying.delete(productId);
@@ -123,21 +139,30 @@ export const isCoinProduct = (productId: string) => productId.startsWith('prayer
 /* ---- paid, not yet confirmed ------------------------------------------------------------------ */
 
 /** The waits between confirm attempts for a held purchase. Past the last one only a return to the
- *  foreground (or the next launch's unfinishedPurchases) asks again — the store keeps it meanwhile. */
+ *  foreground (or the next launch's unfinishedPurchases) asks again — the store keeps it meanwhile —
+ *  and the pack's spinner goes, with a 'delayed' notice (29-10: it used to spin for good). */
 export const CONFIRM_RETRY_MS = [3_000, 10_000, 30_000, 60_000, 120_000, 300_000];
 
 /** Held purchases by store transaction: charged, still unfinished, the server not yet agreed. */
 const held = new Map<string, ProductPurchase>();
+/** Held ones whose timed retries ran out: still asked about on the foreground, but no longer shown
+ *  as awaiting — the player was told, and the pack is not locked behind a spinner for good. */
+const stalled = new Set<string>();
 const keyOf = (p: ProductPurchase) => p.transactionId ?? p.purchaseToken;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
 let retryStep = 0;
 let foreground: { remove(): void } | null = null;
 let flushing: Promise<void> | null = null;
+/** Bumped on sign-out (stopCoinConfirms): work started for one account drops its answer rather than
+ *  holding, retrying or writing the wallet under the next one. */
+let session = 0;
 
 function publishHeld(): void {
-  useCoins.getState().setAwaiting([...new Set([...held.values()].map(p => p.productId))]);
+  const waiting = [...held].filter(([key]) => !stalled.has(key)).map(([, p]) => p.productId);
+  useCoins.getState().setAwaiting([...new Set(waiting)]);
   if (held.size > 0) return;
   // Nothing left to confirm: the backoff starts over for the next one, and the foreground hook goes.
+  stalled.clear();
   retryStep = 0;
   if (retryTimer) clearTimeout(retryTimer);
   retryTimer = null;
@@ -145,8 +170,21 @@ function publishHeld(): void {
   foreground = null;
 }
 
+/** The timed retries are spent: release every pack still spinning, and say so once per purchase. */
+function stallHeld(): void {
+  for (const [key, p] of held) {
+    if (stalled.has(key)) continue;
+    stalled.add(key);
+    useCoins.getState().noteConfirm(p.productId, 'delayed');
+  }
+  publishHeld();
+}
+
 function holdForConfirm(p: ProductPurchase): void {
   held.set(keyOf(p), p);
+  // A purchase held after the backoff was spent gets its own: without this it spun until the next
+  // foreground, the timer never started again.
+  if (retryStep >= CONFIRM_RETRY_MS.length) retryStep = 0;
   publishHeld();
   if (!foreground) {
     foreground = AppState.addEventListener('change', st => {
@@ -167,19 +205,29 @@ function scheduleRetry(): void {
 
 function flushHeld(): Promise<void> {
   if (!flushing) {
-    flushing = (async () => {
-      try {
-        for (const [key, p] of [...held]) {
-          if (await credit(p, true)) held.delete(key);
-        }
-      } finally {
-        flushing = null;
-      }
-      publishHeld();
-      scheduleRetry();
-    })();
+    const at = session;
+    // Cleared in `.finally`, which always runs after this assignment — a run with nothing to await
+    // must not leave its settled promise here for good. A run from before a sign-out leaves it alone.
+    flushing = confirmHeld(at).finally(() => {
+      if (at === session) flushing = null;
+    });
   }
   return flushing;
+}
+
+async function confirmHeld(at: number): Promise<void> {
+  for (const [key, p] of [...held]) {
+    if (at !== session) return;
+    const r = await credit(p, true);
+    if (at !== session) return;
+    if (r !== 'retry') {
+      held.delete(key);
+      stalled.delete(key);
+    }
+  }
+  publishHeld();
+  if (held.size > 0 && retryStep >= CONFIRM_RETRY_MS.length) stallHeld();
+  else scheduleRetry();
 }
 
 /** Confirm every held purchase now, with the backoff started over — the app came back to the
@@ -191,9 +239,14 @@ export function retryHeldCoinPurchases(): Promise<void> {
   return flushHeld();
 }
 
-/** Hand one paid purchase to the server; on its yes, consume it and set the wallet. Credits once:
- *  the server is idempotent per store transaction (a replay adds 0, and noteCoins says nothing). */
-async function credit(purchase: ProductPurchase, late: boolean): Promise<boolean> {
+/**
+ * Hand one paid purchase to the server; on its yes, consume it and set the wallet. Credits once:
+ * the server is idempotent per store transaction (a replay adds 0, and noteCoins says nothing).
+ * 'refused' is the server's final no (422): left UNFINISHED — never consume a purchase nobody was
+ * credited for; the store re-delivers it and support can reconcile it — and the player is told.
+ */
+async function credit(purchase: ProductPurchase, late: boolean): Promise<'credited' | 'retry' | 'refused'> {
+  const at = session;
   const r = await confirmCoinPurchase({
     platform: purchase.platform,
     productId: purchase.productId,
@@ -202,24 +255,37 @@ async function credit(purchase: ProductPurchase, late: boolean): Promise<boolean
   });
   if (!r.ok) {
     devlog(`[coins] could not confirm ${purchase.productId} ${purchase.transactionId ?? ''}: ${r.error}`);
-    return false;
+    if (r.error !== 'invalid') return 'retry';
+    if (at === session) useCoins.getState().noteConfirm(purchase.productId, 'unverified');
+    return 'refused';
   }
+  // Credited to whichever account sent it, so it is consumed either way; only the wallet on screen
+  // belongs to the session that asked.
   await finishPurchase(purchase);
+  if (at !== session) return 'credited';
   useCoins.getState().setBalance(r.balance);
   noteCoins(r.coinsAdded, r.balance);
-  if (late) useCoins.getState().noteLateCredit(purchase.productId, r.coinsAdded);
-  return true;
+  useCoins.getState().clearNotice(purchase.productId);
+  // 29-10: a replay of an already-credited purchase adds 0 — nothing to announce, and announcing it
+  // wiped whatever the shop was saying.
+  if (late && r.coinsAdded > 0) useCoins.getState().noteLateCredit(purchase.productId, r.coinsAdded);
+  return 'credited';
 }
 
 /** One paid coin purchase that reached the app outside a buy (launch, a store re-delivery): credit
- *  it, then finish it. One the server did not accept is held and retried in this session too. */
+ *  it, then finish it. One the server could not answer yet is held and retried in this session too;
+ *  one it refused for good is let go (and the shop says so). */
 async function settle(purchase: ProductPurchase): Promise<void> {
   if (!isCoinProduct(purchase.productId)) return;
   const key = keyOf(purchase);
-  if (await credit(purchase, held.has(key))) {
-    if (held.delete(key)) publishHeld();
-  } else {
+  const at = session;
+  const r = await credit(purchase, held.has(key));
+  if (at !== session) return;
+  if (r === 'retry') {
     holdForConfirm(purchase);
+  } else if (held.delete(key)) {
+    stalled.delete(key);
+    publishHeld();
   }
 }
 
@@ -235,10 +301,23 @@ export function startCoinPurchaseRecovery(): () => void {
   return stop;
 }
 
-/** Jest only: forget every held purchase and timer between tests. */
-export function resetCoinConfirmsForTests(): void {
+/**
+ * Sign-out (forgetLocalData): stop asking about the last account's payments. 29-10: the held map,
+ * its timer and the foreground hook outlived the sign-out, so the next retry posted A's transaction
+ * with B's token and the server credited B. The store transactions stay unfinished; the next
+ * launch's recovery offers them again under whoever is signed in then.
+ */
+export function stopCoinConfirms(): void {
+  session += 1;
   held.clear();
-  buying.clear();
+  stalled.clear();
   flushing = null;
   publishHeld();
+  useCoins.setState({ awaiting: [], lateCredit: null, notice: null });
+}
+
+/** Jest only: forget every held purchase and timer between tests. */
+export function resetCoinConfirmsForTests(): void {
+  stopCoinConfirms();
+  buying.clear();
 }

@@ -66,12 +66,13 @@ it('the pass: dev confirms with the platform only; the store sends the receipt; 
 
   (finishPurchase as jest.Mock).mockClear();
   fetchMock.mockResolvedValueOnce(reply(422, { success: false, error_code: 'PURCHASE_INVALID', owned: false }));
-  // The refusal carries the store's still-unfinished purchase (29-10): the store took the money, so
-  // the pass holds it for a retry (journeyPassRetry.test.tsx) and answers 'awaiting'.
+  // The refusal carries the store's still-unfinished purchase (29-10): the store took the money and
+  // a 422 is final, so the pass answers 'unverified' and leaves it unfinished for support — only a
+  // refusal that can change is held for a retry (journeyPassRetry.test.tsx).
   expect(spy).toHaveBeenCalledTimes(2);
-  expect(await buyJourneyPass('newyear-2027', 'prayers_journey_2027', false)).toEqual({ ok: false, reason: 'awaiting' });
+  expect(await buyJourneyPass('newyear-2027', 'prayers_journey_2027', false)).toEqual({ ok: false, reason: 'unverified' });
   expect(await spy.mock.results[2].value).toEqual({
-    ok: false, reason: 'refused', confirmed: { owned: false, error: 'PURCHASE_INVALID' },
+    ok: false, reason: 'refused', confirmed: { owned: false, error: 'PURCHASE_INVALID', status: 422 },
     purchase: purchase('prayers_journey_2027'),
   });
   expect(finishPurchase).not.toHaveBeenCalled();

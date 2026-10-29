@@ -25,11 +25,15 @@ export const CoinPackList: React.FC<{ onBought?(coinsAdded: number): void }> = (
   // them): not buyable again until they land, and the note says the payment arrived (29-10).
   const awaiting = useCoins(s => s.awaiting);
   const lateCredit = useCoins(s => s.lateCredit);
+  const notice = useCoins(s => s.notice);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [prices, setPrices] = useState<Record<string, string>>({});
   // The credit already on screen when this list mounted is old news; only a new one is announced.
   const seenCredit = useRef(lateCredit?.seq ?? 0);
+  // A notice IS shown when it predates this list (29-10): a refusal found at launch, or a payment
+  // whose retries ran out while the shop was closed, is said the next time the shop opens.
+  const seenNotice = useRef(0);
 
   useEffect(() => {
     refreshCoins();
@@ -52,6 +56,14 @@ export const CoinPackList: React.FC<{ onBought?(coinsAdded: number): void }> = (
     else setNote(null);
   }, [lateCredit, t]);
 
+  // A held payment that did not simply land: refused for good, or still not confirmed after the
+  // timed retries — the spinner is gone, so the words have to say what happened.
+  useEffect(() => {
+    if (!notice || notice.seq === seenNotice.current) return;
+    seenNotice.current = notice.seq;
+    setNote(t(notice.kind === 'unverified' ? 'coins.unverified' : 'coins.delayed'));
+  }, [notice, t]);
+
   const buy = async (p: CoinProduct) => {
     if (busy || awaiting.includes(p.productId)) return;
     sfx.tap();
@@ -67,6 +79,8 @@ export const CoinPackList: React.FC<{ onBought?(coinsAdded: number): void }> = (
       setNote(t('coins.pending'));
     } else if (r.reason === 'awaiting') {
       setNote(t('coins.awaiting'));
+    } else if (r.reason === 'unverified') {
+      setNote(t('coins.unverified'));
     } else if (r.reason !== 'cancelled') {
       setNote(t(r.reason === 'unavailable' ? 'coins.unavailable' : 'coins.failed'));
     }

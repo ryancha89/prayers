@@ -7,7 +7,9 @@
  *    foreground — and consumed once,
  *  · the same pass cannot be bought again while it waits,
  *  · a dev-platform refusal (no money taken) is still a refusal,
- *  · the pass screen says the payment was received, never "try again", and moves on when it lands.
+ *  · the pass screen says the payment was received, never "try again", and moves on when it lands,
+ *  · (29-10, later) a 422 is final — not held, not finished, the screen says to contact support —
+ *    and when the timed retries run out the button comes back with a "still confirming" line.
  */
 import React from 'react';
 import { Alert, AppState } from 'react-native';
@@ -117,7 +119,7 @@ it('coming back to the foreground confirms at once', async () => {
 });
 
 it('the same pass cannot be bought again while one waits', async () => {
-  fetchMock.mockResolvedValueOnce(reply(422, { success: false, error_code: 'PURCHASE_INVALID', owned: false }));
+  fetchMock.mockResolvedValueOnce(reply(503, { success: false, error: 'boom' }));
   await buyJourneyPass('newyear-2027', PRODUCT, false);
   expect(await buyJourneyPass('newyear-2027', PRODUCT, false)).toEqual({ ok: false, reason: 'awaiting' });
   expect(buyProduct).toHaveBeenCalledTimes(1);
@@ -128,6 +130,38 @@ it('the dev platform took no money: a refusal is still a refusal, nothing is hel
   expect(await buyJourneyPass('newyear-2027', PRODUCT, true)).toEqual({ ok: false, reason: 'invalid' });
   expect(usePassPurchases.getState().awaiting).toEqual([]);
   expect(foreground).toBeNull();
+});
+
+it('a 422 after the store charged is final: not held, not finished, not retried', async () => {
+  fetchMock.mockResolvedValueOnce(reply(422, { success: false, error_code: 'PURCHASE_INVALID', owned: false }));
+  expect(await buyJourneyPass('newyear-2027', PRODUCT, false)).toEqual({ ok: false, reason: 'unverified' });
+  expect(usePassPurchases.getState()).toMatchObject({ awaiting: [], notice: { productId: PRODUCT, kind: 'unverified' } });
+  expect(foreground).toBeNull();
+  await act(async () => { jest.advanceTimersByTime(10 * 60_000); });
+  expect(passPosts()).toHaveLength(1);
+  expect(finishPurchase).not.toHaveBeenCalled();
+});
+
+it('a 5xx that carries a JSON body is still held (only 422 is final)', async () => {
+  fetchMock.mockResolvedValueOnce(reply(500, { success: false, error: 'boom' }));
+  expect(await buyJourneyPass('newyear-2027', PRODUCT, false)).toEqual({ ok: false, reason: 'awaiting' });
+  expect(usePassPurchases.getState().awaiting).toEqual([PRODUCT]);
+});
+
+it('when the timed retries run out the pass is released with a "delayed" notice', async () => {
+  fetchMock.mockResolvedValue(reply(503, null));
+  await buyJourneyPass('newyear-2027', PRODUCT, false);
+  for (const ms of CONFIRM_RETRY_MS) {
+    await act(async () => { jest.advanceTimersByTime(ms); });
+    await flush();
+  }
+  expect(usePassPurchases.getState()).toMatchObject({ awaiting: [], notice: { productId: PRODUCT, kind: 'delayed' } });
+  // The foreground still asks; when it lands the pass opens.
+  fetchMock.mockResolvedValue(reply(200, OWNED));
+  await act(async () => { foreground!('active'); });
+  await flush();
+  expect(finishPurchase).toHaveBeenCalledTimes(1);
+  expect(usePassPurchases.getState()).toMatchObject({ owned: ['newyear-2027'], notice: null });
 });
 
 describe('the pass screen', () => {
@@ -160,5 +194,39 @@ describe('the pass screen', () => {
     await flush();
     expect(finishPurchase).toHaveBeenCalledTimes(1);
     expect(mockNav.replace).toHaveBeenCalledWith('JourneyCounselor', { journeyId: 'newyear-2027' });
+  });
+
+  it('a 422 says the payment could not be verified — no "try again" alert — and the button is back', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    fetchMock.mockImplementation(async (url: string) =>
+      String(url).endsWith('/access')
+        ? reply(200, { success: true, owned: false, price_krw: 9900, product_id: PRODUCT, dev_purchase: false })
+        : reply(422, { success: false, error_code: 'PURCHASE_INVALID', owned: false }));
+    await act(async () => { tree = ReactTestRenderer.create(<JourneyPassScreen />); });
+    await flush();
+    await act(async () => { buyButton().props.onPress(); });
+    await flush();
+    expect(alert).not.toHaveBeenCalled();
+    expect(shown()).toContain("We couldn't verify this payment");
+    expect(shown()).not.toContain('Payment received');
+    expect(buyButton().props.disabled).toBe(false);
+  });
+
+  it('after the retries ran out it says the payment is still being confirmed, and the button is back', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      String(url).endsWith('/access')
+        ? reply(200, { success: true, owned: false, price_krw: 9900, product_id: PRODUCT, dev_purchase: false })
+        : reply(503, null));
+    await act(async () => { tree = ReactTestRenderer.create(<JourneyPassScreen />); });
+    await flush();
+    await act(async () => { buyButton().props.onPress(); });
+    await flush();
+    for (const ms of CONFIRM_RETRY_MS) {
+      await act(async () => { jest.advanceTimersByTime(ms); });
+      await flush();
+    }
+    expect(shown()).toContain("We're still confirming your payment");
+    expect(shown()).not.toContain('Payment received');
+    expect(buyButton().props.disabled).toBe(false);
   });
 });

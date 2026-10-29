@@ -62,11 +62,13 @@ it('store purchase: the server verifies, THEN it is consumed, and the balance is
   expect(useCoins.getState().balance).toBe(1320);
 });
 
-it('PURCHASE_INVALID after the store charged: nothing added, NOT consumed, and held — not "try again"', async () => {
+it('PURCHASE_INVALID after the store charged: nothing added, NOT consumed, and not held', async () => {
   fetchMock.mockResolvedValueOnce(reply(422, { error_code: 'PURCHASE_INVALID' }));
   const r = await buyCoins('prayer_coin_1000', { dev: false });
-  // 29-10: the store took the money, so this is "payment received", never a failure to retry by hand.
-  expect(r).toEqual({ ok: false, reason: 'awaiting' });
+  // 29-10: the store took the money and the server's no is final — 'unverified' (contact support),
+  // not 'awaiting': held, it spun "payment received" for good (coinPurchaseRetry.test.tsx).
+  expect(r).toEqual({ ok: false, reason: 'unverified' });
+  expect(useCoins.getState().awaiting).toEqual([]);
   expect(finishPurchase).not.toHaveBeenCalled();
   expect(useCoins.getState().balance).toBeNull();
 });

@@ -6,7 +6,9 @@
  *  · the purchase stays unfinished and is confirmed again in this session — on a backoff and on every
  *    return to the foreground — and is credited and consumed once,
  *  · the same pack cannot be bought again while it waits,
- *  · the dev platform (no money taken) still reports a refusal as a refusal.
+ *  · the dev platform (no money taken) still reports a refusal as a refusal,
+ *  · (29-10, later) only what can still succeed is held: a 422 is final — released, left unfinished,
+ *    and the shop says to contact support; and when the timed retries run out the spinner goes too.
  */
 import React from 'react';
 import { AppState } from 'react-native';
@@ -140,7 +142,7 @@ it('a replay that adds 0 (already credited) is consumed and announces nothing', 
 });
 
 it('the same pack cannot be bought again while one waits; another pack can', async () => {
-  fetchMock.mockResolvedValueOnce(reply(422, { error_code: 'PURCHASE_INVALID' }));
+  fetchMock.mockResolvedValueOnce(reply(503, null));
   await buyCoins('prayer_coin_1000', { dev: false });
   expect(await buyCoins('prayer_coin_1000', { dev: false })).toEqual({ ok: false, reason: 'awaiting' });
   expect(buyProduct).toHaveBeenCalledTimes(1);
@@ -169,6 +171,82 @@ it('an unfinished purchase the launch could not confirm is retried in the sessio
   expect(finishPurchase).toHaveBeenCalledTimes(1);
   expect(useCoins.getState().awaiting).toEqual([]);
   stop();
+});
+
+it('a 422 after the store charged is final: not held, not finished, not retried', async () => {
+  fetchMock.mockResolvedValueOnce(reply(422, { success: false, error_code: 'PURCHASE_INVALID' }));
+  expect(await buyCoins('prayer_coin_1000', { dev: false })).toEqual({ ok: false, reason: 'unverified' });
+  expect(useCoins.getState().awaiting).toEqual([]);
+  expect(foreground).toBeNull();
+  await act(async () => { jest.advanceTimersByTime(10 * 60_000); });
+  expect(purchasePosts()).toHaveLength(1);
+  // Never credited, so never consumed: the store keeps it for re-delivery and support.
+  expect(finishPurchase).not.toHaveBeenCalled();
+  // …and the pack can be bought again.
+  fetchMock.mockResolvedValueOnce(reply(200, { success: true, coins_added: 1100, coin_balance: 1320 }));
+  expect(await buyCoins('prayer_coin_1000', { dev: false })).toEqual({ ok: true, coinsAdded: 1100, balance: 1320 });
+});
+
+it('a held purchase refused with 422 on a retry is let go, with a notice', async () => {
+  fetchMock.mockResolvedValueOnce(reply(503, null)).mockResolvedValueOnce(reply(422, { error_code: 'PURCHASE_INVALID' }));
+  await buyCoins('prayer_coin_1000', { dev: false });
+  await act(async () => { jest.advanceTimersByTime(CONFIRM_RETRY_MS[0]); });
+  await flush();
+  expect(useCoins.getState().awaiting).toEqual([]);
+  expect(useCoins.getState().notice).toMatchObject({ productId: 'prayer_coin_1000', kind: 'unverified' });
+  expect(finishPurchase).not.toHaveBeenCalled();
+  expect(foregroundRemoved).toBe(1);
+  await act(async () => { jest.advanceTimersByTime(10 * 60_000); });
+  expect(purchasePosts()).toHaveLength(2);
+});
+
+it('a launch re-delivery the server refuses is not held again (it used to spin at every launch)', async () => {
+  (unfinishedPurchases as jest.Mock).mockResolvedValueOnce([purchase]);
+  fetchMock.mockResolvedValueOnce(reply(422, { error_code: 'PURCHASE_INVALID' }));
+  const stop = startCoinPurchaseRecovery();
+  await flush();
+  expect(useCoins.getState().awaiting).toEqual([]);
+  expect(useCoins.getState().notice).toMatchObject({ productId: 'prayer_coin_1000', kind: 'unverified' });
+  expect(finishPurchase).not.toHaveBeenCalled();
+  expect(foreground).toBeNull();
+  stop();
+});
+
+it('when the timed retries run out the pack is released; the foreground still asks, silently', async () => {
+  fetchMock.mockResolvedValue(reply(503, null));
+  await buyCoins('prayer_coin_1000', { dev: false });
+  for (const ms of CONFIRM_RETRY_MS) {
+    expect(useCoins.getState().awaiting).toEqual(['prayer_coin_1000']);
+    await act(async () => { jest.advanceTimersByTime(ms); });
+    await flush();
+  }
+  expect(purchasePosts()).toHaveLength(1 + CONFIRM_RETRY_MS.length);
+  expect(useCoins.getState().awaiting).toEqual([]);
+  expect(useCoins.getState().notice).toMatchObject({ productId: 'prayer_coin_1000', kind: 'delayed' });
+  const seq = useCoins.getState().notice!.seq;
+
+  // Back to the foreground: asked again, no spinner, no second notice; it lands and is credited.
+  await act(async () => { foreground!('active'); });
+  await flush();
+  expect(useCoins.getState().awaiting).toEqual([]);
+  expect(useCoins.getState().notice?.seq).toBe(seq);
+  fetchMock.mockResolvedValue(reply(200, { success: true, coins_added: 1100, coin_balance: 1320 }));
+  await act(async () => { foreground!('active'); });
+  await flush();
+  expect(finishPurchase).toHaveBeenCalledTimes(1);
+  expect(useCoins.getState().balance).toBe(1320);
+  expect(useCoins.getState().notice).toBeNull();
+});
+
+it('a late replay that adds 0 leaves lateCredit alone (it used to wipe the shop note)', async () => {
+  fetchMock
+    .mockResolvedValueOnce(reply(502, null))
+    .mockResolvedValueOnce(reply(200, { success: true, coins_added: 0, coin_balance: 1320 }));
+  await buyCoins('prayer_coin_1000', { dev: false });
+  await act(async () => { jest.advanceTimersByTime(CONFIRM_RETRY_MS[0]); });
+  await flush();
+  expect(finishPurchase).toHaveBeenCalledTimes(1);
+  expect(useCoins.getState().lateCredit).toBeNull();
 });
 
 describe('the coin shop', () => {
@@ -201,6 +279,28 @@ describe('the coin shop', () => {
     await flush();
     expect(shown()).toContain('1,100');
     expect(shown()).not.toContain('Payment received');
+    expect(row('prayer_coin_1000').props.disabled).toBe(false);
+  });
+
+  it('a 422 says the payment could not be verified, and the pack stays buyable', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      String(url).endsWith('/coins/purchase') ? reply(422, { error_code: 'PURCHASE_INVALID' }) : reply(200, WALLET));
+    await act(async () => { tree = ReactTestRenderer.create(<CoinPackList />); });
+    await flush();
+    await act(async () => { row('prayer_coin_1000').props.onPress(); });
+    await flush();
+    expect(shown()).toContain("We couldn't verify this payment");
+    expect(shown()).toContain('contact support');
+    expect(shown()).not.toContain('Payment received');
+    expect(row('prayer_coin_1000').props.disabled).toBe(false);
+  });
+
+  it('opened after the retries ran out, it says the payment is still being confirmed', async () => {
+    fetchMock.mockImplementation(async () => reply(200, WALLET));
+    useCoins.getState().noteConfirm('prayer_coin_1000', 'delayed');
+    await act(async () => { tree = ReactTestRenderer.create(<CoinPackList />); });
+    await flush();
+    expect(shown()).toContain("We're still confirming your payment");
     expect(row('prayer_coin_1000').props.disabled).toBe(false);
   });
 

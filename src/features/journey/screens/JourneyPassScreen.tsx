@@ -46,6 +46,9 @@ export const JourneyPassScreen: React.FC = () => {
   // received; a late confirm (passPurchase's retry) moves on to the guide like a buy that landed.
   const awaiting = usePassPurchases(s => !!access?.productId && s.awaiting.includes(access.productId));
   const ownedLate = usePassPurchases(s => s.owned.includes(params.journeyId));
+  // A paid pass refused for good, or still unconfirmed when the timed retries ran out (29-10): the
+  // button is back on, so the footer has to say what became of the money.
+  const notice = usePassPurchases(s => (access?.productId && s.notice?.productId === access.productId ? s.notice.kind : null));
 
   useEffect(() => {
     const ac = new AbortController();
@@ -80,8 +83,11 @@ export const JourneyPassScreen: React.FC = () => {
       const r = await buyJourneyPass(journey.id, access.productId, access.devPurchase && devPurchases());
       if (r.ok) unlocked();
       // Cancelled is the player's own choice, and with no store the button was never enabled.
-      // 'awaiting' is money taken: never "try again" — the footer says it was received.
-      else if (r.reason !== 'cancelled' && r.reason !== 'unavailable' && r.reason !== 'awaiting') Alert.alert(t('journey.pass.failed'));
+      // 'awaiting' is money taken: never "try again" — the footer says it was received. So is
+      // 'unverified', and the footer says to contact support.
+      else if (r.reason !== 'cancelled' && r.reason !== 'unavailable' && r.reason !== 'awaiting' && r.reason !== 'unverified') {
+        Alert.alert(t('journey.pass.failed'));
+      }
     } finally {
       setBusy(false);
     }
@@ -131,7 +137,11 @@ export const JourneyPassScreen: React.FC = () => {
               )}
             </Pressable>
           )}
-          {awaiting ? <Text style={styles.awaiting}>{t('journey.pass.awaiting')}</Text> : null}
+          {awaiting ? (
+            <Text style={styles.awaiting}>{t('journey.pass.awaiting')}</Text>
+          ) : notice ? (
+            <Text style={styles.awaiting}>{t(notice === 'unverified' ? 'journey.pass.unverified' : 'journey.pass.delayed')}</Text>
+          ) : null}
           {access?.devPurchase ? <Text style={styles.dev}>{t('journey.pass.dev')}</Text> : null}
         </View>
       </SafeAreaView>

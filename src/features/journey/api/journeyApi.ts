@@ -315,11 +315,13 @@ export async function fetchJourneyAccess(journeyId: string, signal?: AbortSignal
 export async function confirmJourneyPurchase(
   journeyId: string,
   input: StoreConfirmInput,
-): Promise<{ owned: boolean; error?: string }> {
+): Promise<{ owned: boolean; error?: string; status?: number }> {
   const r = await confirmStorePurchase(`/api/v1/prayers/journeys/${journeyId}/purchase`, input);
-  if (!r || r.body == null) return { owned: false, error: 'network' };
+  if (!r || r.body == null) return { owned: false, error: 'network', status: r?.status };
   const b = r.body;
-  return { owned: !!b?.owned, error: b?.success ? undefined : b?.error_code ?? 'invalid' };
+  // `status` (29-10): only a 422 is the server's final no on a receipt; a 5xx with a JSON body also
+  // lands here as `error`, and that one is worth asking again (passPurchase).
+  return { owned: !!b?.owned, error: b?.success ? undefined : b?.error_code ?? 'invalid', status: r.status };
 }
 
 // buyJourneyPass lives in passPurchase.ts (29-10): a charged-but-unconfirmed pass is held and
