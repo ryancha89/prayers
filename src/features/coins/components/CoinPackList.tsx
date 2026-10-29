@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
@@ -21,9 +21,15 @@ import { formatCoins, formatKrw } from '../format';
 export const CoinPackList: React.FC<{ onBought?(coinsAdded: number): void }> = ({ onBought }) => {
   const t = useT();
   const products = useCoins(s => s.products);
+  // Packs the store charged for that the server has not confirmed yet (coinsApi holds and retries
+  // them): not buyable again until they land, and the note says the payment arrived (29-10).
+  const awaiting = useCoins(s => s.awaiting);
+  const lateCredit = useCoins(s => s.lateCredit);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [prices, setPrices] = useState<Record<string, string>>({});
+  // The credit already on screen when this list mounted is old news; only a new one is announced.
+  const seenCredit = useRef(lateCredit?.seq ?? 0);
 
   useEffect(() => {
     refreshCoins();
@@ -38,8 +44,16 @@ export const CoinPackList: React.FC<{ onBought?(coinsAdded: number): void }> = (
     return () => { alive = false; };
   }, [products]);
 
+  // A held purchase confirmed later: the coins it said were coming have come.
+  useEffect(() => {
+    if (!lateCredit || lateCredit.seq === seenCredit.current) return;
+    seenCredit.current = lateCredit.seq;
+    if (lateCredit.coinsAdded > 0) setNote(t('coins.added', { coins: formatCoins(lateCredit.coinsAdded) }));
+    else setNote(null);
+  }, [lateCredit, t]);
+
   const buy = async (p: CoinProduct) => {
-    if (busy) return;
+    if (busy || awaiting.includes(p.productId)) return;
     sfx.tap();
     setBusy(p.productId);
     setNote(null);
@@ -51,6 +65,8 @@ export const CoinPackList: React.FC<{ onBought?(coinsAdded: number): void }> = (
       onBought?.(r.coinsAdded);
     } else if (r.reason === 'pending') {
       setNote(t('coins.pending'));
+    } else if (r.reason === 'awaiting') {
+      setNote(t('coins.awaiting'));
     } else if (r.reason !== 'cancelled') {
       setNote(t(r.reason === 'unavailable' ? 'coins.unavailable' : 'coins.failed'));
     }
@@ -59,36 +75,46 @@ export const CoinPackList: React.FC<{ onBought?(coinsAdded: number): void }> = (
   if (products.length === 0) return <ActivityIndicator color={colors.gold} style={styles.loading} />;
   return (
     <View style={styles.list}>
-      {products.map(p => (
-        <Pressable
-          key={p.productId}
-          style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-          onPress={() => buy(p)}
-          disabled={!!busy}
-          accessibilityRole="button"
-          accessibilityLabel={`${t('coins.pack', { coins: formatCoins(p.coins) })} ${prices[p.productId] || formatKrw(t, p.priceKrw)}`}>
-          <CoinGlyph size={30} />
-          <View style={styles.text}>
-            <Text style={styles.coins}>{t('coins.pack', { coins: formatCoins(p.coins) })}</Text>
-            {p.bonusPct > 0 && (
-              <Text style={styles.detail}>
-                {t('coins.detail', { base: formatCoins(p.baseCoins), bonus: formatCoins(p.coins - p.baseCoins) })}
-              </Text>
-            )}
-          </View>
-          {p.bonusPct > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{t('coins.bonus', { pct: p.bonusPct })}</Text>
+      {products.map(p => {
+        const held = awaiting.includes(p.productId);
+        return (
+          <Pressable
+            key={p.productId}
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+            onPress={() => buy(p)}
+            disabled={!!busy || held}
+            accessibilityState={{ disabled: !!busy || held, busy: busy === p.productId || held }}
+            testID={`coin-pack-${p.productId}`}
+            accessibilityRole="button"
+            accessibilityLabel={`${t('coins.pack', { coins: formatCoins(p.coins) })} ${prices[p.productId] || formatKrw(t, p.priceKrw)}`}>
+            <CoinGlyph size={30} />
+            <View style={styles.text}>
+              <Text style={styles.coins}>{t('coins.pack', { coins: formatCoins(p.coins) })}</Text>
+              {p.bonusPct > 0 && (
+                <Text style={styles.detail}>
+                  {t('coins.detail', { base: formatCoins(p.baseCoins), bonus: formatCoins(p.coins - p.baseCoins) })}
+                </Text>
+              )}
             </View>
-          )}
-          {busy === p.productId ? (
-            <ActivityIndicator color={colors.gold} style={styles.price} />
-          ) : (
-            <Text style={styles.price}>{prices[p.productId] || formatKrw(t, p.priceKrw)}</Text>
-          )}
-        </Pressable>
-      ))}
-      {note ? <Text style={styles.note}>{note}</Text> : null}
+            {p.bonusPct > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{t('coins.bonus', { pct: p.bonusPct })}</Text>
+              </View>
+            )}
+            {busy === p.productId || held ? (
+              <ActivityIndicator color={colors.gold} style={styles.price} />
+            ) : (
+              <Text style={styles.price}>{prices[p.productId] || formatKrw(t, p.priceKrw)}</Text>
+            )}
+          </Pressable>
+        );
+      })}
+      {note ? (
+        <Text style={styles.note}>{note}</Text>
+      ) : awaiting.length > 0 ? (
+        // Opened again while a payment still waits: say so rather than show a spinner with no words.
+        <Text style={styles.note}>{t('coins.awaiting')}</Text>
+      ) : null}
     </View>
   );
 };

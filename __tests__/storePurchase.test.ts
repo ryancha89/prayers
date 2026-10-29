@@ -21,7 +21,7 @@ import { authedFetch } from '../src/features/auth/api/headers';
 import { buyProduct, finishPurchase, storeAvailable } from '../src/features/tickets/providers/purchase';
 import { buyWithStore } from '../src/features/tickets/providers/storeBuy';
 import { buyCoins } from '../src/features/coins/api/coinsApi';
-import { buyJourneyPass } from '../src/features/journey/api/journeyApi';
+import { buyJourneyPass, resetPassConfirmsForTests } from '../src/features/journey/api/passPurchase';
 import { formatCoins, formatKrw } from '../src/features/coins/format';
 
 const fetchMock = authedFetch as jest.Mock;
@@ -35,7 +35,9 @@ beforeEach(() => {
   (buyProduct as jest.Mock).mockReset().mockImplementation(async (id: string) => purchase(id));
   (finishPurchase as jest.Mock).mockClear();
   (storeAvailable as jest.Mock).mockReturnValue(true);
+  resetPassConfirmsForTests();
 });
+afterEach(() => resetPassConfirmsForTests());
 
 it('coins and the journey pass both go through buyWithStore', async () => {
   fetchMock.mockResolvedValueOnce(reply(200, { success: true, coins_added: 500, coin_balance: 600 }));
@@ -64,8 +66,13 @@ it('the pass: dev confirms with the platform only; the store sends the receipt; 
 
   (finishPurchase as jest.Mock).mockClear();
   fetchMock.mockResolvedValueOnce(reply(422, { success: false, error_code: 'PURCHASE_INVALID', owned: false }));
-  expect(await buyJourneyPass('newyear-2027', 'prayers_journey_2027', false)).toEqual({
+  // The refusal carries the store's still-unfinished purchase (29-10): the store took the money, so
+  // the pass holds it for a retry (journeyPassRetry.test.tsx) and answers 'awaiting'.
+  expect(spy).toHaveBeenCalledTimes(2);
+  expect(await buyJourneyPass('newyear-2027', 'prayers_journey_2027', false)).toEqual({ ok: false, reason: 'awaiting' });
+  expect(await spy.mock.results[2].value).toEqual({
     ok: false, reason: 'refused', confirmed: { owned: false, error: 'PURCHASE_INVALID' },
+    purchase: purchase('prayers_journey_2027'),
   });
   expect(finishPurchase).not.toHaveBeenCalled();
 });

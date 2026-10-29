@@ -14,7 +14,7 @@ jest.mock('../src/features/tickets/providers/purchase', () => ({
 
 import { authedFetch } from '../src/features/auth/api/headers';
 import { buyProduct, finishPurchase, storeAvailable } from '../src/features/tickets/providers/purchase';
-import { buyCoins, fetchCoins } from '../src/features/coins/api/coinsApi';
+import { buyCoins, fetchCoins, resetCoinConfirmsForTests } from '../src/features/coins/api/coinsApi';
 import { useCoins } from '../src/features/coins/store/coinStore';
 
 const fetchMock = authedFetch as jest.Mock;
@@ -27,7 +27,9 @@ beforeEach(() => {
   (finishPurchase as jest.Mock).mockClear();
   (storeAvailable as jest.Mock).mockReturnValue(true);
   useCoins.setState({ balance: null, products: [], shopOpen: false });
+  resetCoinConfirmsForTests();
 });
+afterAll(() => resetCoinConfirmsForTests());
 
 it('reads the wallet and the Prayer Coin packs', async () => {
   fetchMock.mockResolvedValueOnce(reply(200, {
@@ -60,10 +62,11 @@ it('store purchase: the server verifies, THEN it is consumed, and the balance is
   expect(useCoins.getState().balance).toBe(1320);
 });
 
-it('PURCHASE_INVALID: nothing added, and the purchase is NOT consumed', async () => {
+it('PURCHASE_INVALID after the store charged: nothing added, NOT consumed, and held — not "try again"', async () => {
   fetchMock.mockResolvedValueOnce(reply(422, { error_code: 'PURCHASE_INVALID' }));
   const r = await buyCoins('prayer_coin_1000', { dev: false });
-  expect(r).toEqual({ ok: false, reason: 'invalid' });
+  // 29-10: the store took the money, so this is "payment received", never a failure to retry by hand.
+  expect(r).toEqual({ ok: false, reason: 'awaiting' });
   expect(finishPurchase).not.toHaveBeenCalled();
   expect(useCoins.getState().balance).toBeNull();
 });

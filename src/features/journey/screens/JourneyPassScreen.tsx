@@ -10,7 +10,8 @@ import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import type { RootStackParamList } from '../../../navigation/types';
 import { productPrice, storeAvailable } from '../../tickets/providers/purchase';
-import { buyJourneyPass, fetchJourneyAccess, type JourneyAccess } from '../api/journeyApi';
+import { fetchJourneyAccess, type JourneyAccess } from '../api/journeyApi';
+import { buyJourneyPass, usePassPurchases } from '../api/passPurchase';
 import { formatKrw } from '../../coins/format';
 import { JOURNEYS } from '../data/journeys';
 import { JourneyTrainArt } from '../components/JourneyTrainArt';
@@ -41,6 +42,10 @@ export const JourneyPassScreen: React.FC = () => {
   const [access, setAccess] = useState<JourneyAccess | null>(null);
   const [storePrice, setStorePrice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Paid and not confirmed yet (29-10): the button stays off and the screen says the payment was
+  // received; a late confirm (passPurchase's retry) moves on to the guide like a buy that landed.
+  const awaiting = usePassPurchases(s => !!access?.productId && s.awaiting.includes(access.productId));
+  const ownedLate = usePassPurchases(s => s.owned.includes(params.journeyId));
 
   useEffect(() => {
     const ac = new AbortController();
@@ -53,6 +58,10 @@ export const JourneyPassScreen: React.FC = () => {
     return () => ac.abort();
   }, [params.journeyId, navigation]);
 
+  useEffect(() => {
+    if (ownedLate) navigation.replace('JourneyCounselor', { journeyId: params.journeyId });
+  }, [ownedLate, params.journeyId, navigation]);
+
   if (!journey) return null;
   const price = storePrice ?? (access?.priceKrw ? formatKrw(t, access.priceKrw) : '');
   const canBuy = storeAvailable() || !!access?.devPurchase;
@@ -63,7 +72,7 @@ export const JourneyPassScreen: React.FC = () => {
   };
 
   const buy = async () => {
-    if (busy || !access?.productId) return;
+    if (busy || awaiting || !access?.productId) return;
     sfx.tap();
     setBusy(true);
     try {
@@ -71,7 +80,8 @@ export const JourneyPassScreen: React.FC = () => {
       const r = await buyJourneyPass(journey.id, access.productId, access.devPurchase && devPurchases());
       if (r.ok) unlocked();
       // Cancelled is the player's own choice, and with no store the button was never enabled.
-      else if (r.reason !== 'cancelled' && r.reason !== 'unavailable') Alert.alert(t('journey.pass.failed'));
+      // 'awaiting' is money taken: never "try again" — the footer says it was received.
+      else if (r.reason !== 'cancelled' && r.reason !== 'unavailable' && r.reason !== 'awaiting') Alert.alert(t('journey.pass.failed'));
     } finally {
       setBusy(false);
     }
@@ -106,7 +116,12 @@ export const JourneyPassScreen: React.FC = () => {
           {access == null ? (
             <ActivityIndicator color={colors.gold} />
           ) : (
-            <Pressable style={[styles.buy, (!canBuy || busy) && styles.buyOff]} disabled={!canBuy || busy} onPress={buy} accessibilityRole="button">
+            <Pressable
+              testID="journey-pass-buy"
+              style={[styles.buy, (!canBuy || busy || awaiting) && styles.buyOff]}
+              disabled={!canBuy || busy || awaiting}
+              onPress={buy}
+              accessibilityRole="button">
               {busy ? (
                 <ActivityIndicator color="#1A1330" />
               ) : (
@@ -116,6 +131,7 @@ export const JourneyPassScreen: React.FC = () => {
               )}
             </Pressable>
           )}
+          {awaiting ? <Text style={styles.awaiting}>{t('journey.pass.awaiting')}</Text> : null}
           {access?.devPurchase ? <Text style={styles.dev}>{t('journey.pass.dev')}</Text> : null}
         </View>
       </SafeAreaView>
@@ -145,4 +161,5 @@ const styles = StyleSheet.create({
   buyOff: { opacity: 0.5 },
   buyText: { ...typography.h3, color: '#1A1330' },
   dev: { ...typography.tiny, color: colors.textMuted, textAlign: 'center' },
+  awaiting: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
 });

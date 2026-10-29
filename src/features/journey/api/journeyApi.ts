@@ -1,7 +1,7 @@
 import { apiBase } from '../../../shared/config/api';
 import { devlog } from '../../../shared/devlog';
 import { authedFetch } from '../../auth/api/headers';
-import { buyWithStore, confirmStorePurchase, type StoreConfirmInput } from '../../tickets/providers/storeBuy';
+import { confirmStorePurchase, type StoreConfirmInput } from '../../tickets/providers/storeBuy';
 import type { Lang } from '../../../shared/i18n';
 import type { JourneyCard, JourneyContent, JourneyPart, JourneyReport, JourneySummary, ReportBlock, ReportSection, StationCard } from '../types';
 import type { CounselingSubject } from '../../counseling/types';
@@ -322,16 +322,5 @@ export async function confirmJourneyPurchase(
   return { owned: !!b?.owned, error: b?.success ? undefined : b?.error_code ?? 'invalid' };
 }
 
-/**
- * Buy the journey pass through `buyWithStore`. `dev` is the server's own `dev_purchase` flag (not
- * `__DEV__`): checked first, since a simulator has the store module but no App Store. The dev
- * confirmation carries the platform only, exactly as the pass screen always sent it.
- */
-export function buyJourneyPass(journeyId: string, productId: string, dev: boolean) {
-  return buyWithStore({
-    productId,
-    dev,
-    confirm: input => confirmJourneyPurchase(journeyId, input.platform === 'dev' ? { platform: 'dev' } : input),
-    accepted: r => r.owned,
-  });
-}
+// buyJourneyPass lives in passPurchase.ts (29-10): a charged-but-unconfirmed pass is held and
+// retried there, which needs state this file of plain requests does not keep.
