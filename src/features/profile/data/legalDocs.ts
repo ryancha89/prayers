@@ -239,7 +239,7 @@ const VI: Record<LegalDoc, Document> = {
       {
         heading: '1. Ứng dụng này là gì',
         body: [
-          'Prayers đưa ra các bài luận dựa trên tứ trụ (saju), trình bày dưới dạng một cuộc trò chuyện với nhân vật tư vấn.',
+          'Prayers đưa ra các luận giải dựa trên tứ trụ (saju), trình bày dưới dạng một cuộc trò chuyện với nhân vật tư vấn.',
           'Bài luận dành cho việc chiêm nghiệm và giải trí. Đó không phải lời khuyên về sức khoẻ, tài chính, việc làm, quan hệ hay pháp lý, và không thay thế được ý kiến của người có chuyên môn.',
         ],
       },
@@ -282,7 +282,7 @@ const VI: Record<LegalDoc, Document> = {
         heading: '1. Chúng tôi thu thập gì',
         body: [
           'Mã định danh tài khoản từ nhà cung cấp đăng nhập, và tên hiển thị nếu bạn cho phép. Chúng tôi không nhận mật khẩu của bạn.',
-          'Thông tin ngày sinh bạn nhập — tên, ngày sinh, giờ sinh nếu biết, giới tính — cho chính bạn và cho những người bạn thêm vào. Đây là căn cứ để lập lá số; không có thì không có bài luận.',
+          'Thông tin ngày sinh bạn nhập — tên, ngày sinh, giờ sinh nếu biết, giới tính — cho chính bạn và cho những người bạn thêm vào. Đây là căn cứ để lập lá số; không có thì không thể luận giải.',
           'Câu hỏi của bạn và câu trả lời của thầy, để phiên tư vấn nối tiếp được. Các lần xem tarot và bói cà phê trong quán cafe cũng vậy.',
           'Những gì bạn viết trong nhật ký, và ảnh bạn tự chọn đính kèm.',
           'Ảnh đại diện, nếu bạn thêm.',
@@ -314,9 +314,9 @@ const VI: Record<LegalDoc, Document> = {
         heading: '4. Lưu ở đâu',
         body: [
           'Trên máy chủ của chúng tôi, gắn với tài khoản của bạn, và trên chính thiết bị này để ứng dụng hoạt động giữa các lần mở.',
-          'Xoá tài khoản sẽ xoá khỏi máy chủ mọi thứ gắn với nó — bài luận và cuộc trò chuyện, thông tin ngày sinh, nhật ký, ảnh nhật ký và ảnh đại diện, số dư coin, ngày điểm danh, nhân vật và căn phòng — và xoá những người đã lưu, lịch sử và mục yêu thích khỏi thiết bị này.',
+          'Xoá tài khoản sẽ xoá khỏi máy chủ mọi thứ gắn với nó — kết quả xem và cuộc trò chuyện, thông tin ngày sinh, nhật ký, ảnh nhật ký và ảnh đại diện, số dư coin, ngày điểm danh, nhân vật và căn phòng — và xoá những người đã lưu, lịch sử và mục yêu thích khỏi thiết bị này.',
           'Một ngoại lệ: hồ sơ giao dịch mua trên cửa hàng (sản phẩm, số tiền, nền tảng, mã giao dịch và ngày) được giữ 5 năm theo yêu cầu của Luật Bảo vệ người tiêu dùng trong thương mại điện tử của Hàn Quốc, sau đó bị xoá. Hồ sơ này không còn gắn với tên, email hay ảnh của bạn.',
-          'Chúng tôi cũng giữ một ghi chú rằng tài khoản đã bị xoá — thời điểm, nhà cung cấp đăng nhập, và lý do nếu bạn có ghi — không kèm tên, email hay ảnh, để tài khoản đã xoá không bao giờ đăng nhập lại được.',
+          'Chúng tôi cũng giữ một ghi chú rằng tài khoản đã bị xoá — thời điểm, phương thức đăng nhập, và lý do nếu bạn có ghi — không kèm tên, email hay ảnh, để tài khoản đã xoá không bao giờ đăng nhập lại được.',
         ],
       },
       {
