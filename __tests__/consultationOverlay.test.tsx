@@ -268,3 +268,28 @@ test('the loop offers the two SAVIS answer styles, and only when a server is the
   const without = render({});
   expect(without).not.toMatch(/티키타카|Quick chat/);
 });
+
+/**
+ * 29-10: a spoken question the coin check refused used to vanish with the take. The engine hands it
+ * back as `heldQuestion`; the box takes it (after anything typed), to send once topped up.
+ */
+test('a spoken question refused for coins lands in the question box', () => {
+  const loop: FlowState = { ...base, screen: 'loop', line: '', canTap: false, inputEnabled: true };
+  const el = (state: FlowState) => (
+    <ConsultationOverlay state={state} onTap={noop} onChoose={noop} onSubmit={noop} onRetry={noop} onLeave={noop} />
+  );
+  let tree!: ReactTestRenderer.ReactTestRenderer;
+  ReactTestRenderer.act(() => { tree = ReactTestRenderer.create(el(loop)); });
+  const input = () => tree.root.findAll(n => typeof n.props.onChangeText === 'function' && 'value' in n.props)[0];
+  expect(input().props.value).toBe('');
+  ReactTestRenderer.act(() => tree.update(el({ ...loop, heldQuestion: { text: 'Should I move?', seq: 1 } })));
+  expect(input().props.value).toBe('Should I move?');
+  // Typed words are kept; a second hand-back of the same words still arrives.
+  ReactTestRenderer.act(() => input().props.onChangeText('Also,'));
+  ReactTestRenderer.act(() => tree.update(el({ ...loop, heldQuestion: { text: 'Should I move?', seq: 2 } })));
+  expect(input().props.value).toBe('Also, Should I move?');
+  // A re-render with the same hand-back adds nothing.
+  ReactTestRenderer.act(() => tree.update(el({ ...loop, heldQuestion: { text: 'Should I move?', seq: 2 }, pending: true })));
+  expect(input().props.value).toBe('Also, Should I move?');
+  ReactTestRenderer.act(() => tree.unmount());
+});

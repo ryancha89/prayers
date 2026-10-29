@@ -1703,6 +1703,24 @@ describe('coins', () => {
     expect(stage.asks).toHaveLength(1);
   });
 
+  it('a spoken question refused for coins is handed to the question box, not lost (29-10)', () => {
+    let coins = false;
+    const { sched, stage, engine } = withWallet({ canAsk: () => coins });
+    engine.begin();
+    sched.advance(60_000);
+    expect(engine.getState().heldQuestion ?? null).toBeNull();
+    engine.onMicResult({ ok: true, text: '  Should I move?  ', error: '' });
+    expect(stage.asks).toHaveLength(0);
+    expect(engine.getState().heldQuestion).toEqual({ text: 'Should I move?', seq: 1 });
+    // The same words again still arrive (a new seq), and a take that went out hands nothing back.
+    engine.onMicResult({ ok: true, text: 'Should I move?', error: '' });
+    expect(engine.getState().heldQuestion?.seq).toBe(2);
+    coins = true;
+    engine.onMicResult({ ok: true, text: 'Should I move?', error: '' });
+    expect(stage.asks).toHaveLength(1);
+    expect(engine.getState().heldQuestion?.seq).toBe(2);
+  });
+
   it('a typed question and the notice’s Retry are held to the same check', () => {
     let coins = true;
     const { sched, stage, engine } = withWallet({ canAsk: () => coins });

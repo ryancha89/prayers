@@ -347,6 +347,10 @@ export interface FlowState {
   speaking: boolean;
   /** Where the microphone is, and how loud the room is while it listens (0–1). */
   mic: MicView;
+  /** A spoken question the room's coin check refused (29-10): nothing was asked, and the words
+   *  used to vanish with the take. The question box takes them, to be sent after topping up.
+   *  `seq` rises on every hand-back so the same words twice still arrive. */
+  heldQuestion?: { text: string; seq: number } | null;
 }
 
 export interface MicView {
@@ -381,6 +385,7 @@ const emptyState: FlowState = {
   emotion: 'neutral',
   speaking: false,
   mic: { state: 'idle', level: 0, error: '', offered: true },
+  heldQuestion: null,
 };
 
 export interface EngineOptions {
@@ -1283,8 +1288,12 @@ export class ConsultationEngine {
       this.restoreCutOff();
       return;
     }
-    // Refused (no coins): nothing was asked, so she gets back the answer the mic cut off.
-    if (!this.submitQuestion(text)) this.restoreCutOff();
+    // Refused (no coins): nothing was asked, so she gets back the answer the mic cut off, and the
+    // words go to the question box rather than nowhere.
+    if (!this.submitQuestion(text)) {
+      this.restoreCutOff();
+      this.patch({ heldQuestion: { text, seq: (this.state.heldQuestion?.seq ?? 0) + 1 } });
+    }
   }
 
   /**

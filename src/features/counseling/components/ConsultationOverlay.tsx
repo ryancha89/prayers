@@ -156,6 +156,15 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   const mic = state.mic;
   const recording = mic.state !== 'idle';
 
+  // A spoken question the coin check refused lands here (29-10), after anything already typed, so
+  // it can be sent once the wallet is topped up instead of being said again.
+  const held = state.heldQuestion;
+  useEffect(() => {
+    if (!held) return;
+    setInput(prev => (prev.trim() ? `${prev.trim()} ${held.text}` : held.text));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per hand-back, keyed by seq
+  }, [held?.seq]);
+
   const send = () => {
     const text = input.trim();
     if (!text) return;

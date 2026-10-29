@@ -38,6 +38,7 @@ import { useSoundStore } from '../../../shared/audio/store';
 import { NoCoinsCard } from '../../coins/components/NoCoinsCard';
 import { CoinPill } from '../../coins/components/CoinPill';
 import { CONSULT_COST, fetchCoins } from '../../coins/api/coinsApi';
+import { canAffordTurn, fetchConsultPrice } from '../api/consultPrice';
 import { useCoins } from '../../coins/store/coinStore';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -202,23 +203,40 @@ export const CounselingRoomScreen: React.FC = () => {
   // v2 with no coins and come back as "cannot gather the reading". `coinsShort` covers the refusal
   // the check did not foresee (a 20-coin 깊은 풀이 turn on 10 coins, a stale balance): the coin card,
   // not the upstream line.
+  //
+  // The price is the SERVER's for this player (29-10, consultPrice): 0 where CoinGate lets a turn
+  // through free (consult coins off, development), which is how a dev- account with 0 coins asks
+  // at all. Until it is known, and from a server that does not say, it is CONSULT_COST.
   const [coinPrompt, setCoinPrompt] = useState(false);
+  const consultCost = useRef(CONSULT_COST);
+  /** Re-reads the wallet and the price; falls back to the coin wallet alone on an old server. */
+  const refreshPrice = useCallback(async (): Promise<number | null> => {
+    const p = await fetchConsultPrice();
+    if (p) {
+      consultCost.current = p.cost;
+      useCoins.getState().setBalance(p.balance);
+      return p.balance;
+    }
+    const r = await fetchCoins();
+    if (!r) return null;
+    useCoins.getState().setBalance(r.balance);
+    return r.balance;
+  }, []);
+  useEffect(() => { refreshPrice(); }, [refreshPrice]);
   const canAsk = useCallback((): boolean => {
-    const balance = useCoins.getState().balance;
-    if (balance != null && balance < CONSULT_COST) {
+    if (!canAffordTurn(useCoins.getState().balance, consultCost.current)) {
       setCoinPrompt(true);
       return false;
     }
     return true;
   }, []);
   const coinsShort = useCallback(async (): Promise<boolean> => {
-    const r = await fetchCoins();
-    if (!r) return false;
-    useCoins.getState().setBalance(r.balance);
-    const short = r.balance < CONSULT_COST;
+    const balance = await refreshPrice();
+    if (balance == null) return false;
+    const short = !canAffordTurn(balance, consultCost.current);
     if (short) setCoinPrompt(true);
     return short;
-  }, []);
+  }, [refreshPrice]);
 
   const consultation = useConsultationEngine({
     topic,
@@ -291,11 +309,10 @@ export const CounselingRoomScreen: React.FC = () => {
   useEffect(() => {
     return getUnityBridge().onEvent(e => {
       if (e.type !== 'ORACLE_RESULT' || !e.payload?.ok) return;
-      fetchCoins().then(r => {
-        if (r) useCoins.getState().setBalance(r.balance);
-      });
+      // The price too: in development a turn is free only while the wallet cannot pay.
+      refreshPrice();
     });
-  }, []);
+  }, [refreshPrice]);
 
   // What she remembers of last time, fetched while the player is still loading the room.
   //
@@ -552,7 +569,7 @@ export const CounselingRoomScreen: React.FC = () => {
         <NoCoinsCard
           face={counselor.avatarImage ?? counselor.cardImage}
           accent={counselor.accent}
-          cost={CONSULT_COST}
+          cost={consultCost.current || CONSULT_COST}
           onClose={() => setCoinPrompt(false)}
         />
       )}
