@@ -12,6 +12,10 @@
  * room that is NOT a walk-in — they send no `walkIn` at all and must keep starting on READY alone.
  */
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
+// The hook cuts speech when the screen loses focus; there is no navigator in this test.
+jest.mock('../src/shared/audio/useScreenAudio', () => ({
+  useScreenAudio: () => ({ active: { current: true } }),
+}));
 
 import React from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';

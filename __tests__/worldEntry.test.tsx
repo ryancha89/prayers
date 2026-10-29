@@ -57,8 +57,8 @@ describe('the 월드 tab', () => {
     const labels = tree.root
       .findAll(n => n.type === RNText && typeof n.props.children === 'string')
       .map(n => n.props.children as string)
-      .filter(l => ['홈', '월드', '대화', '아카이브', '마이'].includes(l));
-    expect(labels).toEqual(['홈', '월드', '대화', '아카이브', '마이']);
+      .filter(l => ['홈', '월드', '대화', '아카이브', '프로필'].includes(l));
+    expect(labels).toEqual(['홈', '월드', '대화', '아카이브', '프로필']);
 
     const tab = tree.root.findAll(n => typeof n.props.onPress === 'function' && n.findAll(c => c.props.children === '월드').length > 0)[0];
     await act(async () => { tab.props.onPress({ preventDefault() {} }); });
