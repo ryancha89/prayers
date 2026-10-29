@@ -14,7 +14,7 @@ import { WorldJoystick } from '../components/WorldJoystick';
 import { DoorCard, DoorTitle } from '../components/DoorCard';
 import { getWorldBridge, isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
-import { playerCharacter, playerHair, playerGender } from '../../counseling/bridge/playerGender';
+import { playerCharacter, playerHair, playerGender, playerOutfit } from '../../counseling/bridge/playerGender';
 import type { WorldInitPayload, WorldZone } from '../../counseling/types';
 import { CoinPill } from '../../coins/components/CoinPill';
 import { useCoins } from '../../coins/store/coinStore';
@@ -209,7 +209,7 @@ export const WorldScreen: React.FC = () => {
     const open = () => {
       if (cancelled) return;
       const { position, returnZone } = useWorldStore.getState();
-      const init: WorldInitPayload = { lang, spawn: position, playerGender: playerGender(), playerCharacter: playerCharacter(), playerHair: playerHair() };
+      const init: WorldInitPayload = { lang, spawn: position, playerGender: playerGender(), playerCharacter: playerCharacter(), playerHair: playerHair(), playerOutfit: playerOutfit() };
       if (returnZone) init.zone = returnZone;
       bridge.openWorld(init);
     };

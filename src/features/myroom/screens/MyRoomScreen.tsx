@@ -13,7 +13,7 @@ import type { RootStackParamList } from '../../../navigation/types';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { getMyRoomBridge, isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
-import { playerCharacter, playerHair, playerGender } from '../../counseling/bridge/playerGender';
+import { playerCharacter, playerHair, playerGender, playerOutfit } from '../../counseling/bridge/playerGender';
 import { CoinPill } from '../../coins/components/CoinPill';
 import { useMyRoomCamera } from '../components/useMyRoomCamera';
 import { WorldJoystick } from '../../world/components/WorldJoystick';
@@ -188,6 +188,7 @@ export const MyRoomScreen: React.FC = () => {
       playerGender: playerGender(),
       playerCharacter: playerCharacter(),
       playerHair: playerHair(),
+      playerOutfit: playerOutfit(),
     };
   };
   useEffect(() => {

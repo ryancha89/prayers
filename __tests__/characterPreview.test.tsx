@@ -51,6 +51,7 @@ beforeEach(async () => {
     self: { id: 'self', displayName: 'Linh', birthDate: '2002-11-12', gender: 'female', isUser: true },
     playerCharacter: undefined,
     playerHair: '',
+    playerOutfit: '',
     creatorSeen: false,
   });
   await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
@@ -80,7 +81,7 @@ it('closes the preview on the way out', async () => {
   expect(mockBridge.closeCharacterPreview).toHaveBeenCalledTimes(1);
 });
 
-it('one character for her gender: no step to "choose" it — hair (face shot) → done, then the turn, then the store', async () => {
+it('one character for her gender: no step to "choose" it — hair (face shot) → outfit (whole body) → done, then the turn, then the store', async () => {
   jest.useFakeTimers();
   try {
     expect(tree.root.findAll(n => n.props.testID === 'character-step-look')).toHaveLength(0);
@@ -90,6 +91,12 @@ it('one character for her gender: no step to "choose" it — hair (face shot) �
     await act(async () => byId('character-hair-C46A86').props.onPress());
     expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(
       expect.objectContaining({ playerCharacter: 'xb_f01', playerHair: '#C46A86' }));
+    await act(async () => next().props.onPress());
+    // the outfit: framed on the whole body, previewed live like the hair
+    expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0 });
+    await act(async () => byId('character-outfit-2E3A5C').props.onPress());
+    expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(
+      expect.objectContaining({ playerCharacter: 'xb_f01', playerHair: '#C46A86', playerOutfit: '#2E3A5C' }));
     await act(async () => next().props.onPress());
     expect(texts()).toContain('This is you in Prayers');
     expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0 });
@@ -101,6 +108,7 @@ it('one character for her gender: no step to "choose" it — hair (face shot) �
     await act(async () => { jest.advanceTimersByTime(1300); });
     expect(useSubjectsStore.getState().playerCharacter).toBe('xb_f01');
     expect(useSubjectsStore.getState().playerHair).toBe('#C46A86');
+    expect(useSubjectsStore.getState().playerOutfit).toBe('#2E3A5C');
     // an account that picked on the old card screen is shown the creator once; this ends that
     expect(useSubjectsStore.getState().creatorSeen).toBe(true);
   } finally {
@@ -159,4 +167,34 @@ it('a card switch shows "preparing your character" until Unity has drawn the new
   } finally {
     jest.useRealTimers();
   }
+});
+
+it('the outfit step: hair → outfit → done in the step bar, the artist\'s own first, and new outfits shown as coming soon', async () => {
+  const steps = tree.root.findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('character-step-') && !!n.props.onPress)
+    .map(n => n.props.testID);
+  expect(steps).toEqual(['character-step-hair', 'character-step-outfit', 'character-step-done']);
+  await act(async () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress).props.onPress());
+  // a stored colour the palette has is where the step opens; "" is the artist's own
+  expect(byId('character-outfit-original').props.accessibilityState).toEqual({ selected: true });
+  expect(texts()).toContain('New outfits · Coming soon');
+  const soon = tree.root.find(n => n.props.testID === 'character-outfit-soon' && !!n.props.accessibilityState);
+  expect(soon.props.accessibilityState).toEqual({ disabled: true });
+  expect(soon.props.onPress).toBeUndefined();
+  // backing out of the creator leaves the stored outfit as it was
+  await act(async () => byId('character-outfit-7A2E3B').props.onPress());
+  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: '#7A2E3B' }));
+  expect(useSubjectsStore.getState().playerOutfit).toBe('');
+});
+
+it('opens on the stored outfit, and a colour the palette dropped falls back to the artist\'s own', async () => {
+  act(() => tree.unmount());
+  mockBridge.openCharacterPreview.mockClear();
+  useSubjectsStore.setState({ playerOutfit: '#8FA48A' });
+  await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
+  expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerOutfit: '#8FA48A' }));
+  act(() => tree.unmount());
+  mockBridge.openCharacterPreview.mockClear();
+  useSubjectsStore.setState({ playerOutfit: '#123456' });
+  await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
+  expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerOutfit: '' }));
 });

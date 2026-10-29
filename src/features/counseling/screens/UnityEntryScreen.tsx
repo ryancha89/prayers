@@ -1,14 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { colors, radius, spacing, typography } from '../../../shared/theme';
+import { colors, spacing, typography } from '../../../shared/theme';
 import { useLang, useT } from '../../../shared/i18n';
 import { RootStackParamList } from '../../../navigation/types';
 import { getLocalizedCounselor } from '../../counselors/data/mockCounselors';
 import { roomSubjects } from '../bridge/subjectPayload';
-import { playerCharacter, playerHair } from '../bridge/playerGender';
+import { playerCharacter, playerHair, playerOutfit } from '../bridge/playerGender';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useCounselingStore } from '../store/counselingStore';
 import { defaultTopicFor } from '../topicsForCounselor';
@@ -115,6 +115,7 @@ export const UnityEntryScreen: React.FC = () => {
       playerGender: useSubjectsStore.getState().self.gender,
       playerCharacter: playerCharacter(),
       playerHair: playerHair(),
+      playerOutfit: playerOutfit(),
     });
 
     return unsub;

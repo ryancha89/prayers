@@ -49,7 +49,7 @@ afterEach(() => {
 
 test('deletes, signs out, and takes the local copy with it', async () => {
   useFavoritesStore.setState({ ids: ['yuna'] });
-  useSubjectsStore.setState({ playerCharacter: 'xb_f01' });
+  useSubjectsStore.setState({ playerCharacter: 'xb_f01', playerHair: '#C46A86', playerOutfit: '#2E3A5C' });
   await AsyncStorage.setItem('prayers.subjects.v1', '{"state":{}}');
   await AsyncStorage.setItem('prayers.lang.v1', '{"state":{"lang":"vi"}}');
   const spy = stubFetch({ deleted: true });
@@ -65,6 +65,8 @@ test('deletes, signs out, and takes the local copy with it', async () => {
   expect(useSubjectsStore.getState().subjects).toEqual([]);
   // …and the character, or the next account skips its character screen (26-10).
   expect(useSubjectsStore.getState().playerCharacter).toBeUndefined();
+  expect(useSubjectsStore.getState().playerHair).toBe('');
+  expect(useSubjectsStore.getState().playerOutfit).toBe('');
   expect(useConversationsStore.getState().order).toEqual([]);
   // Either the row is gone or a late `persist` write put empty state back — what must not survive
   // is the data. Asserting "null" alone would pass for a row that was rewritten with the old

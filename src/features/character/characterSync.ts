@@ -3,7 +3,7 @@ import { useSubjectsStore } from '../subjects/store/subjectsStore';
 import { devlog } from '../../shared/devlog';
 
 /**
- * Keeps the player's character (body id, hair, "has seen the creator") on the ACCOUNT (27-10), the
+ * Keeps the player's character (body id, hair, outfit, "has seen the creator") on the ACCOUNT (27-10), the
  * same way languageSync keeps the language: the local store is what the app reads, the server is
  * where the choice is remembered — so a reinstall or a second phone does not ask again or lose the
  * hair colour.
@@ -41,7 +41,9 @@ function hydrated(): Promise<void> {
 function pushLocal(why: string): Promise<boolean> {
   const st = useSubjectsStore.getState();
   if (!st.playerCharacter) return Promise.resolve(false);
-  return saveAccountCharacter({ playerCharacter: st.playerCharacter, playerHair: st.playerHair, creatorSeen: st.creatorSeen }).then(ok => {
+  return saveAccountCharacter({
+    playerCharacter: st.playerCharacter, playerHair: st.playerHair, playerOutfit: st.playerOutfit, creatorSeen: st.creatorSeen,
+  }).then(ok => {
     devlog(`[character] ${why} - pushed ${st.playerCharacter} (${ok ? 'ok' : 'failed'})`);
     return ok;
   });
@@ -64,9 +66,12 @@ export async function syncAccountCharacter(signal?: AbortSignal): Promise<void> 
     useSubjectsStore.setState({
       playerCharacter: remote.playerCharacter,
       playerHair: remote.playerHair ?? '',
+      // null is "no answer" here, not "the artist's own": a server with the hair but not the outfit
+      // column (29-10) must not reset the colour picked on this device at every launch.
+      playerOutfit: remote.playerOutfit ?? st.playerOutfit,
       creatorSeen: remote.creatorSeen || st.creatorSeen,
     });
-    devlog(`[character] account says ${remote.playerCharacter} hair='${remote.playerHair ?? ''}'`);
+    devlog(`[character] account says ${remote.playerCharacter} hair='${remote.playerHair ?? ''}' outfit='${remote.playerOutfit ?? '(none)'}'`);
     return;
   }
   if (st.playerCharacter && st.creatorSeen) await pushLocal('account had none');

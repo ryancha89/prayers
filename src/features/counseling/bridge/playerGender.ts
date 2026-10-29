@@ -24,3 +24,7 @@ export const playerCharacter = (): string | undefined => {
  *  own: JSON drops the field and Unity's JsonUtility reads a missing string as "" — the same "own
  *  hair" — so payloads from before the creator are unchanged. */
 export const playerHair = (): string | undefined => useSubjectsStore.getState().playerHair || undefined;
+
+/** The creator's outfit colour ("#RRGGBB"), sent beside `playerHair` and left off the same way for
+ *  the artist's own clothes (Unity's INIT handlers read a missing field as ""). */
+export const playerOutfit = (): string | undefined => useSubjectsStore.getState().playerOutfit || undefined;

@@ -9,7 +9,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
 
 import { NativeUnityBridge } from '../src/features/counseling/bridge/NativeUnityBridge';
-import { playerGender } from '../src/features/counseling/bridge/playerGender';
+import { playerGender, playerHair, playerOutfit } from '../src/features/counseling/bridge/playerGender';
 import { useSubjectsStore } from '../src/features/subjects/store/subjectsStore';
 
 const self = (gender?: 'male' | 'female') =>
@@ -55,4 +55,23 @@ it('sends it on the scene INITs', () => {
   bridge.openCafe({ lang: 'ko', playerGender: playerGender() });
   const init = posted.map(j => JSON.parse(j)).find(m => m.type === 'CAFE_INIT');
   expect(init.payload.playerGender).toBe('female');
+});
+
+it('sends the outfit colour beside the hair on the scene INITs, and leaves the artist\'s own off the wire', () => {
+  self('female');
+  useSubjectsStore.setState({ playerHair: '#C46A86', playerOutfit: '#2E3A5C' });
+  const posted: string[] = [];
+  const bridge = new NativeUnityBridge();
+  bridge.registerView({ postMessage: (_o, _m, json) => posted.push(json) });
+  bridge.openCafe({ lang: 'ko', playerGender: playerGender(), playerHair: playerHair(), playerOutfit: playerOutfit() });
+  bridge.openWorld({ lang: 'ko', spawn: null, playerHair: playerHair(), playerOutfit: playerOutfit() });
+  const sent = posted.map(j => JSON.parse(j));
+  expect(sent.find(m => m.type === 'CAFE_INIT').payload).toMatchObject({ playerHair: '#C46A86', playerOutfit: '#2E3A5C' });
+  expect(sent.find(m => m.type === 'WORLD_INIT').payload.playerOutfit).toBe('#2E3A5C');
+
+  useSubjectsStore.setState({ playerOutfit: '' });
+  posted.length = 0;
+  bridge.openMyRoom({ lang: 'ko', playerOutfit: playerOutfit() });
+  expect(posted.map(j => JSON.parse(j)).find(m => m.type === 'MYROOM_INIT').payload).not.toHaveProperty('playerOutfit');
+  useSubjectsStore.setState({ playerHair: '', playerOutfit: '' });
 });

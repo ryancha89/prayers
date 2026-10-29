@@ -14,6 +14,7 @@ import { charactersFor, effectiveCharacter } from '../characters';
 import { saveCharacterToAccount } from '../characterSync';
 import { useCharacterView } from '../useCharacterView';
 import { HAIR_COLORS, knownHair } from '../hairColors';
+import { OUTFIT_COLORS, knownOutfit } from '../outfitColors';
 import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
@@ -51,6 +52,11 @@ import type { FaceTrackingState } from '../../counseling/types';
  * (CHARACTER_CONFIRM) before the pick is stored. The hair colour (`playerHair`) is stored with the
  * character and travels on every *_INIT like it, so the World walks the same hair.
  *
+ * 29-10, the Outfit step (hair → outfit → done): the same, for the clothes (`playerOutfit`). Each
+ * gender has one rigged body, so there are no other outfits to list — a colour for the whole outfit
+ * is the choice there is, framed on the whole body. New outfits are announced under the swatches as
+ * "coming soon" rather than left out.
+ *
  * BODY_READY says which gender Unity can actually mount; a `false` shows "Coming soon" and a note,
  * and still saves the pick so the body is there the day it lands.
  */
@@ -64,10 +70,12 @@ const TOP_COVER = 0.12;
 const BOTTOM_COVER = 0.3;
 
 /** The creator's steps, and the zoom each one frames (0 whole body … 1 face). */
-const ALL_STEPS = ['look', 'hair', 'done'] as const;
+const ALL_STEPS = ['look', 'hair', 'outfit', 'done'] as const;
 type Step = (typeof ALL_STEPS)[number];
-const STEP_ZOOM: Record<Step, number> = { look: 0, hair: 0.8, done: 0 };
-const STEP_LABEL: Record<Step, TranslationKey> = { look: 'character.step.look', hair: 'character.step.hair', done: 'character.step.done' };
+const STEP_ZOOM: Record<Step, number> = { look: 0, hair: 0.8, outfit: 0, done: 0 };
+const STEP_LABEL: Record<Step, TranslationKey> = {
+  look: 'character.step.look', hair: 'character.step.hair', outfit: 'character.step.outfit', done: 'character.step.done',
+};
 /** How long Unity's confirm turn takes (CharacterPreviewStage.ConfirmTime) before the pick is stored. */
 const CONFIRM_MS = 1250;
 
@@ -83,8 +91,11 @@ export const CharacterSelectScreen: React.FC = () => {
   const setPlayerCharacter = useSubjectsStore(s => s.setPlayerCharacter);
   const storedHair = useSubjectsStore(s => s.playerHair);
   const setPlayerHair = useSubjectsStore(s => s.setPlayerHair);
+  const storedOutfit = useSubjectsStore(s => s.playerOutfit);
+  const setPlayerOutfit = useSubjectsStore(s => s.setPlayerOutfit);
   const setCreatorSeen = useSubjectsStore(s => s.setCreatorSeen);
   const [hair, setHair] = useState(knownHair(storedHair));
+  const [outfit, setOutfit] = useState(knownOutfit(storedOutfit));
   // 27-10 ("làm phần chọn character cho hợp lý"): with a gender on the profile there is ONE
   // character to pick, and a step that "chooses" from a single card is a step for nothing. The
   // character step only appears when there is a choice to make.
@@ -177,7 +188,7 @@ export const CharacterSelectScreen: React.FC = () => {
   const [track, setTrack] = useState<FaceTrackingState>('off');
   const previewInit = (id?: string) => {
     const def = options.find(c => c.id === id);
-    return { lang, playerGender: gender ?? def?.gender, playerCharacter: id, playerHair: hair };
+    return { lang, playerGender: gender ?? def?.gender, playerCharacter: id, playerHair: hair, playerOutfit: outfit };
   };
   useEffect(() => {
     if (!native) return undefined;
@@ -206,7 +217,7 @@ export const CharacterSelectScreen: React.FC = () => {
   useEffect(() => {
     if (native && picked) nativeUnityBridge.setCharacterPreview(previewInit(picked));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [picked, hair]);
+  }, [picked, hair, outfit]);
   const toggleCamera = () => {
     const on = !cameraOn;
     sfx.tap();
@@ -225,6 +236,7 @@ export const CharacterSelectScreen: React.FC = () => {
   const commit = () => {
     if (!picked) return;
     setPlayerHair(hair);
+    setPlayerOutfit(outfit);
     setPlayerCharacter(picked);
     setCreatorSeen();
     saveCharacterToAccount();
@@ -249,6 +261,33 @@ export const CharacterSelectScreen: React.FC = () => {
     if (stepIndex > 0) goStep(STEPS[stepIndex - 1]);
     else navigation.goBack();
   };
+
+  // One row of colour swatches (hair, outfit): the first entry ("") is the artist's own colour.
+  const swatchRow = (palette: { hex: string; swatch: string }[], value: string, set: (hex: string) => void, kind: string, original: string) => (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.swatches}>
+      {palette.map(c => {
+        const on = value === c.hex;
+        return (
+          <Pressable
+            key={c.hex || 'original'}
+            testID={`character-${kind}-${c.hex ? c.hex.slice(1) : 'original'}`}
+            accessibilityRole="button"
+            accessibilityLabel={c.hex || original}
+            accessibilityState={{ selected: on }}
+            onPress={() => { sfx.tap(); set(c.hex); }}
+            style={[styles.swatchRing, on && styles.swatchRingOn]}>
+            {c.hex ? (
+              <View style={[styles.swatch, { backgroundColor: c.swatch }]} />
+            ) : (
+              <View style={[styles.swatch, styles.swatchOriginal]}>
+                <Text style={styles.swatchOriginalText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{original}</Text>
+              </View>
+            )}
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
 
   const cards = options.map(c => {
     const on = picked === c.id;
@@ -350,30 +389,16 @@ export const CharacterSelectScreen: React.FC = () => {
               {cards}
             </ScrollView>
           ) : null}
-          {step === 'hair' ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.swatches}>
-              {HAIR_COLORS.map(c => {
-                const on = hair === c.hex;
-                return (
-                  <Pressable
-                    key={c.hex || 'original'}
-                    testID={`character-hair-${c.hex ? c.hex.slice(1) : 'original'}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={c.hex || t('character.hair.original')}
-                    accessibilityState={{ selected: on }}
-                    onPress={() => { sfx.tap(); setHair(c.hex); }}
-                    style={[styles.swatchRing, on && styles.swatchRingOn]}>
-                    {c.hex ? (
-                      <View style={[styles.swatch, { backgroundColor: c.swatch }]} />
-                    ) : (
-                      <View style={[styles.swatch, styles.swatchOriginal]}>
-                        <Text style={styles.swatchOriginalText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{t('character.hair.original')}</Text>
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+          {step === 'hair' ? swatchRow(HAIR_COLORS, hair, setHair, 'hair', t('character.hair.original')) : null}
+          {step === 'outfit' ? (
+            <>
+              {swatchRow(OUTFIT_COLORS, outfit, setOutfit, 'outfit', t('character.outfit.original'))}
+              {/* Announced, not hidden (29-10): one body per gender today, more outfits to come. */}
+              <View style={styles.soonCard} testID="character-outfit-soon" accessibilityState={{ disabled: true }}>
+                <Icon name="lock" size={16} color={colors.textMuted} />
+                <Text style={styles.soonCardText} numberOfLines={1}>{t('character.outfit.soon')}</Text>
+              </View>
+            </>
           ) : null}
           {step === 'done' ? <Text style={styles.doneTitle}>{t('character.done.title')}</Text> : null}
           <PrimaryButton
@@ -533,6 +558,12 @@ const styles = StyleSheet.create({
   swatch: { width: 40, height: 40, borderRadius: 20 },
   swatchOriginal: { backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
   swatchOriginalText: { fontSize: 9, color: colors.textPrimary, textAlign: 'center' },
+  soonCard: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, opacity: 0.55,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md,
+    backgroundColor: colors.card, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderStyle: 'dashed',
+  },
+  soonCardText: { ...typography.caption, color: colors.textMuted, flexShrink: 1 },
   doneTitle: { ...typography.body, color: colors.violetSoft, textAlign: 'center', paddingVertical: spacing.sm },
   panelName: { ...typography.h3, color: colors.textPrimary },
   strip: { gap: spacing.sm, paddingVertical: spacing.xs },

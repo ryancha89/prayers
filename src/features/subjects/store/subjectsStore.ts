@@ -40,6 +40,10 @@ interface SubjectsState {
    *  HairTint reads it on every body that can be recoloured. */
   playerHair: string;
   setPlayerHair: (hex: string) => void;
+  /** The outfit colour picked in the creator (29-10): "#RRGGBB", or "" for the artist's own clothes.
+   *  Unity's OutfitTint reads it the way HairTint reads the hair. */
+  playerOutfit: string;
+  setPlayerOutfit: (hex: string) => void;
   /** Has this account been through the 3D creator (27-10)? A pick made on the old card screen does
    *  not count: those accounts are shown the creator once more on their next launch. */
   creatorSeen: boolean;
@@ -76,6 +80,8 @@ export const useSubjectsStore = create<SubjectsState>()(
       setPlayerCharacter: c => set({ playerCharacter: c }),
       playerHair: '',
       setPlayerHair: hex => set({ playerHair: hex }),
+      playerOutfit: '',
+      setPlayerOutfit: hex => set({ playerOutfit: hex }),
       creatorSeen: false,
       setCreatorSeen: () => set({ creatorSeen: true }),
       subjects: [
@@ -122,6 +128,7 @@ export const useSubjectsStore = create<SubjectsState>()(
         profileDeferred: state.profileDeferred,
         playerCharacter: state.playerCharacter,
         playerHair: state.playerHair,
+        playerOutfit: state.playerOutfit,
         creatorSeen: state.creatorSeen,
       }),
     },

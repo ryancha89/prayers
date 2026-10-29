@@ -135,6 +135,8 @@ export interface UnitySessionPayload {
   playerCharacter?: string;
   /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
   playerHair?: string;
+  /** The creator's outfit colour, "#RRGGBB" or "" for the artist's own clothes (29-10). */
+  playerOutfit?: string;
 }
 
 /* ---- Stage commands (bridge v2) ----------------------------------------
@@ -615,6 +617,8 @@ export interface WorldInitPayload {
   playerCharacter?: string;
   /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
   playerHair?: string;
+  /** The creator's outfit colour, "#RRGGBB" or "" for the artist's own clothes (29-10). */
+  playerOutfit?: string;
 }
 
 export interface MyRoomInitPayload {
@@ -633,6 +637,8 @@ export interface MyRoomInitPayload {
   playerCharacter?: string;
   /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
   playerHair?: string;
+  /** The creator's outfit colour, "#RRGGBB" or "" for the artist's own clothes (29-10). */
+  playerOutfit?: string;
 }
 
 /** CAFE_INIT. Mirrored by name in Unity's RNCafeInit. */
@@ -653,6 +659,8 @@ export interface CafeInitPayload {
   playerCharacter?: string;
   /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
   playerHair?: string;
+  /** The creator's outfit colour, "#RRGGBB" or "" for the artist's own clothes (29-10). */
+  playerOutfit?: string;
 }
 
 /** CAFE_TABLES' row: a seat id and whether somebody else (the shared room) sits there. */
@@ -793,6 +801,8 @@ export interface CharacterInitPayload {
   playerCharacter?: string;
   /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
   playerHair?: string;
+  /** The creator's outfit colour, "#RRGGBB" or "" for the artist's own clothes (29-10). */
+  playerOutfit?: string;
 }
 
 /** Where face tracking is (Unity CameraFaceSource): `unsupported` on the simulator and on phones
