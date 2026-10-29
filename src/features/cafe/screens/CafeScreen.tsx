@@ -26,9 +26,9 @@ import { useFollowCamera } from '../../world/components/useWorldCamera';
 import { counselorRegistry } from '../../counselors/data/registry';
 import { localizeCounselors } from '../../counselors/data/mockCounselors';
 import { CoinPill } from '../../coins/components/CoinPill';
-import { useCafeTable } from '../table/useCafeTable';
+import { paidInFlight, unansweredPaid, useCafeTable } from '../table/useCafeTable';
 import { TablePanel } from '../components/TablePanel';
-import { ConfirmSheet } from '../components/ConfirmSheet';
+import { ConfirmSheet, LeaveSheet } from '../components/ConfirmSheet';
 import { FortuneCard } from '../components/FortuneCard';
 import { Bubble, GhostButton, Medallion, PanelBackdrop } from '../components/CafeChrome';
 import { TAROT_TABLE } from '../table/tarotTable';
@@ -272,6 +272,34 @@ export const CafeScreen: React.FC = () => {
 
   const table = useCafeTable(bridge, lang, t);
   tableStage.current = table.state.stage;
+  // Back to the world (the button, or Android's back) while a paid answer is being written asks first,
+  // as End and Leave do (29-10): leaving unmounted the table and the answer the server had already
+  // charged for was lost. The navigation is held until the sheet is answered.
+  const askToLeave = useRef(table.askBeforeLeaving);
+  askToLeave.current = table.askBeforeLeaving;
+  const heldExit = useRef<(() => void) | null>(null);
+  const exiting = useRef(false);
+  useEffect(
+    () =>
+      navigation.addListener('beforeRemove', e => {
+        if (exiting.current || !askToLeave.current('world')) return;
+        e.preventDefault();
+        const action = e.data.action;
+        heldExit.current = () => navigation.dispatch(action);
+      }),
+    [navigation],
+  );
+  const leaveAnyway = () => {
+    if (table.leaveAnyway() !== 'world') return;
+    const go = heldExit.current;
+    heldExit.current = null;
+    exiting.current = true;
+    if (go) go();
+    else navigation.goBack();
+  };
+  const leavingPaid = table.state.leaveAsk ? paidInFlight(table.state) : null;
+  // …or one that failed with no answer and may be charged already: the sheet offers its Retry (29-10).
+  const leavingUnanswered = table.state.leaveAsk && !leavingPaid ? unansweredPaid(table.state) : null;
   const atTable = table.state.seated;
   // Standing up from the table takes its panel's cover with it (the guest's panel reports its own).
   useEffect(() => {
@@ -463,6 +491,10 @@ export const CafeScreen: React.FC = () => {
       ) : null}
       {table.state.confirm && (
         <ConfirmSheet paid={table.state.confirm} onPay={table.confirm} onCancel={table.cancelConfirm} onGetCoins={table.getCoins} />
+      )}
+      {leavingPaid && <LeaveSheet paid={leavingPaid} onStay={table.stay} onLeave={leaveAnyway} />}
+      {leavingUnanswered && (
+        <LeaveSheet paid={leavingUnanswered} unanswered onStay={table.stay} onRetry={table.retryInstead} onLeave={leaveAnyway} />
       )}
 
       {note && (

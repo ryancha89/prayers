@@ -9,7 +9,9 @@
  *  · the confirmation names the price and the balance, and short of coins leads to the coin shop,
  *  · the wallet follows every answer's `coins_balance`,
  *  · while picking and while the cookie waits nothing of RN but the End button takes a touch,
- *  · End / standing up drop a late answer rather than reviving a finished reading.
+ *  · End / standing up drop a late answer rather than reviving a finished reading,
+ *  · …but not one already paid for without asking: End or Back while a paid answer is being written
+ *    asks first (29-10); Stay keeps the table and shows the answer when it lands.
  */
 import React from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';
@@ -39,8 +41,27 @@ jest.mock('../src/features/auth/api/headers', () => ({
 jest.mock('../src/features/auth/api/session', () => ({ ensureGameToken: async () => null }));
 jest.mock('../src/features/coins/api/coinsApi', () => ({ refreshCoins: jest.fn(), buyCoins: jest.fn() }));
 jest.mock('../src/features/tickets/api/attendance', () => ({ fetchAttendance: async () => null, checkIn: jest.fn() }));
+/** The navigator's beforeRemove, as React Navigation runs it: a listener may hold the exit
+ *  (preventDefault) and dispatch the action later; `mockLeft` records the exits that went through. */
+const mockBeforeRemove = new Set<(e: unknown) => void>();
+const mockLeft = jest.fn();
+const mockExit = (action: { type: string }) => {
+  let held = false;
+  mockBeforeRemove.forEach(l => l({ preventDefault: () => { held = true; }, data: { action } }));
+  if (!held) mockLeft(action.type);
+};
+const mockNavigation = {
+  navigate: jest.fn(),
+  goBack: () => mockExit({ type: 'GO_BACK' }),
+  dispatch: (action: { type: string }) => mockExit(action),
+  addListener: (event: string, l: (e: unknown) => void) => {
+    if (event !== 'beforeRemove') return () => {};
+    mockBeforeRemove.add(l);
+    return () => { mockBeforeRemove.delete(l); };
+  },
+};
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn(), addListener: () => () => {} }),
+  useNavigation: () => mockNavigation,
   useFocusEffect: () => {},
 }));
 jest.mock('../src/features/counseling/bridge', () => {
@@ -142,6 +163,7 @@ beforeEach(async () => {
   bridge.cafeCalls.length = 0;
   routes.length = 0;
   sent.length = 0;
+  mockLeft.mockClear();
 });
 afterEach(() => {
   if (tree) act(() => tree!.unmount());
@@ -405,17 +427,58 @@ describe('a tarot reading at the table', () => {
     expect(byTestID('cafe-tap')).toHaveLength(0);
   });
 
-  it('an answer that lands after End is dropped', async () => {
+  it('End while the paid reading is being written asks first; Stay keeps the table and shows the answer', async () => {
     let release!: () => void;
     serve('cafe/tarot/readings', { ...ok(READING), wait: new Promise<void>(r => { release = r; }) });
     await toChosen();
     expect(shown()).toContain('Reading the cards…');
     await press('End');
-    const reveals = calls('CAFE_TAROT_REVEAL').length;   // the early turn-over, at the seventh card
+    // 29-10: the server has charged for this one — End no longer drops it without a word.
+    expect(byTestID('cafe-leave-ask').length).toBeGreaterThan(0);
+    expect(shown()).toContain('Your reading is on its way and already paid.');
+    expect(calls('CAFE_TAROT_END')).toHaveLength(0);
+    await press('Stay');
+    expect(byTestID('cafe-leave-ask')).toHaveLength(0);
+    await act(async () => { release(); });
+    await flush();
+    expect(calls('CAFE_TAROT_REVEAL')).toHaveLength(1);
+    expect(shown()).toContain('Card 1 of 7 · Pos 0');
+    expect(posted('cafe/tarot/readings')).toHaveLength(1);
+  });
+
+  it('an answer that lands while the question is open closes it and is shown', async () => {
+    let release!: () => void;
+    serve('cafe/tarot/readings', { ...ok(READING), wait: new Promise<void>(r => { release = r; }) });
+    await toChosen();
+    await press('End');
+    expect(byTestID('cafe-leave-ask').length).toBeGreaterThan(0);
+    await act(async () => { release(); });
+    await flush();
+    expect(byTestID('cafe-leave-ask')).toHaveLength(0);
+    expect(shown()).toContain('Card 1 of 7 · Pos 0');
+  });
+
+  it('Leave anyway ends the reading, and the answer that lands after it is dropped', async () => {
+    let release!: () => void;
+    serve('cafe/tarot/readings', { ...ok(READING), wait: new Promise<void>(r => { release = r; }) });
+    await toChosen();
+    await press('End');
+    await press('Leave anyway');
+    expect(calls('CAFE_TAROT_END')).toHaveLength(1);
+    expect(byTestID('cafe-seated').length).toBeGreaterThan(0);
+    const reveals = calls('CAFE_TAROT_REVEAL').length;
     await act(async () => { release(); });
     await flush();
     expect(calls('CAFE_TAROT_REVEAL')).toHaveLength(reveals);
     expect(byTestID('cafe-seated').length).toBeGreaterThan(0);
+  });
+
+  it('End with nothing being written ends at once, no question', async () => {
+    serve('cafe/tarot/readings', ok(READING));
+    await toChosen();
+    await press('End');
+    expect(byTestID('cafe-leave-ask')).toHaveLength(0);
+    expect(calls('CAFE_TAROT_END')).toHaveLength(1);
   });
 
   it('standing up (CAFE_PHASE exploring) clears the table and gives the stick back', async () => {
@@ -514,6 +577,37 @@ describe('coffee and a fortune cookie', () => {
     await press('Pay 30 PC');
     const ids = posted('cafe/coffee').map(p => p.body.request_id);
     expect(ids[1]).toBe(ids[0]);
+  });
+
+  it('Back to the World while the paid coffee brews asks first; Leave anyway goes, Stay serves it', async () => {
+    let release!: () => void;
+    serve('cafe/coffee', { ...ok({ fortune: 'Patience pays.', coins_balance: 70 }), wait: new Promise<void>(r => { release = r; }) });
+    await sit();
+    await press('Order Coffee');
+    await press('Pay 30 PC');
+    await press('Back to the World');
+    // Held: the server has charged for this coffee (29-10).
+    expect(mockLeft).not.toHaveBeenCalled();
+    expect(shown()).toContain('Your coffee is on its way and already paid.');
+    await press('Stay');
+    expect(byTestID('cafe-leave-ask')).toHaveLength(0);
+    await act(async () => { release(); });
+    await flush();
+    expect(calls('CAFE_COOKIE_FORTUNE')).toEqual([{ type: 'CAFE_COOKIE_FORTUNE', payload: { text: 'Patience pays.' } }]);
+    // Nothing on its way any more: Back goes at once.
+    await press('Back to the World');
+    expect(mockLeft).toHaveBeenCalledWith('GO_BACK');
+  });
+
+  it('Leave anyway from the brewing coffee carries out the held Back', async () => {
+    serve('cafe/coffee', { ...ok({ fortune: 'x', coins_balance: 70 }), wait: new Promise<void>(() => {}) });
+    await sit();
+    await press('Order Coffee');
+    await press('Pay 30 PC');
+    await press('Back to the World');
+    await press('Leave anyway');
+    expect(mockLeft).toHaveBeenCalledTimes(1);
+    expect(mockLeft).toHaveBeenCalledWith('GO_BACK');
   });
 });
 
@@ -810,5 +904,146 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
     expect(byTestID('cafe-menu').length).toBeGreaterThan(0);
     expect(byTestID('cafe-confirm')).toHaveLength(0);
     expect(byTestID('cafe-readers')).toHaveLength(0);
+  });
+});
+
+/* ---- refusals, each in its own words (29-10) ------------------------------------------------- */
+
+/** …the reading presented and over: the follow-up box is open. */
+async function toFollowup() {
+  serve('cafe/tarot/readings', ok(READING));
+  await toChosen();
+  for (let i = 0; i < 9; i++) await press('Next');
+  expect(byTestID('cafe-followup-input').length).toBeGreaterThan(0);
+}
+const followupSent = async (text: string) => {
+  type('cafe-followup-input', text);
+  await press('Send');
+  await press('Pay 10 PC');
+};
+/** Whether a typed follow-up could be sent (the send button reads the draft too). */
+const composerOff = () => {
+  type('cafe-followup-input', 'Another?');
+  return tree!.root.findAll(n => n.props.testID === 'cafe-followup-send' && typeof n.props.onPress === 'function')[0].props.disabled === true;
+};
+
+describe('every 422 used to read "invalid cards" (29-10)', () => {
+  it('QUESTION_INVALID and UNKNOWN_CONSULTANT are worded as such, with no retry', async () => {
+    serve('cafe/tarot/readings', { status: 422, body: { error_code: 'QUESTION_INVALID', max_length: 500 } });
+    await toChosen();
+    expect(shown()).toContain('keep it under 500 characters');
+    expect(shown()).not.toContain('These cards couldn');
+    expect(byLabel('Try again')).toBeUndefined();
+    await press('End');
+
+    routes.length = 0;
+    bridge.cafeCalls.length = 0;
+    act(() => tree!.unmount());
+    tree = null;
+    serve('cafe/tarot/readings', { status: 422, body: { error_code: 'UNKNOWN_CONSULTANT' } });
+    await toChosen();
+    expect(shown()).toContain('This reader isn');
+    expect(byLabel('Try again')).toBeUndefined();
+  });
+
+  it('REQUEST_ID_INVALID offers Try again, under a fresh request_id', async () => {
+    serve('cafe/tarot/readings', { status: 422, body: { error_code: 'REQUEST_ID_INVALID' } }, ok(READING));
+    await toChosen();
+    expect(shown()).toContain('You were not charged');
+    await press('Try again');
+    const ids = posted('cafe/tarot/readings').map(p => p.body.request_id);
+    expect(ids).toHaveLength(2);
+    expect(ids[1]).not.toBe(ids[0]);
+    expect(types()).toContain('CAFE_TAROT_REVEAL');
+  });
+
+  it('409 REQUEST_ID_REUSED is not retried forever under the same id', async () => {
+    serve('cafe/tarot/readings', { status: 409, body: { error_code: 'REQUEST_ID_REUSED' } }, ok(READING));
+    await toChosen();
+    await press('Try again');
+    const ids = posted('cafe/tarot/readings').map(p => p.body.request_id);
+    expect(ids[1]).not.toBe(ids[0]);
+  });
+
+  it('the retry rule: only a refusal Retry can fix offers it', () => {
+    const { offersRetry } = require('../src/features/cafe/api/cafeApi');
+    expect(['unavailable', 'failed', 'insufficient', 'rejected'].every(offersRetry)).toBe(true);
+    expect(['invalidCards', 'notFound', 'questionInvalid', 'unknownConsultant'].some(offersRetry)).toBe(false);
+  });
+});
+
+describe('a follow-up that fails does not lock the table (29-10)', () => {
+  it('404 READING_NOT_FOUND: the question is let go, Ask another and Change reader work again', async () => {
+    await toFollowup();
+    serve('cafe/tarot/readings/r-1/followups', { status: 404, body: { error_code: 'READING_NOT_FOUND' } });
+    await followupSent('When exactly?');
+    expect(shown()).toContain('This reading has ended');
+    expect(byLabel('Try again')).toBeUndefined();
+    // Another follow-up to a reading the server lost would only be refused again.
+    expect(composerOff()).toBe(true);
+    expect(byLabel('Change reader')).toBeDefined();
+    await press('Ask another question');
+    expect(shown()).toContain('Tell me your new question');
+  });
+
+  it('503 (refunded): Try again resends it; Cancel drops it and the box opens for another', async () => {
+    await toFollowup();
+    serve('cafe/tarot/readings/r-1/followups',
+      { status: 503, body: { error_code: 'LLM_UNAVAILABLE' } },
+      { status: 503, body: { error_code: 'LLM_UNAVAILABLE' } });
+    await followupSent('When exactly?');
+    await press('Try again');
+    const ids = posted('followups').map(p => p.body.request_id);
+    expect(ids[1]).toBe(ids[0]);
+    await press('Cancel');
+    expect(byTestID('cafe-table-error')).toHaveLength(0);
+    expect(composerOff()).toBe(false);
+  });
+});
+
+describe('a paid request that failed with no answer is not given up without asking (29-10)', () => {
+  it('End after a reading with no answer offers Try again under the same request_id', async () => {
+    serve('cafe/tarot/readings', { status: 502, body: null }, ok(READING));
+    await toChosen();
+    expect(shown()).toContain('Trying again will not charge you twice');
+    await press('End');
+    expect(byTestID('cafe-leave-unanswered').length).toBeGreaterThan(0);
+    expect(shown()).toContain('Your reading didn');
+    expect(calls('CAFE_TAROT_END')).toHaveLength(0);
+    await act(async () => { byTestID('cafe-leave-retry').find(n => typeof n.props.onPress === 'function')!.props.onPress(); });
+    await flush();
+    const ids = posted('cafe/tarot/readings').map(p => p.body.request_id);
+    expect(ids).toHaveLength(2);
+    expect(ids[1]).toBe(ids[0]);
+    expect(types()).toContain('CAFE_TAROT_REVEAL');
+    expect(byTestID('cafe-leave-unanswered')).toHaveLength(0);
+  });
+
+  it('…and Leave anyway still ends it', async () => {
+    serve('cafe/tarot/readings', { status: 502, body: null });
+    await toChosen();
+    await press('End');
+    await press('Leave anyway');
+    expect(calls('CAFE_TAROT_END')).toHaveLength(1);
+  });
+
+  it('a refunded 503 asks nothing: End ends', async () => {
+    serve('cafe/tarot/readings', { status: 503, body: { error_code: 'LLM_UNAVAILABLE' } });
+    await toChosen();
+    await press('End');
+    expect(byTestID('cafe-leave-unanswered')).toHaveLength(0);
+    expect(calls('CAFE_TAROT_END')).toHaveLength(1);
+  });
+
+  it('Back to the World from a coffee with no answer asks too', async () => {
+    serve('cafe/coffee', { status: 502, body: null });
+    await sit();
+    await press('Order Coffee');
+    await press('Pay 30 PC');
+    await press('Back to the World');
+    expect(mockLeft).not.toHaveBeenCalled();
+    expect(shown()).toContain('Your coffee didn');
+    await press('Leave anyway');
+    expect(mockLeft).toHaveBeenCalledWith('GO_BACK');
   });
 });

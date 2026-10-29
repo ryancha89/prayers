@@ -10,6 +10,7 @@ import {
   fetchTarotConsultants,
   isRetryable,
   newRequestId,
+  offersRetry,
   orderCoffee,
   warmVoice,
   type CafeFailure,
@@ -117,9 +118,17 @@ export interface TableState {
   /** The paid thing the confirmation sheet is asking about, if it is open. */
   confirm: CafePaid | null;
   busy: boolean;
+  /** End, Leave or the screen's Back was pressed while a paid answer is on its way: the sheet asks
+   *  before it is given up (29-10). Shown only while `paidInFlight` — an answer that lands first
+   *  closes the question by itself. */
+  leaveAsk: LeaveKind | null;
   error: TableError | null;
   fortune: string | null;
 }
+
+/** What the player was doing when the leave sheet asked: End the reading, stand up from the table,
+ *  or go back to the world (the screen's Back — the screen navigates, the table only asks). */
+export type LeaveKind = 'end' | 'leave' | 'world';
 
 const OFF: TableState = {
   seated: false,
@@ -140,6 +149,7 @@ const OFF: TableState = {
   pending: '',
   confirm: null,
   busy: false,
+  leaveAsk: null,
   error: null,
   fortune: null,
 };
@@ -153,6 +163,34 @@ export const canChangeReader = (s: TableState) =>
   s.seated && !s.busy && !s.confirm && !s.pending &&
   ((s.stage === 'asking' && !s.question) || s.stage === 'followup');
 
+/**
+ * The paid thing being written right now, or null. `busy` is only ever set by the three paid calls
+ * (runReading, runFollowup, runCoffee), each in its own stage. The server charges as the request
+ * arrives (CafeLedger.run: charge → write → refund only on failure), so leaving now throws away an
+ * answer that is already paid for — the replay by request_id is only reachable from this table.
+ */
+export const paidInFlight = (s: TableState): CafePaid | null => {
+  if (!s.busy) return null;
+  if (s.stage === 'reading') return 'reading';
+  if (s.stage === 'followup') return 'followup';
+  if (s.stage === 'brewing') return 'coffee';
+  return null;
+};
+
+/**
+ * The paid thing that failed with no answer — 'failed' is the one failure that may have been charged
+ * (the request went out, nothing readable came back; a 503 is refunded). Its request_id is still open,
+ * and Retry replays the stored answer if the server did write it. Leaving drops that id, so End, Leave
+ * and Back ask first and offer the Retry (29-10; the in-flight question above only covered `busy`).
+ */
+export const unansweredPaid = (s: TableState): CafePaid | null => {
+  if (s.busy || s.error !== 'failed') return null;
+  if (s.stage === 'reading') return 'reading';
+  if (s.stage === 'followup' && s.pending) return 'followup';
+  if (s.stage === 'brewing') return 'coffee';
+  return null;
+};
+
 type Translate = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
 /**
@@ -161,7 +199,8 @@ type Translate = (key: TranslationKey, params?: Record<string, string | number>)
  * what to stage, and only after the server has said yes to anything paid.
  *
  * Results that come back after the player has moved on (End, standing up) are dropped by
- * generation: `gen` moves on every reset, and an answer from an older one is not this table's.
+ * generation: `gen` moves on every reset, and an answer from an older one is not this table's. A paid
+ * answer still being written is not given up without asking (`leaveAsk`, 29-10).
  */
 export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
   const [state, setState] = useState<TableState>(OFF);
@@ -291,7 +330,7 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     if (g !== gen.current) return;
     if (!r.ok) {
       settle(r);
-      patch({ busy: false, error: r.kind });
+      patch({ busy: false, leaveAsk: null, error: r.kind });
       return;
     }
     endIntent();
@@ -299,7 +338,7 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     // Every line of the reading, synthesised now (in order, all at once) so each Next speaks at once.
     for (let i = 0; i <= STEP_ADVICE; i++) void warmVoice(stepLine(reading, i).text, s.consultant.voice, langRef.current);
     ref.current = { ...ref.current, reading, stage: 'presenting', step: -1 };
-    patch({ busy: false, reading, stage: 'presenting', step: -1 });
+    patch({ busy: false, leaveAsk: null, reading, stage: 'presenting', step: -1 });
     // The seven stay face down until the reader comes to each: Unity turns a card over when its SPEAK
     // arrives (stepwise), as a reader at a real table does (21-10 review). They used to flip all at once
     // the moment the seventh was picked.
@@ -331,11 +370,14 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     if (g !== gen.current) return;
     if (!r.ok) {
       settle(r);
-      patch({ busy: false, error: r.kind });
+      // A refusal Retry cannot fix (404 READING_NOT_FOUND, a bad question) lets the question go: it
+      // used to stay `pending`, which disabled the composer and refused Ask another and Change reader —
+      // the follow-up area was locked until End (29-10). The error stays on its own row.
+      patch({ busy: false, leaveAsk: null, error: r.kind, ...(offersRetry(r.kind) ? {} : { pending: '' }) });
       return;
     }
     endIntent();
-    setState(prev => ({ ...prev, busy: false, followups: [...prev.followups, { q: prev.pending, a: r.answer }], pending: '' }));
+    setState(prev => ({ ...prev, busy: false, leaveAsk: null, followups: [...prev.followups, { q: prev.pending, a: r.answer }], pending: '' }));
     speak({ text: r.answer, mood: 'explain' });
   };
 
@@ -351,8 +393,25 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     speak({ text: line, mood: 'warm' });
   };
 
+  /**
+   * A way out pressed while a paid answer is being written: ask first (29-10). End and Back used to
+   * bump `gen` at once — the server still charged, and the answer that came back ~50 s later was
+   * dropped as another generation's. Returns true when it asked (the caller stops there).
+   */
+  const askBeforeLeaving = (kind: LeaveKind): boolean => {
+    if (!paidInFlight(ref.current) && !unansweredPaid(ref.current)) return false;
+    ref.current = { ...ref.current, leaveAsk: kind };
+    patch({ leaveAsk: kind });
+    return true;
+  };
+
   /** End the reading, at any point: the reader says goodbye and leaves; the player stays seated. */
   const end = () => {
+    if (!inTarot(ref.current) || askBeforeLeaving('end')) return;
+    endNow();
+  };
+
+  const endNow = () => {
     if (!inTarot(ref.current)) return;
     gen.current += 1;
     endIntent();
@@ -396,11 +455,11 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     if (g !== gen.current) return;
     if (!r.ok) {
       settle(r);
-      patch({ busy: false, error: r.kind });
+      patch({ busy: false, leaveAsk: null, error: r.kind });
       return;
     }
     endIntent();
-    patch({ busy: false, fortune: r.fortune, stage: 'serving' });
+    patch({ busy: false, leaveAsk: null, fortune: r.fortune, stage: 'serving' });
     bridge.sendCafeCoffeeOrder();
     bridge.sendCafeCookieFortune(r.fortune);
   };
@@ -463,11 +522,50 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     else if (s.stage === 'brewing') runCoffee();
   };
 
+  /** A follow-up refused with nothing charged (503 refunded, 402, a refused id): the player may drop
+   *  it and type another instead of only retrying the same words. */
+  const dropFollowup = () => {
+    const s = ref.current;
+    if (s.stage !== 'followup' || s.busy || !s.pending || s.error === 'failed') return;
+    endIntent();
+    patch({ pending: '', error: null });
+  };
+
   const leaveTable = () => {
+    if (askBeforeLeaving('leave')) return;
+    leaveNow();
+  };
+
+  const leaveNow = () => {
     gen.current += 1;
     clearMove();
     setState(OFF);
     bridge.sendCafeStand();
+  };
+
+  /** The leave sheet's Stay: nothing changes, and the answer is shown when it lands. */
+  const stay = () => {
+    ref.current = { ...ref.current, leaveAsk: null };
+    patch({ leaveAsk: null });
+  };
+
+  /** The leave sheet's Try again, for a paid request that failed with no answer: the same request_id,
+   *  so a charge that did go through is replayed rather than taken twice. */
+  const retryInstead = () => {
+    ref.current = { ...ref.current, leaveAsk: null };
+    patch({ leaveAsk: null });
+    retry();
+  };
+
+  /** The leave sheet's Leave anyway: what was asked about, done now. 'world' is returned to the
+   *  screen, which owns the navigation. */
+  const leaveAnyway = (): LeaveKind | null => {
+    const kind = ref.current.leaveAsk;
+    ref.current = { ...ref.current, leaveAsk: null };
+    patch({ leaveAsk: null });
+    if (kind === 'end') endNow();
+    else if (kind === 'leave') leaveNow();
+    return kind;
   };
 
   /* ---- Unity ---------------------------------------------------------------------------------- */
@@ -591,6 +689,11 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     cancelConfirm,
     retry,
     leaveTable,
+    dropFollowup,
+    askBeforeLeaving,
+    stay,
+    retryInstead,
+    leaveAnyway,
     getCoins: () => useCoins.getState().openShop(),
   };
 }

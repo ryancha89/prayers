@@ -15,8 +15,9 @@ import type { CafeCard } from '../../counseling/types';
  *   POST prayers/cafe/tarot/readings/:id/followups   → 10 PC · { answer, coins_balance }
  *   POST prayers/cafe/coffee                         → 30 PC · { fortune, coins_balance }
  *
- *   402 INSUFFICIENT_COINS { coins_balance } · 422 INVALID_CARDS · 404 READING_NOT_FOUND ·
- *   503 LLM_UNAVAILABLE (the charge was rolled back)
+ *   402 INSUFFICIENT_COINS { coins_balance } · 422 INVALID_CARDS · 422 QUESTION_INVALID ·
+ *   422 UNKNOWN_CONSULTANT · 422 REQUEST_ID_INVALID · 404 READING_NOT_FOUND · 409 REQUEST_IN_PROGRESS ·
+ *   409 REQUEST_ID_REUSED · 503 LLM_UNAVAILABLE (the charge was rolled back)
  *
  * THE SERVER CHARGES; this file only asks. Every paid call carries a `request_id` the caller keeps
  * for one purchase INTENT (myRoomApi's rule): a call whose answer was 503 or never arrived is retried
@@ -57,6 +58,13 @@ export type CafeFailure =
   | { ok: false; kind: 'invalidCards' }
   /** 404 READING_NOT_FOUND: a follow-up to a reading the server does not have. */
   | { ok: false; kind: 'notFound' }
+  /** 422 QUESTION_INVALID: blank, or longer than CAFE_QUESTION_MAX. Not charged; a new question is needed. */
+  | { ok: false; kind: 'questionInvalid' }
+  /** 422 UNKNOWN_CONSULTANT: the reader is no longer on the server's list. Not charged; pick another. */
+  | { ok: false; kind: 'unknownConsultant' }
+  /** 422 REQUEST_ID_INVALID, 409 REQUEST_ID_REUSED, or a 422 this app does not know: the request was
+   *  refused before any charge. The intent ends, so Retry sends the same thing under a fresh request_id. */
+  | { ok: false; kind: 'rejected' }
   /** 503 LLM_UNAVAILABLE — refunded; retry with the same request_id. */
   | { ok: false; kind: 'unavailable' }
   /** No answer, another 5xx, or one that could not be read: retry with the same request_id. */
@@ -75,6 +83,25 @@ function balanceOf(b: any): number | null {
 
 /** True when the failure leaves the purchase intent open (retry with the same request_id). */
 export const isRetryable = (r: CafeFailure): boolean => r.kind === 'unavailable' || r.kind === 'failed';
+
+/** True when pressing Retry can help: the intent is open (503, no answer), coins can be topped up
+ *  (402), or the refusal was about the request's id, which the retry mints afresh. Cards, question and
+ *  reader refusals would only be refused again (29-10: every 422 used to read "invalid cards"). */
+export const offersRetry = (kind: CafeFailure['kind']): boolean =>
+  kind === 'unavailable' || kind === 'failed' || kind === 'insufficient' || kind === 'rejected';
+
+/** The server's QUESTION_MAX (CafeController): the composer stops there instead of earning a 422. */
+export const CAFE_QUESTION_MAX = 500;
+
+/** 422 by its error_code (CafeController's list). */
+function read422(code: unknown): CafeFailure {
+  switch (code) {
+    case 'INVALID_CARDS': return { ok: false, kind: 'invalidCards' };
+    case 'QUESTION_INVALID': return { ok: false, kind: 'questionInvalid' };
+    case 'UNKNOWN_CONSULTANT': return { ok: false, kind: 'unknownConsultant' };
+    default: return { ok: false, kind: 'rejected' };
+  }
+}
 
 /**
  * 409 REQUEST_IN_PROGRESS: the server is still working on this very purchase. Seen on the simulator
@@ -102,13 +129,19 @@ async function post<T>(path: string, body: object, read: (b: any) => T | null, t
   if (!res) return { ok: false, kind: 'failed' };
   const b = await res.json().catch(() => null);
   if (res.status === 402) return { ok: false, ...readInsufficient({ price: b?.price, coin_balance: balanceOf(b) }) };
-  if (res.status === 422) return { ok: false, kind: 'invalidCards' };
+  if (res.status === 422) {
+    devlog(`[cafe] ${path} 422 ${b?.error_code ?? ''}`);
+    return read422(b?.error_code);
+  }
   if (res.status === 404) return { ok: false, kind: 'notFound' };
   if (res.status === 409 && b?.error_code === 'REQUEST_IN_PROGRESS' && tries > 1) {
     devlog(`[cafe] ${path} still in progress — asking again`);
     await pause(IN_PROGRESS_WAIT_MS);
     return post(path, body, read, tries - 1);
   }
+  // The id was already used for another purchase (a follow-up retried with a different question):
+  // retrying it as is would be refused forever, so the intent ends and the retry gets a new one.
+  if (res.status === 409 && b?.error_code === 'REQUEST_ID_REUSED') return { ok: false, kind: 'rejected' };
   if (res.status === 503) {
     devlog(`[cafe] ${path} 503 ${b?.error_code ?? ''}`);
     return { ok: false, kind: 'unavailable' };

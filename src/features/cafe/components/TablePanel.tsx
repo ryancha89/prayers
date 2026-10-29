@@ -9,7 +9,7 @@ import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import { useScreen } from '../../../shared/device/screen';
 import { IVORY, RING_COMPACT, SERIF } from '../../../shared/components/hud/Hud';
-import type { TarotConsultant } from '../api/cafeApi';
+import { CAFE_QUESTION_MAX, offersRetry, type TarotConsultant } from '../api/cafeApi';
 import { CAFE_ART } from '../assets/art';
 import { Bubble, GhostButton, GoldButton, INK, Medallion, PanelBackdrop, PriceChip, ReaderFace } from './CafeChrome';
 import {
@@ -47,6 +47,9 @@ const ERROR_COPY: Record<TableError, TranslationKey> = {
   invalidCards: 'cafe.pay.err.invalidCards',
   insufficient: 'cafe.pay.err.insufficient',
   notFound: 'cafe.pay.err.notFound',
+  questionInvalid: 'cafe.pay.err.questionInvalid',
+  unknownConsultant: 'cafe.pay.err.unknownConsultant',
+  rejected: 'cafe.pay.err.rejected',
 };
 
 /**
@@ -252,6 +255,8 @@ const Body: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) => {
                 {s.error ? <ErrorRow table={table} error={s.error} t={t} /> : <Bubble who={s.consultant?.name} text={t('cafe.thinking')} muted />}
               </View>
             ) : null}
+            {/* A refusal that let the question go (404, a bad question): still said, nothing locked. */}
+            {!s.pending && s.error ? <ErrorRow table={table} error={s.error} t={t} /> : null}
           </Lines>
           <GhostButton label={t('cafe.tarot.again')} icon="sparkle" onPress={table.askAnother} style={styles.selfStart}
             testID="cafe-again" />
@@ -260,7 +265,8 @@ const Body: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) => {
             initial=""
             placeholder={t('cafe.tarot.followupPlaceholder')}
             label={t('cafe.send')}
-            disabled={s.busy || !!s.pending}
+            // 404: the server has no such reading, so another follow-up would only be refused again.
+            disabled={s.busy || !!s.pending || s.error === 'notFound'}
             onSend={table.submitFollowup}
             testID="cafe-followup"
             price={CAFE_PRICE.followup}
@@ -494,22 +500,29 @@ const Lines: React.FC<{ children: React.ReactNode; follow?: boolean }> = ({ chil
 const Said: React.FC<{ who: string; text: string }> = ({ text }) =>
   text ? <Bubble text={text} textID="cafe-reader-line" /> : null;
 
-const ErrorRow: React.FC<{ table: CafeTable; error: TableError; t: Translate }> = ({ table, error, t }) => (
-  <View style={styles.errorBox} testID="cafe-table-error">
-    <View style={styles.waitRow}>
-      <Icon name="bolt" size={16} color="#F5B38B" />
-      <Text style={[styles.errorText, styles.grow]}>{t(ERROR_COPY[error])}</Text>
+/** Each refusal in its own words (29-10: every 422 read "invalid cards"). Retry only where it can
+ *  help (cafeApi.offersRetry) — in the follow-up, only while the question is still there to resend;
+ *  a follow-up refused with nothing charged can also be dropped for another question. */
+const ErrorRow: React.FC<{ table: CafeTable; error: TableError; t: Translate }> = ({ table, error, t }) => {
+  const s = table.state;
+  const canRetry = offersRetry(error) && (s.stage !== 'followup' || !!s.pending);
+  const canDrop = s.stage === 'followup' && !!s.pending && error !== 'failed';
+  return (
+    <View style={styles.errorBox} testID="cafe-table-error">
+      <View style={styles.waitRow}>
+        <Icon name="bolt" size={16} color="#F5B38B" />
+        <Text style={[styles.errorText, styles.grow]}>{t(ERROR_COPY[error])}</Text>
+      </View>
+      <View style={styles.errorButtons}>
+        {error === 'insufficient' && (
+          <GoldButton label={t('cafe.pay.getCoins')} onPress={() => { sfx.tap(); table.getCoins(); }} />
+        )}
+        {canRetry ? <GhostButton testID="cafe-table-retry" label={t('cafe.retry')} onPress={table.retry} /> : null}
+        {canDrop ? <GhostButton testID="cafe-followup-drop" label={t('cafe.cancel')} onPress={table.dropFollowup} /> : null}
+      </View>
     </View>
-    <View style={styles.errorButtons}>
-      {error === 'insufficient' && (
-        <GoldButton label={t('cafe.pay.getCoins')} onPress={() => { sfx.tap(); table.getCoins(); }} />
-      )}
-      {error !== 'invalidCards' && error !== 'notFound' && (
-        <GhostButton testID="cafe-table-retry" label={t('cafe.retry')} onPress={table.retry} />
-      )}
-    </View>
-  </View>
-);
+  );
+};
 
 /** A text box and its send button. `initial` re-seeds it when it mounts (a cancelled question comes
  *  back in the box rather than vanishing). */
@@ -543,7 +556,7 @@ const Composer: React.FC<{
         placeholder={placeholder}
         placeholderTextColor={colors.textMuted}
         multiline
-        maxLength={500}
+        maxLength={CAFE_QUESTION_MAX}
       />
       <Pressable testID={`${testID}-send`} onPress={send} disabled={off} accessibilityRole="button" accessibilityLabel={label}
         accessibilityState={{ disabled: off }} style={({ pressed }) => [styles.send, price != null && styles.sendWide, off && styles.muted, pressed && styles.pressed]}>
