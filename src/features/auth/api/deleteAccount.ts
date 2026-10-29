@@ -12,6 +12,11 @@ import { forgetAllLocalPhotos } from '../../myroom/diary/photos';
 import { useMyRoomStore } from '../../myroom/store/myRoomStore';
 import { forgetAvatar } from '../../profile/avatar/avatar';
 import { forgetJourneyVoices } from '../../journey/api/voiceCache';
+import { useSavedJourneys } from '../../journey/store/savedJourneysStore';
+import { useJourneyProfile } from '../../journey/store/journeyProfileStore';
+import { useInbox } from '../../myroom/inbox/inboxStore';
+import { cancelReminders, useReminder } from '../../notifications/reminder';
+import { useLanguageStore } from '../../../shared/i18n';
 
 /** A self with no birth data — the same shape first run starts from, so the app asks again. */
 const EMPTY_SELF = { id: 'self', displayName: '', isUser: true as const };
@@ -83,7 +88,7 @@ export async function forgetLocalData() {
   // keeps its state in memory after the row is gone and the previous person's saved people would
   // stay on screen until the app restarts — the exact moment they must not be there.
   // playerCharacter too: left set, the next account on this phone skipped its character screen.
-  useSubjectsStore.setState({ self: EMPTY_SELF, subjects: [], profileDeferred: false, playerCharacter: undefined, playerHair: '', playerOutfit: '', creatorSeen: false });
+  useSubjectsStore.setState({ self: EMPTY_SELF, subjects: [], profileDeferred: false, playerCharacter: undefined, playerHair: '', playerOutfit: '', creatorSeen: false, characterUnpushed: false });
   useConversationsStore.setState({ byId: {}, order: [] });
   useFavoritesStore.setState({ ids: [] });
   // The 아카이브 and the diary (spec 006) too: left in memory, the next person would see these
@@ -92,6 +97,19 @@ export async function forgetLocalData() {
   useDiaryStore.setState({ reflections: {}, photos: {}, photoDeletes: [] });
   // My Room's cached layout is keyed per account already; dropped all the same, with the rest.
   useMyRoomStore.setState({ byUser: {} });
+  // 29-10: the saved journeys (readings for people by name, listed in the 아카이브), the profile a
+  // ride was for, and the mailbox. Left in memory, the next store update wrote them back — and the
+  // previous person's `checkin:<today>` row made the next account's own check-in gift never appear.
+  useSavedJourneys.setState({ journeys: [], unlocks: {}, heard: {} });
+  useJourneyProfile.setState({ subjectId: 'self' });
+  useInbox.setState({ items: [] });
+  // The language stays (it is the device's), but a choice the last account never took is not
+  // pushed into the next one's (29-10, languageSync).
+  useLanguageStore.setState({ langUnpushed: false });
+  // The reminder's time is the device's; the day it skips is the account's check-in. The planned
+  // ones go now (29-10): they kept ringing "check in" at a signed-out phone, in the old language.
+  useReminder.setState({ checkedOn: null });
+  await cancelReminders();
   await forgetAllLocalPhotos();
   // The profile photo is a face: the next person on this phone must not open My Page on it.
   await forgetAvatar();

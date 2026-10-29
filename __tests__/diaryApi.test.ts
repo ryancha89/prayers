@@ -137,7 +137,7 @@ describe('photos', () => {
     await flushPhotos();
     expect(calls).toHaveLength(0); // dirty: its upload would only 404
 
-    useArchiveStore.getState().pushed([m.id], []);
+    useArchiveStore.getState().pushed([m], []);
     handler = () => ({ status: 503, body: {} });
     await flushPhotos();
     expect(useDiaryStore.getState().photos[m.id][0].uploaded).toBe(false);

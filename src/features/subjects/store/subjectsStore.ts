@@ -48,6 +48,10 @@ interface SubjectsState {
    *  not count: those accounts are shown the creator once more on their next launch. */
   creatorSeen: boolean;
   setCreatorSeen: () => void;
+  /** A pick saved on this device that the account has not confirmed yet (29-10). Persisted, so a
+   *  pick made offline survives a relaunch and the next sync pushes it instead of pulling the
+   *  account's older one over it. Written by characterSync only. */
+  characterUnpushed: boolean;
   /**
    * The player chose "later" at first run.
    *
@@ -84,6 +88,7 @@ export const useSubjectsStore = create<SubjectsState>()(
       setPlayerOutfit: hex => set({ playerOutfit: hex }),
       creatorSeen: false,
       setCreatorSeen: () => set({ creatorSeen: true }),
+      characterUnpushed: false,
       subjects: [
         // Gender is part of the seed because it is part of a usable subject: without it these two
         // would sit in the picker looking complete and then send the player to a form.
@@ -130,6 +135,7 @@ export const useSubjectsStore = create<SubjectsState>()(
         playerHair: state.playerHair,
         playerOutfit: state.playerOutfit,
         creatorSeen: state.creatorSeen,
+        characterUnpushed: state.characterUnpushed,
       }),
     },
   ),

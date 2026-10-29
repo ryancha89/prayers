@@ -28,6 +28,10 @@ import { getUserAuth, signedOut, storeGameToken } from '../src/features/auth/sto
 import { useSubjectsStore } from '../src/features/subjects/store/subjectsStore';
 import { useConversationsStore } from '../src/features/conversations/store/conversationsStore';
 import { useFavoritesStore } from '../src/features/counselors/store/favoritesStore';
+import { useSavedJourneys } from '../src/features/journey/store/savedJourneysStore';
+import { useJourneyProfile } from '../src/features/journey/store/journeyProfileStore';
+import { noteCheckIn, useInbox } from '../src/features/myroom/inbox/inboxStore';
+import { useReminder } from '../src/features/notifications/reminder';
 
 type FetchMock = jest.Mock<Promise<Response>, [string, RequestInit?]>;
 const stubFetch = (body: unknown, status = 200): FetchMock => {
@@ -106,4 +110,30 @@ test('signing out clears the device without deleting anything', async () => {
   expect(useFavoritesStore.getState().ids).toEqual([]);
   // forgetLocalData is only the device half — the account survives it.
   expect(getUserAuth()).toBe('dev-doomed');
+});
+
+test('signing out drops the journeys, the mailbox and the check-in day too (29-10)', async () => {
+  stubFetch({}); // the sign-in's language sync must not reach a real server
+  const today = '2026-10-29';
+  useSavedJourneys.setState({
+    journeys: [{ id: 'j1', journeyId: 'y2027', counselorId: 'yuna', tone: 'warm', lang: 'ko', year: 2027, content: {} as never,
+      savedAt: today, updatedAt: today, profileKey: '1960-01-01 --:-- F', subjectName: 'Mom' }],
+    unlocks: { y2027: ['m1'] },
+    heard: { y2027: ['c1'] },
+  });
+  useJourneyProfile.setState({ subjectId: 'subj_mom' });
+  noteCheckIn(today, true, 30);
+  useSubjectsStore.setState({ characterUnpushed: true });
+  useReminder.setState({ checkedOn: today });
+
+  await forgetLocalData();
+
+  expect(useSavedJourneys.getState()).toMatchObject({ journeys: [], unlocks: {}, heard: {} });
+  expect(useJourneyProfile.getState().subjectId).toBe('self');
+  expect(useInbox.getState().items).toEqual([]);
+  expect(useSubjectsStore.getState().characterUnpushed).toBe(false);
+  expect(useReminder.getState().checkedOn).toBeNull();
+  // The next account's own check-in today gets its own row, instead of finding the last one's.
+  noteCheckIn(today, false);
+  expect(useInbox.getState().items.map(i => [i.id, i.data.claimed])).toEqual([[`checkin:${today}`, false]]);
 });

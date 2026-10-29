@@ -53,8 +53,9 @@ interface ArchiveState {
 
   markAnswered: (questionId: number) => void;
 
-  /** Called by memoriesApi after a successful push: the queue is clear up to these ids. */
-  pushed: (ids: string[], deletedIds: string[]) => void;
+  /** Called by memoriesApi after a successful push, with the rows exactly as they were sent: each
+   *  one's dirty mark is cleared only if the row has not been edited since. */
+  pushed: (sent: ArchiveMemory[], deletedIds: string[]) => void;
   /** Called by memoriesApi after a pull: the server's rows, merged under local unsynced edits. */
   merge: (rows: ArchiveMemory[]) => void;
 
@@ -185,9 +186,16 @@ export const useArchiveStore = create<ArchiveState>()(
       markAnswered: questionId =>
         set(s => ({ answeredQuestions: [...new Set([...s.answeredQuestions, questionId])] })),
 
-      pushed: (ids, deletedIds) =>
+      // 29-10: an edit made while the push was in flight is NOT what the server got. Clearing its
+      // mark by id lost it twice over — the pull that follows put the server's older copy back on
+      // the phone, and nothing pushed the edit again. Every edit replaces the row object (update /
+      // add never mutate), so "unchanged since it was sent" is the same object still in the list.
+      pushed: (sent, deletedIds) =>
         set(s => ({
-          dirty: s.dirty.filter(d => !ids.includes(d)),
+          dirty: s.dirty.filter(d => {
+            const was = sent.find(m => m.id === d);
+            return !was || s.memories.find(m => m.id === d) !== was;
+          }),
           deleted: s.deleted.filter(d => !deletedIds.includes(d)),
           lastSyncedAt: now(),
         })),

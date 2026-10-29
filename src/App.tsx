@@ -20,6 +20,7 @@ import { CoinShopSheet } from './features/coins/components/CoinShopSheet';
 import { SceneTransitionOverlay } from './shared/transition/SceneTransitionOverlay';
 import { startCoinPurchaseRecovery } from './features/coins/api/coinsApi';
 import { applyReminder } from './features/notifications/reminder';
+import { useLanguageStore } from './shared/i18n';
 import { useAuthStore } from './features/auth/store/authStore';
 import { syncAccountCharacter } from './features/character/characterSync';
 import { useJourneyPlayer } from './features/journey/player/journeyPlayer';
@@ -162,8 +163,10 @@ const App: React.FC = () => {
   useEffect(() => (signedIn ? startCoinPurchaseRecovery() : undefined), [signedIn]);
   // The character is reconciled whenever someone is signed in: at launch, and on every sign-in.
   useEffect(() => { if (signedIn) void syncAccountCharacter(); }, [signedIn]);
-  // The check-in reminder's 14-day window rolls forward on every launch.
-  useEffect(() => { void applyReminder(); }, []);
+  // The check-in reminder's 14-day window rolls forward on every launch — and is planned again on
+  // sign-in/out (none while signed out) and on a language change, whose words it carries (29-10).
+  const lang = useLanguageStore(s => s.lang);
+  useEffect(() => { void applyReminder(); }, [signedIn, lang]);
   const onSplashDone = useCallback(() => {
     setSplashDone(true);
     // The splash chime has finished; the bed can come up under whatever screen is showing.

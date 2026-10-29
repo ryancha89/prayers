@@ -17,6 +17,11 @@ import { devlog } from '../../shared/devlog';
  * - It runs at launch for a player already signed in, not only at sign-in: login comes before the
  *   creator and sign-out clears the pick, so at sign-in there is never a local pick to push.
  * - A pick made while the GET was in flight wins over the account's older one.
+ *
+ * QA 29-10: a pick that has not reached the account survives a relaunch. Saved while the GET had
+ * failed (offline, 401) — or pushed and refused — it used to live only in this module's counter,
+ * which a relaunch resets, and the next launch's sync pulled the account's OLD hair over it. The
+ * store's persisted `characterUnpushed` now says "push, don't pull" until a push lands.
  */
 
 /** null = not known yet (no GET answered), false = a server without the fields. */
@@ -41,10 +46,18 @@ function hydrated(): Promise<void> {
 function pushLocal(why: string): Promise<boolean> {
   const st = useSubjectsStore.getState();
   if (!st.playerCharacter) return Promise.resolve(false);
-  return saveAccountCharacter({
+  const sent = {
     playerCharacter: st.playerCharacter, playerHair: st.playerHair, playerOutfit: st.playerOutfit, creatorSeen: st.creatorSeen,
-  }).then(ok => {
-    devlog(`[character] ${why} - pushed ${st.playerCharacter} (${ok ? 'ok' : 'failed'})`);
+  };
+  return saveAccountCharacter(sent).then(ok => {
+    devlog(`[character] ${why} - pushed ${st.playerCharacter} (${ok ? 'ok' : 'failed - kept for the next sync'})`);
+    // Settled only if the store still holds what was sent: a pick made during the request is
+    // pushed by its own save, and must not lose its mark to this answer.
+    const now = useSubjectsStore.getState();
+    if (ok && now.playerCharacter === sent.playerCharacter && now.playerHair === sent.playerHair
+      && now.playerOutfit === sent.playerOutfit && now.creatorSeen === sent.creatorSeen) {
+      useSubjectsStore.setState({ characterUnpushed: false });
+    }
     return ok;
   });
 }
@@ -60,6 +73,10 @@ export async function syncAccountCharacter(signal?: AbortSignal): Promise<void> 
   const st = useSubjectsStore.getState();
   if (localPicks !== picksBefore) {
     await pushLocal('picked during the sync');
+    return;
+  }
+  if (st.characterUnpushed && st.playerCharacter) {
+    await pushLocal('picked before the account heard of it');
     return;
   }
   if (remote.playerCharacter) {
@@ -78,9 +95,10 @@ export async function syncAccountCharacter(signal?: AbortSignal): Promise<void> 
 }
 
 /** The creator's "Start" (and a gender change): save what is now in the store. Before any GET has
- *  answered, it only counts the pick — the sync that answers pushes it. */
+ *  answered, it only marks the pick — the sync that answers (this launch's or the next) pushes it. */
 export function saveCharacterToAccount(): void {
   localPicks++;
+  useSubjectsStore.setState({ characterUnpushed: true });
   if (serverHasFields !== true) {
     devlog('[character] server fields unknown - the next sync pushes the pick');
     return;

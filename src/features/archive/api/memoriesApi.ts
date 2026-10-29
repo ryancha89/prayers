@@ -24,7 +24,6 @@ export async function pushArchive(): Promise<boolean> {
   if (!headers) return false;
 
   const upserts = memories.filter(m => dirty.includes(m.id));
-  const pushedIds = upserts.map(m => m.id);
   const deletes = [...deleted];
   // A stalled connection must not hold a Save (spec 006 SC-003): give up and stay dirty.
   const abort = new AbortController();
@@ -50,7 +49,7 @@ export async function pushArchive(): Promise<boolean> {
       Array.isArray(body?.rejected) ? body.rejected.map((r: any) => String(r?.id ?? '')).filter(Boolean) : [],
     );
     if (rejected.size > 0 && __DEV__) devlog(`[archive] sync rejected ${[...rejected].join(',')}`);
-    useArchiveStore.getState().pushed(pushedIds.filter(id => !rejected.has(id)), deletes);
+    useArchiveStore.getState().pushed(upserts.filter(m => !rejected.has(m.id)), deletes);
     return rejected.size === 0;
   } catch {
     return false;
