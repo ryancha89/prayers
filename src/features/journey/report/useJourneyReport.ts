@@ -40,6 +40,13 @@ export function useJourneyReport(
   const [unlockError, setUnlockError] = useState<ReportState['unlockError']>(null);
   const [nonce, setNonce] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** The price the last unlock's reply set, and a count of unlocks: a poll that left before an unlock
+   *  landed carries the price from before it (29-10, the card went back to "1,000 PC"). */
+  const priced = useRef({ epoch: 0, price: 0 });
+  const take = useCallback((r: JourneyReport, epoch: number) => {
+    const p = priced.current;
+    setReport(p.epoch > epoch ? { ...r, momentPrice: p.price } : r);
+  }, []);
 
   const load = useCallback(async (signal?: AbortSignal) => {
     if (!journeyId || !tone) return null;
@@ -53,10 +60,11 @@ export function useJourneyReport(
     const started = Date.now();
     let alive = true;
     const tick = async () => {
+      const epoch = priced.current.epoch;
       const r = await load(ctrl.signal);
       if (!alive) return;
       if (r) {
-        setReport(r);
+        take(r, epoch);
         setFailed(false);
       } else {
         setFailed(true);
@@ -70,7 +78,7 @@ export function useJourneyReport(
       ctrl.abort();
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [journeyId, tone, load, nonce]);
+  }, [journeyId, tone, load, nonce, take]);
 
   const unlock = useCallback(async (momentId: string) => {
     if (!journeyId || !counselorId || !tone || unlocking) return;
@@ -84,16 +92,23 @@ export function useJourneyReport(
       return;
     }
     const chapterId = momentId.split('#')[0];
+    // What the rest costs now is the server's answer to this unlock (0 once the journey is paid). The
+    // card read the report's price, else the ride's — and only the train ever lowered the ride's, so
+    // after paying here it kept offering "1,000 PC · Unlock the full journey" (29-10).
+    const price = result.momentPrice ?? 0;
+    priced.current = { epoch: priced.current.epoch + 1, price };
+    setReport(prev => (prev ? { ...prev, momentPrice: price } : prev));
     result.parts.forEach(p => useSavedJourneys.getState().addUnlock(journeyId, counselorId, chapterId, p, result.summary));
     const player = useJourneyPlayer.getState();
     if (player.journeyId === journeyId && player.counselorId === counselorId && player.content) {
       const content = result.parts.reduce((c, p) => withPart(c, chapterId, p, result.summary), player.content);
-      useJourneyPlayer.setState({ content });
+      useJourneyPlayer.setState({ content: { ...content, momentPrice: price } });
     }
+    const epoch = priced.current.epoch;
     const r = await load();
-    if (r) setReport(r);
+    if (r) take(r, epoch);
     setUnlocking(null);
-  }, [journeyId, counselorId, tone, lang, unlocking, load]);
+  }, [journeyId, counselorId, tone, lang, unlocking, load, take]);
 
   return { report, failed: failed && !report, unlocking, unlockError, retry: () => setNonce(n => n + 1), unlock };
 }
