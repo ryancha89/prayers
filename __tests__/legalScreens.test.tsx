@@ -77,3 +77,22 @@ test('the terms do not promise a provider the app does not offer', () => {
   expect(all).not.toMatch(/Kakao/i);
   expect(all).not.toMatch(/Manse Calendar/i);
 });
+
+test('every language states the purchase-record retention that account deletion keeps', () => {
+  // Until 29-10 the policy said deletion removed "coins" with no exception, while the server
+  // (saju_server Api::V1::Prayers::AccountController#destroy) keeps store purchase rows for 5 years.
+  // Each written-out language must name the exception, the period and the law; ja and both Chinese
+  // fall back to English and are checked through that fallback.
+  const retention: Record<string, RegExp[]> = {
+    'Privacy Policy': [/5 years/, /Act on Consumer Protection in Electronic Commerce/, /transaction ID/],
+    '개인정보 처리방침': [/5년/, /전자상거래 등에서의 소비자보호에 관한 법률/, /거래 ID/],
+    'Chính sách quyền riêng tư': [/5 năm/, /thương mại điện tử/, /mã giao dịch/],
+  };
+  for (const { code: lang } of LANGUAGES) {
+    const d = docFor('privacy', lang);
+    const patterns = retention[d.title];
+    expect(patterns).toBeDefined();
+    const text = d.sections.flatMap(s => s.body).join(' ');
+    for (const p of patterns) expect(text).toMatch(p);
+  }
+});
