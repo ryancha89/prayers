@@ -234,7 +234,10 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
       patch({ stage: 'menu', returning: false, line });
     }, ms);
   };
-  useEffect(() => () => { clearMove(); }, []);
+  // Gone from the screen (Back to the World, Leave anyway, any exit): an answer still on its way is
+  // another generation's. Nothing bumped `gen` here before 29-10, so a late reading still fired seven
+  // warmVoice syntheses and sent CAFE_TAROT_REVEAL/SPEAK to a cafe the player had left.
+  useEffect(() => () => { gen.current += 1; clearMove(); }, []);
 
   /** One purchase intent → one request_id, kept across retries (cafeApi's rule). */
   const intent = useRef<{ paid: CafePaid; id: string } | null>(null);
@@ -565,6 +568,8 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     patch({ leaveAsk: null });
     if (kind === 'end') endNow();
     else if (kind === 'leave') leaveNow();
+    // The screen navigates away; the answer must not land in the gap before the table unmounts.
+    else if (kind === 'world') gen.current += 1;
     return kind;
   };
 

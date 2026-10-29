@@ -473,6 +473,52 @@ describe('a tarot reading at the table', () => {
     expect(byTestID('cafe-seated').length).toBeGreaterThan(0);
   });
 
+  // 29-10: nothing bumped the generation when the cafe went away, so a late reading still warmed
+  // seven voice lines on the server and sent REVEAL/SPEAK to a cafe the player had left.
+  const ttsCalls = () => sent.filter(c => c.url.includes('tts/url')).length;
+  const tarotToUnity = () => types().filter(t => t === 'CAFE_TAROT_REVEAL' || t === 'CAFE_TAROT_SPEAK').length;
+
+  it('Back to the World + Leave anyway drops the late reading silently', async () => {
+    let release!: () => void;
+    serve('cafe/tarot/readings', { ...ok(READING), wait: new Promise<void>(r => { release = r; }) });
+    await toChosen();
+    await press('Back to the World');
+    await press('Leave anyway');
+    expect(mockLeft).toHaveBeenCalledWith('GO_BACK');
+    const toUnity = tarotToUnity();
+    await act(async () => { release(); });
+    await flush();
+    expect(ttsCalls()).toBe(0);
+    expect(tarotToUnity()).toBe(toUnity);
+  });
+
+  it('a reading that lands after the cafe unmounted is dropped silently', async () => {
+    let release!: () => void;
+    serve('cafe/tarot/readings', { ...ok(READING), wait: new Promise<void>(r => { release = r; }) });
+    await toChosen();
+    const toUnity = tarotToUnity();
+    act(() => tree!.unmount());
+    tree = null;
+    await act(async () => { release(); });
+    await flush();
+    expect(ttsCalls()).toBe(0);
+    expect(tarotToUnity()).toBe(toUnity);
+  });
+
+  it('a coffee that lands after the cafe unmounted sends nothing to Unity', async () => {
+    let release!: () => void;
+    serve('cafe/coffee', { ...ok({ fortune: 'Late.', coins_balance: 70 }), wait: new Promise<void>(r => { release = r; }) });
+    await sit();
+    await press('Order Coffee');
+    await press('Pay 30 PC');
+    act(() => tree!.unmount());
+    tree = null;
+    await act(async () => { release(); });
+    await flush();
+    expect(calls('CAFE_COOKIE_FORTUNE')).toHaveLength(0);
+    expect(calls('CAFE_COFFEE_ORDER')).toHaveLength(0);
+  });
+
   it('End with nothing being written ends at once, no question', async () => {
     serve('cafe/tarot/readings', ok(READING));
     await toChosen();
