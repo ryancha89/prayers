@@ -117,7 +117,7 @@ const EN: Record<LegalDoc, Document> = {
         body: [
           'On our servers, against your account, and on this device so the app works between launches.',
           'Deleting your account deletes from our servers everything attached to it — readings and conversations, birth details, diary, diary and profile photos, coin balance, check-ins, character and room — and clears the saved people, history and favourites from this device.',
-          'One exception: records of store purchases (product, amount, platform, transaction ID and date) are kept for 5 years, as the Korean Act on Consumer Protection in Electronic Commerce requires, and then deleted. They are no longer linked to your name, email or photo.',
+          'One exception: records of store purchases (product, amount, platform, transaction ID and date) are kept for 5 years, as the Korean Act on Consumer Protection in Electronic Commerce requires, and then deleted. They are no longer linked to your name, email or photo. After they are deleted we keep only an irreversibly hashed code derived from each store transaction number, which cannot identify you, so the same purchase can never be credited twice.',
           'We also keep a note that the account was deleted — when, which sign-in provider, and the reason if you gave one — with no name, email or photo, so the deleted account can never be signed into again.',
         ],
       },
@@ -216,7 +216,7 @@ const KO: Record<LegalDoc, Document> = {
         body: [
           '계정에 연결하여 서버에 보관하며, 앱이 실행 사이에 동작하도록 이 기기에도 저장합니다.',
           '계정을 삭제하면 계정에 연결된 모든 정보 — 상담 기록과 대화, 생년월일 정보, 일기, 일기·프로필 사진, 코인 잔액, 출석 기록, 캐릭터와 방 — 가 서버에서 삭제되고, 이 기기에 저장된 사람·기록·즐겨찾기도 지워집니다.',
-          '예외: 스토어 구매 기록(상품, 금액, 플랫폼, 거래 ID, 일시)은 「전자상거래 등에서의 소비자보호에 관한 법률」에 따라 5년간 보관한 뒤 삭제합니다. 이 기록은 더 이상 이름·이메일·사진과 연결되지 않습니다.',
+          '예외: 스토어 구매 기록(상품, 금액, 플랫폼, 거래 ID, 일시)은 「전자상거래 등에서의 소비자보호에 관한 법률」에 따라 5년간 보관한 뒤 삭제합니다. 이 기록은 더 이상 이름·이메일·사진과 연결되지 않습니다. 삭제 후에는 같은 구매가 두 번 적립되지 않도록, 각 스토어 거래 번호에서 되돌릴 수 없게 변환한 코드만 남기며 이 코드로는 이용자를 알아볼 수 없습니다.',
           '삭제된 계정으로 다시 로그인되지 않도록, 계정이 삭제되었다는 사실(삭제 일시, 로그인 제공자, 입력한 경우 탈퇴 사유)은 이름·이메일·사진 없이 남겨 둡니다.',
         ],
       },
@@ -315,7 +315,7 @@ const VI: Record<LegalDoc, Document> = {
         body: [
           'Trên máy chủ của chúng tôi, gắn với tài khoản của bạn, và trên chính thiết bị này để ứng dụng hoạt động giữa các lần mở.',
           'Xoá tài khoản sẽ xoá khỏi máy chủ mọi thứ gắn với nó — kết quả xem và cuộc trò chuyện, thông tin ngày sinh, nhật ký, ảnh nhật ký và ảnh đại diện, số dư coin, ngày điểm danh, nhân vật và căn phòng — và xoá những người đã lưu, lịch sử và mục yêu thích khỏi thiết bị này.',
-          'Một ngoại lệ: hồ sơ giao dịch mua trên cửa hàng (sản phẩm, số tiền, nền tảng, mã giao dịch và ngày) được giữ 5 năm theo yêu cầu của Luật Bảo vệ người tiêu dùng trong thương mại điện tử của Hàn Quốc, sau đó bị xoá. Hồ sơ này không còn gắn với tên, email hay ảnh của bạn.',
+          'Một ngoại lệ: hồ sơ giao dịch mua trên cửa hàng (sản phẩm, số tiền, nền tảng, mã giao dịch và ngày) được giữ 5 năm theo yêu cầu của Luật Bảo vệ người tiêu dùng trong thương mại điện tử của Hàn Quốc, sau đó bị xoá. Hồ sơ này không còn gắn với tên, email hay ảnh của bạn. Sau khi xoá, chúng tôi chỉ giữ một mã băm không thể đảo ngược, tạo từ mã giao dịch của cửa hàng, để cùng một giao dịch không bao giờ được cộng hai lần; mã này không thể dùng để nhận ra bạn.',
           'Chúng tôi cũng giữ một ghi chú rằng tài khoản đã bị xoá — thời điểm, phương thức đăng nhập, và lý do nếu bạn có ghi — không kèm tên, email hay ảnh, để tài khoản đã xoá không bao giờ đăng nhập lại được.',
         ],
       },
