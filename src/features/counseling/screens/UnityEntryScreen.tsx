@@ -14,7 +14,7 @@ import { useCounselingStore } from '../store/counselingStore';
 import { defaultTopicFor } from '../topicsForCounselor';
 import { getUnityBridge, isNativeUnity, unityApiBase } from '../bridge';
 import { isPixelCounselor } from '../pixel/pixelCounselors';
-import { getUserAuth } from '../../auth/store/authStore';
+import { getUserAuth, validGameToken } from '../../auth/store/authStore';
 import { CounselingTopic, UnityToRNEvent } from '../types';
 import { fetchCoins } from '../../coins/api/coinsApi';
 import { useCoins } from '../../coins/store/coinStore';
@@ -121,6 +121,10 @@ export const UnityEntryScreen: React.FC = () => {
       // The ACCOUNT, not the device. Unity forwards this as the User-Auth header, so the reading
       // the room fetches belongs to whoever is signed in — and follows them to their next phone.
       auth: getUserAuth() ?? '',
+      // The account's 24h pgt_ token (29-10). The embedded player no longer ships the server's static
+      // secret, so its Rails calls (chat, voice, mic) run on this. Absent or expired, Unity mints
+      // its own from `auth` — no secret either way.
+      gameToken: validGameToken() ?? '',
       playerGender: useSubjectsStore.getState().self.gender,
       playerCharacter: playerCharacter(),
       playerHair: playerHair(),

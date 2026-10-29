@@ -129,6 +129,10 @@ export interface UnitySessionPayload {
   /** The signed-in Prayers account uid (`pr_…`; `dev-…` in a dev build). Unity sends it as
    *  User-Auth and exchanges it for its own `pgt_` token at `/api/v1/prayers/game/token`. */
   auth?: string;
+  /** The account's 24h `pgt_` Game-Token, when the app holds a live one (29-10). Unity signs its Rails
+   *  calls with it first — the player ships no static server secret. '' = Unity mints its own from
+   *  `auth`. Mirrored by name in Unity's RNSessionPayload. */
+  gameToken?: string;
   /** The account holder's gender: which body the player walks (Unity PlayerBody). Absent = Theo. */
   playerGender?: 'male' | 'female';
   /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
