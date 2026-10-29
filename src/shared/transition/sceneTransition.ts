@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import type { ImageSourcePropType } from 'react-native';
 import type { TranslationKey } from '../i18n';
 import { isNativeUnity } from '../../features/counseling/bridge';
-import { MYROOM_PICTURE } from '../../features/myroom/picture';
 
 /**
  * ONE scene transition for every 3D place (27-10, user: "nên có phần loading để mỗi lần chuyển scene
@@ -17,11 +16,20 @@ import { MYROOM_PICTURE } from '../../features/myroom/picture';
  * later than MAX_MS (a scene that never answers must not trap the player).
  *
  * Without the embedded player (Expo, Jest, the mock) nothing is shown: there is no load to cover.
+ *
+ * ONE picture for every place (29-10, user: the characters "scale lên nhìn không được hợp lý… nên vẽ
+ * 1 màn hình để loading chung"). Each place used to bring its own art, and the counsellor, the creator
+ * and the lecture brought a character card blown up to full screen. The words stay per place.
  */
+export const LOADING_ART: { portrait: ImageSourcePropType; landscape: ImageSourcePropType } = {
+  portrait: require('./assets/loading.jpg'),
+  // The same scene composed wide: cropping the portrait one to a landscape screen kept only the floor.
+  landscape: require('./assets/loading_landscape.jpg'),
+};
+
 export type ScenePlace = 'world' | 'myroom' | 'cafe' | 'meditation' | 'sleep' | 'journey' | 'lecture' | 'counsel' | 'creator';
 
 export interface PlaceDef {
-  art: ImageSourcePropType;
   title: TranslationKey;
   intro: TranslationKey;
   /** The Unity event that means "the place is on screen". */
@@ -37,49 +45,38 @@ export const GENERAL_TIPS: TranslationKey[] = ['transition.tip.chart', 'transiti
 
 export const PLACES: Record<ScenePlace, PlaceDef> = {
   world: {
-    art: require('../../features/world/assets/world_arrival.jpg'),
     title: 'transition.world.title', intro: 'transition.world.intro', ready: 'WORLD_READY',
     tips: ['transition.tip.world.doors', 'transition.tip.world.map'],
   },
   myroom: {
-    art: MYROOM_PICTURE.portrait,
     title: 'world.zone.myroom', intro: 'transition.myroom.intro', ready: 'MYROOM_READY',
     tips: ['transition.tip.myroom.decor'],
   },
   cafe: {
-    art: require('../../features/cafe/assets/coffee.jpg'),
     title: 'world.zone.cafe', intro: 'transition.cafe.intro', ready: 'CAFE_READY',
     tips: ['transition.tip.cafe.sit'],
   },
   meditation: {
-    art: require('../../features/meditation/assets/room.jpg'),
     title: 'world.zone.meditation', intro: 'transition.meditation.intro', ready: 'MEDITATION_READY',
     tips: ['transition.tip.meditation.breath'],
   },
   sleep: {
-    art: require('../../features/meditation/assets/sleep_card.jpg'),
     title: 'home.sleep', intro: 'transition.sleep.intro', ready: 'MEDITATION_READY',
     tips: ['transition.tip.sleep.dim'],
   },
   journey: {
-    art: require('../../features/journey/assets/platform_night.jpg'),
     title: 'world.zone.journey', intro: 'transition.journey.intro', ready: 'JOURNEY_READY',
     tips: ['transition.tip.journey.stops'],
   },
   lecture: {
-    art: require('../../features/philosophy/assets/schopenhauer_shot_front.jpg'),
     title: 'transition.lecture.title', intro: 'transition.lecture.intro', ready: 'LECTURE_READY',
     tips: [],
   },
   creator: {
-    // replaced by the picked character's card art
-    art: require('../../features/character/assets/basic_female.png'),
     title: 'transition.creator.title', intro: 'transition.creator.intro', ready: 'CHARACTER_READY',
     tips: ['transition.tip.creator.turn', 'transition.tip.character'],
   },
   counsel: {
-    // replaced by the counselor's own card art when one is given
-    art: require('../../features/world/assets/world_arrival.jpg'),
     title: 'world.zone.counseling', intro: 'transition.counsel.intro', ready: 'UNITY_READY',
     tips: ['transition.tip.counsel.specific', 'transition.tip.recall'],
   },
@@ -87,8 +84,7 @@ export const PLACES: Record<ScenePlace, PlaceDef> = {
 
 interface Active {
   place: ScenePlace;
-  /** Overrides for this visit: a counselor's art and name. */
-  art?: ImageSourcePropType;
+  /** Override for this visit: a counselor's name. */
   name?: string;
   tip: TranslationKey;
   startedAt: number;
@@ -98,7 +94,7 @@ interface Active {
 
 interface TransitionState {
   active: Active | null;
-  begin: (place: ScenePlace, extra?: { art?: ImageSourcePropType; name?: string }) => void;
+  begin: (place: ScenePlace, extra?: { name?: string }) => void;
   end: (seq?: number) => void;
 }
 
@@ -119,11 +115,11 @@ export const useSceneTransition = create<TransitionState>(set => ({
   begin: (place, extra) => {
     if (!isNativeUnity()) return;
     seq += 1;
-    set({ active: { place, art: extra?.art, name: extra?.name, tip: pickTip(place), startedAt: Date.now(), seq } });
+    set({ active: { place, name: extra?.name, tip: pickTip(place), startedAt: Date.now(), seq } });
   },
   end: s => set(state => (state.active && (s == null || s === state.active.seq) ? { active: null } : state)),
 }));
 
 /** Called by a screen as it opens its place. */
-export const beginSceneTransition = (place: ScenePlace, extra?: { art?: ImageSourcePropType; name?: string }) =>
+export const beginSceneTransition = (place: ScenePlace, extra?: { name?: string }) =>
   useSceneTransition.getState().begin(place, extra);

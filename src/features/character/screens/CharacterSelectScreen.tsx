@@ -181,7 +181,7 @@ export const CharacterSelectScreen: React.FC = () => {
   };
   useEffect(() => {
     if (!native) return undefined;
-    beginSceneTransition('creator', { art: options.find(c => c.id === picked)?.art });
+    beginSceneTransition('creator');
     const off = nativeUnityBridge.onEvent(e => {
       if (e.type === 'CHARACTER_BODY') {
         stopBodyLoading(Math.max(0, bodySince.current + 350 - Date.now()));

@@ -6,10 +6,10 @@ import { SERIF } from '../components/hud/Hud';
 import { colors, spacing, typography } from '../theme';
 import { useT } from '../i18n';
 import { nativeUnityBridge } from '../../features/counseling/bridge';
-import { MAX_MS, MIN_MS, PLACES, useSceneTransition } from './sceneTransition';
+import { LOADING_ART, MAX_MS, MIN_MS, PLACES, useSceneTransition } from './sceneTransition';
 
 /**
- * The scene transition (see sceneTransition.ts): the place's picture full screen, darkening toward
+ * The scene transition (see sceneTransition.ts): the shared loading picture full screen, darkening toward
  * the bottom where its name, a line about it and a tip sit, with three breathing dots for "loading".
  * Mounted once at the App root, above the navigator, so it covers every screen's own wait.
  *
@@ -65,6 +65,7 @@ export const SceneTransitionOverlay: React.FC = () => {
   }, [active, end, fade, pulse]);
 
   if (!shown) return null;
+  const art = loadingArt(width, height);
   const place = PLACES[shown.place];
   const title = shown.name ?? t(place.title);
   const dot = (i: number) => ({
@@ -80,9 +81,9 @@ export const SceneTransitionOverlay: React.FC = () => {
       testID="scene-transition"
       pointerEvents={active ? 'auto' : 'none'}
       style={[StyleSheet.absoluteFill, styles.root, { opacity: fade }]}>
-      <Image source={shown.art ?? place.art} style={{ width, height }} resizeMode="cover" />
+      <Image source={art.source} style={art.style} resizeMode="cover" />
       {/* Only behind the words (user 27-10: the dark panel was "to… che nhiều cái"): a band sized to
-          the copy itself, with a soft step above it, so the place's picture stays visible. */}
+          the copy itself, with a soft step above it, so the picture stays visible. */}
       <View style={[StyleSheet.absoluteFill, styles.wash]} />
       {copyH > 0 ? (
         <>
@@ -91,7 +92,7 @@ export const SceneTransitionOverlay: React.FC = () => {
         </>
       ) : null}
       <View
-        style={[styles.copy, { paddingBottom: insets.bottom + spacing.lg }]}
+        style={[styles.copy, { paddingBottom: insets.bottom + spacing.lg, paddingLeft: insets.left + spacing.xl, paddingRight: insets.right + spacing.xl }]}
         onLayout={e => setCopyH(Math.round(e.nativeEvent.layout.height))}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.intro} numberOfLines={2}>
@@ -111,6 +112,16 @@ export const SceneTransitionOverlay: React.FC = () => {
     </Animated.View>
   );
 };
+
+/** The wide picture is 3:2. A phone held sideways is wider than that, so `cover` would crop it
+ *  evenly top and bottom and cut off the arch; this crops mostly from the floor instead. */
+const LANDSCAPE_ASPECT = 1536 / 1024;
+function loadingArt(width: number, height: number) {
+  if (width <= height) return { source: LOADING_ART.portrait, style: { width, height } };
+  const h = width / LANDSCAPE_ASPECT;
+  if (h <= height) return { source: LOADING_ART.landscape, style: { width, height } };
+  return { source: LOADING_ART.landscape, style: { position: 'absolute' as const, width, height: h, top: -(h - height) * 0.1 } };
+}
 
 const styles = StyleSheet.create({
   root: { backgroundColor: '#13101c', zIndex: 1000, elevation: 1000 },
