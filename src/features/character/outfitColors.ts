@@ -46,6 +46,8 @@ export const OUTFITS: Record<string, BodyOutfits> = {
     tops: [
       piece('hoodie', require('./assets/outfits/xb_f01_hoodie.png')),
       piece('knit', require('./assets/outfits/xb_f01_knit.png')),
+      // 02-11 evening: a long-sleeved overshirt worn over the bottoms — covers her as his clothes cover him
+      piece('shirt', require('./assets/outfits/xb_f01_shirt.png')),
     ],
     bottoms: [
       piece('jeans', require('./assets/outfits/xb_f01_jeans.png')),
