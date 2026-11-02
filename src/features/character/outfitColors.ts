@@ -73,12 +73,11 @@ export const OUTFITS: Record<string, BodyOutfits> = {
 const EMPTY: Outfit = { style: '', top: '', bottom: '' };
 
 /**
- * The garments (tops / bottoms) are OFF for now (02-11-2026, user: "đồ xấu quá… ẩn tạm đồ code đi"): the
- * code-built hoodie / knit / jeans / midi looked plain and kept showing holes in the bodies. They stay wired in
- * Unity and listed above; VRoid-made garments replace them, then this goes back to true. While off, the
- * creator shows only the styles and colours, and a stored top/bottom falls back to the artist's own.
+ * The garments (tops / bottoms) can be switched off here without touching Unity: off, the creator shows only
+ * the styles and colours, and a stored top/bottom falls back to the artist's own. Off for an hour on 02-11,
+ * back on the same evening (user: keep them, fix them).
  */
-export const GARMENTS_ON = false;
+export const GARMENTS_ON = true;
 
 export function outfitsFor(characterId: string | undefined): BodyOutfits | undefined {
   const b = characterId ? OUTFITS[characterId] : undefined;
