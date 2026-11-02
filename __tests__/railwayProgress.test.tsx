@@ -36,6 +36,7 @@ function mount(width: number, current = 1, content?: JourneyContent) {
 
 const titles = (tree: ReactTestRenderer.ReactTestRenderer) =>
   tree.root.findAll(n => (n.type as unknown) === 'Text' && n.props.numberOfLines === 1);
+/** The old compact rail's lone name overlay — gone since 30-10 (every name shows); kept to pin that. */
 const nameLabel = (tree: ReactTestRenderer.ReactTestRenderer) =>
   tree.root.findAll(n => n.props.testID === 'railway-now' && typeof n.type === 'string');
 const stops = (tree: ReactTestRenderer.ReactTestRenderer) =>
@@ -64,37 +65,25 @@ it.each([
   expect(w).toBeGreaterThanOrEqual(45);
 });
 
-it('SE sideways (240 pt): one name, every dot still travels', () => {
-  const { tree, onStation } = mount(240, 2);
-  const now = nameLabel(tree);
-  expect(now).toHaveLength(1);
-  expect(titles(tree)).toHaveLength(1);
-  const s = flat(now[0].props.style);
-  expect(s.left).toBeGreaterThanOrEqual(-32);
-  expect(s.left + s.width).toBeLessThanOrEqual(240 + 32);
+it('SE sideways (240 pt): every station is still named — two staggered rows — and every dot travels (30-10)', () => {
+  // "잠금열쇠 누르기 전에 이 챕터가 무슨 운인지 모르니까": a lock alone did not say what was behind it.
+  const { tree, onStation } = mount(240, 2, allLocked);
+  expect(titles(tree)).toHaveLength(drawn.length);
+  const spacing = 240 / last;
+  const chips = tree.root.findAll(n => typeof n.type === 'string' && n.findAll(c => (c.type as unknown) === 'Text' && c.props.numberOfLines === 1).length === 1
+    && flat(n.props.style).borderRadius === 11);
+  expect(chips).toHaveLength(drawn.length);
+  chips.forEach((c, i) => {
+    const st = flat(c.props.style);
+    // Two stations wide at most, so a name never reaches the next one on its own row…
+    expect(st.width).toBeLessThanOrEqual(2 * spacing);
+    // …and neighbours sit on different rows.
+    expect(st.marginTop).toBe(i % 2 === 1 ? 29 : 5);
+  });
   const all = stops(tree);
   expect(all).toHaveLength(drawn.length);
   act(() => all[all.length - 1].props.onPress());
   expect(onStation).toHaveBeenLastCalledWith(chapters.indexOf(drawn[last]));
-});
-
-it('SE sideways: the name is not a button and stops short of the neighbours\' locks', () => {
-  const width = 240;
-  const spacing = width / last;
-  for (const current of [0, 2, last]) {
-    const { tree } = mount(width, current, allLocked);
-    const now = nameLabel(tree)[0];
-    // Taps go through it to the slots underneath; it catches none of its own.
-    expect(now.props.pointerEvents).toBe('none');
-    expect(now.props.onPress).toBeUndefined();
-    const { left, width: w } = flat(now.props.style);
-    const x = (current / last) * width;
-    // Each neighbour's lock (9 pt, centred on its dot) stays clear of the name.
-    if (current > 0) expect(left).toBeGreaterThanOrEqual(x - spacing + 4.5);
-    if (current < last) expect(left + w).toBeLessThanOrEqual(x + spacing - 4.5);
-    // Every other station keeps its lock.
-    expect(tree.root.findAll(n => n.props.testID === 'railway-lock' && typeof n.type === 'string')).toHaveLength(last);
-  }
 });
 
 it('SE sideways: the dot slots tile the rail without overlapping, slop included', () => {

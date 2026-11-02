@@ -81,8 +81,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('script'); ap.add_argument('out_base')
     ap.add_argument('--voice', default='shimmer'); ap.add_argument('--sample', action='store_true')
-    ap.add_argument('--tempo', type=float, default=1.0); ap.add_argument('--lead', type=float, default=1.5); ap.add_argument('--tail', type=float, default=4.0)
+    ap.add_argument('--instructions', default=None, help='narration direction for the TTS model (default: the Korean one above)'); ap.add_argument('--tempo', type=float, default=1.0); ap.add_argument('--lead', type=float, default=1.5); ap.add_argument('--tail', type=float, default=4.0)
     args = ap.parse_args()
+    if args.instructions:
+        global INSTRUCTIONS
+        INSTRUCTIONS = args.instructions
     key = os.environ.get('OPENAI_API_KEY') or sys.exit('OPENAI_API_KEY missing')
     items = parse(Path(args.script).read_text())
     if args.sample:

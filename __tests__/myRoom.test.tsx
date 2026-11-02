@@ -361,18 +361,15 @@ describe('the My Room screen', () => {
     expect(pictureShown()).toBe(false);
   });
 
-  it('an SE with the long Vietnamese 편집 label leaves the motto out instead of running it under the pill', async () => {
-    // 29-10 device screenshot: "Trang trí phòng" took the room the motto needed and it drew under the pill.
+  it('keeps the motto clear of the stick: left out on an SE, shown on a wide phone (30-10)', async () => {
+    // The stick sits bottom-left as in the world now, and 꾸미기 moved to the right column.
     win = { width: 375, height: 667, scale: 2, fontScale: 1 };
     await render();
-    const pill = () => tree!.root.findAll(n => n.props.testID === 'myroom-edit')[0];
-    act(() => pill().props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 160, height: 40 } } }));
     expect(has('myroom-motto')).toBe(false);
-    // A short label on a wide phone keeps it.
+    expect(has('myroom-edit')).toBe(true);
     act(() => tree!.unmount());
     win = IPHONE_17;
     await render();
-    act(() => pill().props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 76, height: 40 } } }));
     expect(has('myroom-motto')).toBe(true);
   });
 
@@ -833,9 +830,8 @@ describe('the My Room screen', () => {
     const st = StyleSheet.flatten(wrap.props.style);
     expect(st.position).toBe('absolute');
     expect(st.left).toBeLessThan(40);
-    // On the 편집 row, not under it.
-    expect(st.bottom).toBeGreaterThanOrEqual(40);
-    expect(st.bottom).toBeLessThan(80);
+    // Down in the corner, where the world has it (30-10): 꾸미기 is no longer under it.
+    expect(st.bottom).toBeLessThan(40);
     expect(st.top).toBeUndefined();
     rotate(IPHONE_17);
     expect(mockHost.mounts).toBe(1);

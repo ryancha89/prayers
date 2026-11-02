@@ -1,0 +1,145 @@
+﻿분기ID,이전단계,다음단계,선택키,순서,화자,원문,이미지키
+EVT-001,morning_ready,morning_closing,finish_morning,1,narrator,"아직 물어볼 게 한참 남았는데, 시계를 보니 나갈 시간이었다.
+소파에 자리 잡은 고양이가 현관 쪽으로 고개를 돌렸다.",
+EVT-001,morning_ready,morning_closing,finish_morning,2,user,다녀올게.,
+EVT-001,morning_ready,morning_closing,finish_morning,3,assistant,알겠다. 다녀와라. 소파는 내가 지키고 있겠다.,
+EVT-002,arrival,morning_closing,finish_morning,1,narrator,"아직 물어볼 게 한참 남았는데, 시계를 보니 나갈 시간이었다.
+소파에 자리 잡은 고양이가 현관 쪽으로 고개를 돌렸다.",
+EVT-002,arrival,morning_closing,finish_morning,2,user,다녀올게. 여기 있어도 돼.,
+EVT-002,arrival,morning_closing,finish_morning,3,assistant,알겠다. 다녀와라. 소파는 내가 지키고 있겠다.,
+EVT-003,morning_closing,naming,evening,1,narrator,"2장 · 첫 저녁. 출근하는 동안에도 아침 일이 몇 번이나 떠올랐다.
+
+퇴근 후 문을 열자, 소파에서 노란 고개가 돌아왔다.",welcome
+EVT-003,morning_closing,naming,evening,2,assistant,왔나.,
+EVT-003,morning_closing,naming,evening,3,narrator,"아침에 미처 묻지 못했던 게 떠올라 입을 열었다. “그런데, 너는 이름이 뭐야?” 노란 고양이는 턱을 조금 들고 나를 바라본다.",
+EVT-003,morning_closing,naming,evening,4,assistant,이름 말인가? 너희가 발음하기는 어렵다. 부르기 편한 이름을 하나 정해봐라.,
+EVT-004,morning_closing,day,evening,1,narrator,"2장 · 첫 저녁. 출근하는 동안에도 아침 일이 몇 번이나 떠올랐다.
+
+퇴근 후 문을 열자, 소파에서 노란 고개가 돌아왔다.",welcome
+EVT-004,morning_closing,day,evening,2,assistant,왔나.,
+EVT-004,morning_closing,day,evening,3,assistant,그래서 오늘은 어땠나?,
+EVT-005,day,dinner,choose_dinner,1,assistant,메뉴를 고르는 건가. 어디 한번 보자. 네 안목을 확인해주지.,
+EVT-005,day,dinner,choose_dinner,2,narrator,"저녁을 고르려고 휴대폰으로 배달 앱을 열었다. 화면을 훑는데, 노란 앞발이 슬쩍 다가왔다.",menu
+EVT-005,day,dinner,choose_dinner,3,assistant,"넘기지 마라. 방금 그 생선 사진, 조금만 크게.",
+EVT-005,day,dinner,choose_dinner,4,assistant,내가 먹겠다는 건 아니다. 네 메뉴 고르는 안목을 점검하는 거다.,
+EVT-006,dinner,dinner,open_menu,1,narrator,"저녁을 고르려고 휴대폰으로 배달 앱을 열었다. 화면을 훑는데, 노란 앞발이 슬쩍 다가왔다.",menu
+EVT-006,dinner,dinner,open_menu,2,assistant,"넘기지 마라. 방금 그 생선 사진, 조금만 크게.",
+EVT-006,dinner,dinner,open_menu,3,assistant,내가 먹겠다는 건 아니다. 네 메뉴 고르는 안목을 점검하는 거다.,
+EVT-007,dinner,night,confirm_dinner,1,narrator,휴대폰을 내려놓고 고양이 쪽으로 몸을 돌렸다. 아직 하고 싶은 이야기는 남아 있었다.,
+EVT-008,night,ended,rest,1,narrator,"이야기를 잠시 접고 불을 낮췄다. 조용하던 집에, 오늘은 내 말에 답해주는 고양이가 있다.",
+EVT-008,night,ended,rest,2,assistant,내일도 물어볼 테니 오늘은 푹 쉬어라.,
+EVT-008,night,ended,rest,3,narrator,고양이가 소파 한쪽에 조용히 자리를 잡았다. 내일의 이야기는 아직 남아 있었다.,rest
+EVT-009,ended,third_play,third_chapter,1,narrator,"3장 · 웃을 일이 생겼다. 함께 지낸 지 며칠, 거실에서 바스락 소리가 났다.
+
+낚싯대를 잡으려던 고양이가 상자째 옆으로 조금 미끄러졌다. 상자 안에서 고개를 든 얼굴만은 태연했다.",box
+EVT-009,ended,third_play,third_chapter,2,assistant,계획대로다.,
+EVT-010,third_play,third_talk,reflect,1,narrator,"어느새 저녁, 거실이 조용해졌다. 고양이가 소파 한쪽에 자리를 잡고 나를 올려다봤다.",
+EVT-010,third_play,third_talk,reflect,2,assistant,요즘은 좀 어떤가? 지낼 만하냐는 말이다.,
+EVT-011,third_talk,third_closing,finish_third,1,narrator,"손을 내밀어 고양이의 등을 천천히 쓰다듬었다. 잠시 뒤 손을 멈추자, 하얀 앞발이 손목 위에 살짝 올라왔다. 고양이가 태연하게 나를 올려다봤다.",paw_hold
+EVT-011,third_talk,third_closing,finish_third,2,assistant,아직 끝났다고 안 했다.,
+EVT-011,third_talk,third_closing,finish_third,3,narrator,앞발은 손목 위에 그대로였다. 고양이는 대답을 기다리듯 눈을 느리게 감았다 떴다.,
+EVT-012,third_closing,fourth_arrival,fourth_chapter,1,narrator,"4장 · 별로였던 하루. 비가 내리는 어느 저녁, 젖은 소매를 털며 집에 들어섰다.
+
+쓰다듬으려고 손을 내밀자, 고양이가 젖은 손을 보고 고개를 살짝 뒤로 뺐다.",rain_home
+EVT-012,third_closing,fourth_arrival,fourth_chapter,2,assistant,손부터 닦고 와라. 내 털은 수건이 아니다. 나는 여기 있을 테니.,
+EVT-013,fourth_arrival,fourth_listen,wash,1,narrator,수건으로 손을 닦고 고양이 옆에 앉았다. 고양이가 귀를 돌리고 내 쪽을 바라봤다.,
+EVT-013,fourth_arrival,fourth_listen,wash,2,assistant,오늘은 좀 어땠나. 말하고 싶으면 듣고 있겠다.,
+EVT-014,fourth_listen,fourth_choice,choose_support,1,assistant,다음에는 어떻게 하고 싶지? 지금은 그냥 이야기만 해도 된다.,
+EVT-015,fourth_choice,fourth_after,practice_voice,1,user,할 말은 끝까지 하고 싶어.,
+EVT-015,fourth_choice,fourth_after,practice_voice,2,narrator,"고양이가 자세를 바로잡고 앉더니, 하얀 앞발 하나를 들어 보였다. 작은 발바닥이 내 쪽을 향했다.",voice_paw
+EVT-015,fourth_choice,fourth_after,practice_voice,3,assistant,잠깐. 내 말이 아직 안 끝났다. 원하면 이런 말부터 해봐도 된다.,
+EVT-015,fourth_choice,fourth_after,practice_voice,4,narrator,가만히 들고 있던 앞발이 조금 내려왔다. 고양이는 얼른 발을 바닥에 놓았다.,
+EVT-015,fourth_choice,fourth_after,practice_voice,5,assistant,발까지 오래 들 필요는 없다.,
+EVT-016,fourth_choice,fourth_after,practice_breathe,1,user,그 말을 계속 곱씹고 싶지는 않아.,
+EVT-016,fourth_choice,fourth_after,practice_breathe,2,narrator,고양이가 꼬리를 앞발에 단정히 감고 눈을 감았다. 잠깐 조용해지더니 낮은 골골 소리가 났다. 한쪽 눈이 살짝 열렸다.,breathe_cat
+EVT-016,fourth_choice,fourth_after,practice_breathe,3,assistant,"자는 건 아니다. 어깨에 힘 빼고, 편하게 숨을 쉬어봐라. 억지로 잊으려고 하지는 말고.",
+EVT-017,fourth_choice,fourth_after,just_listen,1,user,시범보다 내 얘기를 더 들어줘.,
+EVT-017,fourth_choice,fourth_after,just_listen,2,assistant,알겠다. 방법은 나중에 생각해도 된다. 지금은 네 이야기를 듣고 있겠다.,
+EVT-018,fourth_after,fourth_closing,finish_fourth,1,assistant,오늘 일을 혼자 전부 삼킬 필요는 없다. 더 말하고 싶어지면 그때도 듣고 있겠다.,
+EVT-018,fourth_after,fourth_closing,finish_fourth,2,narrator,고양이가 바로 옆에 조용히 자리를 잡았다. 거실에는 두 숨소리가 남았다.,
+EVT-019,fourth_listen,fourth_closing,finish_fourth,1,assistant,이런 저녁도 나쁘지 않군. 별일 없이 같이 있는 저녁 말이다.,
+EVT-019,fourth_listen,fourth_closing,finish_fourth,2,narrator,고양이가 바로 옆에 조용히 자리를 잡았다. 거실에는 두 숨소리가 남았다.,
+EVT-020,fourth_closing,fifth_home,fifth_chapter,1,narrator,"5장 · 당연해진 저녁. 함께 보낸 주말이 몇 번 지나갔다.
+
+창가 방석은 어느새 고양이의 자리가 됐다. 집에 돌아오자, 방석 밖으로 하얀 앞발을 늘어뜨린 고양이가 고개를 들었다.",window_cat
+EVT-020,fourth_closing,fifth_home,fifth_chapter,2,assistant,왔군. 손부터 씻고 와라. 내 자리는 잘 지켜뒀다.,
+EVT-021,fifth_home,fifth_choice,stretch_lesson,1,narrator,고양이가 러그로 내려와 앞발을 길게 뻗었다. 몸을 쭉 늘이더니 내 쪽을 바라봤다.,stretch_cat
+EVT-021,fifth_home,fifth_choice,stretch_lesson,2,assistant,원하면 이렇게 조금 늘여봐라. 오늘은 보기만 해도 된다.,
+EVT-022,fifth_choice,fifth_after,follow_stretch,1,user,알았어. 나도 해볼게.,
+EVT-022,fifth_choice,fifth_after,follow_stretch,2,narrator,바닥에 앉아 팔을 앞으로 뻗었다. 고양이가 내 주변을 한 바퀴 돌았다.,
+EVT-022,fifth_choice,fifth_after,follow_stretch,3,assistant,조금만 더.,
+EVT-022,fifth_choice,fifth_after,follow_stretch,4,narrator,고개를 들자 고양이가 비어 있는 소파에 올라가고 있었다.,
+EVT-022,fifth_choice,fifth_after,follow_stretch,5,assistant,기왕 시작했으니 마저 해라. 자리는 내가 맡아두겠다.,
+EVT-023,fifth_choice,fifth_after,repeat_stretch,1,user,한 번만 더 보여줘.,
+EVT-023,fifth_choice,fifth_after,repeat_stretch,2,narrator,고양이가 다시 앞발을 뻗었다. 설명하려던 입이 크게 벌어졌다. 긴 하품이었다.,yawn_cat
+EVT-023,fifth_choice,fifth_after,repeat_stretch,3,assistant,하품이 아니라 호흡이다.,
+EVT-024,fifth_choice,fifth_after,skip_stretch,1,user,오늘은 그냥 쉬면서 이야기하자.,
+EVT-024,fifth_choice,fifth_after,skip_stretch,2,assistant,그래. 쉬는 데까지 숙제가 있을 필요는 없지. 편하게 있어라.,
+EVT-025,fifth_after,fifth_closing,finish_fifth,1,narrator,무릎을 내어주자 고양이가 올라와 몸을 둥글게 말았다. 등을 천천히 쓸어주니 낮은 골골 소리가 났다.,lap_cat
+EVT-025,fifth_after,fifth_closing,finish_fifth,2,assistant,너도 이제 쉬어라.,
+EVT-026,fifth_after,fifth_closing,finish_fifth_quiet,1,assistant,오늘은 여기까지 이야기하지. 편하게 쉬어라.,
+EVT-026,fifth_after,fifth_closing,finish_fifth_quiet,2,narrator,고양이가 자기 자리에 편히 몸을 눕혔다. 익숙한 저녁이 조용히 이어졌다.,
+EVT-027,fifth_closing,sixth_walk,sixth_chapter,1,narrator,"6장 · 마지막 밤. 꿈에서 고양이가 나를 불렀다.
+
+처음 만났던 골목이었다. 담장 아래 노란 꽃이 피어 있었고, 몇 걸음 앞선 고양이가 나를 돌아봤다.",dream_alley
+EVT-027,fifth_closing,sixth_walk,sixth_chapter,2,assistant,조금 걷자.,
+EVT-028,sixth_walk,sixth_reveal,hear_secret,1,assistant,"할 말이 있다. 나는 고양이 별로 돌아가기 전에 한 사람을 골라, 한 달 동안 곁에 머물 수 있다.",
+EVT-028,sixth_walk,sixth_reveal,hear_secret,2,assistant,그 뒤에는 그 사람의 수호신이 된다. 사람 말을 하는 것도 그동안뿐이지.,
+EVT-028,sixth_walk,sixth_reveal,hear_secret,3,narrator,고양이가 잠시 말을 멈췄다. 노란 꽃 사이로 바람이 지나갔다.,
+EVT-028,sixth_walk,sixth_reveal,hear_secret,4,assistant,오늘이 마지막이다. 네가 일어나기 전까지는 여기 함께 있을 수 있다.,
+EVT-029,sixth_reveal,sixth_choice,choose_farewell,1,assistant,서두르지 마라. 나도 여기 있겠다.,
+EVT-030,sixth_choice,sixth_stay,farewell_hug,1,user,가지 말라고 하면 안 돼?,
+EVT-030,sixth_choice,sixth_stay,farewell_hug,2,narrator,고양이를 조심히 안았다. 하얀 앞발이 내 팔 위에 올라왔다. 고양이는 피하지 않고 나를 올려다봤다.,dream_hug
+EVT-030,sixth_choice,sixth_stay,farewell_hug,3,assistant,나도 네 집이 좋았다. 갈 수 있는 곳이라면 또 찾아갔을 거다.,
+EVT-031,sixth_choice,sixth_stay,farewell_lap,1,user,조금만 더 같이 있자.,
+EVT-031,sixth_choice,sixth_stay,farewell_lap,2,narrator,담장 아래에 앉아 무릎을 내어줬다. 고양이가 올라와 편히 몸을 눕혔다. 등을 쓸어주자 눈을 천천히 감았다.,dream_lap
+EVT-031,sixth_choice,sixth_stay,farewell_lap,3,assistant,그래. 조금만 더 같이 있자.,
+EVT-032,sixth_choice,sixth_stay,farewell_beside,1,user,곁에서 조금 더 이야기할래.,
+EVT-032,sixth_choice,sixth_stay,farewell_beside,2,assistant,그래. 옆에 있겠다. 하고 싶은 말은 천천히 해라.,
+EVT-033,sixth_stay,sixth_closing,finish_sixth,1,narrator,고양이를 조심히 품에 안고 이마를 맞댔다. 하얀 앞발이 내 팔 위에 놓였다. 멀리서 새벽빛이 조금씩 번졌다.,forehead_goodbye
+EVT-033,sixth_stay,sixth_closing,finish_sixth,2,assistant,"나도 고맙다. 잘 먹고, 잘 잤다. 네 덕분에.",
+EVT-033,sixth_stay,sixth_closing,finish_sixth,3,narrator,마지막 말이 골목에 조용히 남았다. 고양이는 여전히 내 곁에 있었다.,
+EVT-034,sixth_stay,sixth_closing,finish_sixth_words,1,narrator,마지막 인사를 전했다. 고양이는 곁에서 눈을 느리게 감았다 떴다. 멀리서 새벽빛이 조금씩 번졌다.,
+EVT-034,sixth_stay,sixth_closing,finish_sixth_words,2,assistant,"나도 고맙다. 잘 먹고, 잘 잤다. 네 덕분에.",
+EVT-034,sixth_stay,sixth_closing,finish_sixth_words,3,narrator,마지막 말이 골목에 조용히 남았다. 고양이는 여전히 내 곁에 있었다.,
+EVT-035,sixth_closing,seventh_empty,seventh_chapter,1,narrator,"7장 · 네가 남긴 자리. 아침빛에 눈을 떴다. 습관처럼 손을 뻗었지만, 베개 반쪽에는 아무도 없었다.
+
+거실도, 창가도 조용했다. 이름을 불러도 대답은 돌아오지 않았다.",empty_pillow
+EVT-036,seventh_empty,seventh_memory,remember_cheese,1,narrator,"휴대폰에는 치즈 사진이 남아 있었다. 소파를 차지한 얼굴, 상자에 들어간 뒷모습. 짧은 영상에서는 하품까지 당당했다.
+
+웃다가 눈물이 났다. 사진 속 모습을 누군가에게도 보여주고 싶었다. 혼자 보고 있으니 빈자리가 더 크게 느껴졌다.
+
+친구에게 고양이 사진 한 장과 메시지를 보냈다. “같이 지내던 고양이가 많이 생각나. 잠깐 통화할 수 있어?”
+
+잠시 뒤 전화가 왔다. 소파를 온통 제 자리처럼 쓰던 모습부터 이야기했다. 친구는 중간중간 웃으며 듣다가, 내가 말을 멈추면 잠깐 기다려줬다.",
+EVT-037,seventh_memory,seventh_breakfast,make_breakfast,1,narrator,"친구와 통화한 뒤로도 가끔 사진과 짧은 안부를 주고받았다. 아침밥을 챙긴 날에는 밥 위에 계란을 올리고 사진을 찍어 보냈다.
+
+“오늘은 아침 챙겨 먹는 중.” 잠시 뒤 답장이 왔다. “맛있겠다. 나도 이제 뭐 좀 먹어야지.”
+
+치즈가 있었다면 자기 검사부터 받아야 한다고 했을까. 빈자리는 여전했지만, 오늘 아침은 따뜻했다.",breakfast
+EVT-038,seventh_breakfast,seventh_pack,pack_supplies,1,narrator,"주말에는 남은 물품을 꺼냈다. 뜯지 않은 사료와 간식, 깨끗이 씻어둔 그릇. 봉지 위에 잠시 손을 얹었다.
+
+버리기보다는 필요한 곳에 보내고 싶었다. 보호소에 연락해 받을 수 있는 물품을 확인하고, 상자에 하나씩 담았다.",donation
+EVT-039,seventh_pack,seventh_shelter,visit_shelter,1,narrator,"보호소에서 상자를 내려놓자, 물품을 정리하던 사람이 다가왔다.
+
+“고맙습니다. 혹시 함께 지내던 고양이 물건인가요?”
+
+잠깐 망설이다 고개를 끄덕였다. “네. 소파 소유권을 아주 확실하게 주장하던 고양이요.”
+
+그 사람이 웃었다. “집주인이 따로 있었네요.”",
+EVT-040,seventh_shelter,seventh_talk,share_memory,1,narrator,"나란히 앉아 휴대폰의 사진을 펼쳤다. 치즈가 소파에서 잠든 사진이었다.
+
+“이래 놓고 소파를 지키는 중이래요.”
+
+“눈을 감고 경비를 서는군요.”
+
+사진 한 장에서 이야기가 몇 개씩 나왔다. 그 사람은 웃을 때 같이 웃고, 말이 멈추면 기다려줬다. 치즈를 설명할 때 꼭 슬픈 이야기만 할 필요는 없었다.",shared_memory
+EVT-041,seventh_talk,seventh_closing,finish_seventh,1,narrator,"나올 때 그 사람이 말했다. “다음 주에도 오시면, 그 고양이 이야기 더 들려주세요.”
+
+“네. 아직 할 얘기가 많아요.”
+
+집으로 가는 길, 친구에게 치즈 이야기를 한참 했다고 보냈다. 그러고 나니 배가 고팠다. 오늘 저녁은 뭘 먹을까.
+
+치즈가 새 인연을 보내준 걸까. 그건 알 수 없었다. 다만 오늘, 이야기를 들어주는 사람을 한 명 만났다.
+
+보고 싶은 마음을 품은 채로도, 내일을 살아갈 수 있었다.",

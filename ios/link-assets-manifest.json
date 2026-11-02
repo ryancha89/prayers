@@ -150,6 +150,10 @@
       "sha1": "c8b6c1b26272130b8a17adb6a06898338d70bad8"
     },
     {
+      "path": "src/shared/assets/sounds/meditation_guide_vi.m4a",
+      "sha1": "5547a202af22836cb166eb85c0fa131315562398"
+    },
+    {
       "path": "src/shared/assets/sounds/meditation_guide_zh.m4a",
       "sha1": "ed794d761b56a5eea09bf6213fb94d8b9a71dfa8"
     },
@@ -4323,7 +4327,7 @@
     },
     {
       "path": "src/shared/assets/sounds/splash_sound.m4a",
-      "sha1": "6ed3bec66f3a9e875ac313a31866b61053f8ebaa"
+      "sha1": "e202bc92f98c1ee8df97797557a7b2535ba4db3e"
     },
     {
       "path": "src/shared/assets/sounds/train_ambience.m4a",

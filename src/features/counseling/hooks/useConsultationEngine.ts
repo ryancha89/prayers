@@ -21,6 +21,7 @@ import type { PhaseChoice } from '../flow/types';
 import { withCatCues, type CatCue } from '../pixel/cues';
 import type { ChatMode, UnityToRNEvent } from '../types';
 import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
+import { useSoundStore } from '../../../shared/audio/store';
 
 export interface UseConsultationOptions {
   /** The area the app already asked about — seeds the flow's topic. */
@@ -168,6 +169,11 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
     engineRef.current?.setLang(lang);
   }, [lang]);
 
+  const voiceOn = useSoundStore(st => st.voiceEnabled);
+  useEffect(() => {
+    engineRef.current?.setVoiceOn?.(voiceOn);
+  }, [voiceOn]);
+
   // Unity → engine. ORACLE_RESULT and SPEAK_DONE are the only two replies the
   // walk actually waits on; everything else on the channel belongs to the room.
   useEffect(() => {
@@ -185,6 +191,7 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
       else if (e.type === 'UNITY_SEATED') setSeated(true);
       else if (e.type === 'UNITY_STOOD') setSeated(false);
       else if (e.type === 'ORACLE_RESULT') engineRef.current?.onOracleResult(e.payload);
+      else if (e.type === 'SPEAK_STARTED') engineRef.current?.onSpeakStarted(engineKey(e.payload.cacheKey));
       else if (e.type === 'SPEAK_DONE') engineRef.current?.onSpeakDone(engineKey(e.payload.cacheKey));
       else if (e.type === 'MIC_STATE') engineRef.current?.onMicState(e.payload.state, e.payload.level);
       else if (e.type === 'MIC_RESULT') engineRef.current?.onMicResult(e.payload);
@@ -221,7 +228,11 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
       engineRef.current?.cancelMic();
       getUnityBridge().sendEvent({ type: 'WALK_STAND' });
     }, []),
-    tap: useCallback(() => engineRef.current?.tap(), []),
+    // The speaker switch is read at the tap: off, a tap never waits on a voice (30-10).
+    tap: useCallback(() => {
+      engineRef.current?.setVoiceOn?.(useSoundStore.getState().voiceEnabled);
+      engineRef.current?.tap();
+    }, []),
     choose: useCallback((c: PhaseChoice) => engineRef.current?.choose(c), []),
     submit: useCallback((t: string) => engineRef.current?.submitQuestion(t), []),
     retry: useCallback(() => engineRef.current?.retry(), []),

@@ -14,6 +14,7 @@ import { backgroundMusic, meditationBed } from '../../../shared/audio/background
 import { holdScreenAwake } from '../../../shared/device/keepAwake';
 import { BREATH, CYCLE_MS, MeditationSession, SESSION_MS, breathSync, type Phase, type SessionState } from '../session';
 import { UnityHost } from '../../counseling/components/UnityHost';
+import { useFollowCamera } from '../../world/components/useWorldCamera';
 import { guideVoice } from '../guideVoice';
 import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
@@ -102,6 +103,13 @@ export const MeditationRoomScreen: React.FC = () => {
   useEffect(() => { beginSceneTransition('meditation'); }, []);
   const t = useT();
   const lang = useLang();
+  // The player's look round the room (MEDITATION_CAMERA, 30-10): the world's fingers, from the shot.
+  const look = useFollowCamera({
+    enabled: isNativeUnity(),
+    home: { zoom: 0.5, yaw: 0, pitch: 0 },
+    send: c => nativeUnityBridge.sendMeditationCamera(c),
+    doubleTapHome: true,
+  });
   // The guide waits for the bell to ring out on a fresh start; this is that wait, so a Pause or a
   // Leave pressed inside it cancels the guide instead of letting it start talking afterwards.
   const guideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -400,7 +408,10 @@ export const MeditationRoomScreen: React.FC = () => {
       {/* The breath's light is IN the room now (Unity's MeditationBreathLight, behind her and on the
           rug): an overlay here can only sit on top of the 3D view, and it washed over her (13-10). */}
 
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
+      {/* Drag to turn round her, pinch to zoom, double-tap back to the directed shot (30-10). On the
+          controls' own layer: a touch on the UnityView itself never reaches RN, and the buttons
+          inside keep their taps (they claim the touch first). */}
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']} {...look}>
         {/* Top row: the way out (it does NOT fade — everything else may recede, the door cannot), the
             clock in the middle once the session is under way, and Pause on the right while breathing. */}
         <View style={styles.header} onLayout={trackHeader}>
@@ -539,13 +550,15 @@ const styles = StyleSheet.create({
   // The words of the state, over the floor's fade (BottomFade) — no box: the room is the surface.
   plate: { alignItems: 'center', gap: spacing.sm, maxWidth: 440 },
   choices: { gap: spacing.sm, alignSelf: 'stretch', paddingHorizontal: spacing.lg },
-  choicesRow: { flexDirection: 'row' },
+  // Landscape: two cards side by side, centred, each a fixed width (30-10: `flex: 1` inside a plate
+  // that sizes to its content left them zero wide — two slivers of art, no words).
+  choicesRow: { flexDirection: 'row', justifyContent: 'center' },
   choice: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md, minWidth: 300,
     padding: spacing.sm, borderRadius: radius.md,
     borderWidth: 1, borderColor: 'rgba(233,196,106,0.3)', backgroundColor: 'rgba(20,16,28,0.55)',
   },
-  choiceCompact: { flex: 1, minWidth: 0 },
+  choiceCompact: { width: 280, minWidth: 0 },
   choiceArt: { width: 64, height: 64, borderRadius: radius.sm },
   choiceArtCompact: { width: 44, height: 44, borderRadius: radius.sm },
   choiceText: { flex: 1, gap: 2 },

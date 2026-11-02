@@ -54,6 +54,10 @@ export function useRoomLook(opts: {
 }): PanResponderInstance['panHandlers'] {
   const look = useRef({ yaw: 0, pitch: 0 });
   const drag = useRef<{ yaw: number; pitch: number } | null>(null);
+  /** Two fingers (30-10, "가로모드에서 확대가 안되네"): ROOM_ZOOM -1..1, + = closer. Spreading the
+   *  fingers to twice their distance is the whole way in, as on the cabin and the world. */
+  const zoom = useRef(0);
+  const pinch = useRef<{ zoom: number; dist: number } | null>(null);
   const latest = useRef(opts);
   latest.current = opts;
 
@@ -71,9 +75,16 @@ export function useRoomLook(opts: {
       look.current = { yaw, pitch };
       getUnityBridge().sendEvent({ type: 'ROOM_LOOK', payload: look.current });
     };
+    const spread = (e: GestureResponderEvent) => {
+      const [a, b] = e.nativeEvent.touches;
+      return Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY);
+    };
     const claims = (e: GestureResponderEvent, dx: number, dy: number) => {
       const { enabled, topBarBottom, panelTop, walking } = latest.current;
-      if (!enabled || e.nativeEvent.touches.length !== 1) return false;
+      if (!enabled) return false;
+      // Two fingers anywhere over the room are a pinch, never a tap or a scroll.
+      if (e.nativeEvent.touches.length === 2 && !walking) return true;
+      if (e.nativeEvent.touches.length !== 1) return false;
       if (Math.abs(dx) <= DRAG_SLOP && Math.abs(dy) <= DRAG_SLOP) return false;
       // Where the finger STARTED, not where it is now: a scroll of the transcript that drifts up
       // over the room is still a scroll.
@@ -84,11 +95,22 @@ export function useRoomLook(opts: {
       }
       return startsOnRoom(startY, topBarBottom, panelTop());
     };
-    const end = () => { drag.current = null; };
+    const end = () => { drag.current = null; pinch.current = null; };
     return PanResponder.create({
       onMoveShouldSetPanResponderCapture: (e, g) => claims(e, g.dx, g.dy),
       onPanResponderGrant: () => { drag.current = { ...look.current }; },
-      onPanResponderMove: (_e, g) => {
+      onPanResponderMove: (e, g) => {
+        if (e.nativeEvent.touches.length >= 2) {
+          // The pinch: from the zoom it started at, so a second pinch carries on from the first.
+          if (!pinch.current) pinch.current = { zoom: zoom.current, dist: Math.max(1, spread(e)) };
+          const z = Math.max(-1, Math.min(1, pinch.current.zoom + (spread(e) / pinch.current.dist - 1)));
+          if (Math.abs(z - zoom.current) < 0.02) return;
+          zoom.current = z;
+          getUnityBridge().sendEvent({ type: 'ROOM_ZOOM', payload: { zoom: +z.toFixed(2) } });
+          drag.current = null;   // the look does not jump when one finger lifts
+          return;
+        }
+        if (pinch.current) { pinch.current = null; drag.current = { ...look.current }; return; }
         if (!drag.current) return;
         const next = lookFromDrag(drag.current, g.dx, g.dy, Dimensions.get('window'));
         send(next.yaw, next.pitch);

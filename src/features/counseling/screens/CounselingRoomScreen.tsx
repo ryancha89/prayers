@@ -60,17 +60,16 @@ const LoadingTips: React.FC = () => {
  *  See the deadline effect below for why it is this generous. */
 const UNITY_HANDSHAKE_TIMEOUT_MS = 30_000;
 
-/** What of the room the app's UI hides, for VIEW_INSETS: the top bar, and the overlay's panel
- *  along the bottom — full width in portrait, the centred dialogue band in landscape (02-10; it
- *  was a right-hand column before, reported as `right`). The band leaves the sides of the room
- *  open, but a camera can only frame into a rectangle, so the bottom is what it is told. All three
- *  boxes are measured in the room container's coordinates; the orientation no longer changes the
- *  answer and is kept for the shared useViewInsets signature. */
-export function roomCoveredPx(r: MeasuredRects, _landscape: boolean) {
+/** What of the room the app's UI hides, for VIEW_INSETS: the top bar, and the overlay's panel —
+ *  along the bottom in portrait, the column down the right in landscape (30-10: the bottom-centre
+ *  band of 02-10 stood over the counsellor once it carried the transcript; on the right the room
+ *  frames her in the left). All boxes are measured in the room container's coordinates. */
+export function roomCoveredPx(r: MeasuredRects, landscape: boolean) {
   const { host, topBar, panel } = r;
   if (!host) return null;
   const top = topBar ? topBar.y + topBar.height : 0;
   if (!panel) return { top };
+  if (landscape) return { top, right: Math.max(0, host.width - panel.x) };
   return { top, bottom: host.height - panel.y };
 }
 
@@ -542,9 +541,6 @@ export const CounselingRoomScreen: React.FC = () => {
       />
       <ConsultationOverlay
         history={previousMessages}
-        questionControls={!pixel && subject ? (
-          <SubjectSwitcher initialId={questionSubjectId} onChange={setQuestionSubjectId} />
-        ) : undefined}
         voice={voice}
         counselorName={counselor.name}
         state={consultation.state}
@@ -592,6 +588,7 @@ export const CounselingRoomScreen: React.FC = () => {
         onLayout={onTopBarLayout}
         testID="room-top-bar">
         {/* Silent on purpose, as the room has always been: its mix is Unity's (uiSounds.test). */}
+        <View style={styles.topLeft} pointerEvents="box-none">
         <View style={styles.topRight} pointerEvents="box-none">
           <RingButton testID="room-back" icon="back" size={RING_COMPACT} label={t('hud.back')} onPress={onExit} />
           {/* 일어서기 (10-17): out of the chair to walk the room; 대화하기 sits back down and the
@@ -600,6 +597,12 @@ export const CounselingRoomScreen: React.FC = () => {
             <RingButton testID="room-stand" icon="stand" size={RING_COMPACT} label={t('room.stand')}
               onPress={consultation.stand} />
           )}
+        </View>
+          {/* Whose chart the question is about, in the header (30-10): it sat over the question box
+              and pushed the input up. Under the back button — the row beside it is full. */}
+          {!pixel && subject ? (
+            <SubjectSwitcher initialId={questionSubjectId} onChange={setQuestionSubjectId} />
+          ) : null}
         </View>
         {/* The counselor's voice on/off (10-15). Her lines play on Unity's Voice bus; VOICE_AUDIO
             mutes it, the line already playing included, and the subtitles carry on. Remembered
@@ -667,8 +670,9 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
+  topLeft: { gap: spacing.sm, alignItems: 'flex-start' },
   loadingVeil: {
     ...absoluteFill,
     alignItems: 'center',

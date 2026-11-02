@@ -30,21 +30,23 @@ interface ChatModeState {
  * ConsultationEngine.submitQuestion. The store key moved to v2 so every player starts there once;
  * 깊은 풀이 stays one tap away and is remembered as before.
  */
-const coerce = (v: unknown): ChatMode => (v === 'detail' || v === 'short' ? v : 'tiki');
+// 30-10: 티키타카 is `short` now (1–2 sentences) and the picker has two modes — a stored `tiki`,
+// or nothing, becomes `short`; only a stored 'detail' stays.
+const coerce = (v: unknown): ChatMode => (v === 'detail' ? 'detail' : 'short');
 
 export const useChatModeStore = create<ChatModeState>()(
   persist(
     (set, get) => ({
-      chatMode: 'tiki',
+      chatMode: 'short',
       setChatMode: mode => set({ chatMode: coerce(mode) }),
-      toggleChatMode: () => set({ chatMode: get().chatMode === 'tiki' ? 'detail' : 'tiki' }),
+      toggleChatMode: () => set({ chatMode: get().chatMode === 'detail' ? 'short' : 'detail' }),
     }),
     {
       name: 'prayers.chatMode.v2',
       storage: createJSONStorage(() => AsyncStorage),
       merge: (persisted, current) => ({
         ...current,
-        // Anything but a stored 'detail' is the default (tiki).
+        // Anything but a stored 'detail' is the default (short = 티키타카).
         chatMode: coerce((persisted as Partial<ChatModeState> | undefined)?.chatMode),
       }),
     },

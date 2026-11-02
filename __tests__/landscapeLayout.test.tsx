@@ -198,9 +198,9 @@ describe('VIEW_INSETS values per orientation', () => {
 
   it('the room and the meditation report the same way, and a missing panel covers nothing', () => {
     const host = { x: 0, y: 0, width: 874, height: 402 };
-    // The room's landscape UI is a band along the bottom (02-10), so it covers the bottom, not the right.
-    expect(roomCoveredPx({ host, topBar: { x: 0, y: 0, width: 874, height: 48 }, panel: { x: 190, y: 250, width: 495, height: 152 } }, true))
-      .toEqual({ top: 48, bottom: 152 });
+    // The room's landscape UI is a column down the right (30-10), so it covers the right.
+    expect(roomCoveredPx({ host, topBar: { x: 0, y: 0, width: 874, height: 48 }, panel: { x: 472, y: 48, width: 340, height: 354 } }, true))
+      .toEqual({ top: 48, right: 402 });
     expect(roomCoveredPx({ host, topBar: { x: 0, y: 0, width: 874, height: 48 } }, true)).toEqual({ top: 48 });
     // The meditation room has no side panel since 13-10: she is in the middle, the words in a band
     // along the bottom, in both orientations.
@@ -501,7 +501,7 @@ describe('the consultation overlay in landscape', () => {
     [n.props.style].flat(Infinity).filter(Boolean).reduce((a: object, b: object) => ({ ...a, ...b }), {}) as Record<string, number | string>;
   afterEach(() => Object.assign(mockSafe, { top: 0, left: 0, right: 0, bottom: 0 }));
 
-  it('is a band at the bottom-centre, ~2/3 of the safe width, never a right-hand column', async () => {
+  it('is a column down the right, clear of her: the room is told RIGHT and frames her on the left (30-10)', async () => {
     // iPhone 17 on its side: 62 pt either side whichever way it is turned, the home bar 21.
     Object.assign(mockSafe, { left: 62, right: 62, bottom: 21 });
     win = IPHONE_17_SIDE;
@@ -511,40 +511,36 @@ describe('the consultation overlay in landscape', () => {
       tree = ReactTestRenderer.create(overlay(loop, r => reported.push(r)));
     });
     const band = landscapeBand(874, { left: 62, right: 62 });
-    expect(band).toBe(495);
+    expect(band).toBe(340);
     const panel = panelOf(tree);
     expect(panel).toHaveLength(1);
-    // The band: its own width, centred by its parent, lifted off the home indicator.
     expect(flatOf(panel[0])).toMatchObject({ width: band, paddingBottom: 21 + 8 });
-    // Its parent spans the screen between the safe-area edges, under the top bar, and centres it —
-    // so the band is clear of the island on whichever side it is.
-    expect(nodesWithStyle(tree, s => s.alignItems === 'center' && s.paddingLeft === 62 && s.paddingRight === 62 && s.paddingTop === 48))
+    // Its parent spans the screen between the safe-area edges, under the top bar, and puts it on the
+    // right — inside the safe area, so clear of the island on whichever side it is.
+    expect(nodesWithStyle(tree, s => s.alignItems === 'flex-end' && s.paddingLeft === 62 && s.paddingRight === 62 && s.paddingTop === 48))
       .toHaveLength(1);
-    expect(band).toBeLessThanOrEqual(874 - 62 - 62);
-    // Nothing is a side column any more.
-    expect(nodesWithStyle(tree, s => s.position === 'absolute' && s.right === 0 && typeof s.width === 'number')).toHaveLength(0);
-    // What the band covers is reported straight from its own box (screen coordinates), and the room
-    // turns that into a BOTTOM inset so Unity frames the counsellor above it.
-    act(() => panel[0].props.onLayout(layout(190, 230, 495, 172)));
-    expect(reported).toEqual([{ x: 190, y: 230, width: 495, height: 172 }]);
+    // What the column covers is reported from its own box, and the room turns it into a RIGHT inset.
+    act(() => panel[0].props.onLayout(layout(472, 48, 340, 354)));
+    expect(reported).toEqual([{ x: 472, y: 48, width: 340, height: 354 }]);
     const host = { x: 0, y: 0, width: 874, height: 402 };
     expect(roomCoveredPx({ host, topBar: { x: 0, y: 0, width: 874, height: 48 }, panel: reported[0] as never }, true))
-      .toEqual({ top: 48, bottom: 172 });
+      .toEqual({ top: 48, right: 402 });
+    // Portrait still reports the bottom.
+    expect(roomCoveredPx({ host: { x: 0, y: 0, width: 402, height: 874 }, topBar: { x: 0, y: 0, width: 402, height: 100 },
+      panel: { x: 0, y: 500, width: 402, height: 374 } }, false)).toEqual({ top: 100, bottom: 374 });
     act(() => tree.unmount());
   });
 
-  it('heights stay a band: the counsellor keeps the window above it', () => {
+  it('the column fits under the top bar: transcript, box and the chips row', () => {
     win = IPHONE_17_SIDE;
     let tree!: ReactTestRenderer.ReactTestRenderer;
     act(() => {
       tree = ReactTestRenderer.create(overlay(loop));
     });
     const heights = nodesWithStyle(tree, s => typeof s.maxHeight === 'number').map(n => flatOf(n).maxHeight as number);
-    // The transcript is a couple of lines, not a column…
-    expect(Math.max(...heights)).toBeLessThanOrEqual(IPHONE_17_SIDE.height * 0.2);
-    // …and transcript + input, plus ~100 for the chips/leave row, gaps and the home-bar lift, leave
-    // the counsellor at least 40% of the window above the band (the free chat is the tallest state).
-    expect(heights.reduce((a, b) => a + b, 0) + 100).toBeLessThanOrEqual(IPHONE_17_SIDE.height * 0.6);
+    // Transcript + input, plus ~100 for the chips/leave row, gaps and the home-bar lift, inside the
+    // window under the 48 pt top bar.
+    expect(heights.reduce((a, b) => a + b, 0) + 100).toBeLessThanOrEqual(IPHONE_17_SIDE.height - 48);
     act(() => tree.unmount());
   });
 
@@ -582,22 +578,23 @@ describe('the consultation overlay in landscape', () => {
     act(() => tree.unmount());
   });
 
-  it('an island on one side only (an Android cutout) still keeps the band inside the safe area', () => {
+  it('an island on one side only (an Android cutout) still keeps the column inside the safe area', () => {
     Object.assign(mockSafe, { left: 48, right: 0, bottom: 0 });
     win = IPHONE_17_SIDE;
     let tree!: ReactTestRenderer.ReactTestRenderer;
     act(() => {
       tree = ReactTestRenderer.create(overlay(loop));
     });
-    expect(nodesWithStyle(tree, s => s.alignItems === 'center' && s.paddingLeft === 48 && s.paddingRight === 0)).toHaveLength(1);
+    expect(nodesWithStyle(tree, s => s.alignItems === 'flex-end' && s.paddingLeft === 48 && s.paddingRight === 0)).toHaveLength(1);
     expect(flatOf(panelOf(tree)[0]).width).toBe(landscapeBand(874, { left: 48, right: 0 }));
     expect(landscapeBand(874, { left: 48, right: 0 })).toBeLessThanOrEqual(874 - 48);
     act(() => tree.unmount());
   });
 
   it('a narrow phone on its side never gets a band wider than its safe area', () => {
-    expect(landscapeBand(667, { left: 0, right: 0 })).toBe(440);
+    expect(landscapeBand(667, { left: 0, right: 0 })).toBe(340);
     expect(landscapeBand(400, { left: 30, right: 30 })).toBe(340);
+    expect(landscapeBand(1200, { left: 0, right: 0 })).toBe(460);
   });
 
   it('portrait is unchanged: full-width stack, no band width, no landscape padding', () => {

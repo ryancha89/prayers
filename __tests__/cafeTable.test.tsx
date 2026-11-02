@@ -285,10 +285,17 @@ describe('a tarot reading at the table', () => {
     for (let i = 1; i < 7; i++) await press('Next');
     expect(byTestID('cafe-reading-title')[0].props.children).toBe('Card 6 · Upright');
     expect(speaks().map(s => s.slot).filter(s => s != null)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    // Before the summary she asks about the situation (30-10); the answer rewrites the summary, free.
     await press('Next');
-    expect(speaks().at(-1)).toEqual({ text: 'All told, patience.', mood: 'explain' });
+    expect(speaks().at(-1)).toEqual({ text: 'Before I sum up — could you tell me a little more about your situation?', mood: 'think' });
+    serve('cafe/tarot/readings/r-1/synthesis', ok({ reading_id: 'r-1', overall: 'All told, patience — the offer can wait a season.', advice: 'Write the letter tonight.' }));
+    type('cafe-clarify-input', 'A job offer abroad');
+    await press('Send');
+    expect(posted('synthesis').map(p => p.body)).toEqual([{ context: 'A job offer abroad', lang: 'en' }]);
+    expect(useCoins.getState().balance).toBe(70);
+    expect(speaks().at(-1)).toEqual({ text: 'All told, patience — the offer can wait a season.', mood: 'explain' });
     await press('Next');
-    expect(speaks().at(-1)).toEqual({ text: 'Write the letter.', mood: 'warm' });
+    expect(speaks().at(-1)).toEqual({ text: 'Write the letter tonight.', mood: 'warm' });
     await press('Next');
     expect(speaks().at(-1)?.text).toBe('Would you like to ask anything else about your reading?');
 
@@ -959,7 +966,10 @@ describe('walked straight in: any free table, then coffee or tarot from its menu
 async function toFollowup() {
   serve('cafe/tarot/readings', ok(READING));
   await toChosen();
-  for (let i = 0; i < 9; i++) await press('Next');
+  // Seven cards, then her question before the summary (skipped: the reading's own), summary, advice.
+  for (let i = 0; i < 7; i++) await press('Next');
+  await press('Skip to the summary');
+  for (let i = 0; i < 2; i++) await press('Next');
   expect(byTestID('cafe-followup-input').length).toBeGreaterThan(0);
 }
 const followupSent = async (text: string) => {

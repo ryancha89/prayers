@@ -131,6 +131,9 @@ interface JourneyState {
   unlockError: UnlockError | null;
   /** The counsellor is saying the locked moment's offer. */
   teaserSpeaking: boolean;
+  /** A part's voice is being fetched and loaded before it plays (30-10, "다음게 생성중인지 멈춰있는지
+   *  유저가 파악하기 어려우니 상태를 좀 표시해줘"): the screen says so instead of sitting silent. */
+  loadingPart: boolean;
   /** The last one-shot cabin effect and its sequence number. The number only ever grows — for the
    *  whole app session, across journeys — because Unity fires a cue once per NEW cueSeq. */
   cue: MomentCue | '';
@@ -601,6 +604,7 @@ async function startPart(ci: number, pi: number, gen: number) {
     lockAt(ci, pi);
     return;
   }
+  useJourneyPlayer.setState({ loadingPart: true });
   // Warm what comes next while this plays: the next part, its lock's offer, or the next station.
   const after = s.queue[0] != null && s.chapterIndex === ci ? s.queue[0] : pi + 1;
   const afterPart = partAt(ci, after);
@@ -654,7 +658,7 @@ async function startPart(ci: number, pi: number, gen: number) {
   const heard = useJourneyPlayer.getState().heard;
   useJourneyPlayer.setState({
     heard: heard.includes(heardKey) ? heard : [...heard, heardKey],
-    status: 'playing', stage: '', position: 0, chapterIndex: ci, partIndex: pi, transitionTo: null,
+    status: 'playing', stage: '', position: 0, chapterIndex: ci, partIndex: pi, transitionTo: null, loadingPart: false,
     moment: part.momentId ? 'premium' : '', momentId: part.momentId, teaserSpeaking: false, reveal: null, revealBusy: false,
   });
   voice?.play?.((ok: boolean) => {
@@ -838,6 +842,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
   unlocking: false,
   unlockError: null,
   teaserSpeaking: false,
+  loadingPart: false,
   cue: '',
   cueSeq: 0,
 
@@ -1217,7 +1222,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
       momentId: null,
       unlocking: false,
       unlockError: null,
-      teaserSpeaking: false,
+      teaserSpeaking: false, loadingPart: false,
       // cue/cueSeq are kept: the sequence must never go back.
     });
   },

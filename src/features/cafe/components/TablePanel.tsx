@@ -9,7 +9,7 @@ import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import { useScreen } from '../../../shared/device/screen';
 import { IVORY, RING_COMPACT, SERIF } from '../../../shared/components/hud/Hud';
-import { CAFE_QUESTION_MAX, offersRetry, type TarotConsultant } from '../api/cafeApi';
+import { CAFE_QUESTION_MAX, offersRetry, type TarotConsultant, type TarotReading } from '../api/cafeApi';
 import { CAFE_ART } from '../assets/art';
 import { Bubble, GhostButton, GoldButton, INK, Medallion, PanelBackdrop, PriceChip, ReaderFace } from './CafeChrome';
 import {
@@ -242,6 +242,9 @@ const Body: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) => {
       return (
         <>
           <Lines follow>
+            {/* The reading stays above the follow-ups, scrolled up to (29-10: "상담한 이력 볼 수 있어야함"). */}
+            {s.question ? <Bubble mine who={t('cafe.you')} text={s.question} /> : null}
+            {s.reading ? <ReadingRecap reading={s.reading} t={t} /> : null}
             <Said who={s.consultant?.name ?? ''} text={s.line} />
             {s.followups.map((f, i) => (
               <View key={i} style={styles.exchange}>
@@ -425,6 +428,31 @@ const Presenting: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) 
   if (!r || s.step < 0) {
     return <Lines><Waiting icon="sparkle" text={t('cafe.tarot.flipping')} /></Lines>;
   }
+  // Her question before the summary (30-10): the answer goes into it. Skip keeps the reading's own.
+  if (s.clarify === 'asking' || s.clarify === 'thinking') {
+    const thinking = s.clarify === 'thinking';
+    return (
+      <>
+        <Lines follow>
+          <Said who={s.consultant?.name ?? ''} text={s.line} />
+          {s.clarifyAnswer ? <Bubble mine who={t('cafe.you')} text={s.clarifyAnswer} /> : null}
+          {thinking ? <Bubble who={s.consultant?.name} text={t('cafe.tarot.clarifyThinking')} muted /> : null}
+        </Lines>
+        {!thinking ? (
+          <GhostButton testID="cafe-clarify-skip" label={t('cafe.tarot.clarifySkip')} onPress={table.skipClarify} style={styles.selfStart} />
+        ) : null}
+        <Composer
+          key="clarify"
+          initial=""
+          placeholder={t('cafe.tarot.clarifyPlaceholder')}
+          label={t('cafe.send')}
+          disabled={thinking}
+          onSend={table.submitClarify}
+          testID="cafe-clarify"
+        />
+      </>
+    );
+  }
   let head: string;
   let title: string;
   let body: string;
@@ -467,6 +495,30 @@ const Presenting: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) 
     </>
   );
 };
+
+/** The whole reading, once it is over: the seven cards, the overall and the advice, in one card. */
+const ReadingRecap: React.FC<{ reading: TarotReading; t: Translate }> = ({ reading, t }) => (
+  <View style={styles.readingCard} testID="cafe-reading-recap">
+    {reading.cards.map((c, i) => (
+      <View key={i} style={styles.recapItem}>
+        <Text style={styles.cardHead}>{[t('cafe.tarot.cardOf', { n: i + 1 }), c.position].filter(Boolean).join(' · ')}</Text>
+        <Text style={styles.recapTitle}>
+          {`${c.name} · ${t(c.orientation === 'reversed' ? 'cafe.tarot.reversed' : 'cafe.tarot.upright')}`}
+        </Text>
+        <Text style={styles.reply}>{c.meaning}</Text>
+      </View>
+    ))}
+    <View style={styles.cardRule} />
+    <View style={styles.recapItem}>
+      <Text style={styles.recapTitle}>{t('cafe.tarot.overall')}</Text>
+      <Text style={styles.reply}>{reading.overall}</Text>
+    </View>
+    <View style={styles.recapItem}>
+      <Text style={styles.recapTitle}>{t('cafe.tarot.advice')}</Text>
+      <Text style={styles.reply}>{reading.advice}</Text>
+    </View>
+  </View>
+);
 
 /** Where the reading is: seven card pips, then the overall and the advice as diamonds. */
 const Progress: React.FC<{ step: number }> = ({ step }) => (
@@ -636,6 +688,8 @@ const styles = StyleSheet.create({
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   cardTitle: { fontFamily: SERIF, fontSize: 20, color: IVORY },
   cardRule: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(233,196,106,0.45)' },
+  recapItem: { gap: 2, paddingVertical: spacing.xs },
+  recapTitle: { fontFamily: SERIF, fontSize: 16, color: IVORY },
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   dots: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   pip: { width: 8, height: 12, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(233,196,106,0.45)' },

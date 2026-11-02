@@ -110,6 +110,9 @@ export type RootStackParamList = {
    *  consultation: free, pre-recorded, nothing sent. The NAME is load-bearing — App.tsx silences the
    *  app's bed on it (`SELF_SCORED_SCREENS`), as for the meditation room. */
   Lecture: { chapter: number; line?: number };
+  /** An interactive story (Home 스토리 tab) — 「수호신 치즈냥이」 chapter 1. The name is load-bearing:
+   *  App.tsx lists it in SELF_SCORED_SCREENS (the cat's voice is the content). */
+  Story: { storyId: 'cheese' } | undefined;
   /** Loading screen that boots the (mock) Unity room, spec §17. */
   UnityEntry: {
     counselorId: string;

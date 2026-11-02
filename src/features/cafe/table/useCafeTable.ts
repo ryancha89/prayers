@@ -12,6 +12,7 @@ import {
   newRequestId,
   offersRetry,
   orderCoffee,
+  synthesizeReading,
   warmVoice,
   type CafeFailure,
   type TarotConsultant,
@@ -112,6 +113,12 @@ export interface TableState {
   reading: TarotReading | null;
   /** `presenting`: -1 while the cards turn over, then 0..STEP_ADVICE. */
   step: number;
+  /** Between the seventh card and the summary (30-10): the reader asks about the player's situation
+   *  (`asking`), the answer is written into the summary (`thinking`), then `done`. Skipped = `done`
+   *  with the reading's own summary. */
+  clarify: 'none' | 'asking' | 'thinking' | 'done';
+  /** The player's answer to that question, shown while the summary is written. */
+  clarifyAnswer: string;
   followups: { q: string; a: string }[];
   /** The follow-up awaiting its confirmation or its answer. */
   pending: string;
@@ -145,6 +152,8 @@ const OFF: TableState = {
   chosen: null,
   reading: null,
   step: -1,
+  clarify: 'none',
+  clarifyAnswer: '',
   followups: [],
   pending: '',
   confirm: null,
@@ -340,8 +349,8 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     const reading = r.reading;
     // Every line of the reading, synthesised now (in order, all at once) so each Next speaks at once.
     for (let i = 0; i <= STEP_ADVICE; i++) void warmVoice(stepLine(reading, i).text, s.consultant.voice, langRef.current);
-    ref.current = { ...ref.current, reading, stage: 'presenting', step: -1 };
-    patch({ busy: false, leaveAsk: null, reading, stage: 'presenting', step: -1 });
+    ref.current = { ...ref.current, reading, stage: 'presenting', step: -1, clarify: 'none', clarifyAnswer: '' };
+    patch({ busy: false, leaveAsk: null, reading, stage: 'presenting', step: -1, clarify: 'none', clarifyAnswer: '' });
     // The seven stay face down until the reader comes to each: Unity turns a card over when its SPEAK
     // arrives (stepwise), as a reader at a real table does (21-10 review). They used to flip all at once
     // the moment the seventh was picked.
@@ -352,10 +361,47 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
   const next = () => {
     const s = ref.current;
     if (s.stage !== 'presenting' || s.step < 0) return;
+    // After the seventh card, before the summary: she asks about the player's situation (30-10,
+    // "종합이 너무 짧은데 도출하기 전에 유저에게 그 질문에 대해 좀 더 물어보고 도출해").
+    if (s.step === SPREAD_SIZE - 1 && s.clarify === 'none' && s.reading) {
+      const ask = s.reading.ask || tRef.current('cafe.tarot.clarifyAsk');
+      patch({ clarify: 'asking', line: ask });
+      speak({ text: ask, mood: 'think' });
+      return;
+    }
     if (s.step < STEP_ADVICE) { showStep(s.step + 1); return; }
     const prompt = tRef.current('cafe.tarot.followupPrompt');
     patch({ stage: 'followup', line: prompt });
     speak({ text: prompt, mood: 'warm' });
+  };
+
+  /** The player's answer to her question: the summary is written again with it (free), then told. */
+  const submitClarify = async (text: string) => {
+    const q = text.trim();
+    const s = ref.current;
+    if (!q || s.stage !== 'presenting' || s.clarify !== 'asking' || !s.reading) return;
+    const g = gen.current;
+    patch({ clarify: 'thinking', clarifyAnswer: q });
+    const r = await synthesizeReading({ readingId: s.reading.readingId, context: q, lang: langRef.current });
+    const now = ref.current;
+    if (g !== gen.current || now.stage !== 'presenting' || !now.reading) return;
+    // Not written (server down): the reading's own summary, rather than a dead end.
+    const reading = r ? { ...now.reading, overall: r.overall, advice: r.advice } : now.reading;
+    if (r && now.consultant) {
+      void warmVoice(stepLine(reading, STEP_OVERALL).text, now.consultant.voice, langRef.current);
+      void warmVoice(stepLine(reading, STEP_ADVICE).text, now.consultant.voice, langRef.current);
+    }
+    ref.current = { ...now, reading, clarify: 'done' };
+    patch({ reading, clarify: 'done' });
+    showStep(STEP_OVERALL);
+  };
+
+  /** Skip her question: the reading's own summary. */
+  const skipClarify = () => {
+    if (ref.current.clarify !== 'asking') return;
+    ref.current = { ...ref.current, clarify: 'done' };
+    patch({ clarify: 'done' });
+    showStep(STEP_OVERALL);
   };
 
   const submitFollowup = (text: string) => {
@@ -682,6 +728,8 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     chooseConsultant,
     submitQuestion,
     next,
+    submitClarify,
+    skipClarify,
     submitFollowup,
     askAnother,
     end,

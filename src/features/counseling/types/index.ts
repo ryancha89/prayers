@@ -375,6 +375,8 @@ export type RNToUnityEvent =
   /** The player turning the consultation room's camera with one finger, -1..1 each (+ = right /
    *  up); Unity turns in place up to ±60° / ±15° (ConsultationLook) and eases. */
   | { type: 'ROOM_LOOK'; payload: { yaw: number; pitch: number } }
+  /** The room's pinch (30-10): -1 (wider) .. 1 (closer) — Unity narrows the lens, the camera stays put. */
+  | { type: 'ROOM_ZOOM'; payload: { zoom: number } }
   /** The chapter narration's loudness (server `tts/url` envelope), sent as the chapter starts. The
    *  voice plays here in RN; this is how the counsellor's mouth in the cabin follows it. */
   | { type: 'JOURNEY_VOICE'; payload: JourneyVoicePayload }
@@ -406,6 +408,8 @@ export type RNToUnityEvent =
    *  the player), yaw -1..1 (= ±180° round them, wrapped), pitch -1..1 (+ = higher). Absolute, many a
    *  second; the last one wins. The stick is WALK_INPUT, which Unity routes to the room while it is up. */
   | { type: 'MYROOM_CAMERA'; payload: MyRoomCamera }
+  /** The meditation room's look (30-10): drag to turn, pinch to zoom — MYROOM_CAMERA's numbers. */
+  | { type: 'MEDITATION_CAMERA'; payload: MyRoomCamera }
   /** Use the piece MYROOM_NEAR_ITEM named (spec 005 US1): sit / rest / lamp / look. A lamp toggles. */
   | { type: 'MYROOM_ACT'; payload: { uid: string; action: MyRoomAction } }
   /** Stop using it: stand up, get up, look away. Unity ignores it when nothing is going. */
@@ -862,6 +866,8 @@ export type UnityToRNEvent =
   | { type: 'INPUT_STATE'; payload: { enabled: boolean } }
   | { type: 'ORACLE_RESULT'; payload: OracleResultPayload }
   /** A spoken take finished — RN paces the next beat off this, not a guess. */
+  /** That take's voice is audible now (30-10) — before it, a tap says the voice is being made. */
+  | { type: 'SPEAK_STARTED'; payload: { cacheKey: string } }
   | { type: 'SPEAK_DONE'; payload: { cacheKey: string } }
   /** Where the microphone is, and how loud the room is while it listens. The level exists so the
    *  button can move: a listening dot that never changes looks exactly like a dead microphone. */

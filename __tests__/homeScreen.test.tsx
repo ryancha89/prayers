@@ -52,13 +52,25 @@ const render = async () => {
   await act(async () => { tree = ReactTestRenderer.create(<HomeScreen />); });
 };
 
-it('tabs 전체 · 사주 · 강의 · 명상: lectures and meditation have tabs of their own (16-10)', async () => {
+it('tabs 전체 · 스토리 · 사주 · 강의 · 명상: stories, lectures and meditation have tabs of their own', async () => {
   await render();
   const tabs = () => tree.root.findByType(CategoryTabs).props.categories.map((c: { key: string }) => c.key);
-  expect(tabs()).toEqual(['recommended', 'saju', 'lecture', 'meditation']);
+  // 스토리 right after 전체 (01-11, "메인 홈에 스토리 카테고리 추가").
+  expect(tabs()).toEqual(['recommended', 'story', 'saju', 'lecture', 'meditation']);
   const pick = (key: string) => act(() => tree.root.findByType(CategoryTabs).props.onChange(key));
   const footerPress = (testID?: string) =>
     tree.root.findAll(n => typeof n.props.onPress === 'function' && (!testID || n.props.testID === testID));
+
+  // 전체 carries the story card too.
+  expect(tree.root.findAll(n => n.props.testID === 'home-story-cheese' && typeof n.props.onPress === 'function'))
+    .toHaveLength(1);
+
+  // 스토리: no counsellors, the cat's story, opened in the story player.
+  pick('story');
+  expect(tree.root.findByType(CounselorGrid).props.counselors).toEqual([]);
+  expect(tree.root.findAll(n => n.props.testID === 'lecture-series-card')).toHaveLength(0);
+  act(() => footerPress('home-story-cheese')[0].props.onPress());
+  expect(mockNavigate).toHaveBeenLastCalledWith('Story', { storyId: 'cheese' });
 
   // A counsellor tab: only those counsellors, nothing else under them.
   pick('saju');

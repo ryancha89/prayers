@@ -92,3 +92,10 @@ unity/*.log
 
 # Local server secret for dev builds (see devToken.example.ts). Never commit.
 src/features/counseling/api/devToken.ts
+
+# Blender auto-backups, Python bytecode, render logs, raw reference archives
+*.blend1
+__pycache__/
+*.pyc
+3d-modeling/**/*.log
+3d-modeling/**/references/*.zip

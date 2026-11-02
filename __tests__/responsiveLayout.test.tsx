@@ -127,11 +127,11 @@ describe('consultation overlay heights held sideways', () => {
     }
   });
 
-  it('the transcript stays a couple of lines, so the counsellor keeps the window above the band', () => {
-    // 02-10: landscape is a band along the bottom, not a column down the right — what it takes in
-    // height it takes from the counsellor. Stacked, 30% of 402 would be clamped up to the 140 floor.
-    expect(Math.max(...maxHeights(IPHONE_17_SIDE))).toBeLessThan(140);
-    expect(Math.max(...maxHeights(SE_SIDE))).toBeLessThan(140);
+  it('sideways, the transcript uses the column’s height but never the whole window', () => {
+    // 30-10: landscape is a column down the right (the counsellor framed on the left), so its height
+    // is free to use — up to under half the window, leaving the box and the chips their room.
+    expect(Math.max(...maxHeights(IPHONE_17_SIDE))).toBeLessThanOrEqual(IPHONE_17_SIDE.height * 0.45);
+    expect(Math.max(...maxHeights(SE_SIDE))).toBeLessThanOrEqual(SE_SIDE.height * 0.45);
   });
 });
 

@@ -28,9 +28,13 @@ import { FeatureCard } from '../../../shared/components/FeatureCard';
 import { NEWYEAR_2027, journeyEntryRoute } from '../../journey/data/journeys';
 import { journeyActive, useJourneyPlayer } from '../../journey/player/journeyPlayer';
 import { sleepAudio } from '../../meditation/sleepAudio';
+import { StoryHeroCard } from '../../story/components/StoryHeroCard';
 
 /** The sleep guide's card art: the breathing card's girl, asleep in the same room at night. */
 const SLEEP_CARD_ART = require('../../meditation/assets/sleep_card.jpg');
+// The room without anyone in it (30-10, "개인실에 캐릭터 안보이게"): the right of myroom_landscape.jpg —
+// sofa, the waterfall windows — cropped clear of the old stand-in standing mid-room.
+const MYROOM_CARD_ART = require('../../myroom/assets/myroom_card.jpg');
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -62,16 +66,22 @@ export const HomeScreen: React.FC = () => {
   // 전체 · 사주 · 강의 · 명상 (16-10, user: "메인화면에 전체 사주 강의 명상 챕터 추가"). The counsellor
   // categories come from who is on the roster; 강의 and 명상 are not counsellors and get a tab each
   // when there is something behind it. 전체 shows everything.
+  // 스토리 (01-11, user: "메인 홈에 스토리 카테고리 추가") sits right after 전체: interactive stories
+  // are not counsellors either, and the first one is new — it should be seen.
+  const counselorTabs = CATEGORIES.filter(c =>
+    c.key !== 'meditation' && (c.key === 'recommended' || available.some(person => person.category === c.key)),
+  ).map(c => ({ key: c.key, label: c.key === 'recommended' ? t('home.all') : t(c.labelKey) }));
   const categories: { key: string; label: string }[] = [
-    ...CATEGORIES.filter(c =>
-      c.key !== 'meditation' && (c.key === 'recommended' || available.some(person => person.category === c.key)),
-    ).map(c => ({ key: c.key, label: c.key === 'recommended' ? t('home.all') : t(c.labelKey) })),
+    ...counselorTabs.slice(0, 1),
+    { key: 'story', label: t('cat.story') },
+    ...counselorTabs.slice(1),
     // The Schopenhauer series is recorded in every language the app offers.
     { key: 'lecture', label: t('cat.lecture') },
     ...(meditationGuide ? [{ key: 'meditation', label: t('cat.meditation') }] : []),
   ];
   const activeCategory = categories.some(c => c.key === category) ? category : 'recommended';
   const counselors = available.filter(c => activeCategory === 'recommended' || c.category === activeCategory);
+  const showStory = activeCategory === 'recommended' || activeCategory === 'story';
   const showLecture = (activeCategory === 'recommended' || activeCategory === 'lecture');
   const showMeditation = !!meditationGuide && (activeCategory === 'recommended' || activeCategory === 'meditation');
   const recent = order.map(id => byId[id]).find(c =>
@@ -199,8 +209,25 @@ export const HomeScreen: React.FC = () => {
             </View>
           </View>
         }
-        ListFooterComponent={showLecture || showMeditation ? (
+        ListFooterComponent={showLecture || showMeditation || showStory ? (
           <View>
+          {/* Under 스토리 the counsellor grid above is empty, so the story sits right under the tabs. */}
+          {showStory && (
+            <StoryHeroCard onOpen={() => { sfx.select(); navigation.navigate('Story', { storyId: 'cheese' }); }} />
+          )}
+          {/* Straight into My Room from Home (30-10, "메인화면에 개인실로 가는 것도 만들어줘"), not only
+              through the World's door. Recommended only: it is the player's own room, not a category. */}
+          {activeCategory === 'recommended' && (
+            <FeatureCard
+              testID="home-myroom"
+              image={MYROOM_CARD_ART}
+              badge={t('world.zone.myroom.sub')}
+              title={t('world.zone.myroom')}
+              tagline={t('world.myroom.line')}
+              cta={t('world.myroom.cta')}
+              onPress={() => { sfx.tap(); navigation.navigate('MyRoom'); }}
+            />
+          )}
           {showLecture && (
             <LectureSeriesCard
               onOpen={(chapter, line) => { sfx.select(); navigation.navigate('Lecture', { chapter, line }); }}

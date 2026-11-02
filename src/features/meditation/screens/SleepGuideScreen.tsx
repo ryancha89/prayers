@@ -11,6 +11,7 @@ import { ArtWait, BottomFade, MED, Vignette } from '../components/BreathStage';
 import { SleepSession, type SleepState } from '../sleepSession';
 import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
 import { UnityHost } from '../../counseling/components/UnityHost';
+import { useFollowCamera } from '../../world/components/useWorldCamera';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets } from '../../counseling/bridge/viewInsets';
 import { useScreen } from '../../../shared/device/screen';
@@ -62,6 +63,13 @@ export const SleepGuideScreen: React.FC = () => {
   useEffect(() => { beginSceneTransition('sleep'); }, []);
   const t = useT();
   const lang = useLang();
+  // The player's look round the room (MEDITATION_CAMERA, 30-10): the world's fingers, from the shot.
+  const look = useFollowCamera({
+    enabled: isNativeUnity(),
+    home: { zoom: 0.5, yaw: 0, pitch: 0 },
+    send: c => nativeUnityBridge.sendMeditationCamera(c),
+    doubleTapHome: true,
+  });
   const navigation = useNavigation();
   const session = useRef(new SleepSession()).current;
   const [state, setState] = useState<SleepState>(() => session.read());
@@ -126,6 +134,9 @@ export const SleepGuideScreen: React.FC = () => {
     session.start(lang);
     setState(session.read());
     const offBlur = navigation.addListener('blur', () => {
+      // Only a real way out: a blur that arrives while this screen is still the focused one (a
+      // transition's stray event) must not stop the guide under the player.
+      if (navigation.isFocused()) return;
       session.stop();
       setState(session.read());
     });
@@ -172,7 +183,17 @@ export const SleepGuideScreen: React.FC = () => {
     navigation.goBack();
   };
 
-  useScreenAudio(() => { session.stop(); setState(session.read()); });
+  // Back in front (focus, or a transition that ended with this screen on top) with the session
+  // stopped: start it again (30-10, "멈추네") — a transition's stray silence stopped it right after
+  // the start and nothing restarted it, so the screen sat on "준비하고 있어요…" (status idle).
+  useScreenAudio(
+    () => { session.stop(); setState(session.read()); },
+    () => {
+      if (session.read().status !== 'idle') return;
+      session.start(lang);
+      setState(session.read());
+    },
+  );
   const { status } = state;
   const remainingMs = state.remainingSeconds * 1000;
 
@@ -203,7 +224,10 @@ export const SleepGuideScreen: React.FC = () => {
         </View>
       )}
 
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
+      {/* Drag to turn round her, pinch to zoom, double-tap back to the directed shot (30-10). On the
+          controls' own layer: a touch on the UnityView itself never reaches RN, and the buttons
+          inside keep their taps (they claim the touch first). */}
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']} {...look}>
         <View style={styles.header} onLayout={insets.track('header')}>
           <View style={styles.back}>
             <RingButton testID="sleep-back" icon="back" size={RING_COMPACT} label={t('sleep.stop')} onPress={leave} />

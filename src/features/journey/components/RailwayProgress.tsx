@@ -61,35 +61,14 @@ export const RailwayProgress: React.FC<{
   // Compact slots tile the rail exactly; only the vertical slop stays, so no slot reaches a neighbour's.
   const slop = compact ? { top: 6, bottom: 6, left: 0, right: 0 } : 6;
   const slotW = compact ? spacing : slot;
+  /** Compact: a name may run over its neighbours' slots — they are on the other row. */
+  const chipW = Math.min(NAME_W, Math.max(0, 2 * spacing - CHIP_GAP));
   return (
-    <View style={styles.wrap} onLayout={e => setWidth(e.nativeEvent.layout.width)} testID="railway">
+    <View style={[styles.wrap, compact && styles.wrapStaggered]} onLayout={e => setWidth(e.nativeEvent.layout.width)} testID="railway">
       <View style={styles.track}>
         <View style={styles.rail} />
         <View style={[styles.railLit, { width: `${fill * 100}%` }]} />
       </View>
-      {compact && chapters[current] ? (() => {
-        // The one name, centred on its dot, kept inside the rail's margins (the wrap's 32 pt) and
-        // short of either neighbour's lock (half a 9 pt icon + a gap). Toward an end of the line there
-        // is no neighbour, only the margin.
-        const c = chapters[current];
-        const paid = content ? paidOf(content, c.id) : 'free';
-        const x = (current / last) * width;
-        const reach = Math.min(NAME_W / 2, spacing - LOCK_CLEAR);
-        const left = Math.max(-32, x - (current > 0 ? reach : NAME_W / 2));
-        const right = Math.min(width + 32, x + (current < last ? reach : NAME_W / 2));
-        return (
-          // Not a button: taps fall through to the dot slots under it (the current one's included).
-          <View key="now" pointerEvents="none" style={[styles.nowName, { left, width: right - left }]}
-            testID="railway-now">
-            <View style={[styles.chip, styles.chipNow, paid === 'open' && styles.chipOpen, styles.chipSolid]}>
-              {paid === 'locked' || paid === 'partial' ? (
-                <Icon name="lock" size={9} color={paid === 'partial' ? colors.gold : colors.textMuted} />
-              ) : null}
-              <Text numberOfLines={1} style={[styles.label, styles.labelNow]}>{t(c.title)}</Text>
-            </View>
-          </View>
-        );
-      })() : null}
       {chapters.map((c, i) => {
         const state = i < current ? 'past' : i === current ? 'now' : 'ahead';
         const paid = content ? paidOf(content, c.id) : 'free';
@@ -105,17 +84,10 @@ export const RailwayProgress: React.FC<{
             <View style={styles.dotBox}>
               <View style={[styles.dot, state === 'past' && styles.dotPast, state === 'now' && styles.dotNow]} />
             </View>
-            {compact ? (
-              state === 'now' ? (
-                // Under the name label, so a tap on the name lands on its own station's slot.
-                <View style={styles.lockOnly} />
-              ) : paid === 'locked' || paid === 'partial' ? (
-                <View style={styles.lockOnly} testID="railway-lock">
-                  <Icon name="lock" size={9} color={paid === 'partial' ? colors.gold : colors.textMuted} />
-                </View>
-              ) : null
-            ) : (
-            <View style={[styles.chip, state === 'now' && styles.chipNow, paid === 'open' && styles.chipOpen]}>
+            {/* Narrow (the landscape panel): every name still shows (30-10, "잠금열쇠 누르기 전에 이 챕터가
+                무슨 운인지 모르니까"), on two staggered rows so each gets two stations' width. */}
+            <View style={[styles.chip, state === 'now' && styles.chipNow, paid === 'open' && styles.chipOpen,
+              compact && [styles.chipStaggered, { width: chipW }, i % 2 === 1 && styles.chipLow]]}>
               {paid === 'locked' || paid === 'partial' ? (
                 <Icon name="lock" size={9} color={paid === 'partial' ? colors.gold : colors.textMuted} />
               ) : null}
@@ -123,7 +95,6 @@ export const RailwayProgress: React.FC<{
                 {t(c.title)}
               </Text>
             </View>
-            )}
           </Pressable>
         );
       })}
@@ -142,8 +113,6 @@ const CHIP_GAP = 2;
 const MIN_CHIP_W = 45;
 /** The compact rail's one name chip, at most. */
 const NAME_W = 110;
-/** How far the name stops short of a neighbour's dot: half the 9 pt lock under it, and 3 pt. */
-const LOCK_CLEAR = 7.5;
 
 const styles = StyleSheet.create({
   // Wide enough that the end stations' chips (52 pt, centred on the dot) are not cut by the screen.
@@ -174,11 +143,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
   chipNow: { borderColor: colors.gold, backgroundColor: 'rgba(233,196,106,0.14)' },
-  // Compact: the current station's name, wider than a slot, laid over the row under the dots.
-  nowName: { position: 'absolute', top: 18, alignItems: 'center', zIndex: 1 },
-  lockOnly: { marginTop: 5, height: 22, justifyContent: 'center' },
-  // Opaque over the rail; the name already stops short of a neighbour's lock.
-  chipSolid: { backgroundColor: '#2A2440' },
+  // Compact: the names on two rows (even stations high, odd low), each as wide as two stations.
+  wrapStaggered: { height: 74 },
+  chipStaggered: { justifyContent: 'center' },
+  chipLow: { marginTop: 5 + 22 + 2 },
   chipOpen: { borderColor: 'rgba(233,196,106,0.5)' },
   label: { ...typography.tiny, color: colors.textSecondary, flexShrink: 1 },
   labelNow: { color: colors.gold },

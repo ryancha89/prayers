@@ -71,7 +71,7 @@ const MEDITATION_RETRY_MS = 1500;
 const MEDITATION_MAX_TRIES = 4;
 
 /** Absolute-state messages sent while a finger moves: coalesced (see NativeUnityBridge.postStream). */
-const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'CAFE_CAMERA', 'CAFE_ZOOM', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK', 'CHARACTER_VIEW']);
+const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'CAFE_CAMERA', 'CAFE_ZOOM', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK', 'ROOM_ZOOM', 'CHARACTER_VIEW', 'MEDITATION_CAMERA']);
 /** ~30 a second per type: smooth under Unity's own easing, a quarter of what a thumb produced. */
 const STREAM_MS = 33;
 /** The scenes' own handshake events. Not every `*_READY` is one: CAFE_DECK_READY is a step inside the
@@ -329,6 +329,13 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   sendMeditationState(payload: MeditationStatePayload): void {
     this.meditationState = payload;
     if (this.view) this.post({ type: 'MEDITATION_STATE', payload });
+  }
+
+  /** The player's look in the meditation room (30-10): orbit / pinch, MYROOM_CAMERA's numbers. A
+   *  stream, posted straight through; a new visit starts at the directed shot (Unity resets it). */
+  sendMeditationCamera(camera: MyRoomCamera): void {
+    const clamp = (v: number, lo: number, hi: number) => (Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : 0);
+    if (this.view) this.postLive({ type: 'MEDITATION_CAMERA', payload: { zoom: clamp(camera.zoom, 0, 1), yaw: clamp(camera.yaw, -1, 1), pitch: clamp(camera.pitch, -1, 1) } });
   }
 
   /**

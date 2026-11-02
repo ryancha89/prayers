@@ -11,6 +11,7 @@ import { useScreen } from '../../../shared/device/screen';
 import type { RootStackParamList } from '../../../navigation/types';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { WorldJoystick } from '../components/WorldJoystick';
+import { useKeyboardRun } from '../components/useKeyboardWalk';
 import { DoorCard, DoorTitle } from '../components/DoorCard';
 import { getWorldBridge, isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
@@ -417,6 +418,15 @@ export const WorldScreen: React.FC = () => {
   // While the 3D world loads there is nothing to walk: no stick, no run (02-10 screenshot: they
   // floated over the old drawing). Map stays — a door picked while loading opens at once.
   const loadingWorld = unity && !worldUp;
+  // Shift on a keyboard runs while held, then the button's own state comes back (30-10).
+  const runBeforeShift = useRef<boolean | null>(null);
+  useKeyboardRun(!busy && !loadingWorld, held => {
+    if (held) { runBeforeShift.current = run; setRun(true); bridge.sendWorldRun(true); return; }
+    const back = runBeforeShift.current ?? false;
+    runBeforeShift.current = null;
+    setRun(back);
+    bridge.sendWorldRun(back);
+  });
 
   return (
     <WorldSheetTop.Provider value={barBottom}>

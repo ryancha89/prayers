@@ -70,7 +70,8 @@ const UNITY_SCENERY_SCREENS = new Set(['Journey']);
  * someone still deciding whether they have ten minutes.
  */
 // The sleep guide is the same kind of room: its voice and music are the content (sleepAudio.ts).
-const SELF_SCORED_SCREENS = new Set(['MeditationRoom', 'SleepGuide', 'Lecture']);
+// Story (11-01): the cat's voice is the content — no mini player over it, a running journey pauses.
+const SELF_SCORED_SCREENS = new Set(['MeditationRoom', 'SleepGuide', 'Lecture', 'Story']);
 
 /** Whether the app's own music may play. The splash has a cue of its own and the two would
  *  overlap, so nothing starts until it is done. */

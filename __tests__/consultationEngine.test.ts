@@ -69,6 +69,8 @@ class StageDouble implements StagePort {
   /** Hang only the takes whose key starts with this — lets a test step ONE beat
    *  by hand while the cover phases before it still pace themselves. */
   holdPrefix: string | null = null;
+  /** Set false to keep every take's voice unmade (no SPEAK_STARTED), the way a slow TTS is. */
+  voiceStarts = true;
   private engine!: ConsultationEngine;
 
   bind(engine: ConsultationEngine) {
@@ -90,6 +92,7 @@ class StageDouble implements StagePort {
   speakClip(keys: string[], _topic: string, cacheKey: string) {
     this.spokenKeys.push(...(keys ?? []));
     this.spoken.push(cacheKey);
+    if (this.voiceStarts) this.engine.onSpeakStarted(cacheKey);
     if (!this.holds(cacheKey)) this.engine.onSpeakDone(cacheKey);
   }
   /** The words, not just the keys — a test about WHAT is said cannot use a cache key. */
@@ -97,6 +100,7 @@ class StageDouble implements StagePort {
   speakText(text: string, cacheKey: string) {
     this.spoken.push(cacheKey);
     this.spokenText.push(text);
+    if (this.voiceStarts) this.engine.onSpeakStarted(cacheKey);
     if (!this.holds(cacheKey)) this.engine.onSpeakDone(cacheKey);
   }
   prefetched: string[] = [];
@@ -531,6 +535,33 @@ test('tapping mid-reading shows the rest of the beat instead of skipping it', ()
   // Second tap moves on, the way a tap always did.
   engine.tap();
   expect(engine.getState().phaseId).not.toBe('P11');
+});
+
+test('a tap before her voice is made waits and says so; with the voice off it skips (30-10)', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('질문');
+  stage.holdPrefix = 'P11#';
+  stage.voiceStarts = false;
+  engine.onOracleResult({ ok: true, followup: '', beats: [{ phaseId: 'P11', lines: [LONG_ANSWER] }] });
+  sched.advance(120_000);
+  const line = engine.getState().line;
+
+  engine.tap();
+  expect(engine.getState().voiceWait).toBe(true);
+  expect(engine.getState().phaseId).toBe('P11');
+  expect(engine.getState().line).toBe(line);
+
+  // The voice starts: the note goes.
+  engine.onSpeakStarted(stage.spoken[stage.spoken.length - 1]);
+  expect(engine.getState().voiceWait).toBe(false);
+
+  // Speaker off: nothing waits on a voice any more.
+  stage.voiceStarts = false;
+  engine.setVoiceOn(false);
+  engine.tap();
+  expect(engine.getState().voiceWait).toBe(false);
 });
 
 /**
@@ -1571,6 +1602,14 @@ describe('stripScoreLines', () => {
   it('drops it in any language and leaves nothing when it was all there was', () => {
     expect(stripScoreLines('돈 버는 힘=61, 지키는 힘=35, 타이밍=59')).toBe('');
     expect(stripScoreLines('Earning=61, Keeping=35.')).toBe('');
+  });
+
+  it('drops the period tag and keeps its phrase (30-10)', () => {
+    expect(stripScoreLines('협동, 공식 인정, 수련\n\nMonths=10-10; 격국이 살아나는 달이에요.')).toBe(
+      '협동, 공식 인정, 수련\n\n격국이 살아나는 달이에요.',
+    );
+    expect(stripScoreLines('7) Months=6-9; June through September')).toBe('June through September');
+    expect(stripScoreLines('Months = 3 – 5')).toBe('');
   });
 
   it('leaves ordinary sentences with numbers and commas alone', () => {

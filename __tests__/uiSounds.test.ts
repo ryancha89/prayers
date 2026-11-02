@@ -23,6 +23,7 @@ const SILENT: Record<string, string> = {
   'features/auth/screens/LoginScreen.tsx': 'not wired yet',
   'shared/components/FeatureCard.tsx': 'the caller answers the press (HomeScreen plays select / tap)',
   'features/journey/components/JourneyHeroCard.tsx': 'the caller answers the press (HomeScreen plays select)',
+  'features/story/components/StoryHeroCard.tsx': 'the caller answers the press (HomeScreen plays select)',
   'features/journey/components/RailwayProgress.tsx': 'the caller answers the press (JourneyScreen plays tap)',
   'shared/components/hud/Hud.tsx':
     'the caller answers the press (MyRoomScreen, WorldScreen, Journey and Meditation play tap / select / back; the consultation room stays silent — Unity owns its mix)',

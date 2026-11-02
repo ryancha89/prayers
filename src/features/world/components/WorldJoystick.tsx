@@ -4,6 +4,7 @@ import Svg, { Circle, Path, Polygon } from 'react-native-svg';
 import { getUnityBridge } from '../../counseling/bridge';
 import { colors } from '../../../shared/theme';
 import { GoldKnob, starPoints } from '../../../shared/components/Ornaments';
+import { useKeyboardWalk } from './useKeyboardWalk';
 
 /**
  * The world's analogue stick, in the Zenless Zone Zero manner (user 02-10, two ZZZ screenshots):
@@ -32,6 +33,8 @@ const DEAD = 0.12;
 const STEP = 0.05;
 /** The ring rests whole inside the zone's corner, its star clear of the zone's bottom. */
 const REST_AT = { x: RING / 2 + 6, y: STICK_ZONE.height - RING / 2 - 14 };
+/** The resting ring's right edge, from the zone's left — what a screen keeps clear beside the stick. */
+export const STICK_RING_RIGHT = REST_AT.x + RING / 2;
 /** Room under the ring for the star that hangs off its bottom. */
 const TAIL = 12;
 
@@ -139,6 +142,15 @@ export const WorldJoystick: React.FC<{ visible: boolean; onOtherTouch?: (pageX: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
+  // The keyboard drives the same walk (WASD / arrows, 30-10); the knob shows where it is heading.
+  // A finger on the stick wins: keys are ignored while it steers.
+  useKeyboardWalk(visible, (x, y) => {
+    if (finger.current) return;
+    knob.setValue({ x: x * RADIUS, y: -y * RADIUS });
+    setHeading(x === 0 && y === 0 ? null : Math.atan2(-y, x));
+    send(x, y);
+  });
 
   // Hidden (an overlay opened) or gone: the player must stop.
   useEffect(() => { if (!visible) release(false); }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps

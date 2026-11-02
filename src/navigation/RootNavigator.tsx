@@ -7,6 +7,7 @@ import { CounselorDetailScreen } from '../features/counselors/screens/CounselorD
 import { CounselingSubjectScreen } from '../features/counseling/screens/CounselingSubjectScreen';
 import { UnityEntryScreen } from '../features/counseling/screens/UnityEntryScreen';
 import { LectureScreen } from '../features/philosophy/screens/LectureScreen';
+import { StoryScreen } from '../features/story/screens/StoryScreen';
 import { CounselingRoomScreen } from '../features/counseling/screens/CounselingRoomScreen';
 import { AddSubjectScreen } from '../features/subjects/screens/AddSubjectScreen';
 import { CharacterSelectScreen } from '../features/character/screens/CharacterSelectScreen';
@@ -37,9 +38,6 @@ import { CafeScreen } from '../features/cafe/screens/CafeScreen';
 import { useAuthStore } from '../features/auth/store/authStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
-/** The 3D rooms with a landscape layout: these follow the phone (Info.plist's orientations). */
-const ROTATES = { orientation: 'default' } as const;
 
 /**
  * WHO THE APP IS FOR IS ASKED ONCE, AT THE START — not in the middle of choosing a counselor.
@@ -78,10 +76,8 @@ export const RootNavigator: React.FC = () => {
       headerShown: false,
       contentStyle: { backgroundColor: colors.bg },
       animation: 'slide_from_right',
-      // PORTRAIT BY DEFAULT (26-10, "tự quay ngang quay dọc"): Info.plist allows landscape for the 3D
-      // rooms laid out for it (CS97/98), which let EVERY screen turn with the phone. Only the screens
-      // below that set ROTATES follow the phone now; menus, profile and the pickers stay upright.
-      orientation: 'portrait',
+      // EVERY SCREEN FOLLOWS THE PHONE (29-10): the 26-10 portrait-by-default lock is undone — the
+      // tabs and menus turn with the phone again, as they did before (Info.plist's orientations).
     }}>
     {userAuth == null ? (
       <Stack.Screen name="Login" component={LoginScreen} options={{ animation: 'fade' }} />
@@ -93,8 +89,10 @@ export const RootNavigator: React.FC = () => {
     {userAuth != null && needsProfile ? (
       <Stack.Screen name="ProfileSetup" component={AddSubjectScreen} options={{ animation: 'fade' }} />
     ) : null}
+    {/* No swipe-back on any screen whose drag turns a 3D camera (30-10, "다른화면도 앵글돌릴때
+        이전화면으로 안가게"): here the drag turns the character (CHARACTER_VIEW). */}
     {userAuth != null && needsCharacter ? (
-      <Stack.Screen name="CharacterSetup" component={CharacterSelectScreen} options={{ animation: 'fade' }} />
+      <Stack.Screen name="CharacterSetup" component={CharacterSelectScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     ) : null}
     <Stack.Screen name="Tabs" component={BottomTabNavigator} />
     <Stack.Screen name="Account" component={AccountScreen} />
@@ -113,25 +111,29 @@ export const RootNavigator: React.FC = () => {
     <Stack.Screen name="JourneyCounselor" component={JourneyCounselorScreen} />
     {/* No swipe-back: a one-finger drag on the cabin turns the camera (useCabinCamera), and iOS 26's
         full-screen pop gesture took every rightward drag as "back". The header keeps its back button. */}
-    <Stack.Screen name="Journey" component={JourneyScreen} options={{ ...ROTATES, animation: 'fade', gestureEnabled: false }} />
+    <Stack.Screen name="Journey" component={JourneyScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     <Stack.Screen name="JourneyResult" component={JourneyResultScreen} options={{ animation: 'fade' }} />
     <Stack.Screen name="JourneyEnding" component={JourneyEndingScreen} options={{ animation: 'fade' }} />
     <Stack.Screen name="JourneyCollection" component={JourneyCollectionScreen} options={{ animation: 'fade' }} />
     <Stack.Screen name="ArchiveSection" component={ArchiveSectionScreen} />
     {/* Fade, like My Room: from the World the UnityView must mount into a settled screen. Pushed with
         the default slide (02-10) the room never answered MEDITATION_INIT while My Room, fading, did. */}
-    <Stack.Screen name="MeditationRoom" component={MeditationRoomScreen} options={{ ...ROTATES, animation: 'fade' }} />
-    <Stack.Screen name="SleepGuide" component={SleepGuideScreen} options={{ animation: 'fade' }} />
+    {/* No swipe-back (30-10, "돌릴때 이전 화면으로 나가려는거 막아"): a sideways drag turns the camera
+        round her; the way out is the back button. */}
+    <Stack.Screen name="MeditationRoom" component={MeditationRoomScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+    <Stack.Screen name="SleepGuide" component={SleepGuideScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     {/* No swipe-back: the walk keys sit at the left edge, and a thumb on ◀ read as iOS's pop
         gesture (the cabin's lesson). The top bar's 2D button is the way out. */}
-    <Stack.Screen name="World" component={WorldScreen} options={{ ...ROTATES, animation: 'fade', gestureEnabled: false }} />
+    <Stack.Screen name="World" component={WorldScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     {/* No swipe-back: the stick sits at the left edge and a one-finger drag looks round the room
         (useMyRoomCamera) — the cabin's lesson. The top bar's back button returns to the world. */}
-    <Stack.Screen name="MyRoom" component={MyRoomScreen} options={{ ...ROTATES, animation: 'fade', gestureEnabled: false }} />
+    <Stack.Screen name="MyRoom" component={MyRoomScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     {/* My Room's rules: fade (the UnityView mounts into a settled screen), no swipe-back (the stick
         sits at the left edge and a one-finger drag looks round). The top bar's back is the way out. */}
-    <Stack.Screen name="Cafe" component={CafeScreen} options={{ ...ROTATES, animation: 'fade', gestureEnabled: false }} />
-    <Stack.Screen name="Lecture" component={LectureScreen} options={{ ...ROTATES, animation: 'fade' }} />
+    <Stack.Screen name="Cafe" component={CafeScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+    {/* No swipe-back: a drag turns the lecture room's camera (LECTURE_CAMERA); the top bar's back is the way out. */}
+    <Stack.Screen name="Lecture" component={LectureScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+    <Stack.Screen name="Story" component={StoryScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     <Stack.Screen name="Legal" component={LegalScreen} />
     <Stack.Screen name="CounselorDetail" component={CounselorDetailScreen} />
     <Stack.Screen name="CounselingSubject" component={CounselingSubjectScreen} />
@@ -146,12 +148,12 @@ export const RootNavigator: React.FC = () => {
     <Stack.Screen
       name="UnityEntry"
       component={UnityEntryScreen}
-      options={{ ...ROTATES, animation: 'fade' }}
+      options={{ animation: 'fade' }}
     />
     <Stack.Screen
       name="CounselingRoom"
       component={CounselingRoomScreen}
-      options={{ ...ROTATES, animation: 'fade', gestureEnabled: false }}
+      options={{ animation: 'fade', gestureEnabled: false }}
     />
     </Stack.Group>
   </Stack.Navigator>

@@ -77,7 +77,10 @@ type SpokenChunk = ReadingChunk & {
 export function stripScoreLines(text: string): string {
   const PAIR = String.raw`[^\n=,，、]{1,40}=\s*\d{1,3}`;
   const RUN = new RegExp(String.raw`(^|\n)[ \t]*${PAIR}(?:\s*[,，、]\s*${PAIR})+[ \t.]*(?=\n|$)`, 'g');
-  return text.replace(RUN, '$1').replace(/\n{3,}/g, '\n\n').trim();
+  // The period part's tag (30-10, "Months=10-10; 격국이…" on her card): its months are the ribbon's
+  // data, never speech. The phrase after the ';' is kept — it is the sentence that goes with them.
+  const PERIOD = /(^|\n)?[ \t]*(?:\d\)\s*)?Months\s*=\s*\d{1,2}\s*[-–—~]\s*\d{1,2}\s*[;:,.]?[ \t]*/gi;
+  return text.replace(RUN, '$1').replace(PERIOD, '$1').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function chunksOfScenes(scenes: CounselorScene[]): SpokenChunk[] {
@@ -105,6 +108,8 @@ const ANSWER_GUARD_MIN_MS = 20000;
 const MIN_HOLD_MS = 1800;
 /** Maximum hold, so an unusually long line does not freeze the screen. */
 const MAX_HOLD_MS = 9000;
+/** How long the "voice is being made" note stays after a tap, if the voice does not start first. */
+const VOICE_WAIT_NOTE_MS = 4000;
 /** The pause after a line finishes, before the next phase. */
 const TAIL_MS = 700;
 
@@ -345,6 +350,9 @@ export interface FlowState {
    *  Not the same as `!inputEnabled`: in the loop the box is open while she speaks, precisely so
    *  she CAN be cut off. The UI needs the difference to offer "stop" instead of "send". */
   speaking: boolean;
+  /** A tap came while her voice was still being made (30-10): the tap waits, and the card says so —
+   *  with the way to go on without a voice (the speaker button). Cleared when the voice starts. */
+  voiceWait?: boolean;
   /** Where the microphone is, and how loud the room is while it listens (0–1). */
   mic: MicView;
   /** A spoken question the room's coin check refused (29-10): nothing was asked, and the words
@@ -384,6 +392,7 @@ const emptyState: FlowState = {
   tone: '',
   emotion: 'neutral',
   speaking: false,
+  voiceWait: false,
   mic: { state: 'idle', level: 0, error: '', offered: true },
   heldQuestion: null,
 };
@@ -477,6 +486,11 @@ export class ConsultationEngine {
   /** When the current take was handed to Unity, and how many characters it carries. */
   private speakStartedAt = 0;
   private speakChars = 0;
+  /** The take Unity said is audible (SPEAK_STARTED); a take still waiting on its voice differs. */
+  private heardKey: string | null = null;
+  /** The player's speaker switch: off, nothing waits on a voice. */
+  private voiceOn = true;
+  private voiceWaitTimer: number | null = null;
   /** A line of the current phase came back silent — see MAX_UNVOICED_HOLD_MS. */
   private phaseUnvoiced = false;
   private speakDoneWaiter: (() => void) | null = null;
@@ -1012,8 +1026,26 @@ export class ConsultationEngine {
     this.speakDoneWaiter = then;
   }
 
+  /** The speaker switch. Turning the voice off ends any wait on it. */
+  setVoiceOn(on: boolean) {
+    this.voiceOn = on;
+    if (!on) this.endVoiceWait();
+  }
+
+  /** Unity's voice for this take is audible now. */
+  onSpeakStarted(cacheKey: string) {
+    this.heardKey = cacheKey;
+    if (this.speaking === cacheKey) this.endVoiceWait();
+  }
+
+  private endVoiceWait() {
+    if (this.voiceWaitTimer) { this.sched.clear(this.voiceWaitTimer); this.voiceWaitTimer = null; }
+    if (this.state.voiceWait) this.patch({ voiceWait: false });
+  }
+
   /** Unity finished a spoken take. */
   onSpeakDone(cacheKey: string) {
+    this.endVoiceWait();
     if (this.speaking && this.speaking !== cacheKey) return;
     if (this.speaking && this.speakChars > 0) {
       const expected = (this.speakChars / CHARS_PER_SECOND) * 1000;
@@ -1103,6 +1135,14 @@ export class ConsultationEngine {
   /** Tap-to-continue on a dialogue beat. */
   tap() {
     if (!this.running || !this.state.canTap) return;
+    // Her voice is still being made: skipping now would throw it away unheard. Say so, and how to go
+    // on without it (30-10). A take that fails reports SPEAK_DONE, so this never waits for nothing.
+    if (this.voiceOn && this.speaking && this.heardKey !== this.speaking) {
+      this.patch({ voiceWait: true });
+      if (this.voiceWaitTimer) this.sched.clear(this.voiceWaitTimer);
+      this.voiceWaitTimer = this.sched.set(() => { this.voiceWaitTimer = null; this.patch({ voiceWait: false }); }, VOICE_WAIT_NOTE_MS);
+      return;
+    }
     // Mid-reading, the first tap finishes the beat rather than skipping it: the
     // card only holds what has been spoken so far, so advancing here would throw
     // away text the player never saw.

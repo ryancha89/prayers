@@ -18,6 +18,7 @@ import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useFollowCamera } from '../../world/components/useWorldCamera';
 import { ALL_ORIENTATIONS } from '../../coins/components/CoinShopSheet';
 import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
+import { useScreen } from '../../../shared/device/screen';
 import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -28,6 +29,7 @@ const ON_GOLD = '#1A1330';
 /** The lecture framing Unity starts on: zoom 0.5 = LectureRoomBuilder's shot, facing him. */
 /** Height one subtitle line takes (styles.line lineHeight). */
 const SUBTITLE_LINE_H = 32;
+const SUBTITLE_LINE_H_SIDE = 24;
 const LECTURE_CAMERA_HOME = { zoom: 0.5, yaw: 0, pitch: 0 };
 /** Sentences per camera angle before the cut. */
 const SHOT_LINES = 4;
@@ -198,7 +200,12 @@ export const LectureScreen: React.FC = () => {
   // user: "이전 자막도 볼수있게 스크롤로"); the box is `subtitleLines` lines tall and follows the voice.
   const subtitleScroll = useRef<ScrollView>(null);
   // "N줄" = room for N sentences of up to two wrapped lines each — a sentence is never cut in half.
-  const boxH = subtitleLines * (SUBTITLE_LINE_H * 2 + 6);
+  // LANDSCAPE IS A STRIP (30-10, "가로형태에 표시가 너무 커서 캐릭터를 가려버림"): the phone is only
+  // ~400 pt tall on its side, and two big lines, ticks, a 68 pt play button and a second row of
+  // buttons covered him to the shoulders. There: one sentence in a smaller face, and every control on
+  // one row.
+  const landscape = useScreen().landscape;
+  const boxH = landscape ? SUBTITLE_LINE_H_SIDE * 2 + 6 : subtitleLines * (SUBTITLE_LINE_H * 2 + 6);
   const pickLines = (n: number) => {
     sfx.select();
     setSubtitleLines(n);
@@ -341,7 +348,7 @@ export const LectureScreen: React.FC = () => {
 
         <View style={styles.spacer} pointerEvents="none" />
 
-        <View style={styles.stage} pointerEvents="box-none">
+        <View style={[styles.stage, landscape && styles.stageSide]} pointerEvents="box-none">
           {atQuestion ? (
             <View style={styles.questionCard} testID="lecture-question">
               <Text style={styles.questionLabel}>{t('lecture.question')}</Text>
@@ -356,21 +363,22 @@ export const LectureScreen: React.FC = () => {
               showsVerticalScrollIndicator={false}
               onContentSizeChange={() => subtitleScroll.current?.scrollToEnd({ animated: true })}>
               {chapter.lines.slice(0, index).map((l, k) => (
-                <Text key={k} style={[styles.line, styles.linePast]}>{l.text}</Text>
+                <Text key={k} style={[styles.line, landscape && styles.lineSide, styles.linePast]}>{l.text}</Text>
               ))}
-              <Text style={styles.line}>{current.text}</Text>
+              <Text style={[styles.line, landscape && styles.lineSide]}>{current.text}</Text>
             </ScrollView>
           )}
         </View>
 
         {/* One tick per sentence, and the question. */}
-        <View style={styles.ticks}>
+        <View style={[styles.ticks, landscape && styles.ticksSide]}>
           {Array.from({ length: total + 1 }, (_, i) => (
             <View key={i} style={[styles.tick, i < index && styles.tickDone, i === index && styles.tickNow]} />
           ))}
         </View>
 
-        <View style={styles.controls}>
+        <View style={landscape ? styles.dockSide : undefined}>
+        <View style={[styles.controls, landscape && styles.controlsSide]}>
           <Pressable
             testID="lecture-speed"
             style={styles.speed}
@@ -385,7 +393,7 @@ export const LectureScreen: React.FC = () => {
           </Pressable>
           <Pressable
             testID="lecture-play"
-            style={styles.play}
+            style={[styles.play, landscape && styles.playSide]}
             onPress={toggle}
             accessibilityRole="button"
             accessibilityLabel={playing ? t('lecture.pause') : t('lecture.play')}>
@@ -394,8 +402,9 @@ export const LectureScreen: React.FC = () => {
           <Pressable style={styles.ctl} onPress={() => step(1)} disabled={atQuestion} accessibilityLabel={t('lecture.nextLine')}>
             <Icon name="next" size={24} color={atQuestion ? colors.textMuted : colors.textPrimary} />
           </Pressable>
-          {/* Balances the speed button, so play stays in the middle. */}
-          <Pressable
+          {/* Balances the speed button, so play stays in the middle. Not in landscape: the strip
+              always shows one sentence, so the choice would change nothing there. */}
+          {!landscape && <Pressable
             testID="lecture-lines"
             style={styles.speed}
             onPress={() => { sfx.tap(); setSpeedMenu(false); setLinesMenu(m => !m); }}
@@ -403,13 +412,13 @@ export const LectureScreen: React.FC = () => {
             accessibilityRole="button"
             accessibilityLabel={t('lecture.lines', { n: subtitleLines })}>
             <Text style={styles.speedText}>{t('lecture.lines', { n: subtitleLines })}</Text>
-          </Pressable>
+          </Pressable>}
         </View>
 
-        <View style={styles.bottomRow}>
+        <View style={[styles.bottomRow, landscape && styles.bottomRowSide]}>
         <Pressable
           testID="lecture-autoplay"
-          style={[styles.autoplay, autoplay && styles.autoplayOn]}
+          style={[styles.autoplay, landscape && styles.slimSide, autoplay && styles.autoplayOn]}
           onPress={() => { sfx.tap(); setAutoplay(!autoplay); }}
           accessibilityRole="switch"
           accessibilityState={{ checked: autoplay }}
@@ -424,7 +433,7 @@ export const LectureScreen: React.FC = () => {
         {chapter.no < LAST ? (
           <Pressable
             testID="lecture-next-chapter"
-            style={({ pressed }) => [styles.nextChapter, ended && styles.nextChapterLead, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.nextChapter, landscape && styles.slimSide, ended && styles.nextChapterLead, pressed && styles.pressed]}
             onPress={nextChapter}
             accessibilityRole="button">
             <Text style={[styles.nextChapterText, ended && styles.nextChapterTextLead]} numberOfLines={1}>
@@ -436,12 +445,13 @@ export const LectureScreen: React.FC = () => {
           ended ? <Text style={[styles.finished, styles.nextGrow]}>{t('lecture.finished')}</Text> : <View style={styles.nextGrow} />
         )}
         </View>
+        </View>
       </SafeAreaView>
 
       {speedMenu && (
         <>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setSpeedMenu(false)} testID="lecture-speed-dismiss" />
-          <View style={styles.speedMenu} testID="lecture-speed-menu">
+          <View style={[styles.speedMenu, landscape && styles.speedMenuSide]} testID="lecture-speed-menu">
             <Text style={styles.speedMenuTitle}>{t('lecture.speed')}</Text>
             {[...LECTURE_SPEEDS].reverse().map(s => (
               <Pressable
@@ -592,6 +602,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
   },
   bottomRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.lg, marginBottom: spacing.sm },
+  // Landscape: the strip (see `landscape` above).
+  stageSide: { minHeight: 0, marginBottom: spacing.sm },
+  lineSide: { fontSize: 16, lineHeight: SUBTITLE_LINE_H_SIDE },
+  ticksSide: { marginBottom: spacing.sm },
+  dockSide: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginBottom: spacing.xs },
+  controlsSide: { justifyContent: 'flex-start', gap: spacing.xs },
+  playSide: { width: 46, height: 46, borderRadius: 23 },
+  bottomRowSide: { flex: 1, marginTop: 0, marginBottom: 0 },
+  slimSide: { paddingVertical: spacing.sm },
+  speedMenuSide: { bottom: 64 },
   nextGrow: { flex: 1 },
   autoplay: {
     flexDirection: 'row', alignItems: 'center', gap: 5,

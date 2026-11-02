@@ -1,0 +1,443 @@
+{
+  "blender": "5.1.2",
+  "seats": 110,
+  "original_objects_preserved": true,
+  "imagegen_assets": [
+    "taenghwa.png",
+    "cushion.png",
+    "halo.png"
+  ],
+  "materials": 38,
+  "images": [
+    {
+      "name": "coffer.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "coffer.png.001",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "cushion.png",
+      "packed": true,
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "name": "cushion.png.001",
+      "packed": true,
+      "size": [
+        1254,
+        1254
+      ]
+    },
+    {
+      "name": "dancheong_beam.png",
+      "packed": true,
+      "size": [
+        2048,
+        256
+      ]
+    },
+    {
+      "name": "dancheong_beam.png.001",
+      "packed": true,
+      "size": [
+        2048,
+        256
+      ]
+    },
+    {
+      "name": "dancheong_bracket.png",
+      "packed": true,
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "name": "dancheong_bracket.png.001",
+      "packed": true,
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "name": "dancheong_rafter.png",
+      "packed": true,
+      "size": [
+        256,
+        256
+      ]
+    },
+    {
+      "name": "dancheong_rafter.png.001",
+      "packed": true,
+      "size": [
+        256,
+        256
+      ]
+    },
+    {
+      "name": "fabric_normal.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "fabric_roughness.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "gold_leaf.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "gold_leaf_normal.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "gold_leaf_roughness.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "granite.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "granite.png.001",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "granite_normal.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "granite_roughness.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "halo.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "halo.png.001",
+      "packed": true,
+      "size": [
+        1254,
+        1254
+      ]
+    },
+    {
+      "name": "lattice_door.png",
+      "packed": true,
+      "size": [
+        512,
+        1024
+      ]
+    },
+    {
+      "name": "lattice_door.png.001",
+      "packed": true,
+      "size": [
+        512,
+        1024
+      ]
+    },
+    {
+      "name": "leaves_maple.png",
+      "packed": true,
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "name": "leaves_pine.png",
+      "packed": true,
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "name": "paint_normal.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "paint_roughness.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "paper_normal.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "paper_roughness.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "paving.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "plaster.png",
+      "packed": true,
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "name": "plaster.png.001",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "plaster_normal.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "plaster_roughness.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "roof_tile.png",
+      "packed": true,
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "name": "roof_tile.png.001",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "roof_tile_normal.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "roof_tile_roughness.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "sky_sunset.png",
+      "packed": true,
+      "size": [
+        4096,
+        1024
+      ]
+    },
+    {
+      "name": "taenghwa.png",
+      "packed": true,
+      "size": [
+        2048,
+        1280
+      ]
+    },
+    {
+      "name": "taenghwa.png.001",
+      "packed": true,
+      "size": [
+        1962,
+        802
+      ]
+    },
+    {
+      "name": "wood_brown.png",
+      "packed": true,
+      "size": [
+        512,
+        512
+      ]
+    },
+    {
+      "name": "wood_brown.png.001",
+      "packed": true,
+      "size": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "name": "wood_brown_normal.png",
+      "packed": true,
+      "size": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "name": "wood_brown_roughness.png",
+      "packed": true,
+      "size": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "name": "wood_floor.png",
+      "packed": true,
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "name": "wood_floor.png.001",
+      "packed": true,
+      "size": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "name": "wood_floor_normal.png",
+      "packed": true,
+      "size": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "name": "wood_floor_roughness.png",
+      "packed": true,
+      "size": [
+        2048,
+        2048
+      ]
+    },
+    {
+      "name": "wood_red.png",
+      "packed": true,
+      "size": [
+        512,
+        1024
+      ]
+    },
+    {
+      "name": "wood_red.png.001",
+      "packed": true,
+      "size": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "name": "wood_red_normal.png",
+      "packed": true,
+      "size": [
+        1024,
+        2048
+      ]
+    },
+    {
+      "name": "wood_red_roughness.png",
+      "packed": true,
+      "size": [
+        1024,
+        2048
+      ]
+    }
+  ],
+  "render_engine": "CYCLES",
+  "renders": [
+    "/Users/namaste/git/prayers/assets/mountain-temple/previews-textured/interior.png",
+    "/Users/namaste/git/prayers/assets/mountain-temple/previews-textured/texture_detail.png",
+    "/Users/namaste/git/prayers/assets/mountain-temple/previews-textured/exterior.png"
+  ]
+}

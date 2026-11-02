@@ -49,6 +49,9 @@ export interface TarotReading {
   cards: TarotReadingCard[];
   overall: string;
   advice: string;
+  /** The reader's question before the summary (30-10): what she wants to know about the player's
+   *  situation. '' from an older server — the app asks its own (cafe.tarot.clarifyAsk). */
+  ask: string;
 }
 
 export type CafeFailure =
@@ -210,7 +213,10 @@ export function createReading(req: {
       // Seven cards or it is not a reading this screen can present.
       if (b?.reading_id == null || !Array.isArray(b.cards) || b.cards.length !== 7) return null;
       return {
-        reading: { readingId: str(b.reading_id), cards: b.cards.map(readCard), overall: plain(str(b.overall)), advice: plain(str(b.advice)) },
+        reading: {
+          readingId: str(b.reading_id), cards: b.cards.map(readCard),
+          overall: plain(str(b.overall)), advice: plain(str(b.advice)), ask: plain(str(b.ask)),
+        },
       };
     },
   );
@@ -248,6 +254,34 @@ export function askFollowup(req: {
     { request_id: req.requestId, question: req.question, lang: req.lang },
     b => (typeof b?.answer === 'string' && b.answer.length > 0 ? { answer: plain(b.answer) } : null),
   );
+}
+
+/**
+ * The summary rewritten with the player's answer to the reader's question (30-10, "종합이 너무 짧은데
+ * 도출하기 전에 유저에게 그 질문에 대해 좀 더 물어보고 도출해"). Free — part of the reading. Null when
+ * the server could not write it: the reading's own summary is shown instead.
+ */
+export async function synthesizeReading(req: {
+  readingId: string;
+  context: string;
+  lang: Lang;
+}): Promise<{ overall: string; advice: string } | null> {
+  try {
+    const res = await authedFetch(`${apiBase()}/api/v1/prayers/cafe/tarot/readings/${encodeURIComponent(req.readingId)}/synthesis`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ context: req.context, lang: req.lang }),
+    });
+    const b = await res?.json().catch(() => null);
+    if (!res?.ok || !b?.overall || !b?.advice) {
+      devlog(`[cafe] synthesis refused: HTTP ${res?.status ?? '-'} ${b?.error_code ?? ''}`);
+      return null;
+    }
+    return { overall: plain(str(b.overall)), advice: plain(str(b.advice)) };
+  } catch (e) {
+    devlog(`[cafe] synthesis failed: ${String(e)}`);
+    return null;
+  }
 }
 
 export function orderCoffee(req: { requestId: string; lang: Lang }): Promise<CafeResult<{ fortune: string }>> {

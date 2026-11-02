@@ -409,6 +409,14 @@ export const JourneyScreen: React.FC = () => {
           ? ''
           : [...sentences].reverse().find(x => x.start <= progress)?.text ?? sentences[0]?.text ?? '';
 
+  // The box's status line: loading the next part (or the journey, or the next station), or paused.
+  const status: { text: string; busy: boolean } | null =
+    s.status === 'error' ? null
+      : preparing || s.loadingPart ? { text: t('journey.status.loading'), busy: true }
+        : s.status === 'transition' ? { text: t('journey.status.moving'), busy: true }
+          : s.status === 'paused' && !waiting && !storyShowing ? { text: t('journey.status.paused'), busy: false }
+            : null;
+
   const saveCard = useCallback(
     (card: ActiveCard) => {
       if (!journey) return;
@@ -478,7 +486,9 @@ export const JourneyScreen: React.FC = () => {
         // Over the cabin a month card sits low in the window, over the table, and one with a feeling
         // waits for the counsellor's reaction (cabinState.mood → Happy/Concerned/Sad): centred and at
         // once, it covered the face the reaction is on (07-10).
-        <View style={[styles.cardLayer, unity && styles.cardLayerCabin]} pointerEvents="box-none">
+        // Landscape: up under the top bar (30-10, "가로화면에서 저장했어요 중간에 나오는데 내용 나오는거랑
+        // 안겹치게") — low in a ~400 pt window it sat on the dialogue box and the line being read.
+        <View style={[styles.cardLayer, unity && styles.cardLayerCabin, landscape && styles.cardLayerSide]} pointerEvents="box-none">
           <FortuneCardOverlay card={s.activeCard} year={journey.year} onDone={s.dismissCard} onSave={saveCard}
             delayMs={unity && cabinState?.mood ? MOOD_BEAT_LEAD_MS : 0} />
         </View>
@@ -589,6 +599,14 @@ export const JourneyScreen: React.FC = () => {
           </Text>
         </View>
         {s.status === 'playing' && <Icon name="chevronRight" size={18} color={colors.gold} style={styles.more} />}
+        {/* What the trip is doing right now, in the box itself so it shows folded too (30-10, "다음게
+            생성중인지 멈춰있는지 유저가 파악하기 어려우니 상태를 좀 표시해줘"). */}
+        {status ? (
+          <View style={styles.statusRow} testID="journey-status" accessibilityLiveRegion="polite">
+            {status.busy ? <ActivityIndicator size="small" color={colors.gold} /> : <Icon name="pause" size={12} color={colors.textMuted} />}
+            <Text style={[styles.statusText, !status.busy && styles.statusTextIdle]}>{status.text}</Text>
+          </View>
+        ) : null}
       </Pressable>
 
       {panelMode === 'full' && (<>
@@ -739,6 +757,7 @@ const styles = StyleSheet.create({
   retryText: { ...typography.bodyStrong, color: '#1A1330' },
   cardLayer: { ...absoluteFill, justifyContent: 'center' },
   cardLayerCabin: { justifyContent: 'flex-end', paddingBottom: spacing.md },
+  cardLayerSide: { justifyContent: 'flex-start', paddingTop: 64, paddingBottom: 0 },
   narrator: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.xl, marginTop: spacing.lg },
   avatar: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(233,196,106,0.5)' },
   guideName: { ...typography.caption, color: colors.textPrimary, fontWeight: '700' },
@@ -754,6 +773,9 @@ const styles = StyleSheet.create({
   lineBoxSide: { minHeight: 0, marginTop: spacing.xs },
   lineSide: { fontSize: 16, lineHeight: 24 },
   controlsSide: { paddingHorizontal: spacing.lg, marginVertical: spacing.sm },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
+  statusText: { ...typography.caption, color: colors.gold },
+  statusTextIdle: { color: colors.textMuted },
   preparing: { ...typography.caption, color: colors.gold, textAlign: 'center', paddingHorizontal: spacing.md, marginBottom: spacing.sm },
   more: { position: 'absolute', right: spacing.lg, bottom: spacing.xs },
   lineBox: { minHeight: 76, justifyContent: 'center', paddingHorizontal: spacing.xl, marginTop: spacing.sm },
