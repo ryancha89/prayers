@@ -72,8 +72,17 @@ export const OUTFITS: Record<string, BodyOutfits> = {
 
 const EMPTY: Outfit = { style: '', top: '', bottom: '' };
 
+/**
+ * The garments (tops / bottoms) are OFF for now (02-11-2026, user: "đồ xấu quá… ẩn tạm đồ code đi"): the
+ * code-built hoodie / knit / jeans / midi looked plain and kept showing holes in the bodies. They stay wired in
+ * Unity and listed above; VRoid-made garments replace them, then this goes back to true. While off, the
+ * creator shows only the styles and colours, and a stored top/bottom falls back to the artist's own.
+ */
+export const GARMENTS_ON = false;
+
 export function outfitsFor(characterId: string | undefined): BodyOutfits | undefined {
-  return characterId ? OUTFITS[characterId] : undefined;
+  const b = characterId ? OUTFITS[characterId] : undefined;
+  return b && !GARMENTS_ON ? { ...b, tops: [], bottoms: [] } : b;
 }
 
 /** A stored value → its three parts, keeping only what this body has (another body's pieces drop). */
