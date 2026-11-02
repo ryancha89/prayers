@@ -20,44 +20,92 @@ export const OUTFIT_COLORS: { hex: string; swatch: string }[] = [
 ];
 
 /**
- * Outfit sets (02-11): each body's clothes texture repainted — each garment its own colour or pattern
- * (Saju `tools/outfits/gen_outfits.py`). Same mesh and rig, so only the cloth changes. Picked as
- * `set:<id>` (Unity's OutfitTint swaps the texture); the ids must match the PNGs Unity imported
- * (`xuan_basic/<body>/Textures/outfits/<body>_Clothes_<id>.png`). A body without sets lists none.
+ * Outfits (02-11): picked in three parts, as Unity's OutfitTint reads them —
+ *   style   the artist's own pieces' look: "" (as drawn), a palette colour "#RRGGBB", or a repainted
+ *           texture (a STYLE set, Saju `tools/outfits/gen_outfits.py`)
+ *   top     "" (the artist's) or a garment top (a new mesh on the rig, Saju `tools/outfits/<garment>`)
+ *   bottom  "" (the artist's) or a garment bottom
+ * Stored in `playerOutfit` as before when only a style is picked ("", "#RRGGBB", "set:<id>"), and as
+ * "s=<style>;t=<top>;b=<bottom>" (empty parts left out) once a garment is worn. Old "set:<garment>" values
+ * still read. Ids must match the sets Unity wired on the body (OutfitSets / OutfitGarments).
  */
-export type OutfitSet = { id: string; value: string; thumb: number; label: string };
+export type OutfitPiece = { id: string; thumb: number; label: string };
+export type Outfit = { style: string; top: string; bottom: string };
 
-const set = (id: string, thumb: number): OutfitSet => ({ id, value: `set:${id}`, thumb, label: `character.outfit.set.${id}` });
+const piece = (id: string, thumb: number): OutfitPiece => ({ id, thumb, label: `character.outfit.set.${id}` });
 
-export const OUTFIT_SETS: Record<string, OutfitSet[]> = {
-  xb_f01: [
-    set('school', require('./assets/outfits/xb_f01_school.png')),
-    set('winter', require('./assets/outfits/xb_f01_winter.png')),
-    set('spring', require('./assets/outfits/xb_f01_spring.png')),
-    // 02-11: garment sets — new meshes on her rig (Saju tools/outfits/{hoodie_f,jeans_f,midi_f}).
-    set('hoodie', require('./assets/outfits/xb_f01_hoodie.png')),
-    set('jeans', require('./assets/outfits/xb_f01_jeans.png')),
-    set('midi', require('./assets/outfits/xb_f01_midi.png')),
-  ],
-  xb_m01: [
-    set('smart', require('./assets/outfits/xb_m01_smart.png')),
-    set('earth', require('./assets/outfits/xb_m01_earth.png')),
-    set('denim', require('./assets/outfits/xb_m01_denim.png')),
-    // 02-11: the first GARMENT set — a new mesh (Saju tools/outfits/hoodie), not a repaint.
-    set('hoodie', require('./assets/outfits/xb_m01_hoodie.png')),
-  ],
+type BodyOutfits = { styles: OutfitPiece[]; tops: OutfitPiece[]; bottoms: OutfitPiece[]; ownTop: number; ownBottom?: number };
+
+export const OUTFITS: Record<string, BodyOutfits> = {
+  xb_f01: {
+    styles: [
+      piece('school', require('./assets/outfits/xb_f01_school.png')),
+      piece('winter', require('./assets/outfits/xb_f01_winter.png')),
+      piece('spring', require('./assets/outfits/xb_f01_spring.png')),
+    ],
+    tops: [
+      piece('hoodie', require('./assets/outfits/xb_f01_hoodie.png')),
+      piece('knit', require('./assets/outfits/xb_f01_knit.png')),
+    ],
+    bottoms: [
+      piece('jeans', require('./assets/outfits/xb_f01_jeans.png')),
+      piece('midi', require('./assets/outfits/xb_f01_midi.png')),
+    ],
+    ownTop: require('./assets/outfits/xb_f01_top_original.png'),
+    ownBottom: require('./assets/outfits/xb_f01_bottom_original.png'),
+  },
+  xb_m01: {
+    styles: [
+      piece('smart', require('./assets/outfits/xb_m01_smart.png')),
+      piece('earth', require('./assets/outfits/xb_m01_earth.png')),
+      piece('denim', require('./assets/outfits/xb_m01_denim.png')),
+    ],
+    tops: [piece('hoodie', require('./assets/outfits/xb_m01_hoodie.png'))],
+    bottoms: [],
+    ownTop: require('./assets/outfits/xb_m01_top_original.png'),
+  },
 };
 
-export function outfitSetsFor(characterId: string | undefined): OutfitSet[] {
-  return (characterId && OUTFIT_SETS[characterId]) || [];
+const EMPTY: Outfit = { style: '', top: '', bottom: '' };
+
+export function outfitsFor(characterId: string | undefined): BodyOutfits | undefined {
+  return characterId ? OUTFITS[characterId] : undefined;
 }
 
-/**
- * A stored outfit this body can draw: a palette colour, or one of ITS sets. Anything else (a colour
- * the palette dropped, another body's set after switching character) falls back to the model's own.
- */
+/** A stored value → its three parts, keeping only what this body has (another body's pieces drop). */
+export function parseOutfit(value: string | undefined, characterId?: string): Outfit {
+  const b = outfitsFor(characterId);
+  const has = (list: OutfitPiece[] | undefined, id: string) => !!list?.some(p => p.id === id);
+  const styleOk = (st: string) => st === '' || OUTFIT_COLORS.some(c => c.hex === st) || has(b?.styles, st);
+  const v = (value ?? '').trim();
+  if (!v) return { ...EMPTY };
+  if (v.includes('=')) {
+    const o = { ...EMPTY };
+    for (const part of v.split(';')) {
+      const [k, val = ''] = part.split('=');
+      if (k === 's' && styleOk(val)) o.style = val;
+      if (k === 't' && has(b?.tops, val)) o.top = val;
+      if (k === 'b' && has(b?.bottoms, val)) o.bottom = val;
+    }
+    return o;
+  }
+  if (v.startsWith('#')) return { ...EMPTY, style: styleOk(v) ? v : '' };
+  if (v.startsWith('set:')) {
+    const id = v.slice(4);
+    if (has(b?.styles, id)) return { ...EMPTY, style: id };
+    if (has(b?.tops, id)) return { ...EMPTY, top: id };
+    if (has(b?.bottoms, id)) return { ...EMPTY, bottom: id };
+  }
+  return { ...EMPTY };
+}
+
+/** The three parts → the stored value (the short old forms when no garment is worn). */
+export function encodeOutfit(o: Outfit): string {
+  if (!o.top && !o.bottom) return !o.style ? '' : o.style.startsWith('#') ? o.style : `set:${o.style}`;
+  return [o.style && `s=${o.style}`, o.top && `t=${o.top}`, o.bottom && `b=${o.bottom}`].filter(Boolean).join(';');
+}
+
+/** A stored outfit this body can draw, normalised (unknown or other-body parts fall back to the artist's own). */
 export function knownOutfit(value: string | undefined, characterId?: string): string {
-  if (OUTFIT_COLORS.some(c => c.hex === value)) return value as string;
-  if (value && outfitSetsFor(characterId).some(s => s.value === value)) return value;
-  return '';
+  return encodeOutfit(parseOutfit(value, characterId));
 }

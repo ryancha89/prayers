@@ -14,7 +14,7 @@ import { charactersFor, effectiveCharacter } from '../characters';
 import { saveCharacterToAccount } from '../characterSync';
 import { useCharacterView } from '../useCharacterView';
 import { HAIR_COLORS, knownHair } from '../hairColors';
-import { OUTFIT_COLORS, knownOutfit, outfitSetsFor } from '../outfitColors';
+import { OUTFIT_COLORS, encodeOutfit, knownOutfit, outfitsFor, parseOutfit, type Outfit, type OutfitPiece } from '../outfitColors';
 import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
@@ -52,9 +52,9 @@ import type { FaceTrackingState } from '../../counseling/types';
  * (CHARACTER_CONFIRM) before the pick is stored. The hair colour (`playerHair`) is stored with the
  * character and travels on every *_INIT like it, so the World walks the same hair.
  *
- * 29-10, the Outfit step (hair → outfit → done): the same, for the clothes (`playerOutfit`): a colour
- * for the whole outfit, framed on the whole body. 02-11: above the colours, the body's outfit SETS
- * (`set:<id>`, its clothes texture repainted per garment) — they replaced the "coming soon" card.
+ * 29-10, the Outfit step (hair → outfit → done): the same, for the clothes (`playerOutfit`), framed on the
+ * whole body. 02-11: a TOP, a BOTTOM and a STYLE for the artist's own pieces (a repainted texture or a
+ * colour), picked separately — see outfitColors.ts for how the three are stored.
  *
  * BODY_READY says which gender Unity can actually mount; a `false` shows "Coming soon" and a note,
  * and still saves the pick so the body is there the day it lands.
@@ -291,13 +291,28 @@ export const CharacterSelectScreen: React.FC = () => {
     </ScrollView>
   );
 
-  // The body's outfit sets (02-11): round crops of each set on the body, above the colours.
-  const sets = outfitSetsFor(picked);
-  const setRow = sets.length === 0 ? null : (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.swatches}>
-      <Text style={styles.setsLabel}>{t('character.outfit.sets')}</Text>
-      {sets.map(o => {
-        const on = outfit === o.value;
+  // The outfit (02-11): a top, a bottom and a style for the artist's own pieces, picked separately — three
+  // rows of round crops (+ the colours), each starting with the artist's own piece.
+  const look = parseOutfit(outfit, picked);
+  const wear = (part: Partial<Outfit>) => { sfx.tap(); setOutfit(encodeOutfit({ ...look, ...part })); };
+  const bodyOutfits = outfitsFor(picked);
+  const pieceRow = (kind: 'top' | 'bottom' | 'style', label: string, pieces: OutfitPiece[], own: number | undefined, current: string,
+                    pick: (id: string) => void) => (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.swatches} testID={`character-outfit-row-${kind}`}>
+      <Text style={styles.setsLabel}>{label}</Text>
+      {own !== undefined ? (
+        <Pressable
+          testID={`character-outfit-${kind}-original`}
+          accessibilityRole="button"
+          accessibilityLabel={t('character.outfit.original')}
+          accessibilityState={{ selected: current === '' }}
+          onPress={() => pick('')}
+          style={[styles.setRing, current === '' && styles.swatchRingOn]}>
+          <Image source={own} style={styles.setThumb} />
+        </Pressable>
+      ) : null}
+      {pieces.map(o => {
+        const on = current === o.id;
         return (
           <Pressable
             key={o.id}
@@ -305,13 +320,20 @@ export const CharacterSelectScreen: React.FC = () => {
             accessibilityRole="button"
             accessibilityLabel={t(o.label as TranslationKey)}
             accessibilityState={{ selected: on }}
-            onPress={() => { sfx.tap(); setOutfit(o.value); }}
+            onPress={() => pick(o.id)}
             style={[styles.setRing, on && styles.swatchRingOn]}>
             <Image source={o.thumb} style={styles.setThumb} />
           </Pressable>
         );
       })}
     </ScrollView>
+  );
+  const outfitRows = !bodyOutfits ? null : (
+    <>
+      {bodyOutfits.tops.length > 0 ? pieceRow('top', t('character.outfit.tops'), bodyOutfits.tops, bodyOutfits.ownTop, look.top, id => wear({ top: id })) : null}
+      {bodyOutfits.bottoms.length > 0 ? pieceRow('bottom', t('character.outfit.bottoms'), bodyOutfits.bottoms, bodyOutfits.ownBottom, look.bottom, id => wear({ bottom: id })) : null}
+      {bodyOutfits.styles.length > 0 ? pieceRow('style', t('character.outfit.styles'), bodyOutfits.styles, undefined, look.style, id => wear({ style: id })) : null}
+    </>
   );
 
   const cards = options.map(c => {
@@ -418,8 +440,8 @@ export const CharacterSelectScreen: React.FC = () => {
           {step === 'hair' ? swatchRow(HAIR_COLORS, hair, setHair, 'hair', t('character.hair.original')) : null}
           {step === 'outfit' ? (
             <>
-              {setRow}
-              {swatchRow(OUTFIT_COLORS, outfit, setOutfit, 'outfit', t('character.outfit.original'))}
+              {outfitRows}
+              {swatchRow(OUTFIT_COLORS, look.style.startsWith('#') || look.style === '' ? look.style : '-', hex => setOutfit(encodeOutfit({ ...look, style: hex })), 'outfit', t('character.outfit.original'))}
             </>
           ) : null}
           {step === 'done' ? <Text style={styles.doneTitle}>{t('character.done.title')}</Text> : null}
