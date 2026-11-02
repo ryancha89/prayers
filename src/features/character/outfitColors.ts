@@ -39,6 +39,8 @@ export const OUTFIT_SETS: Record<string, OutfitSet[]> = {
     set('smart', require('./assets/outfits/xb_m01_smart.png')),
     set('earth', require('./assets/outfits/xb_m01_earth.png')),
     set('denim', require('./assets/outfits/xb_m01_denim.png')),
+    // 02-11: the first GARMENT set — a new mesh (Saju tools/outfits/hoodie), not a repaint.
+    set('hoodie', require('./assets/outfits/xb_m01_hoodie.png')),
   ],
 };
 
