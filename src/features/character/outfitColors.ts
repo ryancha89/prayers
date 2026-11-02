@@ -34,6 +34,10 @@ export const OUTFIT_SETS: Record<string, OutfitSet[]> = {
     set('school', require('./assets/outfits/xb_f01_school.png')),
     set('winter', require('./assets/outfits/xb_f01_winter.png')),
     set('spring', require('./assets/outfits/xb_f01_spring.png')),
+    // 02-11: garment sets — new meshes on her rig (Saju tools/outfits/{hoodie_f,jeans_f,midi_f}).
+    set('hoodie', require('./assets/outfits/xb_f01_hoodie.png')),
+    set('jeans', require('./assets/outfits/xb_f01_jeans.png')),
+    set('midi', require('./assets/outfits/xb_f01_midi.png')),
   ],
   xb_m01: [
     set('smart', require('./assets/outfits/xb_m01_smart.png')),

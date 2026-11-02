@@ -178,8 +178,8 @@ it('the outfit step: hair → outfit → done in the step bar, the artist\'s own
   expect(byId('character-outfit-original').props.accessibilityState).toEqual({ selected: true });
   // 02-11: her three sets (xb_f01), named, replace the "coming soon" card
   expect(tree.root.findAll(n => n.props.testID === 'character-outfit-soon')).toHaveLength(0);
-  expect(['school', 'winter', 'spring'].map(id => byId(`character-outfit-set-${id}`).props.accessibilityLabel))
-    .toEqual(['School', 'Winter knit', 'Spring']);
+  expect(['school', 'winter', 'spring', 'hoodie', 'jeans', 'midi'].map(id => byId(`character-outfit-set-${id}`).props.accessibilityLabel))
+    .toEqual(['School', 'Winter knit', 'Spring', 'Hoodie', 'Jeans', 'Midi skirt']);
   // backing out of the creator leaves the stored outfit as it was
   await act(async () => byId('character-outfit-7A2E3B').props.onPress());
   expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: '#7A2E3B' }));
