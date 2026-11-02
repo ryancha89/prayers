@@ -1,6 +1,6 @@
 /**
  * The creator's outfit colours (29-10, the "Outfit" step). Each gender has ONE rigged player body
- * (xb_f01, xb_m01), so there are no other outfits to list yet; a recolour is the choice there is.
+ * (xb_f01, xb_m01); its outfits are recolours (below) and repainted sets (OUTFIT_SETS).
  * Unity's OutfitTint works like HairTint: a grey copy of the clothes texture (cardigan, skirt and
  * socks share it on xb_f01; shirt, jacket and trousers on xb_m01) multiplied by the colour — the
  * folds and stripes survive, which is why these are mid-tones that read as cloth, not pure colours.
@@ -19,7 +19,39 @@ export const OUTFIT_COLORS: { hex: string; swatch: string }[] = [
   { hex: '#A99BC9', swatch: '#A99BC9' }, // lavender
 ];
 
-/** A stored colour the palette no longer has falls back to the model's own. */
-export function knownOutfit(hex: string | undefined): string {
-  return OUTFIT_COLORS.some(c => c.hex === hex) ? (hex as string) : '';
+/**
+ * Outfit sets (02-11): each body's clothes texture repainted — each garment its own colour or pattern
+ * (Saju `tools/outfits/gen_outfits.py`). Same mesh and rig, so only the cloth changes. Picked as
+ * `set:<id>` (Unity's OutfitTint swaps the texture); the ids must match the PNGs Unity imported
+ * (`xuan_basic/<body>/Textures/outfits/<body>_Clothes_<id>.png`). A body without sets lists none.
+ */
+export type OutfitSet = { id: string; value: string; thumb: number; label: string };
+
+const set = (id: string, thumb: number): OutfitSet => ({ id, value: `set:${id}`, thumb, label: `character.outfit.set.${id}` });
+
+export const OUTFIT_SETS: Record<string, OutfitSet[]> = {
+  xb_f01: [
+    set('school', require('./assets/outfits/xb_f01_school.png')),
+    set('winter', require('./assets/outfits/xb_f01_winter.png')),
+    set('spring', require('./assets/outfits/xb_f01_spring.png')),
+  ],
+  xb_m01: [
+    set('smart', require('./assets/outfits/xb_m01_smart.png')),
+    set('earth', require('./assets/outfits/xb_m01_earth.png')),
+    set('denim', require('./assets/outfits/xb_m01_denim.png')),
+  ],
+};
+
+export function outfitSetsFor(characterId: string | undefined): OutfitSet[] {
+  return (characterId && OUTFIT_SETS[characterId]) || [];
+}
+
+/**
+ * A stored outfit this body can draw: a palette colour, or one of ITS sets. Anything else (a colour
+ * the palette dropped, another body's set after switching character) falls back to the model's own.
+ */
+export function knownOutfit(value: string | undefined, characterId?: string): string {
+  if (OUTFIT_COLORS.some(c => c.hex === value)) return value as string;
+  if (value && outfitSetsFor(characterId).some(s => s.value === value)) return value;
+  return '';
 }

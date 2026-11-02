@@ -14,7 +14,7 @@ import { charactersFor, effectiveCharacter } from '../characters';
 import { saveCharacterToAccount } from '../characterSync';
 import { useCharacterView } from '../useCharacterView';
 import { HAIR_COLORS, knownHair } from '../hairColors';
-import { OUTFIT_COLORS, knownOutfit } from '../outfitColors';
+import { OUTFIT_COLORS, knownOutfit, outfitSetsFor } from '../outfitColors';
 import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
@@ -52,10 +52,9 @@ import type { FaceTrackingState } from '../../counseling/types';
  * (CHARACTER_CONFIRM) before the pick is stored. The hair colour (`playerHair`) is stored with the
  * character and travels on every *_INIT like it, so the World walks the same hair.
  *
- * 29-10, the Outfit step (hair → outfit → done): the same, for the clothes (`playerOutfit`). Each
- * gender has one rigged body, so there are no other outfits to list — a colour for the whole outfit
- * is the choice there is, framed on the whole body. New outfits are announced under the swatches as
- * "coming soon" rather than left out.
+ * 29-10, the Outfit step (hair → outfit → done): the same, for the clothes (`playerOutfit`): a colour
+ * for the whole outfit, framed on the whole body. 02-11: above the colours, the body's outfit SETS
+ * (`set:<id>`, its clothes texture repainted per garment) — they replaced the "coming soon" card.
  *
  * BODY_READY says which gender Unity can actually mount; a `false` shows "Coming soon" and a note,
  * and still saves the pick so the body is there the day it lands.
@@ -95,7 +94,8 @@ export const CharacterSelectScreen: React.FC = () => {
   const setPlayerOutfit = useSubjectsStore(s => s.setPlayerOutfit);
   const setCreatorSeen = useSubjectsStore(s => s.setCreatorSeen);
   const [hair, setHair] = useState(knownHair(storedHair));
-  const [outfit, setOutfit] = useState(knownOutfit(storedOutfit));
+  // Sets belong to one body, so the stored outfit is checked against the body it will go on.
+  const [outfit, setOutfit] = useState(() => knownOutfit(storedOutfit, effectiveCharacter(gender, stored)?.id));
   // 27-10 ("làm phần chọn character cho hợp lý"): with a gender on the profile there is ONE
   // character to pick, and a step that "chooses" from a single card is a step for nothing. The
   // character step only appears when there is a choice to make.
@@ -109,6 +109,8 @@ export const CharacterSelectScreen: React.FC = () => {
   const [picked, setPicked] = useState<string | undefined>(
     effectiveCharacter(gender, stored)?.id ?? (isNativeUnity() ? options[0]?.id : undefined));
   const pickedDef = options.find(c => c.id === picked);
+  // Another body's set does not fit this one (02-11): switching character drops it to the model's own.
+  useEffect(() => { setOutfit(o => knownOutfit(o, picked)); }, [picked]);
   // "Female 2" only when there is more than one of that gender to tell apart.
   const label = (c: (typeof options)[number]) => {
     const base = t(c.gender === 'male' ? 'character.male' : 'character.female');
@@ -289,6 +291,29 @@ export const CharacterSelectScreen: React.FC = () => {
     </ScrollView>
   );
 
+  // The body's outfit sets (02-11): round crops of each set on the body, above the colours.
+  const sets = outfitSetsFor(picked);
+  const setRow = sets.length === 0 ? null : (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.swatches}>
+      <Text style={styles.setsLabel}>{t('character.outfit.sets')}</Text>
+      {sets.map(o => {
+        const on = outfit === o.value;
+        return (
+          <Pressable
+            key={o.id}
+            testID={`character-outfit-set-${o.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={t(o.label as TranslationKey)}
+            accessibilityState={{ selected: on }}
+            onPress={() => { sfx.tap(); setOutfit(o.value); }}
+            style={[styles.setRing, on && styles.swatchRingOn]}>
+            <Image source={o.thumb} style={styles.setThumb} />
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+
   const cards = options.map(c => {
     const on = picked === c.id;
     return (
@@ -393,12 +418,8 @@ export const CharacterSelectScreen: React.FC = () => {
           {step === 'hair' ? swatchRow(HAIR_COLORS, hair, setHair, 'hair', t('character.hair.original')) : null}
           {step === 'outfit' ? (
             <>
+              {setRow}
               {swatchRow(OUTFIT_COLORS, outfit, setOutfit, 'outfit', t('character.outfit.original'))}
-              {/* Announced, not hidden (29-10): one body per gender today, more outfits to come. */}
-              <View style={styles.soonCard} testID="character-outfit-soon" accessibilityState={{ disabled: true }}>
-                <Icon name="lock" size={16} color={colors.textMuted} />
-                <Text style={styles.soonCardText} numberOfLines={1}>{t('character.outfit.soon')}</Text>
-              </View>
             </>
           ) : null}
           {step === 'done' ? <Text style={styles.doneTitle}>{t('character.done.title')}</Text> : null}
@@ -563,12 +584,9 @@ const styles = StyleSheet.create({
   swatch: { width: 40, height: 40, borderRadius: 20 },
   swatchOriginal: { backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
   swatchOriginalText: { fontSize: 9, color: colors.textPrimary, textAlign: 'center' },
-  soonCard: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, opacity: 0.55,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md,
-    backgroundColor: colors.card, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', borderStyle: 'dashed',
-  },
-  soonCardText: { ...typography.caption, color: colors.textMuted, flexShrink: 1 },
+  setsLabel: { ...typography.caption, color: colors.textMuted, marginRight: spacing.xs },
+  setRing: { padding: 3, borderRadius: 30, borderWidth: 2, borderColor: 'transparent' },
+  setThumb: { width: 48, height: 48, borderRadius: 24 },
   doneTitle: { ...typography.body, color: colors.violetSoft, textAlign: 'center', paddingVertical: spacing.sm },
   panelName: { ...typography.h3, color: colors.textPrimary },
   strip: { gap: spacing.sm, paddingVertical: spacing.xs },
