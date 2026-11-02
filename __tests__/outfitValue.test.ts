@@ -11,8 +11,10 @@ it('reads the old forms and the new one', () => {
 });
 
 it('drops what the body has not got', () => {
-  expect(knownOutfit('s=winter;t=knit;b=midi', 'xb_m01')).toBe('');          // her pieces on him
+  expect(knownOutfit('s=winter;t=knit;b=midi', 'xb_m01')).toBe('t=knit');    // her style and midi drop; he has a knit too
   expect(knownOutfit('s=smart;t=hoodie', 'xb_m01')).toBe('s=smart;t=hoodie');
+  expect(knownOutfit('t=knit;b=jeans', 'xb_m01')).toBe('t=knit;b=jeans');                // his own knit and jeans
+  expect(knownOutfit('b=midi', 'xb_m01')).toBe('');
   expect(knownOutfit('#123456', 'xb_f01')).toBe('');                          // a colour the palette dropped
 });
 

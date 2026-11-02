@@ -60,9 +60,13 @@ export const OUTFITS: Record<string, BodyOutfits> = {
       piece('earth', require('./assets/outfits/xb_m01_earth.png')),
       piece('denim', require('./assets/outfits/xb_m01_denim.png')),
     ],
-    tops: [piece('hoodie', require('./assets/outfits/xb_m01_hoodie.png'))],
-    bottoms: [],
+    tops: [
+      piece('hoodie', require('./assets/outfits/xb_m01_hoodie.png')),
+      piece('knit', require('./assets/outfits/xb_m01_knit.png')),
+    ],
+    bottoms: [piece('jeans', require('./assets/outfits/xb_m01_jeans.png'))],
     ownTop: require('./assets/outfits/xb_m01_top_original.png'),
+    ownBottom: require('./assets/outfits/xb_m01_bottom_original.png'),
   },
 };
 
