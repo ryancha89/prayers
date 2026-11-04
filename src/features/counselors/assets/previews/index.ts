@@ -33,6 +33,13 @@ import { ImageSourcePropType } from 'react-native';
  */
 export const PREVIEW_FRAMES = 20;
 /**
+ * Frames per row (11-04). The sheets are a 5x4 grid of 600x450 = 3000x1800, not a 600x9000 strip:
+ * Android shrank the tall strip to ~136px wide (Fresco downsamples past 2048px) and every preview
+ * looked pixelated there. Convert a fresh vertical strip with
+ *   magick strip.jpg -crop 600x450 +repage +adjoin miff:- | magick montage - -tile 5x4 -geometry +0+0 -quality 88 jpg:out.jpg
+ */
+export const PREVIEW_COLUMNS = 5;
+/**
  * Width / height of ONE frame. The strips are 600x450.
  *
  * It was 2:1 first, and that was the whole reason the previews looked wrong: a standing figure in a

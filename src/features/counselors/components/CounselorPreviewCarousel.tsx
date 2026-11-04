@@ -4,7 +4,7 @@ import { Text } from '../../../shared/components/Text';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
 import { useT } from '../../../shared/i18n';
 import { CounselorPreview } from '../types';
-import { PREVIEW_ASPECT, PREVIEW_FPS, PREVIEW_FRAMES } from '../assets/previews';
+import { PREVIEW_ASPECT, PREVIEW_COLUMNS, PREVIEW_FPS, PREVIEW_FRAMES } from '../assets/previews';
 import { SpriteStrip } from './SpriteStrip';
 import { PixelCatClip } from '../../counseling/pixel/PixelCatClip';
 import { sfx } from '../../../shared/audio/sfx';
@@ -34,6 +34,7 @@ export const CounselorPreviewCarousel: React.FC<{
         <SpriteStrip
           source={current.strip}
           frames={PREVIEW_FRAMES}
+          columns={PREVIEW_COLUMNS}
           aspect={PREVIEW_ASPECT}
           fps={PREVIEW_FPS}
           borderRadius={radius.lg}

@@ -2,8 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Image, ImageSourcePropType, LayoutChangeEvent, StyleSheet, View } from 'react-native';
 
 /**
- * Plays a vertical sprite strip: one image holding `frames` frames stacked top to bottom, shown one
- * at a time by sliding it inside a clipped box.
+ * Plays a sprite sheet: one image holding `frames` frames in a grid of `columns` across, read left
+ * to right then top to bottom, shown one at a time by sliding it inside a clipped box.
+ *
+ * A GRID, NOT A TALL STRIP (11-04, "blur처리되어있는데 잘 보이게해"). The sheets were 600x9000 —
+ * twenty frames stacked. Android's image pipeline (Fresco, DownsampleMode.AUTO) shrinks any bitmap
+ * past 2048px on a side, so the strip was decoded at about 136px wide and stretched back to the
+ * card: blocky on every Android phone, sharp on iOS. A 5x4 grid of 600x450 is 3000x1800 — inside
+ * the 4096px texture limit every GPU has — and `resizeMethod="none"` stops Fresco shrinking it.
  *
  * Sliding rather than swapping N separate images: Metro would have to resolve twenty requires per
  * clip, and the first play would stutter while each frame decoded. One image decodes once.
@@ -17,11 +23,13 @@ export const SpriteStrip: React.FC<{
   frames: number;
   /** Frame width / height. */
   aspect: number;
+  /** Frames per row of the sheet. */
+  columns?: number;
   fps: number;
   /** Pause when the strip is off-screen or its screen is not focused. */
   playing?: boolean;
   borderRadius?: number;
-}> = ({ source, frames, aspect, fps, playing = true, borderRadius = 0 }) => {
+}> = ({ source, frames, aspect, columns = 1, fps, playing = true, borderRadius = 0 }) => {
   const [width, setWidth] = useState(0);
   const [frame, setFrame] = useState(0);
   const frameRef = useRef(0);
@@ -42,6 +50,8 @@ export const SpriteStrip: React.FC<{
   }, [source]);
 
   const frameH = width / aspect;
+  const cols = Math.max(1, columns);
+  const rows = Math.ceil(frames / cols);
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
   return (
@@ -50,14 +60,19 @@ export const SpriteStrip: React.FC<{
         <Image
           source={source}
           style={{
-            width,
-            height: frameH * frames,
-            transform: [{ translateY: -frame * frameH }],
+            width: width * cols,
+            height: frameH * rows,
+            transform: [
+              { translateX: -(frame % cols) * width },
+              { translateY: -Math.floor(frame / cols) * frameH },
+            ],
           }}
-          // `stretch`, not `cover`: cover would re-fit the WHOLE strip (1:40) into the box and every
-          // frame would be a sliver. The strip is authored at exactly frames x aspect, so stretch is
-          // an identity scale.
+          // `stretch`, not `cover`: cover would re-fit the WHOLE sheet into the box and every frame
+          // would be a sliver. The sheet is authored at exactly cols x rows frames of `aspect`, so
+          // stretch is an identity scale.
           resizeMode="stretch"
+          // Android: never let Fresco downsample the sheet (see the note at the top).
+          resizeMethod="none"
           fadeDuration={0}
         />
       )}
