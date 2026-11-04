@@ -103,7 +103,16 @@ export interface FollowCameraOptions {
  * the buttons sit above the layer and own their touches. No gesture library, for the reason
  * useCabinCamera gives.
  */
-export function useFollowCamera(options: FollowCameraOptions): PanResponderInstance['panHandlers'] {
+/** What the follow-camera hook hands back: the layer's responder handlers, and `look` — the same
+ *  one-finger look-around, fed from OUTSIDE the layer. The joystick owns every touch while a thumb
+ *  steers (RN grants one responder at a time), so it relays its second finger here
+ *  (04-11, "when walking running can not control screen angle change"). */
+export interface FollowCameraControls {
+  handlers: PanResponderInstance['panHandlers'];
+  look: (phase: 'begin' | 'move' | 'end', pageX: number, pageY: number) => void;
+}
+
+export function useFollowCamera(options: FollowCameraOptions): FollowCameraControls {
   const { enabled } = options;
   const opts = useRef(options);
   opts.current = options;
@@ -115,6 +124,23 @@ export function useFollowCamera(options: FollowCameraOptions): PanResponderInsta
   const lastTap = useRef(0);
   /** The `onDrag` in progress: the finger's last position (page coordinates). */
   const dragging = useRef<{ x: number; y: number } | null>(null);
+
+  /** The external look drag (the stick's second finger): where it began and the camera it started from. */
+  const external = useRef<{ x: number; y: number; yaw: number; pitch: number } | null>(null);
+
+  const look = useMemo(() => (phase: 'begin' | 'move' | 'end', pageX: number, pageY: number) => {
+    if (!opts.current.enabled) { external.current = null; return; }
+    if (phase === 'begin') {
+      external.current = { x: pageX, y: pageY, yaw: camera.current.yaw, pitch: camera.current.pitch };
+      return;
+    }
+    const d = external.current;
+    if (!d) return;
+    if (phase === 'end') { external.current = null; return; }
+    const r = cameraFromDrag(d, pageX - d.x, pageY - d.y, Dimensions.get('window'));
+    camera.current = { ...camera.current, yaw: r.yaw, pitch: r.pitch };
+    opts.current.send({ ...camera.current });
+  }, []);
 
   const pan = useMemo(() => {
     const two = (e: GestureResponderEvent) => e.nativeEvent.touches.length >= 2;
@@ -209,11 +235,11 @@ export function useFollowCamera(options: FollowCameraOptions): PanResponderInsta
     });
   }, [enabled]);
 
-  return pan.panHandlers;
+  return { handlers: pan.panHandlers, look };
 }
 
 /** The world hub's camera (spec 004): WORLD_CAMERA, and a tap handed on as WORLD_TAP. */
-export function useWorldCamera(enabled: boolean): PanResponderInstance['panHandlers'] {
+export function useWorldCamera(enabled: boolean): FollowCameraControls {
   return useFollowCamera({
     enabled,
     home: { zoom: WORLD_START_ZOOM, yaw: 0, pitch: 0 },

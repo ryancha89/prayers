@@ -62,8 +62,18 @@ function arc(c: number, r: number, a0: number, a1: number) {
  * button, and PanResponder's dx/dy average all fingers, so the second one also yanked the knob. The
  * stick now follows only its own finger (by identifier) and hands any other finger's touch-down to
  * `onOtherTouch` (window coordinates), for the screen to hit-test its buttons.
+ *
+ * LOOK WHILE STEERING (04-11, "when walking running can not control screen angle change"): the same
+ * relay, held for the finger's whole life. The first OTHER finger that moves past the slop becomes a
+ * look-around drag, streamed to `onOtherDrag` ('begin' at the touch-down point, then 'move'/'end' in
+ * window coordinates) — the screen feeds it to the follow camera's `look`. A finger that never moves
+ * stays what it was: a button tap, already delivered through `onOtherTouch`.
  */
-export const WorldJoystick: React.FC<{ visible: boolean; onOtherTouch?: (pageX: number, pageY: number) => void }> = ({ visible, onOtherTouch }) => {
+export const WorldJoystick: React.FC<{
+  visible: boolean;
+  onOtherTouch?: (pageX: number, pageY: number) => void;
+  onOtherDrag?: (phase: 'begin' | 'move' | 'end', pageX: number, pageY: number) => void;
+}> = ({ visible, onOtherTouch, onOtherDrag }) => {
   const knob = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const sent = useRef({ x: 0, y: 0 });
   /** Where the ring sits (zone-local centre). Fixed in the corner (10-22, "움직이면 안되는데 아래
@@ -76,6 +86,17 @@ export const WorldJoystick: React.FC<{ visible: boolean; onOtherTouch?: (pageX: 
   const finger = useRef<{ id: string; x: number; y: number } | null>(null);
   const other = useRef(onOtherTouch);
   other.current = onOtherTouch;
+  const otherDrag = useRef(onOtherDrag);
+  otherDrag.current = onOtherDrag;
+  /** The second finger being tracked as a (possible) look drag. */
+  const look = useRef<{ id: string; x: number; y: number; moved: boolean } | null>(null);
+  /** Movement before the second finger counts as a look drag rather than a button tap. */
+  const LOOK_SLOP = 10;
+  const endLook = () => {
+    const l = look.current;
+    look.current = null;
+    if (l?.moved) otherDrag.current?.('end', l.x, l.y);
+  };
   /** Steering angle for the gold arc (radians, screen space), null at rest. */
   const [heading, setHeading] = useState<number | null>(null);
 
@@ -117,27 +138,42 @@ export const WorldJoystick: React.FC<{ visible: boolean; onOtherTouch?: (pageX: 
         // Every touch-down while the stick is held, its own first one included.
         onPanResponderStart: e => {
           for (const t of e.nativeEvent.changedTouches) {
-            if (String(t.identifier) !== finger.current?.id) other.current?.(t.pageX, t.pageY);
+            if (String(t.identifier) === finger.current?.id) continue;
+            other.current?.(t.pageX, t.pageY);
+            if (!look.current) look.current = { id: String(t.identifier), x: t.pageX, y: t.pageY, moved: false };
           }
         },
         onPanResponderMove: e => {
           const f = finger.current;
           const t = f && e.nativeEvent.touches.find(x => String(x.identifier) === f.id);
-          if (!f || !t) return;
-          const v = stickVector(start.current.x + t.pageX - f.x, start.current.y + t.pageY - f.y);
-          knob.setValue({ x: v.kx, y: v.ky });
-          setHeading(v.x === 0 && v.y === 0 ? null : Math.atan2(v.ky, v.kx));
-          send(v.x, v.y);
+          if (f && t) {
+            const v = stickVector(start.current.x + t.pageX - f.x, start.current.y + t.pageY - f.y);
+            knob.setValue({ x: v.kx, y: v.ky });
+            setHeading(v.x === 0 && v.y === 0 ? null : Math.atan2(v.ky, v.kx));
+            send(v.x, v.y);
+          }
+          // The second finger: a look-around drag once past the slop (see the header).
+          const l = look.current;
+          const o = l && e.nativeEvent.touches.find(x => String(x.identifier) === l.id);
+          if (!l || !o) return;
+          if (!l.moved) {
+            if (Math.hypot(o.pageX - l.x, o.pageY - l.y) <= LOOK_SLOP) return;
+            l.moved = true;
+            otherDrag.current?.('begin', l.x, l.y);
+          }
+          l.x = o.pageX; l.y = o.pageY;
+          otherDrag.current?.('move', o.pageX, o.pageY);
         },
         // The steering finger lifting stops the walk even while another finger is still down.
         onPanResponderEnd: e => {
+          if (e.nativeEvent.changedTouches.some(t => String(t.identifier) === look.current?.id)) endLook();
           if (e.nativeEvent.changedTouches.some(t => String(t.identifier) === finger.current?.id)) {
             finger.current = null;
             release();
           }
         },
-        onPanResponderRelease: () => { finger.current = null; release(); },
-        onPanResponderTerminate: () => { finger.current = null; release(); },
+        onPanResponderRelease: () => { endLook(); finger.current = null; release(); },
+        onPanResponderTerminate: () => { endLook(); finger.current = null; release(); },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

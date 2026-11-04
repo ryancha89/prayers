@@ -1033,7 +1033,10 @@ export interface MyRoomBridge {
 
 /** CHARACTER_VIEW's payload: degrees turned, 0 whole body … 1 face, and — measured — the share of
  *  the screen height RN's top bar and bottom panel cover (absent = Unity's own .12 / .30). */
-export interface CharacterViewPayload { yaw: number; zoom: number; top?: number; bottom?: number }
+/** Where the creator's camera looks (04-11): the whole body, or the top / bottom of the clothes while the
+ *  outfit panel is on them. Unity reframes from it; `zoom` stays the step's (0 on the outfit step). */
+export type CharacterViewFocus = 'body' | 'top' | 'bottom';
+export interface CharacterViewPayload { yaw: number; zoom: number; top?: number; bottom?: number; focus?: CharacterViewFocus }
 
 /** CAFE_ZOOM's payload (cafe/table/cardsZoom.ts). */
 export interface CardsGesture {

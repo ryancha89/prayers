@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Animated, Image, LayoutAnimation, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/Text';
@@ -14,7 +14,8 @@ import { charactersFor, effectiveCharacter } from '../characters';
 import { saveCharacterToAccount } from '../characterSync';
 import { useCharacterView } from '../useCharacterView';
 import { HAIR_COLORS, knownHair } from '../hairColors';
-import { OUTFIT_COLORS, encodeOutfit, knownOutfit, outfitsFor, parseOutfit, type Outfit, type OutfitPiece } from '../outfitColors';
+import { knownOutfit } from '../outfitCatalog';
+import { OUTFIT_COVER, OutfitPanel, type OutfitFocus } from './OutfitPanel';
 import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
@@ -52,9 +53,10 @@ import type { FaceTrackingState } from '../../counseling/types';
  * (CHARACTER_CONFIRM) before the pick is stored. The hair colour (`playerHair`) is stored with the
  * character and travels on every *_INIT like it, so the World walks the same hair.
  *
- * 29-10, the Outfit step (hair → outfit → done): the same, for the clothes (`playerOutfit`), framed on the
- * whole body. 02-11: a TOP, a BOTTOM and a STYLE for the artist's own pieces (a repainted texture or a
- * colour), picked separately — see outfitColors.ts for how the three are stored.
+ * 29-10, the Outfit step (hair → outfit → done): the same, for the clothes (`playerOutfit`). 04-11: a TOP
+ * and a BOTTOM, each an item with a tint or (the artist's piece only) a repaint — see outfitCatalog.ts
+ * for the stored form, OutfitPanel.tsx for the three tabs (Sets · Clothes · Colour). The panel is short
+ * on the sets and tall on the other two, and tells Unity where to look (CHARACTER_VIEW `focus`).
  *
  * BODY_READY says which gender Unity can actually mount; a `false` shows "Coming soon" and a note,
  * and still saves the pick so the body is there the day it lands.
@@ -133,9 +135,12 @@ export const CharacterSelectScreen: React.FC = () => {
   // phone against the 30% Unity framed to, and the top bar ~127 against 12%): sent with every view
   // so Unity fits the body between what is really there.
   const covers = useRef<{ top?: number; bottom?: number }>({});
+  // Where Unity looks (04-11): the whole body, or the top / bottom of the clothes while the outfit
+  // panel is on them. A ref, so a drag (which only sends yaw and zoom) keeps it.
+  const focusRef = useRef<OutfitFocus>('body');
   const view = useCharacterView(
     v => {
-      nativeUnityBridge.setCharacterView({ ...v, ...covers.current });
+      nativeUnityBridge.setCharacterView({ ...v, ...covers.current, focus: focusRef.current });
       const z = v.zoom > 0.5;
       if (z !== zoomedRef.current) { zoomedRef.current = z; setZoomed(z); }
     },
@@ -149,11 +154,27 @@ export const CharacterSelectScreen: React.FC = () => {
     view.set({ ...view.current.current });
   };
   // Each step frames its own shot; the turn the player gave the body is kept, except at the end.
+  // Off the outfit step the camera is back on the whole body (the panel sets its own focus on it).
   useEffect(() => {
     if (!native) return;
+    if (step !== 'outfit') focusRef.current = 'body';
     view.set({ yaw: step === 'done' ? 0 : view.current.current.yaw, zoom: STEP_ZOOM[step] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
+  const onOutfitFocus = (focus: OutfitFocus) => {
+    if (focusRef.current === focus) return;
+    focusRef.current = focus;
+    view.set({ ...view.current.current });
+  };
+  // The outfit panel's height follows its tab (short on the sets, tall on the clothes and colours);
+  // the other steps keep the 30% cover. Unity still gets the measured height, whatever it is.
+  const [outfitCover, setOutfitCover] = useState(OUTFIT_COVER.sets);
+  const onOutfitCover = (cover: number) => {
+    if (cover === outfitCover) return;
+    try { LayoutAnimation.easeInEaseOut(); } catch { /* no layout animation (tests, old Android) */ }
+    setOutfitCover(cover);
+  };
+  const panelCover = step === 'outfit' ? outfitCover : BOTTOM_COVER;
   const goStep = (to: Step) => {
     if (confirming || to === step) return;
     sfx.tap();
@@ -291,51 +312,6 @@ export const CharacterSelectScreen: React.FC = () => {
     </ScrollView>
   );
 
-  // The outfit (02-11): a top, a bottom and a style for the artist's own pieces, picked separately — three
-  // rows of round crops (+ the colours), each starting with the artist's own piece.
-  const look = parseOutfit(outfit, picked);
-  const wear = (part: Partial<Outfit>) => { sfx.tap(); setOutfit(encodeOutfit({ ...look, ...part })); };
-  const bodyOutfits = outfitsFor(picked);
-  const pieceRow = (kind: 'top' | 'bottom' | 'style', label: string, pieces: OutfitPiece[], own: number | undefined, current: string,
-                    pick: (id: string) => void) => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.swatches} testID={`character-outfit-row-${kind}`}>
-      <Text style={styles.setsLabel}>{label}</Text>
-      {own !== undefined ? (
-        <Pressable
-          testID={`character-outfit-${kind}-original`}
-          accessibilityRole="button"
-          accessibilityLabel={t('character.outfit.original')}
-          accessibilityState={{ selected: current === '' }}
-          onPress={() => pick('')}
-          style={[styles.setRing, current === '' && styles.swatchRingOn]}>
-          <Image source={own} style={styles.setThumb} />
-        </Pressable>
-      ) : null}
-      {pieces.map(o => {
-        const on = current === o.id;
-        return (
-          <Pressable
-            key={o.id}
-            testID={`character-outfit-set-${o.id}`}
-            accessibilityRole="button"
-            accessibilityLabel={t(o.label as TranslationKey)}
-            accessibilityState={{ selected: on }}
-            onPress={() => pick(o.id)}
-            style={[styles.setRing, on && styles.swatchRingOn]}>
-            <Image source={o.thumb} style={styles.setThumb} />
-          </Pressable>
-        );
-      })}
-    </ScrollView>
-  );
-  const outfitRows = !bodyOutfits ? null : (
-    <>
-      {bodyOutfits.tops.length > 0 ? pieceRow('top', t('character.outfit.tops'), bodyOutfits.tops, bodyOutfits.ownTop, look.top, id => wear({ top: id })) : null}
-      {bodyOutfits.bottoms.length > 0 ? pieceRow('bottom', t('character.outfit.bottoms'), bodyOutfits.bottoms, bodyOutfits.ownBottom, look.bottom, id => wear({ bottom: id })) : null}
-      {bodyOutfits.styles.length > 0 ? pieceRow('style', t('character.outfit.styles'), bodyOutfits.styles, undefined, look.style, id => wear({ style: id })) : null}
-    </>
-  );
-
   const cards = options.map(c => {
     const on = picked === c.id;
     return (
@@ -398,7 +374,7 @@ export const CharacterSelectScreen: React.FC = () => {
               accessibilityLabel={CAMERA_READY ? undefined : `${t('character.cameraOn')} · ${t('character.soon')}`}
               style={[styles.pill, styles.headerPill, cameraOn && styles.cardOn, !CAMERA_READY && styles.pillOff]}>
               <Text style={[styles.pillLabel, cameraOn && styles.labelOn, !CAMERA_READY && styles.pillLabelOff]} numberOfLines={1}>
-                {CAMERA_READY ? t(cameraOn ? 'character.cameraOff' : 'character.cameraOn') : `${t('character.cameraOn')} · ${t('character.soon')}`}
+                {CAMERA_READY ? t(cameraOn ? 'character.cameraOff' : 'character.cameraOn') : `📷 ${t('character.soon')}`}
               </Text>
             </Pressable>
           </View>
@@ -425,13 +401,16 @@ export const CharacterSelectScreen: React.FC = () => {
           </Text>
         ) : null}
 
-        <SafeAreaView edges={['bottom', 'left', 'right']} style={[styles.panel, { minHeight: Math.round(screenH * BOTTOM_COVER) }]} onLayout={measure('bottom')}>
-          <View style={styles.panelRow}>
-            <Text style={styles.panelName}>{pickedDef ? label(pickedDef) : ''}</Text>
-            <Pressable testID="character-shot" onPress={toggleShot} style={styles.pill}>
-              <Text style={styles.pillLabel}>{t(zoomed ? 'character.view.full' : 'character.view.face')}</Text>
-            </Pressable>
-          </View>
+        <SafeAreaView edges={['bottom', 'left', 'right']} style={[styles.panel, { minHeight: Math.round(screenH * panelCover) }]} onLayout={measure('bottom')}>
+          {/* The outfit panel brings its own header (the step name, the dice, Reset) — no name / shot pill there. */}
+          {step !== 'outfit' ? (
+            <View style={styles.panelRow}>
+              <Text style={styles.panelName}>{pickedDef ? label(pickedDef) : ''}</Text>
+              <Pressable testID="character-shot" onPress={toggleShot} style={styles.pill}>
+                <Text style={styles.pillLabel}>{t(zoomed ? 'character.view.full' : 'character.view.face')}</Text>
+              </Pressable>
+            </View>
+          ) : null}
           {step === 'look' ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
               {cards}
@@ -439,10 +418,7 @@ export const CharacterSelectScreen: React.FC = () => {
           ) : null}
           {step === 'hair' ? swatchRow(HAIR_COLORS, hair, setHair, 'hair', t('character.hair.original')) : null}
           {step === 'outfit' ? (
-            <>
-              {outfitRows}
-              {swatchRow(OUTFIT_COLORS, look.style.startsWith('#') || look.style === '' ? look.style : '-', hex => setOutfit(encodeOutfit({ ...look, style: hex })), 'outfit', t('character.outfit.original'))}
-            </>
+            <OutfitPanel characterId={picked} value={outfit} onChange={setOutfit} onFocus={onOutfitFocus} onCover={onOutfitCover} />
           ) : null}
           {step === 'done' ? <Text style={styles.doneTitle}>{t('character.done.title')}</Text> : null}
           <PrimaryButton
@@ -528,7 +504,7 @@ const styles = StyleSheet.create({
   // Back, title and the camera pill share one row: on a 375-pt SE the English title and "Turn camera
   // on · Coming soon" came to ~430 pt against 343 (29-10). Both give way now, the title twice as
   // readily, each truncating to one line; the pill is capped at half the row, so neither leaves it.
-  headerTitle: { ...typography.h3, color: colors.textPrimary, flexShrink: 1, marginHorizontal: spacing.sm },
+  headerTitle: { ...typography.h3, color: colors.textPrimary, flexShrink: 1, marginHorizontal: spacing.sm, flexGrow: 1 },
   headerSpacer: { width: 28 },
   scroll: { padding: spacing.xl, gap: spacing.lg },
   intro: { ...typography.body, color: colors.textSecondary, lineHeight: 22 },
@@ -584,7 +560,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1.5, borderColor: 'transparent',
   },
   pillLabel: { ...typography.caption, color: colors.textPrimary },
-  headerPill: { flexShrink: 0.5, maxWidth: '50%' },
+  headerPill: { flexShrink: 1, maxWidth: '34%' },
   pillOff: { opacity: 0.55 },
   pillLabelOff: { color: colors.textMuted },
   panel: {
@@ -601,14 +577,11 @@ const styles = StyleSheet.create({
   stepLabel: { ...typography.caption, color: colors.textMuted },
   stepLabelOn: { color: colors.textPrimary },
   swatches: { gap: spacing.sm, paddingVertical: spacing.xs, alignItems: 'center' },
-  swatchRing: { padding: 3, borderRadius: 26, borderWidth: 2, borderColor: 'transparent' },
+  swatchRing: { padding: 3, borderRadius: 23, borderWidth: 2, borderColor: 'transparent' },
   swatchRingOn: { borderColor: colors.violet },
-  swatch: { width: 40, height: 40, borderRadius: 20 },
+  swatch: { width: 38, height: 38, borderRadius: 19 },
   swatchOriginal: { backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
   swatchOriginalText: { fontSize: 9, color: colors.textPrimary, textAlign: 'center' },
-  setsLabel: { ...typography.caption, color: colors.textMuted, marginRight: spacing.xs },
-  setRing: { padding: 3, borderRadius: 30, borderWidth: 2, borderColor: 'transparent' },
-  setThumb: { width: 48, height: 48, borderRadius: 24 },
   doneTitle: { ...typography.body, color: colors.violetSoft, textAlign: 'center', paddingVertical: spacing.sm },
   panelName: { ...typography.h3, color: colors.textPrimary },
   strip: { gap: spacing.sm, paddingVertical: spacing.xs },
