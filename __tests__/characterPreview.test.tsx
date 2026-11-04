@@ -37,6 +37,7 @@ jest.mock('../src/features/counseling/bridge', () => ({
 }));
 
 import { CharacterSelectScreen } from '../src/features/character/screens/CharacterSelectScreen';
+import { GARMENTS_ON } from '../src/features/character/outfitColors';
 import { useSubjectsStore } from '../src/features/subjects/store/subjectsStore';
 import { Text } from '../src/shared/components/Text';
 
@@ -169,21 +170,72 @@ it('a card switch shows "preparing your character" until Unity has drawn the new
   }
 });
 
-it('the outfit step: hair → outfit → done in the step bar, the artist\'s own first, and new outfits shown as coming soon', async () => {
+it('the outfit step: hair → outfit → done in the step bar, the artist\'s own first, the body\'s sets above the colours', async () => {
   const steps = tree.root.findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('character-step-') && !!n.props.onPress)
     .map(n => n.props.testID);
   expect(steps).toEqual(['character-step-hair', 'character-step-outfit', 'character-step-done']);
   await act(async () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress).props.onPress());
   // a stored colour the palette has is where the step opens; "" is the artist's own
   expect(byId('character-outfit-original').props.accessibilityState).toEqual({ selected: true });
-  expect(texts()).toContain('New outfits · Coming soon');
-  const soon = tree.root.find(n => n.props.testID === 'character-outfit-soon' && !!n.props.accessibilityState);
-  expect(soon.props.accessibilityState).toEqual({ disabled: true });
-  expect(soon.props.onPress).toBeUndefined();
+  // 02-11: her three sets (xb_f01), named, replace the "coming soon" card
+  expect(tree.root.findAll(n => n.props.testID === 'character-outfit-soon')).toHaveLength(0);
+  if (GARMENTS_ON) {
+    // 02-11: tops, bottoms and styles in their own rows, the artist's piece first in the first two
+    expect(texts()).toEqual(expect.arrayContaining(['Tops', 'Bottoms', 'Style']));
+    expect(['top-original', 'set-hoodie', 'set-knit', 'bottom-original', 'set-jeans', 'set-midi', 'set-school', 'set-winter', 'set-spring']
+      .map(id => byId(`character-outfit-${id}`).props.accessibilityLabel))
+      .toEqual(['Original', 'Hoodie', 'Knit top', 'Original', 'Jeans', 'Midi skirt', 'School', 'Winter knit', 'Spring']);
+  } else {
+    // garments hidden (02-11): only the styles row, no tops / bottoms rows
+    expect(texts()).toEqual(expect.arrayContaining(['Style']));
+    expect(texts()).not.toEqual(expect.arrayContaining(['Tops']));
+    expect(tree.root.findAll(n => n.props.testID === 'character-outfit-set-hoodie')).toHaveLength(0);
+    expect(['set-school', 'set-winter', 'set-spring'].map(id => byId(`character-outfit-${id}`).props.accessibilityLabel))
+      .toEqual(['School', 'Winter knit', 'Spring']);
+  }
   // backing out of the creator leaves the stored outfit as it was
   await act(async () => byId('character-outfit-7A2E3B').props.onPress());
   expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: '#7A2E3B' }));
   expect(useSubjectsStore.getState().playerOutfit).toBe('');
+});
+
+it('a set is picked as set:<id>, previewed live and stored with the character', async () => {
+  await act(async () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress).props.onPress());
+  await act(async () => byId('character-outfit-set-school').props.onPress());
+  expect(byId('character-outfit-set-school').props.accessibilityState).toEqual({ selected: true });
+  expect(byId('character-outfit-original').props.accessibilityState).toEqual({ selected: false });
+  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: 'set:school' }));
+});
+
+(GARMENTS_ON ? it : it.skip)('a top, a bottom and a style are picked separately and stored together', async () => {
+  await act(async () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress).props.onPress());
+  await act(async () => byId('character-outfit-set-knit').props.onPress());
+  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: 't=knit' }));
+  await act(async () => byId('character-outfit-set-jeans').props.onPress());
+  await act(async () => byId('character-outfit-set-winter').props.onPress());
+  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: 's=winter;t=knit;b=jeans' }));
+  expect(byId('character-outfit-set-knit').props.accessibilityState).toEqual({ selected: true });
+  expect(byId('character-outfit-top-original').props.accessibilityState).toEqual({ selected: false });
+  // the artist's top again keeps the bottom and the style
+  await act(async () => byId('character-outfit-top-original').props.onPress());
+  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: 's=winter;b=jeans' }));
+  // a colour replaces the style; with no garment left it is stored the old short way
+  await act(async () => byId('character-outfit-bottom-original').props.onPress());
+  await act(async () => byId('character-outfit-2E3A5C').props.onPress());
+  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: '#2E3A5C' }));
+});
+
+it('a stored set opens selected on its body, and another body\'s set falls back to the artist\'s own', async () => {
+  act(() => tree.unmount());
+  mockBridge.openCharacterPreview.mockClear();
+  useSubjectsStore.setState({ playerOutfit: 'set:winter' });
+  await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
+  expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerOutfit: 'set:winter' }));
+  act(() => tree.unmount());
+  mockBridge.openCharacterPreview.mockClear();
+  useSubjectsStore.setState({ playerOutfit: 'set:denim' });    // a men's set on her body
+  await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
+  expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerOutfit: '' }));
 });
 
 it('opens on the stored outfit, and a colour the palette dropped falls back to the artist\'s own', async () => {
