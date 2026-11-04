@@ -100,6 +100,10 @@ export type RootStackParamList = {
   /** Terms and the privacy policy. Apple wants both reachable, and 5.1.1(v) wants the deletion
    *  above reachable too. */
   Legal: { doc: 'terms' | 'privacy' };
+  /** The gate: what is sent to which third-party AI, asked before anything is (5.1.2(i)). */
+  AiConsent: undefined;
+  /** The same disclosure from My Page, with the date agreed and "withdraw". */
+  AiConsentReview: undefined;
   ProfileSetup: undefined;
   /** First run, after ProfileSetup: pick the body you walk in the 3D world. Same split as
    *  ProfileSetup/AddSubject — the gate and the in-app edit are different routes. */

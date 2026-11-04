@@ -265,6 +265,8 @@ export const MyPageScreen: React.FC = () => {
             label={t('my.privacy')}
             onPress={() => navigation.navigate('Legal', { doc: 'privacy' })}
           />
+          {/* What is sent to which AI, the date agreed, and "withdraw" (5.1.2(i), 11-04). */}
+          <Row label={t('my.aiConsent')} onPress={() => navigation.navigate('AiConsentReview')} />
         </Section>
         {/* Sign out where people look for it (10-17: "로그아웃 버튼없음?" — it was only inside 계정).
             Same as Account's: clears this device, leaves the server account alone. Asks once. */}

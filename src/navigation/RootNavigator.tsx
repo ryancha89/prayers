@@ -36,6 +36,8 @@ import { WorldScreen } from '../features/world/screens/WorldScreen';
 import { MyRoomScreen } from '../features/myroom/screens/MyRoomScreen';
 import { CafeScreen } from '../features/cafe/screens/CafeScreen';
 import { useAuthStore } from '../features/auth/store/authStore';
+import { AiConsentReviewScreen, AiConsentScreen } from '../features/consent/AiConsentScreen';
+import { useAiConsentFor } from '../features/consent/aiConsentStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -57,6 +59,12 @@ export const RootNavigator: React.FC = () => {
   // would file the answer under whoever the app happened to be at the time — which used to be a
   // per-device `dev-` id the server only accepts in development.
   const userAuth = useAuthStore(s => s.userAuth);
+  // PERMISSION BEFORE ANYTHING IS SENT (App Review 5.1.1(i)/5.1.2(i), 2026-11-04). Every signed-in
+  // screen can reach a third-party AI (a question, a voice, a chart, a diary entry), so a signed-in
+  // account that has not agreed sees ONLY the consent screen — and the privacy policy it links to.
+  // `null` = the stored answer is still loading: treated as "not yet", never as yes.
+  const consent = useAiConsentFor(userAuth);
+  const needsConsent = userAuth != null && consent !== true;
   const self = useSubjectsStore(s => s.self);
   const deferred = useSubjectsStore(s => s.profileDeferred);
   // "Later" is honoured, but never silently: the counselor screen still refuses a consultation
@@ -85,7 +93,16 @@ export const RootNavigator: React.FC = () => {
     {/* Keyed on being signed in: signing out (or deleting the account) from Account must drop every
         signed-in screen, not just slide Login in UNDER the one on top — without the key the stack
         kept Account showing, with no account behind it and no way back. */}
-    <Stack.Group navigationKey={userAuth != null ? 'signed-in' : 'signed-out'}>
+    {/* Withdrawing consent from My Page changes the key, which drops every signed-in screen and
+        lands on the gate — the same mechanism as signing out. */}
+    <Stack.Group navigationKey={userAuth == null ? 'signed-out' : needsConsent ? 'needs-consent' : 'signed-in'}>
+    {needsConsent ? (
+      <>
+        <Stack.Screen name="AiConsent" component={AiConsentScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+        <Stack.Screen name="Legal" component={LegalScreen} />
+      </>
+    ) : (
+    <>
     {userAuth != null && needsProfile ? (
       <Stack.Screen name="ProfileSetup" component={AddSubjectScreen} options={{ animation: 'fade' }} />
     ) : null}
@@ -155,6 +172,9 @@ export const RootNavigator: React.FC = () => {
       component={CounselingRoomScreen}
       options={{ animation: 'fade', gestureEnabled: false }}
     />
+    <Stack.Screen name="AiConsentReview" component={AiConsentReviewScreen} />
+    </>
+    )}
     </Stack.Group>
   </Stack.Navigator>
   );

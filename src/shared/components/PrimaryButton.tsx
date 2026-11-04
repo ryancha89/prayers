@@ -15,10 +15,12 @@ export const PrimaryButton: React.FC<{
   /** The tick this press makes. `select` for a press that changes something, `none` where the
    *  screen already sounds — the room has its own mix and must not be talked over. */
   cue?: 'tap' | 'select' | 'none';
-}> = ({ label, onPress, loading, disabled, tone = 'violet', style, cue = 'select' }) => {
+  testID?: string;
+}> = ({ label, onPress, loading, disabled, tone = 'violet', style, cue = 'select', testID }) => {
   const isGhost = tone === 'ghost';
   return (
     <Pressable
+      testID={testID}
       onPress={() => {
         if (cue !== 'none') sfx[cue]();
         onPress();

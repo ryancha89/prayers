@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiBase } from '../../../shared/config/api';
 import { devlog } from '../../../shared/devlog';
 import { authedFetch } from './headers';
-import { signedOut } from '../store/authStore';
+import { getUserAuth, signedOut } from '../store/authStore';
+import { withdrawAiConsent } from '../../consent/aiConsentStore';
 import { useSubjectsStore } from '../../subjects/store/subjectsStore';
 import { useConversationsStore } from '../../conversations/store/conversationsStore';
 import { useFavoritesStore } from '../../counselors/store/favoritesStore';
@@ -66,6 +67,9 @@ export async function deleteAccount(opts: DeleteAccountOptions = {}): Promise<bo
     return false;
   }
 
+  // The deleted account's yes goes with it (the row itself is in KEEP, for the accounts that remain).
+  const uid = getUserAuth();
+  if (uid) withdrawAiConsent(uid);
   await forgetLocalData();
   signedOut();
   return true;
@@ -81,7 +85,9 @@ export async function deleteAccount(opts: DeleteAccountOptions = {}): Promise<bo
  * (29-10) the reminder's time and on/off, which the sweep used to delete though the reminder's own
  * comments said it stayed.
  */
-const KEEP = ['prayers.lang', 'prayers.sound', 'prayers.reminder'];
+// 'prayers.aiConsent' (11-04): consent is kept per account uid, so it survives sign-out — the same
+// person signing back in is not asked again, and another account on this phone is still asked.
+const KEEP = ['prayers.lang', 'prayers.sound', 'prayers.reminder', 'prayers.aiConsent'];
 
 export async function forgetLocalData() {
   // 29-10: the journey playing on sign-out kept narrating the last person's name over Login, and the

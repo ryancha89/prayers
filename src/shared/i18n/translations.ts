@@ -606,6 +606,7 @@ export const translations = {
     'library.noFavorites': '아직 즐겨찾는 상담사가 없어요. 프로필에서 하트를 눌러 추가할 수 있어요.',
     'my.terms': '약관',
     'my.privacy': '개인정보',
+    'my.aiConsent': 'AI 데이터 공유',
     'my.language': '언어',
     'my.music': '명상 음악',
     // ── 아카이브 (Archive) ──
@@ -1807,6 +1808,7 @@ export const translations = {
     'library.noFavorites': 'No favourites yet. Tap the heart on a counselor to keep them here.',
     'my.terms': 'Terms',
     'my.privacy': 'Privacy',
+    'my.aiConsent': 'AI data sharing',
     'my.language': 'Language',
     'my.music': 'Meditation music',
     // ── 아카이브 (Archive) ──
@@ -3008,6 +3010,7 @@ export const translations = {
     'library.noFavorites': 'お気に入りはまだありません。相談者のページでハートを押すとここに残ります。',
     'my.terms': '利用規約',
     'my.privacy': 'プライバシー',
+    'my.aiConsent': 'AIデータ共有',
     'my.language': '言語',
     'my.music': '瞑想の音楽',
     // ── 아카이브 (Archive) ──
@@ -4208,6 +4211,7 @@ export const translations = {
     'library.noFavorites': '还没有收藏的相谈师。在他的页面点一下爱心就会留在这里。',
     'my.terms': '条款',
     'my.privacy': '隐私',
+    'my.aiConsent': 'AI 数据共享',
     'my.language': '语言',
     'my.music': '冥想音乐',
     // ── 아카이브 (Archive) ──
@@ -5408,6 +5412,7 @@ export const translations = {
     'library.noFavorites': '還沒有收藏的相談師。在他的頁面點一下愛心就會留在這裡。',
     'my.terms': '條款',
     'my.privacy': '隱私',
+    'my.aiConsent': 'AI 資料分享',
     'my.language': '語言',
     'my.music': '冥想音樂',
     // ── 아카이브 (Archive) ──
@@ -6609,6 +6614,7 @@ export const translations = {
     'library.noFavorites': 'Chưa có thầy yêu thích nào. Bấm trái tim ở trang thầy để giữ lại đây.',
     'my.terms': 'Điều khoản',
     'my.privacy': 'Riêng tư',
+    'my.aiConsent': 'Chia sẻ dữ liệu AI',
     'my.language': 'Ngôn ngữ',
     'my.music': 'Nhạc thiền',
     // ── 아카이브 (Archive) ──
