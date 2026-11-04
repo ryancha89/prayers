@@ -52,6 +52,8 @@ export const OUTFITS: Record<string, BodyOutfits> = {
     bottoms: [
       piece('jeans', require('./assets/outfits/xb_f01_jeans.png')),
       piece('midi', require('./assets/outfits/xb_f01_midi.png')),
+      // 03-11: cotton chinos, the jeans' cut (tools/outfits/chinos_f). Her tee is off: no forearms under her sleeves.
+      piece('chinos', require('./assets/outfits/xb_f01_chinos.png')),
     ],
     ownTop: require('./assets/outfits/xb_f01_top_original.png'),
     ownBottom: require('./assets/outfits/xb_f01_bottom_original.png'),
@@ -65,8 +67,13 @@ export const OUTFITS: Record<string, BodyOutfits> = {
     tops: [
       piece('hoodie', require('./assets/outfits/xb_m01_hoodie.png')),
       piece('knit', require('./assets/outfits/xb_m01_knit.png')),
+      // 03-11: short-sleeved tee and cotton chinos (tools/outfits/tee_m, chinos_m)
+      piece('tee', require('./assets/outfits/xb_m01_tee.png')),
     ],
-    bottoms: [piece('jeans', require('./assets/outfits/xb_m01_jeans.png'))],
+    bottoms: [
+      piece('jeans', require('./assets/outfits/xb_m01_jeans.png')),
+      piece('chinos', require('./assets/outfits/xb_m01_chinos.png')),
+    ],
     ownTop: require('./assets/outfits/xb_m01_top_original.png'),
     ownBottom: require('./assets/outfits/xb_m01_bottom_original.png'),
   },
