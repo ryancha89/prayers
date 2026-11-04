@@ -450,7 +450,9 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     const yaw = Number.isFinite(view.yaw) ? view.yaw : 0;
     const zoom = Number.isFinite(view.zoom) ? Math.min(1, Math.max(0, view.zoom)) : 0;
     const frac = (v?: number) => (v != null && Number.isFinite(v) ? Math.min(0.6, Math.max(0, v)) : undefined);
-    this.characterView = { yaw, zoom, top: frac(view.top), bottom: frac(view.bottom) };
+    // `focus` goes through only as one of the three words Unity knows; anything else is left out.
+    const focus = view.focus === 'body' || view.focus === 'top' || view.focus === 'bottom' ? view.focus : undefined;
+    this.characterView = { yaw, zoom, top: frac(view.top), bottom: frac(view.bottom), focus };
     if (this.view) this.postLive({ type: 'CHARACTER_VIEW', payload: this.characterView });
   }
 

@@ -37,7 +37,8 @@ jest.mock('../src/features/counseling/bridge', () => ({
 }));
 
 import { CharacterSelectScreen } from '../src/features/character/screens/CharacterSelectScreen';
-import { GARMENTS_ON } from '../src/features/character/outfitColors';
+import { OUTFIT_COVER } from '../src/features/character/screens/OutfitPanel';
+import { OUTFIT_COLORS } from '../src/features/character/outfitCatalog';
 import { useSubjectsStore } from '../src/features/subjects/store/subjectsStore';
 import { Text } from '../src/shared/components/Text';
 
@@ -73,7 +74,8 @@ it('opens the preview on the profile’s default, and swaps it on a card tap', a
 it('the camera is coming soon: shown, disabled, and it never asks Unity for tracking', async () => {
   const cam = tree.root.find(n => n.props.testID === 'character-camera' && 'disabled' in n.props);
   expect(cam.props.disabled).toBe(true);
-  expect(texts()).toContain('Turn camera on · Coming soon');
+  // 04-11: the pill reads "📷 Coming soon" (the long label overflowed an SE); the full name stays in a11y
+  expect(texts()).toContain('📷 Coming soon');
   expect(mockBridge.setFaceTracking).not.toHaveBeenCalled();
 });
 
@@ -87,20 +89,22 @@ it('one character for her gender: no step to "choose" it — hair (face shot) �
   try {
     expect(tree.root.findAll(n => n.props.testID === 'character-step-look')).toHaveLength(0);
     // the first step is the hair, framed on the face
-    expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0.8 });
+    expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0.8, focus: 'body' });
     const next = () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress);
     await act(async () => byId('character-hair-C46A86').props.onPress());
     expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(
       expect.objectContaining({ playerCharacter: 'xb_f01', playerHair: '#C46A86' }));
     await act(async () => next().props.onPress());
-    // the outfit: framed on the whole body, previewed live like the hair
-    expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0 });
-    await act(async () => byId('character-outfit-2E3A5C').props.onPress());
+    // the outfit: framed on the whole body (the Sets tab), previewed live like the hair
+    expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0, focus: 'body' });
+    await act(async () => byId('character-outfit-tab-colour').props.onPress());
+    await act(async () => byId('character-outfit-top-2E3A5C').props.onPress());
+    await act(async () => byId('character-outfit-bottom-2E3A5C').props.onPress());
     expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(
-      expect.objectContaining({ playerCharacter: 'xb_f01', playerHair: '#C46A86', playerOutfit: '#2E3A5C' }));
+      expect.objectContaining({ playerCharacter: 'xb_f01', playerHair: '#C46A86', playerOutfit: 't=orig:#2E3A5C;b=orig:#2E3A5C' }));
     await act(async () => next().props.onPress());
     expect(texts()).toContain('This is you in Prayers');
-    expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0 });
+    expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0, focus: 'body' });
     // the last press: Unity's turn first, the store only after it
     const start = tree.root.find(n => n.props.label === 'Start' && !!n.props.onPress);
     await act(async () => start.props.onPress());
@@ -109,7 +113,7 @@ it('one character for her gender: no step to "choose" it — hair (face shot) �
     await act(async () => { jest.advanceTimersByTime(1300); });
     expect(useSubjectsStore.getState().playerCharacter).toBe('xb_f01');
     expect(useSubjectsStore.getState().playerHair).toBe('#C46A86');
-    expect(useSubjectsStore.getState().playerOutfit).toBe('#2E3A5C');
+    expect(useSubjectsStore.getState().playerOutfit).toBe('t=orig:#2E3A5C;b=orig:#2E3A5C');
     // an account that picked on the old card screen is shown the creator once; this ends that
     expect(useSubjectsStore.getState().creatorSeen).toBe(true);
   } finally {
@@ -122,7 +126,7 @@ it('no gender yet: both characters, so the character step comes first', async ()
   useSubjectsStore.setState({ self: { id: 'self', displayName: 'Linh', birthDate: '2002-11-12', isUser: true } });
   await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
   expect(tree.root.findAll(n => n.props.testID === 'character-step-look').length).toBeGreaterThan(0);
-  expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0 });
+  expect(mockBridge.setCharacterView).toHaveBeenLastCalledWith({ yaw: 0, zoom: 0, focus: 'body' });
 });
 
 it('the back arrow steps back before it leaves', async () => {
@@ -170,70 +174,159 @@ it('a card switch shows "preparing your character" until Unity has drawn the new
   }
 });
 
-it('the outfit step: hair → outfit → done in the step bar, the artist\'s own first, the body\'s sets above the colours', async () => {
+const OUTFIT_COLORS_IDS = OUTFIT_COLORS.map(c => (c.hex ? c.hex.slice(1) : 'original'));
+const toOutfit = async () => act(async () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress).props.onPress());
+const tab = async (k: 'sets' | 'clothes' | 'colour') => act(async () => byId(`character-outfit-tab-${k}`).props.onPress());
+const lastView = () => mockBridge.setCharacterView.mock.calls[mockBridge.setCharacterView.mock.calls.length - 1][0];
+const lastOutfit = () => mockBridge.setCharacterPreview.mock.calls[mockBridge.setCharacterPreview.mock.calls.length - 1][0].playerOutfit;
+const selected = (id: string) => byId(id).props.accessibilityState.selected;
+
+it('the outfit step (04-11): hair → outfit → done in the step bar; three tabs, the sets first, the artist\'s own look worn', async () => {
   const steps = tree.root.findAll(n => typeof n.props.testID === 'string' && n.props.testID.startsWith('character-step-') && !!n.props.onPress)
     .map(n => n.props.testID);
   expect(steps).toEqual(['character-step-hair', 'character-step-outfit', 'character-step-done']);
-  await act(async () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress).props.onPress());
-  // a stored colour the palette has is where the step opens; "" is the artist's own
-  expect(byId('character-outfit-original').props.accessibilityState).toEqual({ selected: true });
-  // 02-11: her three sets (xb_f01), named, replace the "coming soon" card
-  expect(tree.root.findAll(n => n.props.testID === 'character-outfit-soon')).toHaveLength(0);
-  if (GARMENTS_ON) {
-    // 02-11: tops, bottoms and styles in their own rows, the artist's piece first in the first two
-    expect(texts()).toEqual(expect.arrayContaining(['Tops', 'Bottoms', 'Style']));
-    expect(['top-original', 'set-hoodie', 'set-knit', 'bottom-original', 'set-jeans', 'set-midi', 'set-school', 'set-winter', 'set-spring']
-      .map(id => byId(`character-outfit-${id}`).props.accessibilityLabel))
-      .toEqual(['Original', 'Hoodie', 'Knit top', 'Original', 'Jeans', 'Midi skirt', 'School', 'Winter knit', 'Spring']);
-  } else {
-    // garments hidden (02-11): only the styles row, no tops / bottoms rows
-    expect(texts()).toEqual(expect.arrayContaining(['Style']));
-    expect(texts()).not.toEqual(expect.arrayContaining(['Tops']));
-    expect(tree.root.findAll(n => n.props.testID === 'character-outfit-set-hoodie')).toHaveLength(0);
-    expect(['set-school', 'set-winter', 'set-spring'].map(id => byId(`character-outfit-${id}`).props.accessibilityLabel))
-      .toEqual(['School', 'Winter knit', 'Spring']);
-  }
+  await toOutfit();
+  expect(texts()).toEqual(expect.arrayContaining(['Sets', 'Clothes', 'Colour', 'Reset']));
+  // the outfit panel's own header: no name / face pill on this step, a dice and a Reset instead
+  expect(tree.root.findAll(n => n.props.testID === 'character-shot')).toHaveLength(0);
+  expect(byId('character-outfit-dice')).toBeTruthy();
+  // her seven sets, "Original" worn (both slots on the artist's pieces), no "Custom" card
+  expect(['original', 'school', 'winter', 'spring', 'casual', 'campus', 'weekend'].map(id => byId(`character-outfit-set-${id}`).props.accessibilityLabel))
+    .toEqual(['Original', 'School', 'Winter knit', 'Spring', 'Casual', 'Campus', 'Weekend']);
+  expect(selected('character-outfit-set-original')).toBe(true);
+  expect(tree.root.findAll(n => n.props.testID === 'character-outfit-set-custom')).toHaveLength(0);
+  // the clothes: a Top row and a Bottom row, her own piece first in each, by its name
+  await tab('clothes');
+  expect(texts()).toEqual(expect.arrayContaining(['Shirts', 'Pants & Skirts']));
+  expect(['top-orig', 'top-hoodie', 'top-knit', 'top-shirt', 'bottom-orig', 'bottom-jeans', 'bottom-midi', 'bottom-chinos']
+    .map(id => byId(`character-outfit-${id}`).props.accessibilityLabel))
+    .toEqual(['Cardigan', 'Hoodie', 'Knit top', 'Overshirt', 'Skirt', 'Jeans', 'Midi skirt', 'Chinos']);
+  expect(selected('character-outfit-top-orig')).toBe(true);
+  expect(selected('character-outfit-bottom-orig')).toBe(true);
+  // the colours: a chip row per slot, "Original" ringed on both
+  await tab('colour');
+  expect(selected('character-outfit-top-original')).toBe(true);
+  expect(selected('character-outfit-bottom-original')).toBe(true);
   // backing out of the creator leaves the stored outfit as it was
-  await act(async () => byId('character-outfit-7A2E3B').props.onPress());
-  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: '#7A2E3B' }));
+  await act(async () => byId('character-outfit-top-7A2E3B').props.onPress());
+  expect(lastOutfit()).toBe('t=orig:#7A2E3B');
   expect(useSubjectsStore.getState().playerOutfit).toBe('');
 });
 
-it('a set is picked as set:<id>, previewed live and stored with the character', async () => {
-  await act(async () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress).props.onPress());
+it('a set dresses both slots in one tap, previewed live; a change to one slot makes it "Custom"', async () => {
+  await toOutfit();
   await act(async () => byId('character-outfit-set-school').props.onPress());
-  expect(byId('character-outfit-set-school').props.accessibilityState).toEqual({ selected: true });
-  expect(byId('character-outfit-original').props.accessibilityState).toEqual({ selected: false });
-  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: 'set:school' }));
+  expect(selected('character-outfit-set-school')).toBe(true);
+  expect(selected('character-outfit-set-original')).toBe(false);
+  expect(lastOutfit()).toBe('t=orig:school;b=orig:school');
+  await act(async () => byId('character-outfit-set-campus').props.onPress());
+  expect(lastOutfit()).toBe('t=knit;b=midi');
+  // one slot off the set: no set is worn, the ringed "Custom" card leads the row and takes no tap
+  await tab('clothes');
+  await act(async () => byId('character-outfit-bottom-jeans').props.onPress());
+  expect(lastOutfit()).toBe('t=knit;b=jeans');
+  await tab('sets');
+  const custom = tree.root.find(n => n.props.testID === 'character-outfit-set-custom');
+  expect(custom.props.onPress).toBeUndefined();
+  expect(custom.props.accessibilityLabel).toBe('Custom');
+  expect(selected('character-outfit-set-campus')).toBe(false);
+  // back onto a set: the card leaves
+  await act(async () => byId('character-outfit-set-casual').props.onPress());
+  expect(tree.root.findAll(n => n.props.testID === 'character-outfit-set-custom')).toHaveLength(0);
+  expect(lastOutfit()).toBe('t=hoodie;b=jeans');
 });
 
-(GARMENTS_ON ? it : it.skip)('a top, a bottom and a style are picked separately and stored together', async () => {
-  await act(async () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress).props.onPress());
-  await act(async () => byId('character-outfit-set-knit').props.onPress());
-  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: 't=knit' }));
-  await act(async () => byId('character-outfit-set-jeans').props.onPress());
-  await act(async () => byId('character-outfit-set-winter').props.onPress());
-  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: 's=winter;t=knit;b=jeans' }));
-  expect(byId('character-outfit-set-knit').props.accessibilityState).toEqual({ selected: true });
-  expect(byId('character-outfit-top-original').props.accessibilityState).toEqual({ selected: false });
-  // the artist's top again keeps the bottom and the style
+it('a top and a bottom are picked separately; a tint stays on the new item, a repaint drops', async () => {
+  await toOutfit();
+  await act(async () => byId('character-outfit-set-winter').props.onPress());       // orig:winter on both
+  await tab('clothes');
+  await act(async () => byId('character-outfit-top-knit').props.onPress());
+  expect(lastOutfit()).toBe('t=knit;b=orig:winter');                                 // the repaint drops from the knit
+  expect(selected('character-outfit-top-knit')).toBe(true);
+  expect(selected('character-outfit-top-orig')).toBe(false);
+  await tab('colour');
+  await act(async () => byId('character-outfit-top-2E3A5C').props.onPress());
+  expect(lastOutfit()).toBe('t=knit:#2E3A5C;b=orig:winter');
+  expect(selected('character-outfit-top-2E3A5C')).toBe(true);
+  // a repaint rings no chip, not even "Original"
+  expect(selected('character-outfit-bottom-original')).toBe(false);
+  expect(OUTFIT_COLORS_IDS.some(id => selected(`character-outfit-bottom-${id}`))).toBe(false);
+  await tab('clothes');
+  await act(async () => byId('character-outfit-top-hoodie').props.onPress());
+  expect(lastOutfit()).toBe('t=hoodie:#2E3A5C;b=orig:winter');                     // the tint rides along
+  // the artist's piece again keeps the tint too; "Original" on the colour tab clears it
+  await act(async () => byId('character-outfit-top-orig').props.onPress());
+  expect(lastOutfit()).toBe('t=orig:#2E3A5C;b=orig:winter');
+  await tab('colour');
   await act(async () => byId('character-outfit-top-original').props.onPress());
-  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: 's=winter;b=jeans' }));
-  // a colour replaces the style; with no garment left it is stored the old short way
-  await act(async () => byId('character-outfit-bottom-original').props.onPress());
-  await act(async () => byId('character-outfit-2E3A5C').props.onPress());
-  expect(mockBridge.setCharacterPreview).toHaveBeenLastCalledWith(expect.objectContaining({ playerOutfit: '#2E3A5C' }));
+  expect(lastOutfit()).toBe('b=orig:winter');
 });
 
-it('a stored set opens selected on its body, and another body\'s set falls back to the artist\'s own', async () => {
+it('the camera follows the tab and the row last touched, and comes back to the body off the step', async () => {
+  await toOutfit();
+  expect(lastView()).toEqual({ yaw: 0, zoom: 0, focus: 'body' });
+  await tab('clothes');
+  expect(lastView()).toEqual({ yaw: 0, zoom: 0, focus: 'top' });
+  await act(async () => byId('character-outfit-bottom-jeans').props.onPress());
+  expect(lastView()).toEqual({ yaw: 0, zoom: 0, focus: 'bottom' });
+  await tab('colour');
+  expect(lastView().focus).toBe('bottom');                      // the row last touched, across tabs
+  await act(async () => byId('character-outfit-top-8FA48A').props.onPress());
+  expect(lastView().focus).toBe('top');
+  await tab('sets');
+  expect(lastView().focus).toBe('body');
+  await tab('clothes');
+  expect(lastView().focus).toBe('top');
+  await act(async () => tree.root.find(n => n.props.label === 'Next' && !!n.props.onPress).props.onPress());
+  expect(lastView()).toEqual({ yaw: 0, zoom: 0, focus: 'body' });
+});
+
+it('the panel is short on the sets and tall on the clothes and colours', async () => {
+  const { StyleSheet } = require('react-native');
+  const panelH = () => {
+    const panel = tree.root.findAll(n => typeof n.props.onLayout === 'function' && StyleSheet.flatten(n.props.style)?.minHeight > 0)
+      .map(n => StyleSheet.flatten(n.props.style).minHeight as number);
+    return Math.max(...panel);
+  };
+  const before = panelH();
+  await toOutfit();
+  const short = panelH();
+  await tab('clothes');
+  const tall = panelH();
+  expect(short).toBeGreaterThan(before);
+  expect(tall).toBeGreaterThan(short);
+  expect(tall / short).toBeCloseTo(OUTFIT_COVER.clothes / OUTFIT_COVER.sets, 1);
+  await tab('colour');
+  expect(panelH()).toBe(tall);
+});
+
+it('the dice picks a set and some tints; Reset is the artist\'s own look again', async () => {
+  await toOutfit();
+  const seq = [0.5, 0.1, 0.5, 0.9];                               // set 3 (spring); the top tinted burgundy (tint 4), the bottom as the set
+  const rand = jest.spyOn(Math, 'random').mockImplementation(() => seq.shift() ?? 0);
+  try {
+    await act(async () => byId('character-outfit-dice').props.onPress());
+  } finally {
+    rand.mockRestore();
+  }
+  expect(lastOutfit()).toBe('t=orig:#7A2E3B;b=orig:spring');
+  expect(tree.root.find(n => n.props.testID === 'character-outfit-set-custom')).toBeTruthy();
+  await act(async () => byId('character-outfit-reset').props.onPress());
+  expect(lastOutfit()).toBe('');
+  expect(selected('character-outfit-set-original')).toBe(true);
+});
+
+it('a stored set opens worn on its body, and another body\'s set falls back to the artist\'s own', async () => {
   act(() => tree.unmount());
   mockBridge.openCharacterPreview.mockClear();
-  useSubjectsStore.setState({ playerOutfit: 'set:winter' });
+  useSubjectsStore.setState({ playerOutfit: 'set:winter' });    // the 02-11 form
   await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
-  expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerOutfit: 'set:winter' }));
+  expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerOutfit: 't=orig:winter;b=orig:winter' }));
+  await toOutfit();
+  expect(selected('character-outfit-set-winter')).toBe(true);
   act(() => tree.unmount());
   mockBridge.openCharacterPreview.mockClear();
-  useSubjectsStore.setState({ playerOutfit: 'set:denim' });    // a men's set on her body
+  useSubjectsStore.setState({ playerOutfit: 't=orig:denim;b=orig:denim' });    // a men's set on her body
   await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
   expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerOutfit: '' }));
 });
@@ -243,13 +336,14 @@ it('opens on the stored outfit, and a colour the palette dropped falls back to t
   mockBridge.openCharacterPreview.mockClear();
   useSubjectsStore.setState({ playerOutfit: '#8FA48A' });
   await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
-  expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerOutfit: '#8FA48A' }));
+  expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerOutfit: 't=orig:#8FA48A;b=orig:#8FA48A' }));
   act(() => tree.unmount());
   mockBridge.openCharacterPreview.mockClear();
   useSubjectsStore.setState({ playerOutfit: '#123456' });
   await act(async () => { tree = ReactTestRenderer.create(<CharacterSelectScreen />); });
   expect(mockBridge.openCharacterPreview).toHaveBeenCalledWith(expect.objectContaining({ playerOutfit: '' }));
 });
+
 
 it('the header fits a 375-pt SE: the title truncates to one line and the camera pill is capped', () => {
   // Jest has no layout engine, so the rules that keep the row on screen are pinned instead
@@ -261,7 +355,7 @@ it('the header fits a 375-pt SE: the title truncates to one line and the camera 
   const cam = tree.root.find(n => n.props.testID === 'character-camera' && 'disabled' in n.props);
   const pill = StyleSheet.flatten(typeof cam.props.style === 'function' ? cam.props.style({ pressed: false }) : cam.props.style);
   expect(pill.flexShrink).toBeGreaterThan(0);
-  expect(pill.maxWidth).toBe('50%');
+  expect(pill.maxWidth).toBe('34%');
   const label = cam.findAll(n => n.type === Text)[0];
   expect(label.props.numberOfLines).toBe(1);
   // The whole name is still read out, truncated or not.
