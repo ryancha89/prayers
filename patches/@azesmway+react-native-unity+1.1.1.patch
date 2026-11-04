@@ -1550,3 +1550,39 @@ diff --git a/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcfram
 new file mode 100755
 index 0000000..68f3dad
 Binary files /dev/null and b/node_modules/@azesmway/react-native-unity/ios/UnityFramework.xcframework/ios-arm64-simulator/UnityFramework.framework/libiPhone-lib.dylib differ
+diff --git a/node_modules/@azesmway/react-native-unity/src/UnityView.tsx b/node_modules/@azesmway/react-native-unity/src/UnityView.tsx
+--- a/node_modules/@azesmway/react-native-unity/src/UnityView.tsx
++++ b/node_modules/@azesmway/react-native-unity/src/UnityView.tsx
+@@ -70,7 +70,16 @@
+     // (RNUnityView.prepareForRecycle), which only pauses the shared instance so
+     // it can be reused on the next mount. See issue #180.
+     if (this.ref.current) {
+-      Commands.unloadUnity(this.ref.current);
++      if (Platform.OS === 'android') {
++        // ANDROID KEEPS THE ENGINE (prayers, 11-04). Unity as a Library on Android cannot boot a
++        // second runtime in the same process: after unload() the next screen's new UnityPlayer
++        // died in UnityMain with "Graphics device is null" (SIGTRAP) — World → 2D → World crashed
++        // every time. Pause instead and let the next view adopt the same player, which is what
++        // iOS has always effectively done (its unload never really tears the runtime down).
++        Commands.pauseUnity(this.ref.current, true);
++      } else {
++        Commands.unloadUnity(this.ref.current);
++      }
+     }
+   }
+ 
+diff --git a/node_modules/@azesmway/react-native-unity/android/src/main/java/com/azesmwayreactnativeunity/ReactNativeUnityViewManager.java b/node_modules/@azesmway/react-native-unity/android/src/main/java/com/azesmwayreactnativeunity/ReactNativeUnityViewManager.java
+--- a/node_modules/@azesmway/react-native-unity/android/src/main/java/com/azesmwayreactnativeunity/ReactNativeUnityViewManager.java
++++ b/node_modules/@azesmway/react-native-unity/android/src/main/java/com/azesmwayreactnativeunity/ReactNativeUnityViewManager.java
+@@ -60,6 +60,11 @@
+         try {
+             view.setUnityPlayer(getPlayer());
+         } catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {}
++        // The previous screen paused the shared player on its way out (UnityView unmount keeps
++        // the engine on Android). Resume here, before the attach listener's
++        // restoreUnityUserState() would re-apply that pause and leave this view frozen.
++        ReactNativeUnity.resume();
++        getPlayer().windowFocusChanged(true);
+     } else {
+         try {
+             createPlayer(context.getCurrentActivity(), new UnityPlayerCallback() {
