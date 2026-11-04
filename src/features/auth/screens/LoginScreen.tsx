@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '../../../shared/theme';
@@ -48,6 +48,13 @@ export const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const canSubmitEmail = email.trim().length > 0 && password.length > 0;
+  const scrollRef = useRef<ScrollView>(null);
+  const passwordRef = useRef<TextInput>(null);
+  // The review door must be usable with the keyboard up (Play review 11-04, "login credentials do
+  // not work"): on Android (edge-to-edge, so adjustResize no longer shrinks the window) the keyboard
+  // covered the password field and the Sign in button, and the first tap on Sign in only closed
+  // the keyboard. Keep the form in view whenever a field takes focus.
+  const showForm = () => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 250);
 
   const run = async (work: () => Promise<unknown>, plainError = false) => {
     if (inFlight.current) return;
@@ -73,8 +80,14 @@ export const LoginScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.root}>
+      <KeyboardAvoidingView style={styles.root} behavior="padding">
       {/* Scrolls only when it must: held sideways an SE has 375pt for all of this. */}
-      <ScrollView contentContainerStyle={[styles.content, column]} bounces={false}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={[styles.content, column]}
+        bounces={false}
+        // One tap on Sign in signs in, even while the keyboard is still up.
+        keyboardShouldPersistTaps="handled">
       <View style={styles.block}>
         <Text style={styles.title}>{t('login.title')}</Text>
         <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
@@ -162,9 +175,16 @@ export const LoginScreen: React.FC = () => {
             textContentType="username"
             autoComplete="email"
             editable={!busy}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onFocus={showForm}
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
           <TextInput
+            ref={passwordRef}
             testID="login-password-input"
+            returnKeyType="go"
+            onFocus={showForm}
             style={styles.input}
             value={password}
             onChangeText={setPassword}
@@ -207,6 +227,7 @@ export const LoginScreen: React.FC = () => {
         </Pressable>
       )}
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
