@@ -474,7 +474,7 @@ export const MyRoomScreen: React.FC = () => {
 
       {/* The look-around layer: transparent, over the Unity view, under every control. A touch on
           the UnityView itself never reaches RN (useFollowCamera says why). */}
-      {controlsOn && <View style={StyleSheet.absoluteFill} testID="myroom-look" {...look} />}
+      {controlsOn && <View style={StyleSheet.absoluteFill} testID="myroom-look" {...look.handlers} />}
 
       {/* Top row: who you are on the left, the four icons on the right. Decorate mode's bar instead. */}
       {held && !editing ? null : editing ? (
@@ -523,7 +523,7 @@ export const MyRoomScreen: React.FC = () => {
       <View
         pointerEvents="box-none"
         style={[styles.stick, { left: safe.left + spacing.xs, bottom: safe.bottom + spacing.xs }]}>
-        <WorldJoystick visible={walkOn && !atBook} />
+        <WorldJoystick visible={walkOn && !atBook} onOtherDrag={look.look} />
       </View>
 
       {/* Run, over exit: MYROOM_RUN, never WORLD_RUN (that would set the WORLD's run for the way

@@ -442,7 +442,7 @@ export const WorldScreen: React.FC = () => {
       )}
       {/* The look-around layer: transparent, over the Unity view, under every control. A touch on
           the UnityView itself never reaches RN (useWorldCamera says why); taps are handed on. */}
-      {unity && lookOn && <View style={StyleSheet.absoluteFill} testID="world-look" {...camera} />}
+      {unity && lookOn && <View style={StyleSheet.absoluteFill} testID="world-look" {...camera.handlers} />}
 
       {/* Top row, as My Room's: who you are on the left (tap → the profile sheet), the coins and the
           way back to 2D on the right. */}
@@ -473,7 +473,7 @@ export const WorldScreen: React.FC = () => {
       <View
         pointerEvents="box-none"
         style={[styles.stick, { left: safe.left + spacing.xs, bottom: safe.bottom + spacing.xs }]}>
-        <WorldJoystick visible={!busy && !loadingWorld} onOtherTouch={tapWhileSteering} />
+        <WorldJoystick visible={!busy && !loadingWorld} onOtherTouch={tapWhileSteering} onOtherDrag={camera.look} />
       </View>
 
       {!busy && (
