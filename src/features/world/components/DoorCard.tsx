@@ -16,8 +16,8 @@ import { useCoins } from '../../coins/store/coinStore';
 import { CoinGlyph } from '../../coins/components/CoinGlyph';
 import { formatCoins } from '../../coins/format';
 import { zoneInfo } from '../data/zones';
-import { counselingRoster, WorldSheetTop } from './WorldSheets';
-import { PROMPT_LIFT } from './PromptButton';
+import { counselingRoster } from './WorldSheets';
+import { STICK_ZONE } from './WorldJoystick';
 
 /**
  * At a door, what is behind it (13-10 redesign — "vào các phòng từ 3D nên có UI khác cho hợp lý").
@@ -33,7 +33,9 @@ import { PROMPT_LIFT } from './PromptButton';
  *   · myroom      one line, and Enter
  *   · cafe        one line, and Enter (the coffee shop, 16-10)
  *
- * Portrait: where the old pill was (PROMPT_LIFT, centred between the safe edges). Landscape: top centre,
+ * Portrait: low, just over the stick's ring (DOOR_LIFT) — at the old pill's height (PROMPT_LIFT, 250) it
+ * stood on the player's back (30-10, "사람 안가리게 밑으로"). Landscape: low too (30-10, "가로모드에서도
+ * 아래에"), in the gap between the stick and the Map·Quest·Menu row. Before that: top centre,
  * under the top row — the World camera frames the player low and centred, and at the bottom the card
  * stood on him (simulator, 13-10). Same pop either way when the door changes.
  */
@@ -46,7 +48,6 @@ export const DoorCard: React.FC<{
   const lang = useLang();
   const safe = useSafeAreaInsets();
   const landscape = useScreen().landscape;
-  const barBottom = React.useContext(WorldSheetTop);
   const info = zoneInfo(zone);
   const pop = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -95,17 +96,17 @@ export const DoorCard: React.FC<{
       style={[
         styles.wrap,
         {
-          left: safe.left + spacing.md,
-          right: safe.right + spacing.md,
-          ...(landscape ? { top: Math.max(barBottom, safe.top) + spacing.sm } : { bottom: safe.bottom + PROMPT_LIFT.portrait }),
+          left: safe.left + (landscape ? STICK_ZONE.width : spacing.md),
+          right: safe.right + (landscape ? LANDSCAPE_RIGHT : spacing.md),
+          bottom: safe.bottom + (landscape ? spacing.lg : DOOR_LIFT),
           opacity: pop,
-          transform: [{ translateY: pop.interpolate({ inputRange: [0, 1], outputRange: [landscape ? -16 : 16, 0] }) }],
+          transform: [{ translateY: pop.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }],
         },
       ]}>
       <View style={styles.card}>
         <View style={styles.head}>
           <View style={styles.emblem}>
-            <Icon name={info.icon} size={18} color={colors.gold} />
+            <Icon name={info.icon} size={16} color={colors.gold} />
           </View>
           <View style={styles.titles}>
             <Text style={styles.title} numberOfLines={1}>{t(info.label)}</Text>
@@ -158,32 +159,36 @@ export const DoorTitle: React.FC<{ zone: WorldZone }> = ({ zone }) => {
 };
 
 const INK = '#1A1330';
-const AVATAR = 44;
+const AVATAR = 38;
+/** Portrait: the card's bottom, over the joystick's resting ring (its top is ~124 pt up the stick zone). */
+const DOOR_LIFT = STICK_ZONE.height - 88;
+/** Landscape: clear of WorldScreen's bottom-right row — three ROUND (46) rings, their gaps and its inset. */
+const LANDSCAPE_RIGHT = 3 * 46 + 2 * spacing.md + spacing.lg + spacing.sm;
 
 const styles = StyleSheet.create({
   wrap: { position: 'absolute', alignItems: 'center' },
   card: {
-    width: '100%', maxWidth: 380, padding: spacing.md, gap: spacing.md, borderRadius: radius.lg,
+    width: '100%', maxWidth: 330, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, gap: spacing.sm, borderRadius: radius.lg,
     backgroundColor: 'rgba(18,14,40,0.88)', borderWidth: 1, borderColor: 'rgba(233,196,106,0.35)',
   },
-  head: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  head: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   emblem: {
-    width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center',
+    width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: 'rgba(233,196,106,0.55)', backgroundColor: 'rgba(233,196,106,0.08)',
   },
   titles: { flex: 1, gap: 2 },
-  title: { fontFamily: SERIF, fontSize: 19, color: colors.textPrimary, letterSpacing: 0.3 },
+  title: { fontFamily: SERIF, fontSize: 16, color: colors.textPrimary, letterSpacing: 0.3 },
   line: { ...typography.caption, color: colors.textMuted },
   coinLine: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   cta: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.gold,
+    paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.pill, backgroundColor: colors.gold,
     shadowColor: colors.gold, shadowOpacity: 0.5, shadowRadius: 10, shadowOffset: { width: 0, height: 0 },
   },
-  ctaText: { ...typography.bodyStrong, color: INK, maxWidth: 150 },
+  ctaText: { ...typography.bodyStrong, fontSize: 14, color: INK, maxWidth: 140 },
   pressed: { opacity: 0.75 },
   faces: { flexDirection: 'row', justifyContent: 'space-around' },
-  face: { alignItems: 'center', gap: 4, width: 72 },
+  face: { alignItems: 'center', gap: 3, width: 64 },
   avatar: { width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2, borderWidth: 1.5, borderColor: 'rgba(233,196,106,0.7)' },
   faceName: { ...typography.caption, color: colors.textPrimary },
   titleWrap: { ...absoluteFill, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },

@@ -1,0 +1,48 @@
+{
+  "source": "National Museum of Korea bon005191",
+  "license": "KOGL Type 1 \u2014 attribution",
+  "source_url": "https://www.museum.go.kr/MUSEUM/contents/M0502000000.do?relicId=510&schM=view&searchId=search",
+  "source_sha256": "2caa57472663c1c755c48931ae52edebfdc5237f9fa0c47be6c06d430ab78c88",
+  "source_triangles": 169754,
+  "statue_height_m": 2.12,
+  "reconstructed_parts": [
+    "right earth-touching hand",
+    "left palm-up hand",
+    "urna inlay"
+  ],
+  "canopy_lift_m": 0.5,
+  "seats_preserved": 110,
+  "renders": [
+    "/Users/namaste/git/prayers/3d-modeling/buddha/previews/buddha_front.png",
+    "/Users/namaste/git/prayers/3d-modeling/buddha/previews/buddha_three_quarter.png",
+    "/Users/namaste/git/prayers/3d-modeling/buddha/previews/buddha_side.png",
+    "/Users/namaste/git/prayers/3d-modeling/buddha/previews/buddha_back.png",
+    "/Users/namaste/git/prayers/3d-modeling/buddha/previews/buddha_face.png",
+    "/Users/namaste/git/prayers/3d-modeling/buddha/previews/hall_texture_detail.png",
+    "/Users/namaste/git/prayers/3d-modeling/buddha/previews/hall_interior.png"
+  ],
+  "artifact": "/Users/namaste/git/prayers/assets/mountain-temple/mountain_temple_buddha.blend",
+  "archaeological_replica": false,
+  "mobile_performance_tested": false,
+  "submillimetre_dust_vertices_removed": {
+    "Buddha_RightHand_Bhumisparsha": 16,
+    "Buddha_LeftHand_Dhyana": 0
+  },
+  "unrelated_temple_mesh_hashes_preserved": true,
+  "all_game_markers_preserved": true,
+  "all_used_images_packed": true,
+  "used_images": 39,
+  "textured_meshes_have_uv": true,
+  "hands": {
+    "Buddha_RightHand_Bhumisparsha": {
+      "components": 1,
+      "polygons": 83060
+    },
+    "Buddha_LeftHand_Dhyana": {
+      "components": 1,
+      "polygons": 64432
+    }
+  },
+  "file_sha256": "ffb3d80ec90c57c391efd9304e07a3f99cab42e7e7012f6819de5a1ad0349e5e",
+  "fbx_sha256": "1ddac864e99cd348a4f5b3ad14882031a087c9d47432ec76d4c94b6478d81951"
+}

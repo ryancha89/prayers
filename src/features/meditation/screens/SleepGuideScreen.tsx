@@ -7,16 +7,31 @@ import { RING_COMPACT, RingButton, SERIF } from '../../../shared/components/hud/
 import { useLang, useT } from '../../../shared/i18n';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
 import { sfx } from '../../../shared/audio/sfx';
-import { MED, Threshold } from '../components/BreathStage';
+import { ArtWait, BottomFade, MED, Vignette } from '../components/BreathStage';
 import { SleepSession, type SleepState } from '../sleepSession';
 import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
+import { UnityHost } from '../../counseling/components/UnityHost';
+import { useFollowCamera } from '../../world/components/useWorldCamera';
+import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
+import { useViewInsets } from '../../counseling/bridge/viewInsets';
+import { useScreen } from '../../../shared/device/screen';
+import { meditationCoveredPx } from './MeditationRoomScreen';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 /**
  * The sleep guide: thirty minutes of a spoken guide over quiet music, for someone already in bed.
  *
  * Built from the meditation room's parts — its session shape (sleepSession.ts reuses the meditation
- * session's clock), its dusk palette and lantern (BreathStage), its HUD ring for the way out — but it
- * is not that room. No Unity, no breathing ring, no bells: a bell at bedtime is an alarm.
+ * session's clock), its dusk palette and lantern (BreathStage), its HUD ring for the way out. No
+ * breathing ring, no bells: a bell at bedtime is an alarm.
+ *
+ * THE YOGA GIRL IS HERE (22-10, PM: "please implement it with the yoga character"). The screen opens
+ * the meditation room's Unity scene — the same room and the same girl (f_char_004) — as scenery,
+ * exactly as MeditationRoomScreen does (MEDITATION_INIT, the threshold held over the player until
+ * MEDITATION_READY, VIEW_INSETS so she is framed above the words). Nothing new on the Unity side:
+ * MEDITATION_STATE already carries its own breath pattern, so she is sent SLEEP_BREATH — slower than
+ * the room's 4-4-6, the out-breath longest — with her eyes shut while the guide runs. A night shade
+ * over the room takes it down to bedtime.
  *
  * DIFFERENCES FROM THE MEDITATION ROOM, ON PURPOSE
  *  · It starts on arrival. Tapping the card IS the decision; asking again on a dark screen is one
@@ -29,19 +44,77 @@ import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
  * The music is the session's, as in the meditation room: App.tsx only silences the app's bed on this
  * route (`SELF_SCORED_SCREENS`); this screen starts and stops its own.
  */
+/** Her breath while the guide plays: ~5 a minute, the out-breath the longest — the pace of someone
+ *  falling asleep, not the room's 4-4-6 exercise. Nobody follows it; it only has to look restful. */
+export const SLEEP_BREATH = { inMs: 5000, holdMs: 1000, outMs: 7000 };
+const SLEEP_CYCLE_MS = SLEEP_BREATH.inMs + SLEEP_BREATH.holdMs + SLEEP_BREATH.outMs;
+
+/** What the girl in the room is told for each state of the guide (MEDITATION_STATE). */
+export const roomStateFor = (status: SleepState['status']): 'idle' | 'breathing' | 'paused' | 'done' =>
+  status === 'running' ? 'breathing' : status === 'paused' ? 'paused' : status === 'done' ? 'done' : 'idle';
+
 const clock = (ms: number) => {
   const total = Math.max(0, Math.floor(ms / 1000));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 };
 
 export const SleepGuideScreen: React.FC = () => {
+  // The shared loading screen (picture, intro, tip) until this place's READY — sceneTransition.ts.
+  useEffect(() => { beginSceneTransition('sleep'); }, []);
   const t = useT();
   const lang = useLang();
+  // The player's look round the room (MEDITATION_CAMERA, 30-10): the world's fingers, from the shot.
+  const look = useFollowCamera({
+    enabled: isNativeUnity(),
+    home: { zoom: 0.5, yaw: 0, pitch: 0 },
+    send: c => nativeUnityBridge.sendMeditationCamera(c),
+    doubleTapHome: true,
+  });
   const navigation = useNavigation();
   const session = useRef(new SleepSession()).current;
   const [state, setState] = useState<SleepState>(() => session.read());
+  const screen = useScreen();
+  const insets = useViewInsets({
+    send: isNativeUnity() ? i => nativeUnityBridge.sendViewInsets(i) : undefined,
+    landscape: screen.landscape,
+    compute: r => meditationCoveredPx(r, screen.landscape),
+  });
+  const trackHost = insets.track('host');
+  const [view, setView] = useState({ width: screen.width, height: screen.height });
+  /** The threshold over the player, 1 until the room answers (see MeditationRoomScreen for why it
+   *  is the overlay that fades, never the Unity view). */
+  const veil = useRef(new Animated.Value(1)).current;
 
-  /** The lantern, breathing far slower than the meditation room's: this one is a night light. */
+  // The room, opened on the way in and closed on the way out; the threshold lifts when it answers.
+  // No answer at all (an older player, a bridge that never woke) leaves the threshold — the screen
+  // this always was — and the guide plays on regardless.
+  useEffect(() => {
+    if (!isNativeUnity()) return undefined;
+    const off = nativeUnityBridge.onEvent(e => {
+      if (e.type !== 'MEDITATION_READY') return;
+      Animated.timing(veil, { toValue: 0, duration: 600, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+    });
+    nativeUnityBridge.openMeditationRoom();
+    return () => {
+      off();
+      nativeUnityBridge.closeMeditationRoom();
+    };
+  }, [veil]);
+
+  // Her eyes and breath follow the guide: shut and breathing slowly while it plays. Sent on each
+  // change of state (and on resume with where in the breath the guide now is); Unity clocks it.
+  useEffect(() => {
+    if (!isNativeUnity()) return;
+    nativeUnityBridge.sendMeditationState({
+      state: roomStateFor(state.status),
+      ...SLEEP_BREATH,
+      intoMs: Math.max(0, state.elapsedMs) % SLEEP_CYCLE_MS,
+    });
+    // Only on a change of status: the clock ticking must not re-sync her every second.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
+
+  /** The waiting picture's slow drift (in and out over ~11 s): a night light, not a spinner. */
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -61,6 +134,9 @@ export const SleepGuideScreen: React.FC = () => {
     session.start(lang);
     setState(session.read());
     const offBlur = navigation.addListener('blur', () => {
+      // Only a real way out: a blur that arrives while this screen is still the focused one (a
+      // transition's stray event) must not stop the guide under the player.
+      if (navigation.isFocused()) return;
       session.stop();
       setState(session.read());
     });
@@ -107,18 +183,52 @@ export const SleepGuideScreen: React.FC = () => {
     navigation.goBack();
   };
 
-  useScreenAudio(() => { session.stop(); setState(session.read()); });
+  // Back in front (focus, or a transition that ended with this screen on top) with the session
+  // stopped: start it again (30-10, "멈추네") — a transition's stray silence stopped it right after
+  // the start and nothing restarted it, so the screen sat on "준비하고 있어요…" (status idle).
+  useScreenAudio(
+    () => { session.stop(); setState(session.read()); },
+    () => {
+      if (session.read().status !== 'idle') return;
+      session.start(lang);
+      setState(session.read());
+    },
+  );
   const { status } = state;
   const remainingMs = state.remainingSeconds * 1000;
 
   return (
-    <View style={styles.bg} testID="sleep-screen">
-      <View style={styles.glow} pointerEvents="none">
-        <Threshold title={t('home.sleep')} pulse={pulse} />
-      </View>
+    <View
+      style={styles.bg}
+      testID="sleep-screen"
+      onLayout={e => {
+        trackHost(e);
+        const { width, height } = e.nativeEvent.layout;
+        setView({ width, height });
+      }}>
+      {isNativeUnity() ? (
+        <>
+          {/* The room at the back, never hidden (MeditationRoomScreen explains why); night over it;
+              the threshold on top until the room answers. */}
+          <UnityHost style={styles.unity} />
+          <View style={styles.night} pointerEvents="none" />
+          <Vignette width={view.width} height={view.height} strength={0.9} />
+          <BottomFade width={view.width} height={260} />
+          <Animated.View style={[styles.veil, { opacity: veil }]} pointerEvents="none" testID="sleep-veil">
+            <ArtWait source={SLEEP_ART} blur={3} testID="sleep-art" title={t('home.sleep')} pulse={pulse} width={view.width} height={view.height} />
+          </Animated.View>
+        </>
+      ) : (
+        <View style={styles.veil} pointerEvents="none">
+          <ArtWait source={SLEEP_ART} blur={3} testID="sleep-art" title={t('home.sleep')} pulse={pulse} width={view.width} height={view.height} />
+        </View>
+      )}
 
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
-        <View style={styles.header}>
+      {/* Drag to turn round her, pinch to zoom, double-tap back to the directed shot (30-10). On the
+          controls' own layer: a touch on the UnityView itself never reaches RN, and the buttons
+          inside keep their taps (they claim the touch first). */}
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']} {...look}>
+        <View style={styles.header} onLayout={insets.track('header')}>
           <View style={styles.back}>
             <RingButton testID="sleep-back" icon="back" size={RING_COMPACT} label={t('sleep.stop')} onPress={leave} />
           </View>
@@ -132,7 +242,7 @@ export const SleepGuideScreen: React.FC = () => {
 
         <View style={styles.fill} />
 
-        <View style={styles.band}>
+        <View style={styles.band} onLayout={insets.track('band')}>
           {status === 'done' ? (
             <View style={styles.plate}>
               <Text style={styles.plateTitle}>{t('sleep.doneTitle')}</Text>
@@ -161,6 +271,10 @@ export const SleepGuideScreen: React.FC = () => {
   );
 };
 
+/** The sleep card's own picture (the girl asleep in her room at night): what the screen shows while
+ *  the room loads, and all it shows without the player (ArtWait; it replaced the lone lantern, 22-10). */
+const SLEEP_ART = require('../assets/sleep_card.jpg');
+
 /** The meditation room's call to action, dimmer: it is past bedtime. */
 const Action: React.FC<{ label: string; onPress: () => void; testID?: string }> = ({ label, onPress, testID }) => (
   <Pressable
@@ -174,8 +288,11 @@ const Action: React.FC<{ label: string; onPress: () => void; testID?: string }> 
 
 const styles = StyleSheet.create({
   bg: { flex: 1, backgroundColor: MED.dusk },
+  unity: { ...absoluteFill },
+  // The meditation room is lit for dusk; this is bedtime. Over the room, under the words.
+  night: { ...absoluteFill, backgroundColor: 'rgba(10,6,22,0.38)' },
+  veil: { ...absoluteFill, backgroundColor: MED.dusk },
   // The lantern sits a little above the middle, clear of the words in the band.
-  glow: { ...absoluteFill, opacity: 0.7, bottom: '18%' },
   safe: { ...absoluteFill, paddingHorizontal: spacing.xl },
   header: { flexDirection: 'row', alignItems: 'center', paddingTop: spacing.sm, minHeight: RING_COMPACT + spacing.sm },
   back: { marginLeft: spacing.md - spacing.xl, width: RING_COMPACT },

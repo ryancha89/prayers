@@ -12,6 +12,14 @@ import { forgetAllLocalPhotos } from '../../myroom/diary/photos';
 import { useMyRoomStore } from '../../myroom/store/myRoomStore';
 import { forgetAvatar } from '../../profile/avatar/avatar';
 import { forgetJourneyVoices } from '../../journey/api/voiceCache';
+import { useSavedJourneys } from '../../journey/store/savedJourneysStore';
+import { useJourneyProfile } from '../../journey/store/journeyProfileStore';
+import { useInbox } from '../../myroom/inbox/inboxStore';
+import { cancelReminders, useReminder } from '../../notifications/reminder';
+import { stopCoinConfirms } from '../../coins/api/coinsApi';
+import { useCoins } from '../../coins/store/coinStore';
+import { stopPassConfirms } from '../../journey/api/passPurchase';
+import { useJourneyPlayer } from '../../journey/player/journeyPlayer';
 
 /** A self with no birth data — the same shape first run starts from, so the app asks again. */
 const EMPTY_SELF = { id: 'self', displayName: '', isUser: true as const };
@@ -69,11 +77,23 @@ export async function deleteAccount(opts: DeleteAccountOptions = {}): Promise<bo
  * The account is gone from the server; leaving the saved people, the consultation history and the
  * favourites on the phone would hand the next person to sign in someone else's birth dates. Keyed
  * by prefix rather than by importing four stores, so a store added later cannot be forgotten here
- * — the one thing that must NOT be cleared is the language choice, which belongs to the device.
+ * — what must NOT be cleared is what belongs to the device: the language, the sound settings and
+ * (29-10) the reminder's time and on/off, which the sweep used to delete though the reminder's own
+ * comments said it stayed.
  */
-const KEEP = ['prayers.lang', 'prayers.sound'];
+const KEEP = ['prayers.lang', 'prayers.sound', 'prayers.reminder'];
 
 export async function forgetLocalData() {
+  // 29-10: the journey playing on sign-out kept narrating the last person's name over Login, and the
+  // next account found their mini player. Stopped first — before forgetJourneyVoices deletes the
+  // files it is reading from.
+  useJourneyPlayer.getState().stop();
+  // 29-10: a store payment still being confirmed for this account must not be retried with the
+  // next one's token (the server would credit them). Its store transaction stays unfinished.
+  stopCoinConfirms();
+  stopPassConfirms();
+  // The balance is the account's, not the device's: the next account sees "—" until its own loads.
+  useCoins.setState({ balance: null });
   // ⚠️ ORDER MATTERS, and the wrong way round looks like it works. `persist` writes on every
   // setState, so sweeping storage first and resetting the stores second puts a fresh row back on
   // disk a moment later. Reset the live stores, THEN sweep: a late write can only ever land empty
@@ -82,7 +102,8 @@ export async function forgetLocalData() {
   // The sweep covers a store added later; the three resets cover this second, because `persist`
   // keeps its state in memory after the row is gone and the previous person's saved people would
   // stay on screen until the app restarts — the exact moment they must not be there.
-  useSubjectsStore.setState({ self: EMPTY_SELF, subjects: [], profileDeferred: false });
+  // playerCharacter too: left set, the next account on this phone skipped its character screen.
+  useSubjectsStore.setState({ self: EMPTY_SELF, subjects: [], profileDeferred: false, playerCharacter: undefined, playerHair: '', playerOutfit: '', creatorSeen: false, characterUnpushed: false });
   useConversationsStore.setState({ byId: {}, order: [] });
   useFavoritesStore.setState({ ids: [] });
   // The 아카이브 and the diary (spec 006) too: left in memory, the next person would see these
@@ -91,6 +112,20 @@ export async function forgetLocalData() {
   useDiaryStore.setState({ reflections: {}, photos: {}, photoDeletes: [] });
   // My Room's cached layout is keyed per account already; dropped all the same, with the rest.
   useMyRoomStore.setState({ byUser: {} });
+  // 29-10: the saved journeys (readings for people by name, listed in the 아카이브), the profile a
+  // ride was for, and the mailbox. Left in memory, the next store update wrote them back — and the
+  // previous person's `checkin:<today>` row made the next account's own check-in gift never appear.
+  useSavedJourneys.setState({ journeys: [], unlocks: {}, heard: {} });
+  useJourneyProfile.setState({ subjectId: 'self' });
+  useInbox.setState({ items: [] });
+  // The language stays (it is the device's), and so does `langUnpushed` (29-10): every way to a
+  // sign-in comes through here, so clearing it meant a choice the account never took was pulled
+  // back over at the next sign-in instead of being pushed to it.
+  // The reminder's time is the device's (its row is in KEEP); the day it skips is the account's
+  // check-in. The planned ones go now (29-10): they kept ringing "check in" at a signed-out phone,
+  // in the old language — App.tsx plans them again at the next sign-in.
+  useReminder.setState({ checkedOn: null });
+  await cancelReminders();
   await forgetAllLocalPhotos();
   // The profile photo is a face: the next person on this phone must not open My Page on it.
   await forgetAvatar();

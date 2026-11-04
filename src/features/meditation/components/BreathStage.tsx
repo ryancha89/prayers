@@ -1,5 +1,5 @@
 import React from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, type ImageSourcePropType, StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Text } from '../../../shared/components/Text';
 import { SERIF } from '../../../shared/components/hud/Hud';
@@ -14,8 +14,9 @@ import { BREATH } from '../session';
  *     behind her and on the rug, because an overlay can only lie on top of her (13-10).
  *   · PaceLine — the 4·4·6 rhythm as one hairline in three lengths, a spark travelling it.
  *   · Vignette — the room darkens toward the edges, never over her; a flat wash muddied the whole room.
- *   · Threshold — what shows while the room loads: dusk, one lantern breathing, the room's name. It
- *     replaces the 2D concept art, whose girl is not the one in the room (13-10).
+ *   · ArtWait — what shows while a room loads: a picture of the girl, full screen, drifting slowly,
+ *     its name over it. From 13-10 to 22-10 it was a lone lantern on dusk (Threshold, removed): the
+ *     PM's screenshot of exactly that asked for the character instead.
  */
 
 /** The room's world, as tokens. */
@@ -79,25 +80,32 @@ export const BottomFade: React.FC<{ width: number; height: number }> = ({ width,
   </View>
 );
 
-/** While the room loads: dusk, one lantern breathing, the room's name. */
-export const Threshold: React.FC<{ title: string; pulse: Animated.Value }> = ({ title, pulse }) => {
-  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1.15] });
-  const opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0.9] });
+/**
+ * What a room shows while Unity loads it, and all it shows without the player: the room's own
+ * picture of the girl, full screen, drifting slowly with `pulse` (a night light, not a spinner),
+ * shaded toward the words at the bottom, its name over it. `blur` softens a picture smaller than the
+ * screen (the sleep card is 700 × 854, ~3.7× up) so it reads as dreamy rather than low-res.
+ */
+export const ArtWait: React.FC<{
+  source: ImageSourcePropType;
+  title: string;
+  pulse: Animated.Value;
+  width: number;
+  height: number;
+  blur?: number;
+  testID?: string;
+}> = ({ source, title, pulse, width, height, blur = 0, testID }) => {
+  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1.03, 1.08] });
   return (
-    <View style={styles.threshold} testID="med-threshold">
-      <Animated.View style={[styles.lamp, { opacity, transform: [{ scale }] }]}>
-        <Svg width={180} height={180}>
-          <Defs>
-            <RadialGradient id="threshold" cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor={MED.ember} stopOpacity={0.9} />
-              <Stop offset="0.18" stopColor={MED.lantern} stopOpacity={0.5} />
-              <Stop offset="1" stopColor={MED.lantern} stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Rect width={180} height={180} fill="url(#threshold)" />
-        </Svg>
-      </Animated.View>
-      <Text style={styles.thresholdTitle}>{title}</Text>
+    <View style={styles.artFrame} testID={testID}>
+      {/* An explicit size, not just absoluteFill: an Image laid out from four zero insets takes the
+          bitmap's own size (the 23-09 lesson, "sao đang ở góc này?"). */}
+      <Animated.Image source={source} resizeMode="cover" blurRadius={blur}
+        style={[styles.art, { transform: [{ scale }] }]} />
+      <View style={styles.artShade} />
+      <Vignette width={width} height={height} strength={0.85} />
+      <BottomFade width={width} height={Math.round(height * 0.45)} />
+      <Text style={styles.artTitle}>{title}</Text>
     </View>
   );
 };
@@ -105,16 +113,23 @@ export const Threshold: React.FC<{ title: string; pulse: Animated.Value }> = ({ 
 const styles = StyleSheet.create({
   pace: { flexDirection: 'row', alignItems: 'center', height: 10 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  lamp: { width: 180, height: 180 },
   paceSeg: { height: 1, backgroundColor: 'rgba(244,235,221,0.38)' },
   spark: {
     position: 'absolute', left: -3, width: 6, height: 6, borderRadius: 3, backgroundColor: MED.ember,
     shadowColor: MED.lantern, shadowOpacity: 1, shadowRadius: 6, shadowOffset: { width: 0, height: 0 },
   },
-  threshold: {
-    ...StyleSheet.absoluteFill, backgroundColor: MED.dusk, alignItems: 'center', justifyContent: 'center',
-  },
-  thresholdTitle: {
-    fontFamily: SERIF, fontSize: 15, letterSpacing: 4, color: MED.ash, marginTop: 8, textTransform: 'uppercase',
+  artFrame: { ...StyleSheet.absoluteFill, overflow: 'hidden', alignItems: 'center', backgroundColor: MED.dusk },
+  art: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
+  artShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(16,10,30,0.30)' },
+  artTitle: {
+    position: 'absolute',
+    top: '17%',   // over the window's sky in both pictures, clear of her face (at 38% it crossed her chest)
+    fontFamily: SERIF,
+    fontSize: 22,
+    letterSpacing: 6,
+    color: MED.paper,
+    textShadowColor: 'rgba(0,0,0,0.55)',
+    textShadowRadius: 10,
+    textShadowOffset: { width: 0, height: 1 },
   },
 });

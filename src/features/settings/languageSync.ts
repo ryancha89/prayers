@@ -30,12 +30,28 @@ import { devlog } from '../../shared/devlog';
  * resetting them to a default they never picked.
  */
 export async function syncAccountLanguage(signal?: AbortSignal): Promise<void> {
-  const local = useLanguageStore.getState().lang;
+  // Only waits when the store is not back yet: an await on a store already loaded would still put
+  // the GET a tick behind the sign-in that called this.
+  const loading = hydrating();
+  if (loading) await loading;
   const remote = await fetchAccountLanguage(signal);
+  // Read after the GET: a pick made while it was in flight is the newest word, and marks itself.
+  const { lang: local, langUnpushed } = useLanguageStore.getState();
 
   if (remote == null) {
-    const ok = await saveAccountLanguage(local);
+    const ok = await pushLocal(local);
     devlog(`[lang] account had none - pushed '${local}' (${ok ? 'ok' : 'failed'})`);
+    return;
+  }
+  // A choice made on this device that the account never took (29-10: changed offline, then the
+  // next sign-in put the account's old language back). The device's is newer: push it, don't pull.
+  if (langUnpushed) {
+    if (remote === local) {
+      useLanguageStore.setState({ langUnpushed: false });
+      return;
+    }
+    const ok = await pushLocal(local);
+    devlog(`[lang] device choice '${local}' not on the account yet - pushed (${ok ? 'ok' : 'failed - kept for the next sync'})`);
     return;
   }
   if (remote !== local) {
@@ -46,13 +62,32 @@ export async function syncAccountLanguage(signal?: AbortSignal): Promise<void> {
 
 /**
  * The player changed it. Apply locally FIRST — the screen must turn over on the tap, not on the
- * round trip — then tell the account. A failed write leaves the choice in place, and the next
- * `syncAccountLanguage` pushes it, because the device value is what gets written when the account
- * has no answer.
+ * round trip — then tell the account. A failed write leaves the choice in place AND marked
+ * unpushed (persisted), so the next `syncAccountLanguage` pushes it rather than applying the
+ * account's older answer over it.
  */
 export function setLanguageEverywhere(lang: Lang): void {
   useLanguageStore.getState().setLang(lang);
-  void saveAccountLanguage(lang).then(ok => {
-    if (!ok) devlog(`[lang] could not save '${lang}' to the account - kept locally`);
+  useLanguageStore.setState({ langUnpushed: true });
+  void pushLocal(lang).then(ok => {
+    if (!ok) devlog(`[lang] could not save '${lang}' to the account - kept locally, pushed at the next sync`);
+  });
+}
+
+/** Write `lang` to the account; the unpushed mark clears only if the store still holds it — a
+ *  later pick made during the request keeps its own mark. */
+async function pushLocal(lang: Lang): Promise<boolean> {
+  const ok = await saveAccountLanguage(lang);
+  if (ok && useLanguageStore.getState().lang === lang) useLanguageStore.setState({ langUnpushed: false });
+  return ok;
+}
+
+/** A promise for the persisted language when it is still being read back, else null — synced
+ *  before it, the account's answer would be compared with the device default. */
+function hydrating(): Promise<void> | null {
+  const p = (useLanguageStore as unknown as { persist?: { hasHydrated(): boolean; onFinishHydration(cb: () => void): () => void } }).persist;
+  if (!p || p.hasHydrated()) return null;
+  return new Promise(resolve => {
+    const off = p.onFinishHydration(() => { off(); resolve(); });
   });
 }

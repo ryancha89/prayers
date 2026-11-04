@@ -83,6 +83,65 @@ export const ConfirmSheet: React.FC<{
   );
 };
 
+const LEAVE_LINE: Record<CafePaid, TranslationKey> = {
+  reading: 'cafe.leaveAsk.reading',
+  followup: 'cafe.leaveAsk.followup',
+  coffee: 'cafe.leaveAsk.coffee',
+};
+
+const UNANSWERED_LINE: Record<CafePaid, TranslationKey> = {
+  reading: 'cafe.leaveAsk.unanswered.reading',
+  followup: 'cafe.leaveAsk.unanswered.followup',
+  coffee: 'cafe.leaveAsk.unanswered.coffee',
+};
+
+/**
+ * "Your reading is on its way and already paid — leave anyway?" (29-10). Asked when End, Leave or Back
+ * is pressed while a paid answer is being written: the server has charged, and leaving drops the
+ * answer. Stay keeps the table as it is; the answer shows when it lands (and closes this by itself).
+ * The same plain layer as the pay sheet, for the same reason.
+ *
+ * `unanswered`: the paid request failed with no answer and may have been charged. Its main button is
+ * Try again (the same request_id, so the server replays rather than charges twice) instead of Stay.
+ */
+export const LeaveSheet: React.FC<{
+  paid: CafePaid;
+  onStay: () => void;
+  onLeave: () => void;
+  unanswered?: boolean;
+  onRetry?: () => void;
+}> = ({ paid, onStay, onLeave, unanswered, onRetry }) => {
+  const t = useT();
+  const retrying = unanswered && onRetry;
+  const mainLabel = retrying ? t('cafe.retry') : t('cafe.leaveAsk.stay');
+  return (
+    <View style={styles.scrim} testID={unanswered ? 'cafe-leave-unanswered' : 'cafe-leave-ask'}>
+      <View style={styles.card}>
+        <Text style={styles.title}>{t(unanswered ? UNANSWERED_LINE[paid] : LEAVE_LINE[paid])}</Text>
+        <Text style={styles.body}>{t(unanswered ? 'cafe.leaveAsk.unanswered.body' : 'cafe.leaveAsk.body')}</Text>
+        <View style={styles.buttons}>
+          <Pressable
+            testID="cafe-leave-anyway"
+            onPress={() => { sfx.back(); onLeave(); }}
+            accessibilityRole="button"
+            accessibilityLabel={t('cafe.leaveAsk.leave')}
+            style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}>
+            <Text style={styles.ghostText} numberOfLines={1}>{t('cafe.leaveAsk.leave')}</Text>
+          </Pressable>
+          <Pressable
+            testID={retrying ? 'cafe-leave-retry' : 'cafe-leave-stay'}
+            onPress={() => { sfx.tap(); if (unanswered && onRetry) onRetry(); else onStay(); }}
+            accessibilityRole="button"
+            accessibilityLabel={mainLabel}
+            style={({ pressed }) => [styles.cta, pressed && styles.pressed]}>
+            <Text style={styles.ctaText} numberOfLines={1}>{mainLabel}</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+};
+
 const INK = '#1A1330';
 
 const styles = StyleSheet.create({

@@ -196,9 +196,9 @@ export const PillButton: React.FC<{
 export const Motto: React.FC<{ text: string; width: number }> = ({ text, width }) => (
   <View style={styles.motto} pointerEvents="none" testID="myroom-motto">
     <StarRule width={width} />
-    <View style={styles.mottoRow}>
+    <View style={[styles.mottoRow, { maxWidth: width }]}>
       <Diamond size={6} filled />
-      <Text style={styles.mottoText} numberOfLines={1}>{text}</Text>
+      <Text style={[styles.mottoText, { flexShrink: 1 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{text}</Text>
       <Diamond size={6} filled />
     </View>
   </View>

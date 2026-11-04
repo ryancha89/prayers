@@ -192,8 +192,8 @@ describe('reading the server (v2)', () => {
     const req = { journeyId: 'newyear-2027', momentId: 'career#0', tone: 'theo', lang: 'en' as const };
     // Whose stations: the ride's person goes with every unlock (10-12, unlocks are per person).
     useSubjectsStore.setState({ self: { id: 'self', displayName: 'me', isUser: true, birthDate: '1989-12-05', birthTime: '00:50', gender: 'male' } });
-    fetchMock.mockResolvedValueOnce(reply(200, unlockBody('career#0', 0, 380)));
-    expect(await unlockMoment(req)).toMatchObject({ ok: true, charged: 0, coinBalance: 380 });
+    fetchMock.mockResolvedValueOnce(reply(200, { ...unlockBody('career#0', 0, 380), moment_price: 0 }));
+    expect(await unlockMoment(req)).toMatchObject({ ok: true, charged: 0, coinBalance: 380, momentPrice: 0 });
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
       moment_id: 'career#0',
       tone: 'theo',
@@ -202,6 +202,9 @@ describe('reading the server (v2)', () => {
       base_info: { lang: 'en', first: { birth_year: 1989, birth_month: 12, birth_day: 5, birth_hour: 0, birth_minute: 50, gender: 'male' } },
     });
     expect(fetchMock.mock.calls[0][0]).toMatch(/\/api\/v1\/prayers\/journeys\/newyear-2027\/unlock$/);
+    // A server that does not price the reply: null, not a guess.
+    fetchMock.mockResolvedValueOnce(reply(200, unlockBody('career#0', 0, 380)));
+    expect(await unlockMoment(req)).toMatchObject({ ok: true, momentPrice: null });
     fetchMock.mockResolvedValueOnce(reply(402, { error_code: 'INSUFFICIENT_COINS', price: 100, coin_balance: 30 }));
     expect(await unlockMoment(req)).toEqual({ ok: false, kind: 'insufficient', price: 100, balance: 30 });
     fetchMock.mockResolvedValueOnce(reply(404, { error_code: 'UNKNOWN_MOMENT' }));
@@ -247,6 +250,27 @@ describe('the station flow', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('⏮ at an unpaid lock rides back a station instead of repeating the offer (29-10)', async () => {
+    await rideToCareerLock();
+    player().prev();
+    expect(player()).toMatchObject({ status: 'transition', transitionTo: IDX.career - 1, moment: '' });
+    await jest.advanceTimersByTimeAsync(TRANSITION_MS + 50);
+    expect(player().chapterIndex).toBe(IDX.career - 1);
+    expect(player().moment).not.toBe('locked');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('⏮ at a lock mid-station (the journey paid, the next part not) also rides back a station', async () => {
+    served = content(['wealth#0']);
+    await rideTo('career');
+    player().beginStation();
+    await jest.advanceTimersByTimeAsync(8500);
+    expect(player()).toMatchObject({ moment: 'locked', momentId: 'career#0', partIndex: 1 });
+    player().prev();
+    await jest.advanceTimersByTimeAsync(TRANSITION_MS + 50);
+    expect(player().chapterIndex).toBe(IDX.career - 1);
+  });
+
   it('forward travel is free: next at a lock is "later", and a station ahead can be reached', async () => {
     await rideToCareerLock();
     player().next();
@@ -288,8 +312,9 @@ describe('the station flow', () => {
 describe('unlocking', () => {
   it('the first unlock starts the withheld opening before any paid section or reveal card', async () => {
     await rideToCareerLock();
+    // play() at a lock waits for the lock's own buttons. (⏮ here used to restart the station into
+    // the same lock; it now rides back a station — 'the station flow' below.)
     player().play();
-    player().prev();
     await jest.advanceTimersByTimeAsync(9000);
     expect(player()).toMatchObject({ moment: 'locked', status: 'paused' });
     expect(player().heard).not.toContain(`${IDX.career}.0`);
@@ -327,6 +352,13 @@ describe('unlocking', () => {
     await jest.advanceTimersByTimeAsync(4000);
     expect(player()).toMatchObject({ moment: 'locked', momentId: 'career#1' });
     expect(player().content?.momentPrice).toBe(0);
+  });
+
+  it('the price after an unlock is the one the server answers with (29-10)', async () => {
+    fetchMock.mockResolvedValueOnce(reply(200, { ...unlockBody('career#0'), moment_price: 40 }));
+    await rideToCareerLock();
+    await player().unlock();
+    expect(player().content?.momentPrice).toBe(40);
   });
 
   it('INSUFFICIENT_COINS: stays locked, records nothing, the balance is the server\'s', async () => {

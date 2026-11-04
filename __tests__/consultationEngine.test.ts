@@ -69,6 +69,8 @@ class StageDouble implements StagePort {
   /** Hang only the takes whose key starts with this — lets a test step ONE beat
    *  by hand while the cover phases before it still pace themselves. */
   holdPrefix: string | null = null;
+  /** Set false to keep every take's voice unmade (no SPEAK_STARTED), the way a slow TTS is. */
+  voiceStarts = true;
   private engine!: ConsultationEngine;
 
   bind(engine: ConsultationEngine) {
@@ -90,6 +92,7 @@ class StageDouble implements StagePort {
   speakClip(keys: string[], _topic: string, cacheKey: string) {
     this.spokenKeys.push(...(keys ?? []));
     this.spoken.push(cacheKey);
+    if (this.voiceStarts) this.engine.onSpeakStarted(cacheKey);
     if (!this.holds(cacheKey)) this.engine.onSpeakDone(cacheKey);
   }
   /** The words, not just the keys — a test about WHAT is said cannot use a cache key. */
@@ -97,6 +100,7 @@ class StageDouble implements StagePort {
   speakText(text: string, cacheKey: string) {
     this.spoken.push(cacheKey);
     this.spokenText.push(text);
+    if (this.voiceStarts) this.engine.onSpeakStarted(cacheKey);
     if (!this.holds(cacheKey)) this.engine.onSpeakDone(cacheKey);
   }
   prefetched: string[] = [];
@@ -531,6 +535,33 @@ test('tapping mid-reading shows the rest of the beat instead of skipping it', ()
   // Second tap moves on, the way a tap always did.
   engine.tap();
   expect(engine.getState().phaseId).not.toBe('P11');
+});
+
+test('a tap before her voice is made waits and says so; with the voice off it skips (30-10)', () => {
+  const { sched, stage, engine } = build();
+  engine.begin();
+  sched.advance(60_000);
+  engine.submitQuestion('질문');
+  stage.holdPrefix = 'P11#';
+  stage.voiceStarts = false;
+  engine.onOracleResult({ ok: true, followup: '', beats: [{ phaseId: 'P11', lines: [LONG_ANSWER] }] });
+  sched.advance(120_000);
+  const line = engine.getState().line;
+
+  engine.tap();
+  expect(engine.getState().voiceWait).toBe(true);
+  expect(engine.getState().phaseId).toBe('P11');
+  expect(engine.getState().line).toBe(line);
+
+  // The voice starts: the note goes.
+  engine.onSpeakStarted(stage.spoken[stage.spoken.length - 1]);
+  expect(engine.getState().voiceWait).toBe(false);
+
+  // Speaker off: nothing waits on a voice any more.
+  stage.voiceStarts = false;
+  engine.setVoiceOn(false);
+  engine.tap();
+  expect(engine.getState().voiceWait).toBe(false);
 });
 
 /**
@@ -1573,6 +1604,14 @@ describe('stripScoreLines', () => {
     expect(stripScoreLines('Earning=61, Keeping=35.')).toBe('');
   });
 
+  it('drops the period tag and keeps its phrase (30-10)', () => {
+    expect(stripScoreLines('협동, 공식 인정, 수련\n\nMonths=10-10; 격국이 살아나는 달이에요.')).toBe(
+      '협동, 공식 인정, 수련\n\n격국이 살아나는 달이에요.',
+    );
+    expect(stripScoreLines('7) Months=6-9; June through September')).toBe('June through September');
+    expect(stripScoreLines('Months = 3 – 5')).toBe('');
+  });
+
   it('leaves ordinary sentences with numbers and commas alone', () => {
     const s = '2027년에는 기회가 옵니다, 3월과 9월이 특히 좋습니다.';
     expect(stripScoreLines(s)).toBe(s);
@@ -1671,4 +1710,112 @@ it('짧게 answers with no buffer line — the answer is spoken the moment it la
   expect(stage.spoken.slice(spokenBefore).filter(k => k.startsWith('loop_wait'))).toEqual([]);
   engine.onOracleResult({ ok: true, loop: true, followup: '', beats: [{ phaseId: 'loop', lines: ['괜찮아요.'] }] });
   expect(stage.spoken[stage.spoken.length - 1]).toMatch(/^loop_1\./);
+});
+
+/**
+ * The coin check covers every way a question goes out (29-10). A spoken question went straight
+ * from MIC_RESULT to the engine, past the room's check on the text box, reached v2 with no coins,
+ * and the 200 `ticketInsufficient` came back from Unity as `upstream`: "cannot gather the reading".
+ */
+describe('coins', () => {
+  function withWallet(opts: { canAsk?: () => boolean; coinsShort?: () => Promise<boolean> }) {
+    const sched = new FakeScheduler();
+    const stage = new StageDouble();
+    const engine = new ConsultationEngine({ stage, lang: 'en', scheduler: sched, ...opts });
+    stage.bind(engine);
+    return { sched, stage, engine };
+  }
+  const flush = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
+
+  it('a spoken question the wallet cannot pay for is not sent', () => {
+    let coins = false;
+    const canAsk = jest.fn(() => coins);
+    const { sched, stage, engine } = withWallet({ canAsk });
+    engine.begin();
+    sched.advance(60_000);
+    engine.onMicResult({ ok: true, text: 'Should I move?', error: '' });
+    expect(canAsk).toHaveBeenCalled();
+    expect(stage.asks).toHaveLength(0);
+    // Topped up: the next take goes out.
+    coins = true;
+    engine.onMicResult({ ok: true, text: 'Should I move?', error: '' });
+    expect(stage.asks).toHaveLength(1);
+  });
+
+  it('a spoken question refused for coins is handed to the question box, not lost (29-10)', () => {
+    let coins = false;
+    const { sched, stage, engine } = withWallet({ canAsk: () => coins });
+    engine.begin();
+    sched.advance(60_000);
+    expect(engine.getState().heldQuestion ?? null).toBeNull();
+    engine.onMicResult({ ok: true, text: '  Should I move?  ', error: '' });
+    expect(stage.asks).toHaveLength(0);
+    expect(engine.getState().heldQuestion).toEqual({ text: 'Should I move?', seq: 1 });
+    // The same words again still arrive (a new seq), and a take that went out hands nothing back.
+    engine.onMicResult({ ok: true, text: 'Should I move?', error: '' });
+    expect(engine.getState().heldQuestion?.seq).toBe(2);
+    coins = true;
+    engine.onMicResult({ ok: true, text: 'Should I move?', error: '' });
+    expect(stage.asks).toHaveLength(1);
+    expect(engine.getState().heldQuestion?.seq).toBe(2);
+  });
+
+  it('a typed question and the notice’s Retry are held to the same check', () => {
+    let coins = true;
+    const { sched, stage, engine } = withWallet({ canAsk: () => coins });
+    engine.begin();
+    sched.advance(60_000);
+    expect(engine.submitQuestion('Q')).toBe(true);
+    engine.onOracleResult({ ok: false, error: 'upstream', followup: '', beats: [] });
+    sched.advance(120_000);
+    expect(engine.getState().screen).toBe('notice');
+    coins = false;
+    engine.retry();
+    expect(stage.asks).toHaveLength(1);
+  });
+
+  it('a reading refused for want of coins shows the coin notice, not the upstream one', async () => {
+    const coinsShort = jest.fn(async () => true);
+    const { sched, engine } = withWallet({ coinsShort });
+    engine.begin();
+    sched.advance(60_000);
+    engine.submitQuestion('Q');
+    engine.onOracleResult({ ok: false, error: 'upstream', followup: '', beats: [] });
+    await flush();
+    sched.advance(120_000);
+    expect(coinsShort).toHaveBeenCalledTimes(1);
+    expect(engine.getState().screen).toBe('notice');
+    expect(engine.getState().notice?.body).toBe('Not enough Prayer Coins for an answer. Top up, then try again.');
+  });
+
+  it('a real upstream failure keeps its own notice', async () => {
+    const { sched, engine } = withWallet({ coinsShort: async () => false });
+    engine.begin();
+    sched.advance(60_000);
+    engine.submitQuestion('Q');
+    engine.onOracleResult({ ok: false, error: 'upstream', followup: '', beats: [] });
+    await flush();
+    sched.advance(120_000);
+    expect(engine.getState().notice?.body).not.toBe('Not enough Prayer Coins for an answer. Top up, then try again.');
+    expect(engine.getState().notice?.body).toBeTruthy();
+  });
+
+  it('in the chat: no "connection lost" line when the failure was the wallet; one when it was not', async () => {
+    let short = true;
+    const { sched, stage, engine } = withWallet({ coinsShort: async () => short });
+    intoLoop(stage, engine, sched);
+    const before = engine.getState().transcript.length;
+    engine.onOracleResult({ ok: false, loop: true, error: 'upstream', followup: '', beats: [] });
+    await flush();
+    expect(engine.getState().transcript.length).toBe(before);
+    expect(engine.getState().inputEnabled).toBe(true);
+
+    short = false;
+    engine.submitQuestion('again');
+    stage.spoken.forEach(key => engine.onSpeakDone(key));
+    const mid = engine.getState().transcript.length;
+    engine.onOracleResult({ ok: false, loop: true, error: 'upstream', followup: '', beats: [] });
+    await flush();
+    expect(engine.getState().transcript.length).toBe(mid + 1);
+  });
 });

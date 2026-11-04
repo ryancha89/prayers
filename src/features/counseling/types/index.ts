@@ -15,6 +15,8 @@ export interface CounselingSubject {
   /** A `KOREA_PLACES` name (saju/data/koreaPlaces.ts): the hour is corrected to that place's sun.
    *  Absent = Seoul, as before (10-17). */
   birthPlace?: string;
+  /** One of the 16 types, e.g. `INFP` (10-22). Optional — absent means not given. */
+  mbti?: string;
   relationship?: string;
   isUser: boolean;
 }
@@ -42,6 +44,11 @@ export type CounselorEmotion =
   | 'thinking'
   | 'concerned'
   | 'surprised';
+
+/** What a 3D face can show: the five above plus three the drawn stage has no art for. The Unity
+ *  room's FaceExpressions table names all eight (`sad`, `gentle`, `serious` were already there for
+ *  its own [Beat] cues). Picked per tone by `faceForTone`. */
+export type FaceEmotion = CounselorEmotion | 'sad' | 'gentle' | 'serious';
 
 export type CounselorAnimation = 'talk' | 'thinking' | 'nod' | 'smile' | 'concern';
 
@@ -122,6 +129,18 @@ export interface UnitySessionPayload {
   /** The signed-in Prayers account uid (`pr_…`; `dev-…` in a dev build). Unity sends it as
    *  User-Auth and exchanges it for its own `pgt_` token at `/api/v1/prayers/game/token`. */
   auth?: string;
+  /** The account's 24h `pgt_` Game-Token, when the app holds a live one (29-10). Unity signs its Rails
+   *  calls with it first — the player ships no static server secret. '' = Unity mints its own from
+   *  `auth`. Mirrored by name in Unity's RNSessionPayload. */
+  gameToken?: string;
+  /** The account holder's gender: which body the player walks (Unity PlayerBody). Absent = Theo. */
+  playerGender?: 'male' | 'female';
+  /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
+  playerCharacter?: string;
+  /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
+  playerHair?: string;
+  /** The creator's outfit colour, "#RRGGBB" or "" for the artist's own clothes (29-10). */
+  playerOutfit?: string;
 }
 
 /* ---- Stage commands (bridge v2) ----------------------------------------
@@ -309,6 +328,27 @@ export type RNToUnityEvent =
   | { type: 'LECTURE_STATE'; payload: LectureStatePayload }
   /** Leaving the lecture room. */
   | { type: 'LECTURE_END' }
+  /** Open the character preview behind the character screen (26-10). Repeated until CHARACTER_READY. */
+  | { type: 'CHARACTER_INIT'; payload: CharacterInitPayload }
+  /** Swap the previewed body as the player taps a card. */
+  | { type: 'CHARACTER_SET'; payload: CharacterInitPayload }
+  /** Turn the camera-driven face on or off (ARKit on device). */
+  | { type: 'CHARACTER_TRACKING'; payload: { on: boolean } }
+  /** The creator's view (27-10): `yaw` degrees the body is turned on its turntable (the running
+   *  angle, not a delta), `zoom` 0 whole body … 1 face. Unity eases toward it. Streamed. */
+  | { type: 'CHARACTER_VIEW'; payload: CharacterViewPayload }
+  /** The creator's "start" (27-10): Unity turns the body once round (~1.2 s); RN commits after. */
+  | { type: 'CHARACTER_CONFIRM' }
+  /** The face follows the AI reply (26-10, #timeline-truongthinh): the emotion of the line being
+   *  spoken, mapped from the server's tone by TONE_PERFORMANCE. `target` is a role ("counselor",
+   *  "player", "" = every face); `hold` 0 = keep it until the next one. Faces without ARKit
+   *  blendshapes ignore it. */
+  | { type: 'FACE_EXPRESSION'; payload: FaceExpressionPayload }
+  /** The player's face (iPhone camera, ARKit) onto the counselor in the room (26-10). States come
+   *  back as CHARACTER_TRACKING {state}, as on the character screen. */
+  | { type: 'ROOM_FACE_TRACKING'; payload: { on: boolean } }
+  /** Leaving the character screen: camera off, preview gone. */
+  | { type: 'CHARACTER_END' }
   /** The listener turning the camera round him (drag) and in/out (pinch), as WORLD_CAMERA: zoom 0..1
    *  (0 = close), yaw −1..1 (±180° round him), pitch −1..1 (+ = higher). Unity eases toward it;
    *  a double-tap sends the home framing. */
@@ -335,6 +375,8 @@ export type RNToUnityEvent =
   /** The player turning the consultation room's camera with one finger, -1..1 each (+ = right /
    *  up); Unity turns in place up to ±60° / ±15° (ConsultationLook) and eases. */
   | { type: 'ROOM_LOOK'; payload: { yaw: number; pitch: number } }
+  /** The room's pinch (30-10): -1 (wider) .. 1 (closer) — Unity narrows the lens, the camera stays put. */
+  | { type: 'ROOM_ZOOM'; payload: { zoom: number } }
   /** The chapter narration's loudness (server `tts/url` envelope), sent as the chapter starts. The
    *  voice plays here in RN; this is how the counsellor's mouth in the cabin follows it. */
   | { type: 'JOURNEY_VOICE'; payload: JourneyVoicePayload }
@@ -366,6 +408,8 @@ export type RNToUnityEvent =
    *  the player), yaw -1..1 (= ±180° round them, wrapped), pitch -1..1 (+ = higher). Absolute, many a
    *  second; the last one wins. The stick is WALK_INPUT, which Unity routes to the room while it is up. */
   | { type: 'MYROOM_CAMERA'; payload: MyRoomCamera }
+  /** The meditation room's look (30-10): drag to turn, pinch to zoom — MYROOM_CAMERA's numbers. */
+  | { type: 'MEDITATION_CAMERA'; payload: MyRoomCamera }
   /** Use the piece MYROOM_NEAR_ITEM named (spec 005 US1): sit / rest / lamp / look. A lamp toggles. */
   | { type: 'MYROOM_ACT'; payload: { uid: string; action: MyRoomAction } }
   /** Stop using it: stand up, get up, look away. Unity ignores it when nothing is going. */
@@ -429,6 +473,11 @@ export type RNToUnityEvent =
    *  the player walks there alone (as a CAFE_SIT would). Seated it picks a card while the deck is out,
    *  or opens the fortune cookie. The embedded view gets no touch of its own. */
   | { type: 'CAFE_TAP'; payload: { x: number; y: number } }
+  /** Pinch / drag over the 78 while choosing (23-10): one touch gesture, cumulative since it began — the
+   *  fingers' spread `scale` (1 = a drag) and travel (x, y) in half-views, +y up (cafe/table/cardsZoom.ts).
+   *  Unity owns the zoom (about the cards' centre) and its limits; a new `gesture` starts from where the
+   *  last left off. Dropped outside the deal and the pick; every other shot starts unzoomed. */
+  | { type: 'CAFE_ZOOM'; payload: CardsGesture }
   /** Stand up from the table, or cancel the walk to it. */
   | { type: 'CAFE_STAND' }
   /** Leaving the cafe. */
@@ -601,6 +650,14 @@ export interface WorldInitPayload {
   spawn: WorldSpot | null;
   /** Coming back out of a room: stand the player at that door. Wins over `spawn`. */
   zone?: WorldZone;
+  /** The account holder's gender: which body the player walks (Unity PlayerBody). Absent = Theo. */
+  playerGender?: 'male' | 'female';
+  /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
+  playerCharacter?: string;
+  /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
+  playerHair?: string;
+  /** The creator's outfit colour, "#RRGGBB" or "" for the artist's own clothes (29-10). */
+  playerOutfit?: string;
 }
 
 export interface MyRoomInitPayload {
@@ -613,6 +670,14 @@ export interface MyRoomInitPayload {
   layout?: MyRoomLayout | null;
   /** What the account owns. null/absent = not known yet (Unity treats it as the starter set). */
   owned?: MyRoomOwned | null;
+  /** The account holder's gender: which body the player walks (Unity PlayerBody). Absent = Theo. */
+  playerGender?: 'male' | 'female';
+  /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
+  playerCharacter?: string;
+  /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
+  playerHair?: string;
+  /** The creator's outfit colour, "#RRGGBB" or "" for the artist's own clothes (29-10). */
+  playerOutfit?: string;
 }
 
 /** CAFE_INIT. Mirrored by name in Unity's RNCafeInit. */
@@ -627,6 +692,14 @@ export interface CafeInitPayload {
   presenceUrl?: string;
   gameToken?: string;
   name?: string;
+  /** The account holder's gender: which body the player walks (Unity PlayerBody). Absent = Theo. */
+  playerGender?: 'male' | 'female';
+  /** The picked character id (Unity PlayerBodyCatalog.characters). Absent = the gender's default. */
+  playerCharacter?: string;
+  /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
+  playerHair?: string;
+  /** The creator's outfit colour, "#RRGGBB" or "" for the artist's own clothes (29-10). */
+  playerOutfit?: string;
 }
 
 /** CAFE_TABLES' row: a seat id and whether somebody else (the shared room) sits there. */
@@ -801,6 +874,21 @@ export interface MyRoomCamera {
   pitch: number;
 }
 
+/** The body the character preview shows — the same two fields every *_INIT carries. */
+export interface CharacterInitPayload {
+  lang: string;
+  playerGender?: 'male' | 'female';
+  playerCharacter?: string;
+  /** The creator's hair colour, "#RRGGBB" or "" for the model's own (27-10). */
+  playerHair?: string;
+  /** The creator's outfit colour, "#RRGGBB" or "" for the artist's own clothes (29-10). */
+  playerOutfit?: string;
+}
+
+/** Where face tracking is (Unity CameraFaceSource): `unsupported` on the simulator and on phones
+ *  without a TrueDepth camera, `no_face` while the player is out of frame. */
+export type FaceTrackingState = 'off' | 'starting' | 'tracking' | 'no_face' | 'unsupported';
+
 export interface LectureInitPayload {
   lang: string;
   chapter: number;
@@ -850,6 +938,8 @@ export type UnityToRNEvent =
   | { type: 'INPUT_STATE'; payload: { enabled: boolean } }
   | { type: 'ORACLE_RESULT'; payload: OracleResultPayload }
   /** A spoken take finished — RN paces the next beat off this, not a guess. */
+  /** That take's voice is audible now (30-10) — before it, a tap says the voice is being made. */
+  | { type: 'SPEAK_STARTED'; payload: { cacheKey: string } }
   | { type: 'SPEAK_DONE'; payload: { cacheKey: string } }
   /** Where the microphone is, and how loud the room is while it listens. The level exists so the
    *  button can move: a listening dot that never changes looks exactly like a dead microphone. */
@@ -864,6 +954,12 @@ export type UnityToRNEvent =
   | { type: 'MEDITATION_READY' }
   /** The lecture room is on screen — the lecture screen fades its portrait out over it. */
   | { type: 'LECTURE_READY' }
+  /** The character preview is on screen — the character screen fades its card art out over it. */
+  | { type: 'CHARACTER_READY' }
+  /** The creator's body for `id` is mounted AND drawn (27-10): a card switch's indicator waits for it. */
+  | { type: 'CHARACTER_BODY'; payload: { id: string } }
+  /** The face-tracking state changed (see FaceTrackingState). */
+  | { type: 'CHARACTER_TRACKING'; payload: { state: FaceTrackingState } }
   /** The train cabin is on screen (spec 003) — the journey screen fades its SVG window out. */
   | { type: 'JOURNEY_READY' }
   /** The platform walk is over and the player is in the cabin seat: start the reading. */
@@ -1019,6 +1115,24 @@ export interface MyRoomBridge {
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
 }
 
+/** CHARACTER_VIEW's payload: degrees turned, 0 whole body … 1 face, and — measured — the share of
+ *  the screen height RN's top bar and bottom panel cover (absent = Unity's own .12 / .30). */
+/** Where the creator's camera looks (04-11): the whole body, or the top / bottom of the clothes while the
+ *  outfit panel is on them. Unity reframes from it; `zoom` stays the step's (0 on the outfit step). */
+export type CharacterViewFocus = 'body' | 'top' | 'bottom';
+export interface CharacterViewPayload { yaw: number; zoom: number; top?: number; bottom?: number; focus?: CharacterViewFocus }
+
+/** CAFE_ZOOM's payload (cafe/table/cardsZoom.ts). */
+export interface CardsGesture {
+  /** Which touch gesture: changes whenever a finger lands or lifts. */
+  gesture: number;
+  /** How far the fingers spread since the gesture began: 1 = unchanged (a drag), 2 = twice apart. */
+  scale: number;
+  /** How far they moved since it began, in half-views of the view, +x right, +y up. */
+  x: number;
+  y: number;
+}
+
 /** The coffee shop's half of the bridge — its own interface for the reason WorldBridge gives. */
 export interface CafeBridge {
   openCafe(init: CafeInitPayload): void;
@@ -1028,6 +1142,7 @@ export interface CafeBridge {
   sendCafeSay(text: string): void;
   sendCafeShot(): void;
   sendCafeTap(x: number, y: number): void;
+  sendCafeZoom(gesture: CardsGesture): void;
   sendCafeStand(): void;
   sendCafeTarotStart(start: CafeTarotStart): void;
   sendCafeTarotSpread(): void;
@@ -1063,11 +1178,23 @@ export interface GardenBridge {
 }
 
 /* ---- Bridge abstraction (spec §39). Keep Unity behind this interface. ---- */
+export interface FaceExpressionPayload {
+  target: 'counselor' | 'player' | '';
+  emotion: FaceEmotion;
+  intensity: number;
+  hold: number;
+}
+
 export interface UnityBridge {
   openCounselingRoom(payload: UnitySessionPayload): Promise<void>;
   sendEvent(event: RNToUnityEvent): void;
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
   closeCounselingRoom(): Promise<void>;
+  /** The UNITY_READY payload of the room opened last, when it has already arrived — null while
+   *  it has not (or another scene was opened since). A room screen that mounts after the handshake
+   *  (re-entry: UnityEntry heard the READY and only then navigated) asks this instead of waiting
+   *  for a READY that has come and gone (29-10). Optional: test doubles may omit it. */
+  readyRoom?(): { walkIn?: boolean } | null;
   /** Report how much of the UnityView the app's UI covers (VIEW_INSETS). Deduplicated, and
    *  remembered for the room's READY message. */
   sendViewInsets(insets: ViewInsetsPayload): void;

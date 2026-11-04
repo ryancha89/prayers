@@ -9,6 +9,13 @@
          always there, so the Play listing must not exclude those devices. -->
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
+    <!-- Story player speech input (StorySpeechModule): Android 11+ hides the recognition service without this. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
     <application
       android:name=".MainApplication"
       android:label="@string/app_name"
@@ -50,6 +57,16 @@
           <category android:name="android.intent.category.BROWSABLE" />
           <data android:host="oauth" android:scheme="kakao594f68ff944e2730a1d7e6c04656d6ac" />
         </intent-filter>
+      </activity>
+      <!-- Unity's exported unityLibrary declares its player activity as a second LAUNCHER and a
+           sajuworld:// BROWSABLE target, exported. Embedded, the player lives in a view inside
+           MainActivity, so nothing outside the app may start it: one launcher icon, and no
+           external intent reaches the Unity runtime (the CVE-2025-59489 entry point). -->
+      <activity
+        android:name="com.unity3d.player.UnityPlayerGameActivity"
+        android:exported="false"
+        tools:replace="android:exported">
+        <intent-filter tools:node="removeAll" />
       </activity>
     </application>
 </manifest>

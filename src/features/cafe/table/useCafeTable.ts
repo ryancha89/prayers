@@ -10,7 +10,9 @@ import {
   fetchTarotConsultants,
   isRetryable,
   newRequestId,
+  offersRetry,
   orderCoffee,
+  synthesizeReading,
   warmVoice,
   type CafeFailure,
   type TarotConsultant,
@@ -111,15 +113,29 @@ export interface TableState {
   reading: TarotReading | null;
   /** `presenting`: -1 while the cards turn over, then 0..STEP_ADVICE. */
   step: number;
+  /** Between the seventh card and the summary (30-10): the reader asks about the player's situation
+   *  (`asking`), the answer is written into the summary (`thinking`), then `done`. Skipped = `done`
+   *  with the reading's own summary. */
+  clarify: 'none' | 'asking' | 'thinking' | 'done';
+  /** The player's answer to that question, shown while the summary is written. */
+  clarifyAnswer: string;
   followups: { q: string; a: string }[];
   /** The follow-up awaiting its confirmation or its answer. */
   pending: string;
   /** The paid thing the confirmation sheet is asking about, if it is open. */
   confirm: CafePaid | null;
   busy: boolean;
+  /** End, Leave or the screen's Back was pressed while a paid answer is on its way: the sheet asks
+   *  before it is given up (29-10). Shown only while `paidInFlight` — an answer that lands first
+   *  closes the question by itself. */
+  leaveAsk: LeaveKind | null;
   error: TableError | null;
   fortune: string | null;
 }
+
+/** What the player was doing when the leave sheet asked: End the reading, stand up from the table,
+ *  or go back to the world (the screen's Back — the screen navigates, the table only asks). */
+export type LeaveKind = 'end' | 'leave' | 'world';
 
 const OFF: TableState = {
   seated: false,
@@ -136,10 +152,13 @@ const OFF: TableState = {
   chosen: null,
   reading: null,
   step: -1,
+  clarify: 'none',
+  clarifyAnswer: '',
   followups: [],
   pending: '',
   confirm: null,
   busy: false,
+  leaveAsk: null,
   error: null,
   fortune: null,
 };
@@ -147,6 +166,39 @@ const OFF: TableState = {
 /** Stages with a reader at (or on the way to) the table — the ones End is offered in. */
 const TAROT_STAGES = new Set<TableStage>(['arriving', 'asking', 'spreading', 'picking', 'reading', 'presenting', 'followup']);
 export const inTarot = (s: TableState) => s.seated && TAROT_STAGES.has(s.stage);
+/** Another reader can be asked for (10-23, "상담끝나거나 시작전에 상담사 변경가능해야함"): seated with
+ *  this one before any question (nothing paid), or once a reading is over — never mid-reading. */
+export const canChangeReader = (s: TableState) =>
+  s.seated && !s.busy && !s.confirm && !s.pending &&
+  ((s.stage === 'asking' && !s.question) || s.stage === 'followup');
+
+/**
+ * The paid thing being written right now, or null. `busy` is only ever set by the three paid calls
+ * (runReading, runFollowup, runCoffee), each in its own stage. The server charges as the request
+ * arrives (CafeLedger.run: charge → write → refund only on failure), so leaving now throws away an
+ * answer that is already paid for — the replay by request_id is only reachable from this table.
+ */
+export const paidInFlight = (s: TableState): CafePaid | null => {
+  if (!s.busy) return null;
+  if (s.stage === 'reading') return 'reading';
+  if (s.stage === 'followup') return 'followup';
+  if (s.stage === 'brewing') return 'coffee';
+  return null;
+};
+
+/**
+ * The paid thing that failed with no answer — 'failed' is the one failure that may have been charged
+ * (the request went out, nothing readable came back; a 503 is refunded). Its request_id is still open,
+ * and Retry replays the stored answer if the server did write it. Leaving drops that id, so End, Leave
+ * and Back ask first and offer the Retry (29-10; the in-flight question above only covered `busy`).
+ */
+export const unansweredPaid = (s: TableState): CafePaid | null => {
+  if (s.busy || s.error !== 'failed') return null;
+  if (s.stage === 'reading') return 'reading';
+  if (s.stage === 'followup' && s.pending) return 'followup';
+  if (s.stage === 'brewing') return 'coffee';
+  return null;
+};
 
 type Translate = (key: TranslationKey, params?: Record<string, string | number>) => string;
 
@@ -156,7 +208,8 @@ type Translate = (key: TranslationKey, params?: Record<string, string | number>)
  * what to stage, and only after the server has said yes to anything paid.
  *
  * Results that come back after the player has moved on (End, standing up) are dropped by
- * generation: `gen` moves on every reset, and an answer from an older one is not this table's.
+ * generation: `gen` moves on every reset, and an answer from an older one is not this table's. A paid
+ * answer still being written is not given up without asking (`leaveAsk`, 29-10).
  */
 export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
   const [state, setState] = useState<TableState>(OFF);
@@ -190,7 +243,10 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
       patch({ stage: 'menu', returning: false, line });
     }, ms);
   };
-  useEffect(() => () => { clearMove(); }, []);
+  // Gone from the screen (Back to the World, Leave anyway, any exit): an answer still on its way is
+  // another generation's. Nothing bumped `gen` here before 29-10, so a late reading still fired seven
+  // warmVoice syntheses and sent CAFE_TAROT_REVEAL/SPEAK to a cafe the player had left.
+  useEffect(() => () => { gen.current += 1; clearMove(); }, []);
 
   /** One purchase intent → one request_id, kept across retries (cafeApi's rule). */
   const intent = useRef<{ paid: CafePaid; id: string } | null>(null);
@@ -286,15 +342,15 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     if (g !== gen.current) return;
     if (!r.ok) {
       settle(r);
-      patch({ busy: false, error: r.kind });
+      patch({ busy: false, leaveAsk: null, error: r.kind });
       return;
     }
     endIntent();
     const reading = r.reading;
     // Every line of the reading, synthesised now (in order, all at once) so each Next speaks at once.
     for (let i = 0; i <= STEP_ADVICE; i++) void warmVoice(stepLine(reading, i).text, s.consultant.voice, langRef.current);
-    ref.current = { ...ref.current, reading, stage: 'presenting', step: -1 };
-    patch({ busy: false, reading, stage: 'presenting', step: -1 });
+    ref.current = { ...ref.current, reading, stage: 'presenting', step: -1, clarify: 'none', clarifyAnswer: '' };
+    patch({ busy: false, leaveAsk: null, reading, stage: 'presenting', step: -1, clarify: 'none', clarifyAnswer: '' });
     // The seven stay face down until the reader comes to each: Unity turns a card over when its SPEAK
     // arrives (stepwise), as a reader at a real table does (21-10 review). They used to flip all at once
     // the moment the seventh was picked.
@@ -305,10 +361,47 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
   const next = () => {
     const s = ref.current;
     if (s.stage !== 'presenting' || s.step < 0) return;
+    // After the seventh card, before the summary: she asks about the player's situation (30-10,
+    // "종합이 너무 짧은데 도출하기 전에 유저에게 그 질문에 대해 좀 더 물어보고 도출해").
+    if (s.step === SPREAD_SIZE - 1 && s.clarify === 'none' && s.reading) {
+      const ask = s.reading.ask || tRef.current('cafe.tarot.clarifyAsk');
+      patch({ clarify: 'asking', line: ask });
+      speak({ text: ask, mood: 'think' });
+      return;
+    }
     if (s.step < STEP_ADVICE) { showStep(s.step + 1); return; }
     const prompt = tRef.current('cafe.tarot.followupPrompt');
     patch({ stage: 'followup', line: prompt });
     speak({ text: prompt, mood: 'warm' });
+  };
+
+  /** The player's answer to her question: the summary is written again with it (free), then told. */
+  const submitClarify = async (text: string) => {
+    const q = text.trim();
+    const s = ref.current;
+    if (!q || s.stage !== 'presenting' || s.clarify !== 'asking' || !s.reading) return;
+    const g = gen.current;
+    patch({ clarify: 'thinking', clarifyAnswer: q });
+    const r = await synthesizeReading({ readingId: s.reading.readingId, context: q, lang: langRef.current });
+    const now = ref.current;
+    if (g !== gen.current || now.stage !== 'presenting' || !now.reading) return;
+    // Not written (server down): the reading's own summary, rather than a dead end.
+    const reading = r ? { ...now.reading, overall: r.overall, advice: r.advice } : now.reading;
+    if (r && now.consultant) {
+      void warmVoice(stepLine(reading, STEP_OVERALL).text, now.consultant.voice, langRef.current);
+      void warmVoice(stepLine(reading, STEP_ADVICE).text, now.consultant.voice, langRef.current);
+    }
+    ref.current = { ...now, reading, clarify: 'done' };
+    patch({ reading, clarify: 'done' });
+    showStep(STEP_OVERALL);
+  };
+
+  /** Skip her question: the reading's own summary. */
+  const skipClarify = () => {
+    if (ref.current.clarify !== 'asking') return;
+    ref.current = { ...ref.current, clarify: 'done' };
+    patch({ clarify: 'done' });
+    showStep(STEP_OVERALL);
   };
 
   const submitFollowup = (text: string) => {
@@ -326,11 +419,14 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     if (g !== gen.current) return;
     if (!r.ok) {
       settle(r);
-      patch({ busy: false, error: r.kind });
+      // A refusal Retry cannot fix (404 READING_NOT_FOUND, a bad question) lets the question go: it
+      // used to stay `pending`, which disabled the composer and refused Ask another and Change reader —
+      // the follow-up area was locked until End (29-10). The error stays on its own row.
+      patch({ busy: false, leaveAsk: null, error: r.kind, ...(offersRetry(r.kind) ? {} : { pending: '' }) });
       return;
     }
     endIntent();
-    setState(prev => ({ ...prev, busy: false, followups: [...prev.followups, { q: prev.pending, a: r.answer }], pending: '' }));
+    setState(prev => ({ ...prev, busy: false, leaveAsk: null, followups: [...prev.followups, { q: prev.pending, a: r.answer }], pending: '' }));
     speak({ text: r.answer, mood: 'explain' });
   };
 
@@ -346,8 +442,25 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     speak({ text: line, mood: 'warm' });
   };
 
+  /**
+   * A way out pressed while a paid answer is being written: ask first (29-10). End and Back used to
+   * bump `gen` at once — the server still charged, and the answer that came back ~50 s later was
+   * dropped as another generation's. Returns true when it asked (the caller stops there).
+   */
+  const askBeforeLeaving = (kind: LeaveKind): boolean => {
+    if (!paidInFlight(ref.current) && !unansweredPaid(ref.current)) return false;
+    ref.current = { ...ref.current, leaveAsk: kind };
+    patch({ leaveAsk: kind });
+    return true;
+  };
+
   /** End the reading, at any point: the reader says goodbye and leaves; the player stays seated. */
   const end = () => {
+    if (!inTarot(ref.current) || askBeforeLeaving('end')) return;
+    endNow();
+  };
+
+  const endNow = () => {
     if (!inTarot(ref.current)) return;
     gen.current += 1;
     endIntent();
@@ -363,6 +476,25 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     }));
   };
 
+  /** Another reader: this one says goodbye and walks out, and the list opens at the same table.
+   *  Unity takes the next CAFE_TAROT_START even while the last reader is still leaving. */
+  const changeReader = () => {
+    if (!canChangeReader(ref.current)) return;
+    gen.current += 1;
+    endIntent();
+    const farewell = tRef.current('cafe.tarot.farewell');
+    speak({ text: farewell, mood: 'warm' });
+    bridge.sendCafeTarotEnd();
+    setState(prev => ({
+      ...OFF,
+      seated: prev.seated,
+      spot: prev.spot,
+      consultants: prev.consultants,
+      stage: 'consultants',
+    }));
+    if (!ref.current.consultants) loadConsultants();
+  };
+
   /* ---- coffee -------------------------------------------------------------------------------- */
 
   const runCoffee = async () => {
@@ -372,11 +504,11 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     if (g !== gen.current) return;
     if (!r.ok) {
       settle(r);
-      patch({ busy: false, error: r.kind });
+      patch({ busy: false, leaveAsk: null, error: r.kind });
       return;
     }
     endIntent();
-    patch({ busy: false, fortune: r.fortune, stage: 'serving' });
+    patch({ busy: false, leaveAsk: null, fortune: r.fortune, stage: 'serving' });
     bridge.sendCafeCoffeeOrder();
     bridge.sendCafeCookieFortune(r.fortune);
   };
@@ -439,11 +571,52 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     else if (s.stage === 'brewing') runCoffee();
   };
 
+  /** A follow-up refused with nothing charged (503 refunded, 402, a refused id): the player may drop
+   *  it and type another instead of only retrying the same words. */
+  const dropFollowup = () => {
+    const s = ref.current;
+    if (s.stage !== 'followup' || s.busy || !s.pending || s.error === 'failed') return;
+    endIntent();
+    patch({ pending: '', error: null });
+  };
+
   const leaveTable = () => {
+    if (askBeforeLeaving('leave')) return;
+    leaveNow();
+  };
+
+  const leaveNow = () => {
     gen.current += 1;
     clearMove();
     setState(OFF);
     bridge.sendCafeStand();
+  };
+
+  /** The leave sheet's Stay: nothing changes, and the answer is shown when it lands. */
+  const stay = () => {
+    ref.current = { ...ref.current, leaveAsk: null };
+    patch({ leaveAsk: null });
+  };
+
+  /** The leave sheet's Try again, for a paid request that failed with no answer: the same request_id,
+   *  so a charge that did go through is replayed rather than taken twice. */
+  const retryInstead = () => {
+    ref.current = { ...ref.current, leaveAsk: null };
+    patch({ leaveAsk: null });
+    retry();
+  };
+
+  /** The leave sheet's Leave anyway: what was asked about, done now. 'world' is returned to the
+   *  screen, which owns the navigation. */
+  const leaveAnyway = (): LeaveKind | null => {
+    const kind = ref.current.leaveAsk;
+    ref.current = { ...ref.current, leaveAsk: null };
+    patch({ leaveAsk: null });
+    if (kind === 'end') endNow();
+    else if (kind === 'leave') leaveNow();
+    // The screen navigates away; the answer must not land in the gap before the table unmounts.
+    else if (kind === 'world') gen.current += 1;
+    return kind;
   };
 
   /* ---- Unity ---------------------------------------------------------------------------------- */
@@ -555,9 +728,12 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     chooseConsultant,
     submitQuestion,
     next,
+    submitClarify,
+    skipClarify,
     submitFollowup,
     askAnother,
     end,
+    changeReader,
     orderCoffee: () => askToPay('coffee'),
     askReading: () => askToPay('reading'),
     cancelCoffee,
@@ -566,6 +742,11 @@ export function useCafeTable(bridge: CafeBridge, lang: Lang, t: Translate) {
     cancelConfirm,
     retry,
     leaveTable,
+    dropFollowup,
+    askBeforeLeaving,
+    stay,
+    retryInstead,
+    leaveAnyway,
     getCoins: () => useCoins.getState().openShop(),
   };
 }

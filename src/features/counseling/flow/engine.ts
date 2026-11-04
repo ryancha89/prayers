@@ -77,7 +77,10 @@ type SpokenChunk = ReadingChunk & {
 export function stripScoreLines(text: string): string {
   const PAIR = String.raw`[^\n=,，、]{1,40}=\s*\d{1,3}`;
   const RUN = new RegExp(String.raw`(^|\n)[ \t]*${PAIR}(?:\s*[,，、]\s*${PAIR})+[ \t.]*(?=\n|$)`, 'g');
-  return text.replace(RUN, '$1').replace(/\n{3,}/g, '\n\n').trim();
+  // The period part's tag (30-10, "Months=10-10; 격국이…" on her card): its months are the ribbon's
+  // data, never speech. The phrase after the ';' is kept — it is the sentence that goes with them.
+  const PERIOD = /(^|\n)?[ \t]*(?:\d\)\s*)?Months\s*=\s*\d{1,2}\s*[-–—~]\s*\d{1,2}\s*[;:,.]?[ \t]*/gi;
+  return text.replace(RUN, '$1').replace(PERIOD, '$1').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function chunksOfScenes(scenes: CounselorScene[]): SpokenChunk[] {
@@ -105,6 +108,8 @@ const ANSWER_GUARD_MIN_MS = 20000;
 const MIN_HOLD_MS = 1800;
 /** Maximum hold, so an unusually long line does not freeze the screen. */
 const MAX_HOLD_MS = 9000;
+/** How long the "voice is being made" note stays after a tap, if the voice does not start first. */
+const VOICE_WAIT_NOTE_MS = 4000;
 /** The pause after a line finishes, before the next phase. */
 const TAIL_MS = 700;
 
@@ -345,8 +350,15 @@ export interface FlowState {
    *  Not the same as `!inputEnabled`: in the loop the box is open while she speaks, precisely so
    *  she CAN be cut off. The UI needs the difference to offer "stop" instead of "send". */
   speaking: boolean;
+  /** A tap came while her voice was still being made (30-10): the tap waits, and the card says so —
+   *  with the way to go on without a voice (the speaker button). Cleared when the voice starts. */
+  voiceWait?: boolean;
   /** Where the microphone is, and how loud the room is while it listens (0–1). */
   mic: MicView;
+  /** A spoken question the room's coin check refused (29-10): nothing was asked, and the words
+   *  used to vanish with the take. The question box takes them, to be sent after topping up.
+   *  `seq` rises on every hand-back so the same words twice still arrive. */
+  heldQuestion?: { text: string; seq: number } | null;
 }
 
 export interface MicView {
@@ -380,7 +392,9 @@ const emptyState: FlowState = {
   tone: '',
   emotion: 'neutral',
   speaking: false,
+  voiceWait: false,
   mic: { state: 'idle', level: 0, error: '', offered: true },
+  heldQuestion: null,
 };
 
 export interface EngineOptions {
@@ -410,6 +424,16 @@ export interface EngineOptions {
    *  it, and read as a script when there is no table. Leaving the chat still says goodbye through
    *  P20. */
   chatFirst?: boolean;
+  /** Whether a question may be sent now — the room's coin check. Consulted by EVERY way a question
+   *  goes out (typed, the suggestion chip, a spoken take): the mic used to skip the room's own
+   *  check and reach v2 with no coins (29-10). False = the question is not sent; the caller has
+   *  already shown why. */
+  canAsk?: () => boolean;
+  /** Asked when an answer fails: resolves true when the failure was the wallet (v2 answers a
+   *  coin shortfall 200 `ticketInsufficient`, which Unity forwards as `upstream`). The caller shows
+   *  its coin card; the engine then shows the coin notice instead of "cannot gather the reading",
+   *  and no failure line in the chat. */
+  coinsShort?: () => Promise<boolean>;
 }
 
 /** How long a chat-first room waits for the recall before greeting without it. The fetch is free
@@ -451,6 +475,8 @@ export class ConsultationEngine {
    *  untagged, and for every reading from the embedded room — v2 speaks cues, not scenes. */
   private beatScenes: Record<string, CounselorScene[]> = {};
   private oraclePending = false;
+  /** A failed reading is held (still pending) while `coinsShort` asks the wallet. */
+  private checkingCoins = false;
   private oracleError: OracleResultPayload['error'] | null = null;
   private followup = '';
   private reportData: ReportView | null = null;
@@ -460,6 +486,11 @@ export class ConsultationEngine {
   /** When the current take was handed to Unity, and how many characters it carries. */
   private speakStartedAt = 0;
   private speakChars = 0;
+  /** The take Unity said is audible (SPEAK_STARTED); a take still waiting on its voice differs. */
+  private heardKey: string | null = null;
+  /** The player's speaker switch: off, nothing waits on a voice. */
+  private voiceOn = true;
+  private voiceWaitTimer: number | null = null;
   /** A line of the current phase came back silent — see MAX_UNVOICED_HOLD_MS. */
   private phaseUnvoiced = false;
   private speakDoneWaiter: (() => void) | null = null;
@@ -995,8 +1026,26 @@ export class ConsultationEngine {
     this.speakDoneWaiter = then;
   }
 
+  /** The speaker switch. Turning the voice off ends any wait on it. */
+  setVoiceOn(on: boolean) {
+    this.voiceOn = on;
+    if (!on) this.endVoiceWait();
+  }
+
+  /** Unity's voice for this take is audible now. */
+  onSpeakStarted(cacheKey: string) {
+    this.heardKey = cacheKey;
+    if (this.speaking === cacheKey) this.endVoiceWait();
+  }
+
+  private endVoiceWait() {
+    if (this.voiceWaitTimer) { this.sched.clear(this.voiceWaitTimer); this.voiceWaitTimer = null; }
+    if (this.state.voiceWait) this.patch({ voiceWait: false });
+  }
+
   /** Unity finished a spoken take. */
   onSpeakDone(cacheKey: string) {
+    this.endVoiceWait();
     if (this.speaking && this.speaking !== cacheKey) return;
     if (this.speaking && this.speakChars > 0) {
       const expected = (this.speakChars / CHARS_PER_SECOND) * 1000;
@@ -1086,6 +1135,14 @@ export class ConsultationEngine {
   /** Tap-to-continue on a dialogue beat. */
   tap() {
     if (!this.running || !this.state.canTap) return;
+    // Her voice is still being made: skipping now would throw it away unheard. Say so, and how to go
+    // on without it (30-10). A take that fails reports SPEAK_DONE, so this never waits for nothing.
+    if (this.voiceOn && this.speaking && this.heardKey !== this.speaking) {
+      this.patch({ voiceWait: true });
+      if (this.voiceWaitTimer) this.sched.clear(this.voiceWaitTimer);
+      this.voiceWaitTimer = this.sched.set(() => { this.voiceWaitTimer = null; this.patch({ voiceWait: false }); }, VOICE_WAIT_NOTE_MS);
+      return;
+    }
     // Mid-reading, the first tap finishes the beat rather than skipping it: the
     // card only holds what has been spoken so far, so advancing here would throw
     // away text the player never saw.
@@ -1125,14 +1182,15 @@ export class ConsultationEngine {
     else this.advance();
   }
 
-  /** The P05 question, or a follow-up turn once the loop is open. */
-  submitQuestion(text: string) {
+  /** The P05 question, or a follow-up turn once the loop is open. False when nothing was sent. */
+  submitQuestion(text: string): boolean {
     const trimmed = (text ?? '').trim();
-    if (!this.running || !trimmed) return;
+    if (!this.running || !trimmed) return false;
+    if (this.opts.canAsk && !this.opts.canAsk()) return false;
 
     if (this.inLoop) {
       this.askLoop(trimmed);
-      return;
+      return true;
     }
 
     // 티키타카 (26-09): the first question is answered like every later one — a short reply in the
@@ -1143,7 +1201,7 @@ export class ConsultationEngine {
       this.question = trimmed;
       this.openLoop({ intro: false });
       this.askLoop(trimmed);
-      return;
+      return true;
     }
 
     this.question = trimmed;
@@ -1155,6 +1213,7 @@ export class ConsultationEngine {
     this.stage.askOracle({ question: trimmed, topic: this.topic, scope: this.scope });
     this.patch({ inputEnabled: false });
     this.advance();
+    return true;
   }
 
   leave() {
@@ -1269,7 +1328,12 @@ export class ConsultationEngine {
       this.restoreCutOff();
       return;
     }
-    this.submitQuestion(text);
+    // Refused (no coins): nothing was asked, so she gets back the answer the mic cut off, and the
+    // words go to the question box rather than nowhere.
+    if (!this.submitQuestion(text)) {
+      this.restoreCutOff();
+      this.patch({ heldQuestion: { text, seq: (this.state.heldQuestion?.seq ?? 0) + 1 } });
+    }
   }
 
   /**
@@ -1375,13 +1439,16 @@ export class ConsultationEngine {
    *  patch, so relocalize() can rebuild it without knowing why it was shown. */
   private noticeView(): NoticeView {
     const key =
-      this.oracleError === 'no_chart'
+      this.oracleError === 'ticket'
+        ? null
+        : this.oracleError === 'no_chart'
         ? 'consult_no_chart_body'
         : this.oracleError === 'upstream'
           ? 'consult_upstream_body'
           : 'consult_disconnect_body';
     return {
-      body: loc(key, this.lang, ''),
+      // Out of coins: the room's coin card says it; the notice under it only waits for the Retry.
+      body: key ? loc(key, this.lang, '') : ui('notice.coins', this.lang),
       retryLabel: loc('consult_retry', this.lang, 'Retry'),
       leaveLabel: loc('consult_leave_room', this.lang, 'Leave'),
     };
@@ -1392,6 +1459,7 @@ export class ConsultationEngine {
   /** Re-asks the SAME question — the flow still holds topic, scope and text. */
   retry() {
     if (this.pendingRetryIndex < 0) return;
+    if (this.opts.canAsk && !this.opts.canAsk()) return;
     this.oraclePending = true;
     this.oracleError = null;
     this.stage.askOracle({ question: this.question, topic: this.topic, scope: this.scope });
@@ -1434,7 +1502,23 @@ export class ConsultationEngine {
       this.onLoopResult(payload);
       return;
     }
-    if (!this.oraclePending) return;
+    if (!this.oraclePending || this.checkingCoins) return;
+    if (!payload.ok && this.opts.coinsShort) {
+      // Still pending while the wallet is asked: the cover phases keep waiting (their poll reads
+      // oraclePending), so the notice that follows is the right one from its first frame.
+      this.checkingCoins = true;
+      void this.opts.coinsShort().catch(() => false).then(short => {
+        this.checkingCoins = false;
+        if (!this.running || !this.oraclePending) return;
+        this.applyReading(short ? { ...payload, error: 'ticket' } : payload);
+      });
+      return;
+    }
+    this.applyReading(payload);
+  }
+
+  /** The staged reading's result, taken in (a failure already classified). */
+  private applyReading(payload: OracleResultPayload) {
     this.oraclePending = false;
     this.oracleError = payload.ok ? null : (payload.error ?? 'connection');
     this.followup = payload.followup ?? '';
@@ -1621,10 +1705,15 @@ export class ConsultationEngine {
         suggestion: this.followup,
         pending: false,
       });
-      this.appendTranscript(
-        'counselor',
-        loc('consult_disconnect_body', this.lang, ''),
-      );
+      const failLine = () => this.appendTranscript('counselor', loc('consult_disconnect_body', this.lang, ''));
+      // A coin shortfall is the coin card's to say, not "connection lost" in her voice (29-10).
+      if (!payload.ok && this.opts.coinsShort) {
+        void this.opts.coinsShort().catch(() => false).then(short => {
+          if (!short && this.running) failLine();
+        });
+      } else {
+        failLine();
+      }
       return;
     }
     this.followup = payload.followup ?? '';

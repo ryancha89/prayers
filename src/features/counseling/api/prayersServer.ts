@@ -121,6 +121,56 @@ export async function saveAccountLanguage(lang: Lang): Promise<boolean> {
   }
 }
 
+/** The player's own character as the ACCOUNT remembers it (27-10; settings row, next to language). */
+export interface AccountCharacter {
+  playerCharacter: string | null;
+  /** "#RRGGBB", "" = the model's own colour, null = never saved. */
+  playerHair: string | null;
+  /** "#RRGGBB", "" = the artist's own clothes, null = never saved OR a server without the field
+   *  (29-10; one that has the hair but not the outfit) — the caller keeps its local colour. */
+  playerOutfit: string | null;
+  creatorSeen: boolean;
+}
+
+/** `null` = no answer (signed out, offline) — the caller keeps its local copy. */
+export async function fetchAccountCharacter(signal?: AbortSignal): Promise<AccountCharacter | null> {
+  try {
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/settings`, { signal });
+    if (!res || !res.ok) return null;
+    const s = (await res.json())?.settings;
+    // A server from before 27-10 has no such fields: "no answer", not "no character" — so nothing is
+    // pushed to it either (its POST would clear the language, see saveAccountCharacter).
+    if (!s || !('creator_seen' in s)) return null;
+    return {
+      playerCharacter: typeof s.player_character === 'string' && s.player_character ? s.player_character : null,
+      playerHair: typeof s.player_hair === 'string' ? s.player_hair : null,
+      playerOutfit: typeof s.player_outfit === 'string' ? s.player_outfit : null,
+      creatorSeen: s.creator_seen === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Remember the character on the account. Partial POST: the language is left as it is. Best effort.
+ *  ⚠️ Only for a server that reported the fields (characterSync checks): a server from before 27-10
+ *  replaces the whole row on POST and would set the account's language to null. */
+export async function saveAccountCharacter(c: { playerCharacter: string; playerHair: string; playerOutfit: string; creatorSeen: boolean }): Promise<boolean> {
+  try {
+    const res = await authedFetch(`${BASE()}/api/v1/prayers/settings`, {
+      method: 'POST',
+      // No `language`: sending it raced the sign-in language sync and could write the device's over the
+      // account's (QA 28-10).
+      // `player_outfit` (29-10) is ignored by a server without the column, and the rest still lands.
+      body: JSON.stringify({ player_character: c.playerCharacter, player_hair: c.playerHair, player_outfit: c.playerOutfit, creator_seen: c.creatorSeen }),
+    });
+    if (!res || !res.ok) return false;
+    return (await res.json())?.success === true;
+  } catch {
+    return false;
+  }
+}
+
 /** One past consultation, as the server remembers it. */
 export interface RemoteConversation {
   /** `session_<counselorId>_<subjectId>` — the same key the room opens with. */

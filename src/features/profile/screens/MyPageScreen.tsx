@@ -153,6 +153,14 @@ export const MyPageScreen: React.FC = () => {
           {/* The account's own name. Was hard-coded to "Jeongmin", which shipped a stranger's
               name to every player; there is a real one to show now. */}
           <Text style={styles.name}>{displayName || t('account.noName')}</Text>
+          {/* The 3D creator, in plain sight (27-10): before, it was only reachable three levels down
+              (My Info ▸ Character). */}
+          <PrimaryButton
+            label={t('my.customizeCharacter')}
+            tone="ghost"
+            onPress={() => navigation.navigate('CharacterSelect')}
+            style={styles.customizeBtn}
+          />
         </View>
 
         <View style={styles.statsRow}>
@@ -195,12 +203,6 @@ export const MyPageScreen: React.FC = () => {
             label={t('my.favoriteCounselors')}
             value={String(favCount)}
             onPress={() => navigation.navigate('Library', { list: 'favorites' })}
-          />
-          {/* The conversations tab, which now reads the account rather than this phone — so the
-              row is a real destination whichever device they signed in on. */}
-          <Row
-            label={t('my.counselingHistory')}
-            onPress={() => navigation.navigate('Tabs', { screen: 'Conversations' })}
           />
         </Section>
 
@@ -433,6 +435,7 @@ const styles = StyleSheet.create({
   creditsValue: { ...typography.hero, color: colors.textPrimary },
   creditsActions: { flexDirection: 'row', gap: spacing.sm },
   creditBtn: { height: 44, paddingHorizontal: spacing.lg },
+  customizeBtn: { height: 40, paddingHorizontal: spacing.lg, alignSelf: 'center' },
   section: { marginTop: spacing.lg, paddingHorizontal: spacing.lg },
   sectionTitle: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.sm },
   signOut: {

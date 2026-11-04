@@ -112,7 +112,12 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(5,4,26,0.8)', textShadowRadius: 10, textShadowOffset: { width: 0, height: 2 },
   },
   sub: { ...typography.body, color: 'rgba(236,232,255,0.82)', lineHeight: 22 },
-  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
+  // Wraps: on an SE the gold button and five companions are wider than the card (29-10, they ran
+  // over the button and out of the frame), so the companions drop to their own line there.
+  footer: {
+    flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
+    rowGap: spacing.sm, columnGap: spacing.sm, marginTop: spacing.sm,
+  },
   cta: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
     paddingHorizontal: spacing.xl, paddingVertical: spacing.md,

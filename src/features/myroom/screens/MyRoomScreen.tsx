@@ -13,9 +13,12 @@ import type { RootStackParamList } from '../../../navigation/types';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { getMyRoomBridge, isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
+import { playerCharacter, playerHair, playerGender, playerOutfit } from '../../counseling/bridge/playerGender';
 import { CoinPill } from '../../coins/components/CoinPill';
 import { useMyRoomCamera } from '../components/useMyRoomCamera';
-import { WorldJoystick } from '../../world/components/WorldJoystick';
+import { STICK_RING_RIGHT, WorldJoystick } from '../../world/components/WorldJoystick';
+import { useKeyboardRun } from '../../world/components/useKeyboardWalk';
+import { ROUND } from '../../world/screens/WorldScreen';
 import type { MyRoomAction, MyRoomItemAnchor, MyRoomNearItem } from '../../counseling/types';
 import { ItemPrompt, MYROOM_LIFT } from '../components/ItemPrompt';
 import { itemName, themeName } from '../names';
@@ -42,6 +45,7 @@ import { useDecorate } from '../edit/useDecorate';
 import { skinList, swapCandidates } from '../edit/decorate';
 import { unreadCount, useInbox } from '../inbox/inboxStore';
 import type { InboxLink } from '../inbox/lines';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 /** How long the picture may say "Loading" before it offers a retry: past the bridge's last INIT retry. */
 export const MYROOM_STALL_MS = 9000;
@@ -80,9 +84,8 @@ export function myRoomCoveredPx(r: MeasuredRects) {
   };
 }
 
-/** The bottom row's height (the 편집 pill), and the run button's size. */
-const ROW = 40;
-const RUN = 54;
+/** Narrower than this between 편집 and the exit, the motto is left out rather than squeezed under them. */
+export const MOTTO_MIN = 140;
 
 /**
  * My Room (개인실) — the world's fifth door (02-10: "my room xài room hôm qua của tôi đi"), walkable
@@ -119,6 +122,8 @@ const RUN = 54;
  * the gestures go to the mock bridge, so the whole path in and out of the room can be walked.
  */
 export const MyRoomScreen: React.FC = () => {
+  // The shared loading screen (picture, intro, tip) until this place's READY — sceneTransition.ts.
+  useEffect(() => { beginSceneTransition('myroom'); }, []);
   const navigation = useNavigation<Nav>();
   const t = useT();
   const lang = useLang();
@@ -178,7 +183,13 @@ export const MyRoomScreen: React.FC = () => {
   const initFor = (): MyRoomInitPayload => {
     const cached = useMyRoomStore.getState().current();
     sentLayout.current = cached?.layout ?? null;
-    return { lang, book: bookRef.current, layout: cached?.layout ?? null, owned: cached?.owned ?? null };
+    return {
+      lang, book: bookRef.current, layout: cached?.layout ?? null, owned: cached?.owned ?? null,
+      playerGender: playerGender(),
+      playerCharacter: playerCharacter(),
+      playerHair: playerHair(),
+      playerOutfit: playerOutfit(),
+    };
   };
   useEffect(() => {
     if (sameBook(bookRef.current, book)) return;
@@ -296,9 +307,6 @@ export const MyRoomScreen: React.FC = () => {
       if (!savingRef.current) cancelRef.current();
     });
   }, [editing, navigation]);
-  // The 편집 pill grew a longer word and an icon (꾸미기 / Trang trí phòng): the motto between it and
-  // exit is sized from its measured width, not a constant.
-  const [pillW, setPillW] = useState(76);
   const look = useMyRoomCamera(controlsOn, send, editing ? { onTap: decorate.tap, onDrag: decorate.drag } : null);
   const owned = useMyRoomStore(s => s.byUser[myRoomUserKey()]?.owned ?? null);
   const skins = skinList(decorate.catalogThemes, owned, id => themeName(t, id) !== '');
@@ -415,6 +423,15 @@ export const MyRoomScreen: React.FC = () => {
     setRunning(on);
     bridge.sendMyRoomRun(on);
   };
+  // Shift on a keyboard runs while held, then the toggle's own state comes back (30-10).
+  const runBeforeShift = useRef<boolean | null>(null);
+  useKeyboardRun(walkOn && !atBook, shiftHeld => {
+    if (shiftHeld) { runBeforeShift.current = running; setRunning(true); bridge.sendMyRoomRun(true); return; }
+    const back = runBeforeShift.current ?? false;
+    runBeforeShift.current = null;
+    setRunning(back);
+    bridge.sendMyRoomRun(back);
+  });
 
   // The landscape menu sheet starts under the top row (WorldSheet's rule).
   const [topEnd, setTopEnd] = useState(0);
@@ -425,6 +442,9 @@ export const MyRoomScreen: React.FC = () => {
     setTopEnd(y + height);
   };
   const bottomPad = safe.bottom + spacing.sm;
+  // Centred, and clear of the stick's ring on the left and exit on the right; left out where it cannot be.
+  const sideClear = Math.max(safe.left + spacing.xs + STICK_RING_RIGHT, safe.right + spacing.lg + ROUND) + spacing.md;
+  const mottoW = Math.max(0, Math.min(260, screen.width - 2 * sideClear));
 
   return (
     <WorldSheetTop.Provider value={topEnd}>
@@ -454,7 +474,7 @@ export const MyRoomScreen: React.FC = () => {
 
       {/* The look-around layer: transparent, over the Unity view, under every control. A touch on
           the UnityView itself never reaches RN (useFollowCamera says why). */}
-      {controlsOn && <View style={StyleSheet.absoluteFill} testID="myroom-look" {...look} />}
+      {controlsOn && <View style={StyleSheet.absoluteFill} testID="myroom-look" {...look.handlers} />}
 
       {/* Top row: who you are on the left, the four icons on the right. Decorate mode's bar instead. */}
       {held && !editing ? null : editing ? (
@@ -497,23 +517,39 @@ export const MyRoomScreen: React.FC = () => {
       </View>
       )}
 
-      {/* The world's stick, bottom-left over 편집 (WALK_INPUT), drawn in the room's gold. Hidden —
-          and so released — while anything covers the room. */}
+      {/* The world's stick, bottom-left where the world has it (30-10, "방향키는 월드맵 포지션으로";
+          꾸미기 moved out from under it), drawn in the room's gold. Hidden — and so released — while
+          anything covers the room. */}
       <View
         pointerEvents="box-none"
-        style={[styles.stick, { left: safe.left + spacing.xs, bottom: bottomPad + ROW + spacing.xs }]}>
-        <WorldJoystick visible={walkOn && !atBook} />
+        style={[styles.stick, { left: safe.left + spacing.xs, bottom: safe.bottom + spacing.xs }]}>
+        <WorldJoystick visible={walkOn && !atBook} onOtherDrag={look.look} />
       </View>
 
       {/* Run, over exit: MYROOM_RUN, never WORLD_RUN (that would set the WORLD's run for the way
           back). Gold while on. */}
       {walkOn && !atBook && (
-        <View pointerEvents="box-none" style={[styles.run, { right: safe.right + spacing.lg - (RUN - ROW - 4) / 2, bottom: bottomPad + ROW + spacing.lg }]}>
-          <RingButton testID="myroom-run" icon="run" size={RUN} label={t('world.run')} active={running} onPress={toggleRun} />
+        <View pointerEvents="box-none" style={[styles.run, { right: safe.right + spacing.lg, bottom: bottomPad + ROUND + spacing.md }]}>
+          <RingButton testID="myroom-run" icon="run" size={ROUND} label={t('world.run')} active={running} onPress={toggleRun} />
         </View>
       )}
 
-      {/* Bottom row: 편집, the motto, the way out. Decorate mode's tray instead. */}
+      {/* 꾸미기, on the right above Run (and exit): out of the stick's corner. Its slot is fixed, so it
+          does not jump when Run hides at the book. Muted, not hidden, until the room is up and the
+          server answered: a tap says why. */}
+      {!held && !editing && (
+        <View pointerEvents="box-none" style={[styles.run, { right: safe.right + spacing.lg, bottom: bottomPad + 2 * (ROUND + spacing.md) }]}>
+          <PillButton
+            testID="myroom-edit"
+            icon="armchair"
+            label={t('myroom.edit')}
+            muted={!decorate.canEnter}
+            onPress={startDecorate}
+          />
+        </View>
+      )}
+
+      {/* Bottom row: the motto and the way out. Decorate mode's tray instead. */}
       {held && !editing ? null : editing ? (
         <DecorateTray
           owned={owned}
@@ -544,20 +580,18 @@ export const MyRoomScreen: React.FC = () => {
         pointerEvents="box-none"
         style={[styles.bottom, { paddingBottom: bottomPad, paddingLeft: safe.left + spacing.lg, paddingRight: safe.right + spacing.lg }]}
         onLayout={insets.track('bottom')}>
-        {/* Muted, not hidden, until the room is up and the server answered: a tap says why. */}
-        <PillButton
-          testID="myroom-edit"
-          icon="armchair"
-          label={t('myroom.edit')}
-          muted={!decorate.canEnter}
-          onPress={startDecorate}
-          onLayout={e => setPillW(Math.max(76, Math.round(e.nativeEvent.layout.width)))}
-        />
-        <View style={styles.mottoBox} pointerEvents="none">
-          <Motto text={t('myroom.motto')} width={Math.max(0, Math.min(260, screen.width - 2 * (spacing.lg + pillW + spacing.md) - safe.left - safe.right))} />
-        </View>
+        {/* 꾸미기 moved to the right column (30-10, "꾸미기가 여기에 있으면 안됨"): under the stick it
+            sat in the ring's star. The row keeps its left slot empty so the motto stays centred. */}
+        <View style={{ width: ROUND }} />
+        {/* Only where it fits between the two buttons: on an SE the Vietnamese 편집 label left it no
+            room and the motto ran under the pill (29-10, device screenshot). */}
+        {mottoW >= MOTTO_MIN ? (
+          <View style={styles.mottoBox} pointerEvents="none">
+            <Motto text={t('myroom.motto')} width={mottoW} />
+          </View>
+        ) : null}
         {/* Out to the world from anywhere in the room (10-15) — not only at the door or in ☰. */}
-        <RingButton testID="myroom-exit" icon="exit" size={ROW + 4} label={t('myroom.back')} onPress={toWorld} />
+        <RingButton testID="myroom-exit" icon="exit" size={ROUND} label={t('myroom.back')} onPress={toWorld} />
       </View>
       )}
 

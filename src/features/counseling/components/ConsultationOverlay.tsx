@@ -44,12 +44,15 @@ import type { ChatMode } from '../types';
 
 const QUICK_CHAT_ICON = require('../../../shared/assets/icons/quick_chat.png');
 
-/** The landscape dialogue band: this share of the width between the safe-area edges… */
-export const BAND_SHARE = 0.66;
+/** The landscape dialogue column on the RIGHT (30-10, "가로모드에서 채팅이 캐릭터를 가려서 이상함"):
+ *  this share of the width between the safe-area edges… The bottom-centre band of 02-10 grew a
+ *  transcript, chips and the input until it stood over the counsellor; on the right it runs the
+ *  window's height and the room frames her in the left (VIEW_INSETS `right`, roomCoveredPx). */
+export const BAND_SHARE = 0.44;
 /** …never narrower than a chat input stays usable at (or the whole safe width, if that is less)… */
-const BAND_MIN = 360;
-/** …and never a line so long it reads as a banner. */
-const BAND_MAX = 640;
+const BAND_MIN = 340;
+/** …and never wider than a column. */
+const BAND_MAX = 460;
 
 /** The width of the landscape band for a window this wide with these insets. Pure, for tests. */
 export function landscapeBand(width: number, safe: { left: number; right: number }): number {
@@ -133,6 +136,9 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   // answer to "what did that just do".
   const [modeHint, setModeHint] = useState<ChatMode | null>(null);
   const modeHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** The dialogue card's text follows the voice down like a chat (30-10, "자동으로 채팅처럼 스크롤
+   *  내려가면서 이어가게"): the reading grows a sentence at a time, and the newest one is kept in view. */
+  const lineScroll = useRef<ScrollView>(null);
   useEffect(
     () => () => {
       if (modeHintTimer.current) clearTimeout(modeHintTimer.current);
@@ -155,6 +161,15 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   const [input, setInput] = useState('');
   const mic = state.mic;
   const recording = mic.state !== 'idle';
+
+  // A spoken question the coin check refused lands here (29-10), after anything already typed, so
+  // it can be sent once the wallet is topped up instead of being said again.
+  const held = state.heldQuestion;
+  useEffect(() => {
+    if (!held) return;
+    setInput(prev => (prev.trim() ? `${prev.trim()} ${held.text}` : held.text));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per hand-back, keyed by seq
+  }, [held?.seq]);
 
   const send = () => {
     const text = input.trim();
@@ -197,7 +212,9 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
   );
   const modeRow = (
     <View style={[styles.modeRow, landscape && styles.modeRowSide]} accessibilityRole="radiogroup" testID="chat-mode-row">
-      {(['short', 'tiki', 'detail'] as ChatMode[]).map(m => {
+      {/* Two, not three (30-10, "짧게가 티키타카인데"): 티키타카 IS the short rally (`short`, 1–2
+          sentences); the old 서너 문장 `tiki` read as a long answer under that name. */}
+      {(['short', 'detail'] as ChatMode[]).map(m => {
         const on = chatMode === m;
         return (
           <Pressable
@@ -264,7 +281,7 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
           <Transcript
             state={state}
             history={history}
-            maxHeight={landscape ? screen.vh(0.18, 64, 100) : screen.vh(0.3, 140, 320)}
+            maxHeight={landscape ? screen.vh(0.38, 100, 200) : screen.vh(0.3, 140, 320)}
           />
         )}
 
@@ -285,18 +302,28 @@ export const ConsultationOverlay: React.FC<ConsultationOverlayProps> = ({
               <Text style={styles.speaker}>{counselorName || state.speaker}</Text>
             )}
             <ScrollView
+              ref={lineScroll}
+              onContentSizeChange={() => lineScroll.current?.scrollToEnd({ animated: true })}
               style={[
                 styles.lineScroll,
-                { maxHeight: landscape ? screen.vh(0.2, 64, 110) : screen.vh(0.24, 110, 220) },
+                { maxHeight: landscape ? screen.vh(0.32, 80, 170) : screen.vh(0.24, 110, 220) },
               ]}
               showsVerticalScrollIndicator={false}
             >
               <Text style={styles.line}>{state.line}</Text>
             </ScrollView>
             {state.screen === 'thinking' && <ThinkingDots />}
-            {state.canTap && (
+            {state.canTap && state.voiceWait ? (
+              <View style={styles.voiceWait} testID="voice-wait">
+                <Icon name="speaker" size={14} color={colors.gold} />
+                <View style={styles.voiceWaitBody}>
+                  <Text style={styles.voiceWaitText}>{ui('voice.wait', lang)}</Text>
+                  <Text style={styles.voiceWaitHint}>{ui('voice.waitHint', lang)}</Text>
+                </View>
+              </View>
+            ) : state.canTap ? (
               <Text style={styles.hint}>{ui('tap.continue', lang)}</Text>
-            )}
+            ) : null}
           </Pressable>
         )}
 
@@ -638,8 +665,8 @@ const ON_GOLD = '#1A1330';
 
 const styles = StyleSheet.create({
   root: { ...absoluteFill, justifyContent: 'flex-end' },
-  // Landscape: the band is centred; the safe-area and top-bar padding come from the call site.
-  rootBand: { alignItems: 'center' },
+  // Landscape: the column stands at the right; the safe-area and top-bar padding come from the call site.
+  rootBand: { alignItems: 'flex-end' },
   stack: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   // The band's width is the box's (landscapeBand), so no side padding of its own. An open keyboard
   // takes most of a landscape window: the transcript is what gives way.
@@ -670,6 +697,10 @@ const styles = StyleSheet.create({
   lineScroll: {},
   line: { ...typography.body, color: colors.textPrimary, lineHeight: 23 },
   hint: { ...typography.tiny, color: colors.textMuted, alignSelf: 'flex-end' },
+  voiceWait: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs, marginTop: spacing.xs },
+  voiceWaitBody: { flex: 1, gap: 2 },
+  voiceWaitText: { ...typography.caption, color: colors.gold, fontWeight: '700' },
+  voiceWaitHint: { ...typography.tiny, color: colors.textMuted },
   dots: { ...typography.body, color: colors.gold },
 
   noticeRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },

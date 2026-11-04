@@ -361,6 +361,18 @@ describe('the My Room screen', () => {
     expect(pictureShown()).toBe(false);
   });
 
+  it('keeps the motto clear of the stick: left out on an SE, shown on a wide phone (30-10)', async () => {
+    // The stick sits bottom-left as in the world now, and 꾸미기 moved to the right column.
+    win = { width: 375, height: 667, scale: 2, fontScale: 1 };
+    await render();
+    expect(has('myroom-motto')).toBe(false);
+    expect(has('myroom-edit')).toBe(true);
+    act(() => tree!.unmount());
+    win = IPHONE_17;
+    await render();
+    expect(has('myroom-motto')).toBe(true);
+  });
+
   it('a room that never answers says so after MYROOM_STALL_MS and offers a retry that asks again', async () => {
     jest.useFakeTimers();
     await render();
@@ -616,7 +628,8 @@ describe('the My Room screen', () => {
   // The responder plumbing is React Native's; what is pinned is what the hooks do with it. The
   // look layer's config is the one that lets go when asked (the stick's never does).
   type Cfg = Required<Parameters<typeof PanResponder.create>[0]>;
-  const ev = (touches: { pageX: number; pageY: number }[]) => ({ nativeEvent: { touches, pageX: touches[0]?.pageX ?? 0, pageY: touches[0]?.pageY ?? 0 } }) as never;
+  // Touches carry an identifier (their index): the stick follows its own finger by it (10-23).
+  const ev = (touches: { pageX: number; pageY: number }[]) => ({ nativeEvent: { touches: touches.map((t, i) => ({ identifier: i, ...t })), identifier: 0, pageX: touches[0]?.pageX ?? 0, pageY: touches[0]?.pageY ?? 0 } }) as never;
   const one = (x: number, y: number) => ev([{ pageX: x, pageY: y }]);
   const two = (d: number) => ev([{ pageX: 0, pageY: 0 }, { pageX: d, pageY: 0 }]);
   const g = (dx: number, dy: number) => ({ dx, dy }) as never;
@@ -704,7 +717,7 @@ describe('the My Room screen', () => {
     fromUnity({ type: 'MYROOM_READY' });
     const stick = r.stick();
     mockPosted.length = 0;
-    act(() => stick.onPanResponderGrant({ nativeEvent: { locationX: 80, locationY: 140 } } as never, g(0, 0)));
+    act(() => stick.onPanResponderGrant({ nativeEvent: { locationX: 59, locationY: 153, identifier: 0, pageX: 80, pageY: 140 } } as never, g(0, 0)));
     act(() => stick.onPanResponderMove(one(80, 80), g(0, -60)));
     settle();
     const walk = posts('WALK_INPUT').pop()?.payload as { x: number; y: number };
@@ -714,7 +727,7 @@ describe('the My Room screen', () => {
     settle();
     expect(posts('WALK_INPUT').pop()?.payload).toEqual({ x: 0, y: 0 });
 
-    act(() => stick.onPanResponderGrant({ nativeEvent: { locationX: 80, locationY: 140 } } as never, g(0, 0)));
+    act(() => stick.onPanResponderGrant({ nativeEvent: { locationX: 59, locationY: 153, identifier: 0, pageX: 80, pageY: 140 } } as never, g(0, 0)));
     act(() => stick.onPanResponderMove(one(120, 140), g(40, 0)));
     settle();
     expect((posts('WALK_INPUT').pop()?.payload as { x: number }).x).toBeGreaterThan(0.3);
@@ -817,9 +830,8 @@ describe('the My Room screen', () => {
     const st = StyleSheet.flatten(wrap.props.style);
     expect(st.position).toBe('absolute');
     expect(st.left).toBeLessThan(40);
-    // On the 편집 row, not under it.
-    expect(st.bottom).toBeGreaterThanOrEqual(40);
-    expect(st.bottom).toBeLessThan(80);
+    // Down in the corner, where the world has it (30-10): 꾸미기 is no longer under it.
+    expect(st.bottom).toBeLessThan(40);
     expect(st.top).toBeUndefined();
     rotate(IPHONE_17);
     expect(mockHost.mounts).toBe(1);

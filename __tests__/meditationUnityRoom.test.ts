@@ -63,6 +63,12 @@ it('counts the meditation room as a Unity screen, so the nav guard does not sile
   expect(UNITY_SCREENS.has('MeditationRoom')).toBe(true);
 });
 
+// The sleep guide opens the same room behind its words (22-10): the same rule, or arriving on it
+// posts SESSION_END into the room it has just asked for.
+it('counts the sleep guide as a Unity screen too', () => {
+  expect(UNITY_SCREENS.has('SleepGuide')).toBe(true);
+});
+
 /**
  * The player can boot UNDERNEATH this opening too.
  *

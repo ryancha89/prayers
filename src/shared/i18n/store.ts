@@ -118,6 +118,10 @@ interface LanguageState {
   setLang: (lang: Lang) => void;
   /** Next language in the list, wrapping. Kept so a tap-to-cycle affordance still works. */
   cycle: () => void;
+  /** The player picked `lang` and the account has not taken it yet (offline, a failed write).
+   *  Persisted, so the next sign-in pushes this device's newer choice instead of pulling the
+   *  account's older one over it (29-10, languageSync). */
+  langUnpushed: boolean;
 }
 
 /**
@@ -131,6 +135,7 @@ export const useLanguageStore = create<LanguageState>()(
   persist(
     (set, get) => ({
       lang: deviceLang(),
+      langUnpushed: false,
       setLang: lang => set({ lang: isLang(lang) ? lang : deviceLang() }),
       cycle: () => {
         const i = LANGUAGES.findIndex(l => l.code === get().lang);
@@ -146,7 +151,8 @@ export const useLanguageStore = create<LanguageState>()(
       merge: (persisted, current) => {
         const saved = (persisted as Partial<LanguageState> | undefined)?.lang;
         // Nothing persisted means first launch: the device decides, not Korea.
-        return { ...current, lang: isLang(saved) ? saved : deviceLang() };
+        const unpushed = (persisted as Partial<LanguageState> | undefined)?.langUnpushed === true;
+        return { ...current, lang: isLang(saved) ? saved : deviceLang(), langUnpushed: isLang(saved) && unpushed };
       },
     },
   ),

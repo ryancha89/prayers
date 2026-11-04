@@ -131,6 +131,9 @@ interface JourneyState {
   unlockError: UnlockError | null;
   /** The counsellor is saying the locked moment's offer. */
   teaserSpeaking: boolean;
+  /** A part's voice is being fetched and loaded before it plays (30-10, "다음게 생성중인지 멈춰있는지
+   *  유저가 파악하기 어려우니 상태를 좀 표시해줘"): the screen says so instead of sitting silent. */
+  loadingPart: boolean;
   /** The last one-shot cabin effect and its sequence number. The number only ever grows — for the
    *  whole app session, across journeys — because Unity fires a cue once per NEW cueSeq. */
   cue: MomentCue | '';
@@ -314,11 +317,14 @@ function startLayer(which: 'bgm' | 'ambient', file: string | null, volume: numbe
     devlog(`[journey] ${which} ${file} playing at ${volume}`);
     s.setNumberOfLoops?.(-1);
     s.setVolume?.(volume);
-    // Loaded while the ride is paused (music switched back on mid-pause): the resume starts it.
-    if (!screenActive || layers[which] !== s || useJourneyPlayer.getState().status === 'paused') return;
+    // Loaded while the ride is paused (music switched back on mid-pause) or off screen: the resume
+    // starts it. At a card the train is still rolling, so it plays (layersWanted).
+    if (layers[which] !== s || !layersWanted()) return;
     s.play?.();
+    layerOn[which] = true;
   });
   layers[which] = s;
+  layerOn[which] = false;
   // The effects duck the music, never the ambient: the carriage keeps rolling under a hologram.
   if (which === 'bgm') setDuckTarget(s, volume);
 }
@@ -358,13 +364,39 @@ function stopLayers() {
       layers[k]?.release?.();
     } catch {}
     layers[k] = null;
+    layerOn[k] = false;
   }
 }
 
-function pauseLayers(on: boolean) {
+/** Whether each loop was last told to play (so a sync never restarts one that is running). */
+const layerOn: { bgm: boolean; ambient: boolean } = { bgm: false, ambient: false };
+
+/** The music and the carriage play whenever the player is on the train and on its screen: riding,
+ *  between stations, or held at a card (title, quarters, a lock, a reveal — waitFor). Only the
+ *  player's own pause (a narration paused with nothing up) silences them. */
+function layersWanted(): boolean {
+  if (!screenActive) return false;
+  const s = useJourneyPlayer.getState();
+  switch (s.status) {
+    case 'playing': case 'transition': case 'platform': case 'boarding': return true;
+    case 'paused': return s.stage !== '' || s.moment === 'locked';
+    default: return false;
+  }
+}
+
+/** Put the loops in step with layersWanted. Derived from the state, like the station ambience: only
+ *  play() used to resume them, so leaving at a card and coming back through "[topic] 보기" told the
+ *  station with no music or train under it (QA 29-10). */
+function syncLayers() {
+  const want = layersWanted();
   for (const k of ['bgm', 'ambient'] as const) {
-    if (on) layers[k]?.pause?.();
-    else layers[k]?.play?.();
+    const s = layers[k];
+    if (!s || layerOn[k] === want) continue;
+    layerOn[k] = want;
+    try {
+      if (want) s.play?.();
+      else s.pause?.();
+    } catch {}
   }
 }
 
@@ -572,6 +604,7 @@ async function startPart(ci: number, pi: number, gen: number) {
     lockAt(ci, pi);
     return;
   }
+  useJourneyPlayer.setState({ loadingPart: true });
   // Warm what comes next while this plays: the next part, its lock's offer, or the next station.
   const after = s.queue[0] != null && s.chapterIndex === ci ? s.queue[0] : pi + 1;
   const afterPart = partAt(ci, after);
@@ -625,7 +658,7 @@ async function startPart(ci: number, pi: number, gen: number) {
   const heard = useJourneyPlayer.getState().heard;
   useJourneyPlayer.setState({
     heard: heard.includes(heardKey) ? heard : [...heard, heardKey],
-    status: 'playing', stage: '', position: 0, chapterIndex: ci, partIndex: pi, transitionTo: null,
+    status: 'playing', stage: '', position: 0, chapterIndex: ci, partIndex: pi, transitionTo: null, loadingPart: false,
     moment: part.momentId ? 'premium' : '', momentId: part.momentId, teaserSpeaking: false, reveal: null, revealBusy: false,
   });
   voice?.play?.((ok: boolean) => {
@@ -809,6 +842,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
   unlocking: false,
   unlockError: null,
   teaserSpeaking: false,
+  loadingPart: false,
   cue: '',
   cueSeq: 0,
 
@@ -875,7 +909,6 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     // A lock or an overlay waits for its own button.
     if (s.status !== 'paused' || s.moment === 'locked' || s.stage !== '') return;
     set({ status: 'playing' });
-    pauseLayers(false);
     if (voiceIsSilent) {
       silentStart = Date.now();
     } else {
@@ -893,7 +926,6 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     if (get().status !== 'playing') return;
     if (voiceIsSilent) silentOffset += (Date.now() - silentStart) / 1000;
     else voice?.pause?.();
-    pauseLayers(true);
     stopPoll();
     set({ status: 'paused' });
   },
@@ -911,13 +943,17 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
       const resume = resumeOnReturn;
       resumeOnReturn = null;
       resume?.();
+      // Back on the train: its loops and the station's bed come back as the state says they should,
+      // whatever the player returns to (a card, a lock, a deferred ride starting).
+      syncLayers();
+      syncAmbience();
       return;
     }
     get().pause();
     stopPoll();
     clearCueTimer();
     stopBeatVoice();
-    pauseLayers(true);
+    syncLayers();
     stopStationAmbience();
     cancelJourneySfx({ silence: true });
     const target = get().transitionTo;
@@ -971,6 +1007,13 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     // Three seconds in, "previous" means "this part from the top" — as every player does.
     if (s.status !== 'transition' && s.stage === '' && s.moment !== 'locked' && s.position > 3) {
       get().seekBy(-s.position);
+      return;
+    }
+    // At a lock, back a station (29-10): an unpaid lock sits past part 0, so "this station from its
+    // start" ran straight into the reading gate and made the same offer again. The first station has
+    // nothing behind it on the rail, so there ⏮ does nothing rather than repeat the offer.
+    if (s.moment === 'locked' && s.stage === '' && s.transitionTo == null) {
+      if (s.chapterIndex > 0) travelTo(s.chapterIndex - 1);
       return;
     }
     // Inside a station, back to its start; at its start, back a station.
@@ -1101,7 +1144,8 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     if (now.journeyId === journeyId && now.counselorId === counselorId && now.content) {
       const opened = result.parts.reduce((c, p) => withPart(c, chapter.id, p, result.summary), now.content);
       // The first unlock pays for this person's whole journey; later stations cost no more coins.
-      set({ content: { ...opened, momentPrice: 0 } });
+      // The price is the server's, from the unlock reply (29-10); 0 only from a server without it.
+      set({ content: { ...opened, momentPrice: result.momentPrice ?? 0 } });
     }
     result.parts.forEach(p => useSavedJourneys.getState().addUnlock(journeyId, counselorId, chapter.id, p, result.summary));
     noteMoment(journeyId, id, result.part.label);
@@ -1178,7 +1222,7 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
       momentId: null,
       unlocking: false,
       unlockError: null,
-      teaserSpeaking: false,
+      teaserSpeaking: false, loadingPart: false,
       // cue/cueSeq are kept: the sequence must never go back.
     });
   },
@@ -1210,7 +1254,16 @@ export const useJourneyPlayer = create<JourneyState>()((set, get) => ({
     const s = get();
     if (!s.journeyId || !s.content) return;
     arrivalChimed = false;
-    set({ shownCards: [], activeCard: null });
+    // Ride again / a station in the collection is pressed on the result screen, so the Journey screen
+    // is away and travelTo defers until it opens. Status stayed 'done' meanwhile, and the screen
+    // mounting on 'done' replaced itself with JourneyEnding at once — the ride never started and a
+    // half-started one sat in 'transition' afterwards (QA 29-10; since travelTo deferred, 21-10).
+    // The train is under way from the press: the screen opens on the transition, which runs for real
+    // when it is on screen.
+    set({
+      shownCards: [], activeCard: null, status: 'transition', transitionTo: index, stage: '', queue: [],
+      position: 0, moment: '', momentId: null, pickedCard: null, reveal: null, revealBusy: false,
+    });
     startLayers(journeyOf(s.journeyId)!);
     travelTo(index);
   },
@@ -1242,8 +1295,14 @@ export function wantedAmbience(s: Pick<JourneyState, 'status' | 'journeyId' | 'c
   return stationAmbienceOf(chapterId, month);
 }
 
-const syncAmbience = () => setStationAmbience(wantedAmbience(useJourneyPlayer.getState()));
+/** Off screen nothing starts (29-10): an unlock landing in the background moved the state and the
+ *  bed came up over whatever screen the player was on. setScreenActive(true) syncs on return. */
+const syncAmbience = () => {
+  if (!screenActive) return;
+  setStationAmbience(wantedAmbience(useJourneyPlayer.getState()));
+};
 useJourneyPlayer.subscribe(syncAmbience);
+useJourneyPlayer.subscribe(syncLayers);
 useSoundStore.subscribe((now, prev) => {
   if (now.musicEnabled === prev.musicEnabled) return;
   syncAmbience();

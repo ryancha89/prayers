@@ -5,6 +5,9 @@ import {
   CafeRevealCard,
   CafeTarotSpeak,
   CafeTarotStart,
+  CardsGesture,
+  CharacterInitPayload,
+  CharacterViewPayload,
   GardenBridge,
   GardenGrowPayload,
   GardenInitPayload,
@@ -74,7 +77,7 @@ const MEDITATION_RETRY_MS = 1500;
 const MEDITATION_MAX_TRIES = 4;
 
 /** Absolute-state messages sent while a finger moves: coalesced (see NativeUnityBridge.postStream). */
-const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'GARDEN_DRAG', 'CAFE_CAMERA', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK']);
+const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'GARDEN_DRAG', 'CAFE_CAMERA', 'CAFE_ZOOM', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK', 'ROOM_ZOOM', 'CHARACTER_VIEW', 'MEDITATION_CAMERA']);
 /** ~30 a second per type: smooth under Unity's own easing, a quarter of what a thumb produced. */
 const STREAM_MS = 33;
 /** The scenes' own handshake events. Not every `*_READY` is one: CAFE_DECK_READY is a step inside the
@@ -107,6 +110,16 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   private lectureRetry: ReturnType<typeof setTimeout> | null = null;
   private lectureTries = 0;
   private lectureState?: LectureStatePayload;
+  /** The character preview (26-10): the lecture room's open-until-answered rule, plus the camera
+   *  switch, remembered so a CHARACTER_READY that lands after the tap still gets it. */
+  private characterInit?: CharacterInitPayload;
+  private characterPending = false;
+  private characterRetry: ReturnType<typeof setTimeout> | null = null;
+  private characterTries = 0;
+  private characterTracking = false;
+  /** The creator's last view: Unity's stage resets to (0, whole body) when the scene starts, so a
+   *  view sent before CHARACTER_READY (the first step's own shot) must be sent again after it. */
+  private characterView?: CharacterViewPayload;
   /** The train journey cabin: the same open-until-answered rule as the meditation room. */
   private journeyInit?: JourneyInitPayload;
   private journeyPending = false;
@@ -167,11 +180,14 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   private viewInsets?: ViewInsetsPayload;
   private viewInsetsPosted = '';
   private expectedReady: UnityToRNEvent['type'] | null = null;
+  /** The counseling room's UNITY_READY payload, once it came; cleared by the next scene. */
+  private roomReadyPayload: { walkIn?: boolean } | null = null;
 
   /** Unity survives screen changes on iOS. Only the newly opened scene may keep pending work. */
   private beginScene(readyEvent: UnityToRNEvent['type']): void {
     this.expectedReady = readyEvent;
     this.ready = false;
+    this.roomReadyPayload = null;
     this.outbox = [];
     this.streams.clear();
     if (this.streamTimer) clearTimeout(this.streamTimer);
@@ -180,12 +196,14 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.clearJourneyRetry();
     this.clearMeditationRetry();
     this.clearLectureRetry();
+    this.clearCharacterRetry();
     this.clearWorldRetry();
     this.clearMyRoomRetry();
     this.clearCafeRetry();
     this.clearGardenRetry();
     this.payload = undefined;
-    this.meditationPending = this.lecturePending = this.journeyPending = false;
+    this.meditationPending = this.lecturePending = this.journeyPending = this.characterPending = false;
+    this.characterInit = undefined;
     this.worldPending = this.myRoomPending = this.cafePending = this.gardenPending = false;
     this.lectureInit = this.journeyInit = this.worldInit = this.myRoomInit = this.cafeInit = undefined;
     this.gardenInit = undefined;
@@ -334,6 +352,13 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     if (this.view) this.post({ type: 'MEDITATION_STATE', payload });
   }
 
+  /** The player's look in the meditation room (30-10): orbit / pinch, MYROOM_CAMERA's numbers. A
+   *  stream, posted straight through; a new visit starts at the directed shot (Unity resets it). */
+  sendMeditationCamera(camera: MyRoomCamera): void {
+    const clamp = (v: number, lo: number, hi: number) => (Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : 0);
+    if (this.view) this.postLive({ type: 'MEDITATION_CAMERA', payload: { zoom: clamp(camera.zoom, 0, 1), yaw: clamp(camera.yaw, -1, 1), pitch: clamp(camera.pitch, -1, 1) } });
+  }
+
   /**
    * Open the lecture room (the Schopenhauer series). Posts directly and repeats until LECTURE_READY,
    * for exactly the reasons openMeditationRoom gives — this room never sends UNITY_READY either.
@@ -391,6 +416,87 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.clearLectureRetry();
     try {
       if (this.view) this.post({ type: 'LECTURE_END' });
+    } catch {}
+    this.ready = false;
+  }
+
+  /**
+   * Open the character preview (the character screen's 3D pane). Posts directly and repeats until
+   * CHARACTER_READY, as the lecture room does — this scene never sends UNITY_READY either.
+   */
+  openCharacterPreview(init: CharacterInitPayload): void {
+    this.beginScene('CHARACTER_READY');
+    this.characterInit = init;
+    this.characterPending = true;
+    this.characterTries = 0;
+    devlog('[unity-bridge] CHARACTER_INIT');
+    this.post({ type: 'CHARACTER_INIT', payload: init });
+    this.armCharacterRetry();
+  }
+
+  private armCharacterRetry(): void {
+    this.clearCharacterRetry();
+    this.characterRetry = setTimeout(() => {
+      this.characterRetry = null;
+      if (!this.characterPending || !this.view || !this.characterInit) return;
+      if (this.characterTries >= MEDITATION_MAX_TRIES) {
+        devlog(`[unity-bridge] no CHARACTER_READY after ${this.characterTries} retries — staying on the card art`);
+        return;
+      }
+      this.characterTries += 1;
+      devlog(`[unity-bridge] CHARACTER_INIT (retry ${this.characterTries})`);
+      this.post({ type: 'CHARACTER_INIT', payload: this.characterInit });
+      this.armCharacterRetry();
+    }, MEDITATION_RETRY_MS);
+  }
+
+  private clearCharacterRetry(): void {
+    if (this.characterRetry !== null) {
+      clearTimeout(this.characterRetry);
+      this.characterRetry = null;
+    }
+  }
+
+  /** The player tapped another card. Remembered, so a late READY shows the right body. */
+  setCharacterPreview(init: CharacterInitPayload): void {
+    this.characterInit = init;
+    if (this.view) this.post({ type: 'CHARACTER_SET', payload: init });
+  }
+
+  /** The creator's drag and pinch: turn the body, whole body ↔ face, plus the share of the screen
+   *  RN's overlay covers (Unity frames the body between). Streamed (latest wins), remembered, and
+   *  replayed on CHARACTER_READY: sent on mount, the first step's shot (the hair step's face) arrived
+   *  before the scene and Unity's Start reset it to the whole body (review 27-10). */
+  setCharacterView(view: CharacterViewPayload): void {
+    const yaw = Number.isFinite(view.yaw) ? view.yaw : 0;
+    const zoom = Number.isFinite(view.zoom) ? Math.min(1, Math.max(0, view.zoom)) : 0;
+    const frac = (v?: number) => (v != null && Number.isFinite(v) ? Math.min(0.6, Math.max(0, v)) : undefined);
+    // `focus` goes through only as one of the three words Unity knows; anything else is left out.
+    const focus = view.focus === 'body' || view.focus === 'top' || view.focus === 'bottom' ? view.focus : undefined;
+    this.characterView = { yaw, zoom, top: frac(view.top), bottom: frac(view.bottom), focus };
+    if (this.view) this.postLive({ type: 'CHARACTER_VIEW', payload: this.characterView });
+  }
+
+  /** The creator's "this is me" moment. Fire and forget: nothing waits for an answer. */
+  confirmCharacter(): void {
+    if (this.view) this.post({ type: 'CHARACTER_CONFIRM' });
+  }
+
+  /** The camera switch. Remembered and replayed on CHARACTER_READY. */
+  setFaceTracking(on: boolean): void {
+    this.characterTracking = on;
+    if (this.view) this.post({ type: 'CHARACTER_TRACKING', payload: { on } });
+  }
+
+  /** Leaving the character screen. Idempotent, and safe when Unity never booted. */
+  closeCharacterPreview(): void {
+    if (this.expectedReady !== 'CHARACTER_READY') return;
+    this.characterPending = false;
+    this.characterTracking = false;
+    this.characterView = undefined;
+    this.clearCharacterRetry();
+    try {
+      if (this.view) this.post({ type: 'CHARACTER_END' });
     } catch {}
     this.ready = false;
   }
@@ -810,6 +916,14 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     if (this.view) this.post({ type: 'CAFE_TAP', payload: { x: unit(x), y: unit(y) } });
   }
 
+  /** The pinch / drag over the 78 while choosing: cumulative per gesture, so streamed like CAFE_CAMERA. */
+  sendCafeZoom(g: CardsGesture): void {
+    const clamp = (v: number, lo: number, hi: number, or: number) => (Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : or);
+    if (this.view) {
+      this.postLive({ type: 'CAFE_ZOOM', payload: { gesture: Math.trunc(g.gesture) || 0, scale: clamp(g.scale, 0.1, 10, 1), x: clamp(g.x, -4, 4, 0), y: clamp(g.y, -4, 4, 0) } });
+    }
+  }
+
   sendCafeStand(): void {
     this.post({ type: 'CAFE_STAND' });
   }
@@ -1006,8 +1120,13 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     // BGM outliving the room (or an error exit) is exactly the bug this guards.
     if (this.view) this.post({ type: 'SESSION_END' });
     this.ready = false;
+    this.roomReadyPayload = null;
     this.outbox = [];
     this.payload = undefined;
+  }
+
+  readyRoom(): { walkIn?: boolean } | null {
+    return this.expectedReady === 'UNITY_READY' ? this.roomReadyPayload : null;
   }
 
   get isReady(): boolean {
@@ -1046,6 +1165,11 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       devlog('[unity-bridge] LECTURE_INIT (view registered)');
       this.post({ type: 'LECTURE_INIT', payload: this.lectureInit });
       this.armLectureRetry();
+    }
+    if (this.characterPending && this.characterInit) {
+      devlog('[unity-bridge] CHARACTER_INIT (view registered)');
+      this.post({ type: 'CHARACTER_INIT', payload: this.characterInit });
+      this.armCharacterRetry();
     }
     if (this.journeyPending && this.journeyInit) {
       devlog('[unity-bridge] JOURNEY_INIT (view registered)');
@@ -1167,6 +1291,10 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
         devlog('[unity-bridge] LECTURE_INIT (bridge ready)');
         this.post({ type: 'LECTURE_INIT', payload: this.lectureInit });
       }
+      if (this.characterPending && this.characterInit) {
+        devlog('[unity-bridge] CHARACTER_INIT (bridge ready)');
+        this.post({ type: 'CHARACTER_INIT', payload: this.characterInit });
+      }
       if (this.journeyPending && this.journeyInit) {
         devlog('[unity-bridge] JOURNEY_INIT (bridge ready)');
         this.post({ type: 'JOURNEY_INIT', payload: this.journeyInit });
@@ -1192,6 +1320,17 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     // The meditation room's equivalent of UNITY_READY for TRANSPORT purposes only: it proves the
     // player is listening, so nothing after it needs queueing. It does NOT start anything — the
     // screen decides what to do with it.
+    if (event.type === 'CHARACTER_READY') {
+      this.characterPending = false;
+      this.clearCharacterRetry();
+      if (this.characterInit) this.post({ type: 'CHARACTER_SET', payload: this.characterInit });
+      if (this.characterTracking) this.post({ type: 'CHARACTER_TRACKING', payload: { on: true } });
+      if (this.characterView) this.post({ type: 'CHARACTER_VIEW', payload: this.characterView });
+      this.replayViewInsets();
+      this.ready = true;
+      this.everReady = true;
+      this.clearInitRetry();
+    }
     if (event.type === 'LECTURE_READY') {
       this.lecturePending = false;
       this.clearLectureRetry();
@@ -1300,6 +1439,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     if (event.type === 'UNITY_READY') {
       this.ready = true;
       this.everReady = true;
+      this.roomReadyPayload = { ...(event.payload ?? {}) };
       // The room is up: nothing may re-open it now.
       this.clearInitRetry();
       if (!this.initSent && this.payload) this.sendInit('unity ready');

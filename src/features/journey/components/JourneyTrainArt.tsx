@@ -110,6 +110,10 @@ export const JourneyTrainArt: React.FC<{ still?: boolean; fadeTo?: string }> = (
       style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}
       pointerEvents="none"
       onLayout={(e: LayoutChangeEvent) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+      {/* The painting as a plain cover first, needing no measurement: the live layer below only draws
+          once onLayout has sized it, and on the SE 3 release build (29-10) the home card showed bare
+          navy instead. The live layer covers this exactly when it does draw. */}
+      <Image source={still ? JOURNEY_HERO_ART : PLATE} style={StyleSheet.absoluteFill} resizeMode="cover" />
       {side > 0 && (
         <Animated.View
           style={{

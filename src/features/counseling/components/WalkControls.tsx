@@ -53,12 +53,17 @@ export const WalkControls: React.FC<{
   visible: boolean;
   /** Who is in the room: her face and name go on the Talk prompt ("유나와 대화하기"). */
   counselor?: { id: string; name: string };
-}> = ({ visible, counselor }) => {
+  /** Up from the chair mid-conversation (일어서기): the same prompt seats the player again, and
+   *  says so — "앉기", not an invitation to a conversation that is already under way. */
+  stood?: boolean;
+}> = ({ visible, counselor, stood }) => {
   const t = useT();
   const lang = useLang();
-  const talkLabel = counselor?.name
-    ? t('room.talkWith', { name: lang === 'ko' ? koWith(counselor.name) : counselor.name })
-    : t('room.talk');
+  const talkLabel = stood
+    ? t('room.sit')
+    : counselor?.name
+      ? t('room.talkWith', { name: lang === 'ko' ? koWith(counselor.name) : counselor.name })
+      : t('room.talk');
   // Placed as the world places it: bottom-left, clear of the island and the home indicator.
   const safe = useSafeAreaInsets();
   const [canTalk, setCanTalk] = useState(false);

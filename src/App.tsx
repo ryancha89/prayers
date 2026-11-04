@@ -17,9 +17,12 @@ import { preload as preloadSfx } from './shared/audio/sfx';
 import { create } from 'zustand';
 import { JourneyMiniPlayer } from './features/journey/components/JourneyMiniPlayer';
 import { CoinShopSheet } from './features/coins/components/CoinShopSheet';
+import { SceneTransitionOverlay } from './shared/transition/SceneTransitionOverlay';
 import { startCoinPurchaseRecovery } from './features/coins/api/coinsApi';
 import { applyReminder } from './features/notifications/reminder';
+import { useLanguageStore } from './shared/i18n';
 import { useAuthStore } from './features/auth/store/authStore';
+import { syncAccountCharacter } from './features/character/characterSync';
 import { useJourneyPlayer } from './features/journey/player/journeyPlayer';
 import { stopLine } from './features/philosophy/lectureVoice';
 
@@ -51,7 +54,8 @@ const navigationRef = createNavigationContainerRef<RootStackParamList>();
 // Cafe (16-10): the world's sixth door, a Unity scene like My Room.
 // Garden (spec 008, Tree of Mind): a Unity scene too; its music starts with the breathing, like the
 // meditation room's, so the app's bed must be off on arrival and SESSION_END must not reach it.
-export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom', 'World', 'MyRoom', 'Cafe', 'Lecture', 'Garden']);
+// SleepGuide (22-10): the meditation room's scene and girl behind the sleep guide — the same rule.
+export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom', 'SleepGuide', 'World', 'MyRoom', 'Cafe', 'Lecture', 'Garden']);
 /** Screens that host the Unity player but NOT as a room that owns the sound: the train journey
  *  (spec 003) draws its cabin in Unity while its own narration keeps playing. They must not tear
  *  Unity down (stopAllAudio → SESSION_END), and must not pause the journey either — which is why
@@ -68,7 +72,8 @@ const UNITY_SCENERY_SCREENS = new Set(['Journey']);
  * someone still deciding whether they have ten minutes.
  */
 // The sleep guide is the same kind of room: its voice and music are the content (sleepAudio.ts).
-const SELF_SCORED_SCREENS = new Set(['MeditationRoom', 'SleepGuide', 'Lecture']);
+// Story (11-01): the cat's voice is the content — no mini player over it, a running journey pauses.
+const SELF_SCORED_SCREENS = new Set(['MeditationRoom', 'SleepGuide', 'Lecture', 'Story']);
 
 /** Whether the app's own music may play. The splash has a cue of its own and the two would
  *  overlap, so nothing starts until it is done. */
@@ -159,8 +164,12 @@ const App: React.FC = () => {
   // credited) is credited once someone is signed in — the server needs whose wallet it is.
   const signedIn = useAuthStore(s => s.userAuth);
   useEffect(() => (signedIn ? startCoinPurchaseRecovery() : undefined), [signedIn]);
-  // The check-in reminder's 14-day window rolls forward on every launch.
-  useEffect(() => { void applyReminder(); }, []);
+  // The character is reconciled whenever someone is signed in: at launch, and on every sign-in.
+  useEffect(() => { if (signedIn) void syncAccountCharacter(); }, [signedIn]);
+  // The check-in reminder's 14-day window rolls forward on every launch — and is planned again on
+  // sign-in/out (none while signed out) and on a language change, whose words it carries (29-10).
+  const lang = useLanguageStore(s => s.lang);
+  useEffect(() => { void applyReminder(); }, [signedIn, lang]);
   const onSplashDone = useCallback(() => {
     setSplashDone(true);
     // The splash chime has finished; the bed can come up under whatever screen is showing.
@@ -186,6 +195,8 @@ const App: React.FC = () => {
         />
         {/* One coin shop for the whole app: the header pills and the journey's locks open it. */}
         <CoinShopSheet />
+        {/* One loading screen into every 3D place: picture, intro, tip, until the place is READY. */}
+        <SceneTransitionOverlay />
         {/* Overlay splash: the home screen is already mounted beneath, so the
             final fade lands directly on the main screen (storyboard 4.0s). */}
         {!splashDone && <SplashScreen onDone={onSplashDone} />}

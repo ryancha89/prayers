@@ -17,7 +17,7 @@ import { useCoins } from '../../coins/store/coinStore';
  * counsellor, is not charged twice (`charged: 0`) and returns that counsellor's telling.
  *
  * POST /api/v1/prayers/journeys/:key/unlock { moment_id, tone, lang }
- *   200 { success, moment_id, charged, coin_balance, part, summary }
+ *   200 { success, moment_id, charged, coin_balance, moment_price, part, parts, summary }
  *   402 INSUFFICIENT_COINS { price, coin_balance } · 402 PURCHASE_REQUIRED (the pass is not owned)
  *   404 UNKNOWN_MOMENT · 503 the part could not be generated
  */
@@ -50,6 +50,9 @@ export type UnlockResult =
        *  includes `part`. */
       parts: JourneyPart[];
       summary: JourneySummary | null;
+      /** What a moment costs this account NOW, as the server prices it after this unlock (0 once the
+       *  journey is paid). Null from a server that does not send it. */
+      momentPrice: number | null;
     }
   | UnlockFailure;
 
@@ -95,6 +98,9 @@ export async function unlockMoment(req: UnlockRequest): Promise<UnlockResult> {
       part: asked,
       parts: [asked, ...others],
       summary: b.summary ? mapSummary(b.summary) : null,
+      // Read, not assumed (29-10): paying from the report book left the unlock card on "1,000 PC" —
+      // only the train set its price to 0, and by its own rule. The server's word goes everywhere.
+      momentPrice: typeof b.moment_price === 'number' ? b.moment_price : null,
     };
   } catch (e) {
     devlog(`[journey] unlock ${req.momentId} failed: ${String(e)}`);

@@ -19,7 +19,7 @@ import { CueTester } from '../components/CueTester';
 import { useCounselingStore } from '../store/counselingStore';
 import { useChatModeStore } from '../store/chatModeStore';
 import { useArchiveStore } from '../../archive/store/archiveStore';
-import { counselorAI, toneForCharacter } from '../api/counselorAI';
+import { counselorAI, faceForTone, toneForCharacter } from '../api/counselorAI';
 import { getUnityBridge, isNativeUnity } from '../bridge';
 import { CounselorStage } from '../components/CounselorStage';
 import { UnityHost } from '../components/UnityHost';
@@ -38,6 +38,7 @@ import { useSoundStore } from '../../../shared/audio/store';
 import { NoCoinsCard } from '../../coins/components/NoCoinsCard';
 import { CoinPill } from '../../coins/components/CoinPill';
 import { CONSULT_COST, fetchCoins } from '../../coins/api/coinsApi';
+import { canAffordTurn, fetchConsultPrice } from '../api/consultPrice';
 import { useCoins } from '../../coins/store/coinStore';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -59,17 +60,16 @@ const LoadingTips: React.FC = () => {
  *  See the deadline effect below for why it is this generous. */
 const UNITY_HANDSHAKE_TIMEOUT_MS = 30_000;
 
-/** What of the room the app's UI hides, for VIEW_INSETS: the top bar, and the overlay's panel
- *  along the bottom — full width in portrait, the centred dialogue band in landscape (02-10; it
- *  was a right-hand column before, reported as `right`). The band leaves the sides of the room
- *  open, but a camera can only frame into a rectangle, so the bottom is what it is told. All three
- *  boxes are measured in the room container's coordinates; the orientation no longer changes the
- *  answer and is kept for the shared useViewInsets signature. */
-export function roomCoveredPx(r: MeasuredRects, _landscape: boolean) {
+/** What of the room the app's UI hides, for VIEW_INSETS: the top bar, and the overlay's panel —
+ *  along the bottom in portrait, the column down the right in landscape (30-10: the bottom-centre
+ *  band of 02-10 stood over the counsellor once it carried the transcript; on the right the room
+ *  frames her in the left). All boxes are measured in the room container's coordinates. */
+export function roomCoveredPx(r: MeasuredRects, landscape: boolean) {
   const { host, topBar, panel } = r;
   if (!host) return null;
   const top = topBar ? topBar.y + topBar.height : 0;
   if (!panel) return { top };
+  if (landscape) return { top, right: Math.max(0, host.width - panel.x) };
   return { top, bottom: host.height - panel.y };
 }
 
@@ -192,8 +192,55 @@ export const CounselingRoomScreen: React.FC = () => {
     else setCatGesture(g => ({ name: cue.gesture, seq: (g?.seq ?? 0) + 1 }));
   }, []);
 
+  // Coins are asked for at the question, not at the door (16-10, user: "질문할때 없으면 유도해야해").
+  // A question the wallet cannot pay for is not sent: it stays in the box and the purchase card
+  // comes up over the room. The balance is re-read after every answer — each turn spends — so the
+  // check is against what the server holds now, not what it held when the player walked in.
+  //
+  // The check lives in the engine's `canAsk` since 29-10, so a spoken question (MIC_RESULT goes
+  // straight to the engine) and the suggestion chip are held to it too; a spoken one used to reach
+  // v2 with no coins and come back as "cannot gather the reading". `coinsShort` covers the refusal
+  // the check did not foresee (a 20-coin 깊은 풀이 turn on 10 coins, a stale balance): the coin card,
+  // not the upstream line.
+  //
+  // The price is the SERVER's for this player (29-10, consultPrice): 0 where CoinGate lets a turn
+  // through free (consult coins off, development), which is how a dev- account with 0 coins asks
+  // at all. Until it is known, and from a server that does not say, it is CONSULT_COST.
+  const [coinPrompt, setCoinPrompt] = useState(false);
+  const consultCost = useRef(CONSULT_COST);
+  /** Re-reads the wallet and the price; falls back to the coin wallet alone on an old server. */
+  const refreshPrice = useCallback(async (): Promise<number | null> => {
+    const p = await fetchConsultPrice();
+    if (p) {
+      consultCost.current = p.cost;
+      useCoins.getState().setBalance(p.balance);
+      return p.balance;
+    }
+    const r = await fetchCoins();
+    if (!r) return null;
+    useCoins.getState().setBalance(r.balance);
+    return r.balance;
+  }, []);
+  useEffect(() => { refreshPrice(); }, [refreshPrice]);
+  const canAsk = useCallback((): boolean => {
+    if (!canAffordTurn(useCoins.getState().balance, consultCost.current)) {
+      setCoinPrompt(true);
+      return false;
+    }
+    return true;
+  }, []);
+  const coinsShort = useCallback(async (): Promise<boolean> => {
+    const balance = await refreshPrice();
+    if (balance == null) return false;
+    const short = !canAffordTurn(balance, consultCost.current);
+    if (short) setCoinPrompt(true);
+    return short;
+  }, [refreshPrice]);
+
   const consultation = useConsultationEngine({
     topic,
+    canAsk,
+    coinsShort,
     voice,
     pixel,
     onCue,
@@ -247,35 +294,24 @@ export const CounselingRoomScreen: React.FC = () => {
     },
   });
 
-  // Coins are asked for at the question, not at the door (16-10, user: "질문할때 없으면 유도해야해").
-  // A question the wallet cannot pay for is not sent: it stays in the box and the purchase card
-  // comes up over the room. The balance is re-read after every answer — each turn spends — so the
-  // check is against what the server holds now, not what it held when the player walked in. A
-  // refusal the check did not foresee (a 20-coin 깊은 풀이 turn on 10 coins) shows the same card.
-  const [coinPrompt, setCoinPrompt] = useState(false);
+  // A typed question the wallet cannot pay for stays in the box (`ask` returns false).
   const ask = useCallback(
     (text: string): boolean => {
-      const balance = useCoins.getState().balance;
-      if (balance != null && balance < CONSULT_COST) {
-        setCoinPrompt(true);
-        return false;
-      }
+      if (!canAsk()) return false;
       consultation.submit(text);
       return true;
     },
-    [consultation],
+    [consultation, canAsk],
   );
+  // After every answer the balance is re-read. A failure is the engine's to ask about
+  // (`coinsShort`), which opens the card itself.
   useEffect(() => {
     return getUnityBridge().onEvent(e => {
-      if (e.type !== 'ORACLE_RESULT') return;
-      const failed = !e.payload?.ok;
-      fetchCoins().then(r => {
-        if (!r) return;
-        useCoins.getState().setBalance(r.balance);
-        if (failed && r.balance < CONSULT_COST) setCoinPrompt(true);
-      });
+      if (e.type !== 'ORACLE_RESULT' || !e.payload?.ok) return;
+      // The price too: in development a turn is free only while the wallet cannot pay.
+      refreshPrice();
     });
-  }, []);
+  }, [refreshPrice]);
 
   // What she remembers of last time, fetched while the player is still loading the room.
   //
@@ -362,6 +398,50 @@ export const CounselingRoomScreen: React.FC = () => {
       }
     });
   }, [onExit, exitTo]);
+
+  // The counselor's face follows the AI reply (26-10, #timeline-truongthinh): each scene's tone is
+  // already mapped to an emotion by the engine (TONE_PERFORMANCE) for the drawn stage; the Unity
+  // room gets the same value as FACE_EXPRESSION. Sent on CHANGE only — an undirected reply stays
+  // `neutral` and sends nothing, so the room's own [Beat] cues keep the face in that case.
+  // The player's face onto hers (26-10, "cả camera lẫn theo AI"): the iPhone camera through ARKit,
+  // her face on bones until the artist's blendshapes land. Off when the room closes; an "unsupported"
+  // answer (no camera, simulator) turns the switch back off.
+  const faceCamAvailable = !pixel && isNativeUnity();
+  const [faceCam, setFaceCam] = useState(false);
+  const toggleFaceCam = useCallback(() => {
+    setFaceCam(on => {
+      const next = !on;
+      getUnityBridge().sendEvent({ type: 'ROOM_FACE_TRACKING', payload: { on: next } });
+      return next;
+    });
+  }, []);
+  useEffect(() => {
+    if (!faceCamAvailable) return;
+    const off = getUnityBridge().onEvent(e => {
+      if (e.type === 'CHARACTER_TRACKING' && e.payload?.state === 'unsupported') setFaceCam(false);
+    });
+    return () => {
+      off();
+      getUnityBridge().sendEvent({ type: 'ROOM_FACE_TRACKING', payload: { on: false } });
+    };
+  }, [faceCamAvailable]);
+
+  // While the question is with the server (15-20 s) she is thinking it over, whatever face the
+  // last scene left her with; the answer's first scene takes over when it lands.
+  const face = consultation.state.pending
+    ? { emotion: 'thinking' as const, intensity: 0.7 }
+    : faceForTone(consultation.state.tone, consultation.state.emotion);
+  const { emotion, intensity } = face;
+  const sentFace = useRef<string>('neutral@1');
+  useEffect(() => {
+    const key = `${emotion}@${intensity}`;
+    if (pixel || !isNativeUnity() || key === sentFace.current) return;
+    sentFace.current = key;
+    getUnityBridge().sendEvent({
+      type: 'FACE_EXPRESSION',
+      payload: { target: 'counselor', emotion, intensity, hold: 0 },
+    });
+  }, [emotion, intensity, pixel]);
 
   // …and the room can also say NOTHING at all, which the block above does not cover.
   //
@@ -457,12 +537,10 @@ export const CounselingRoomScreen: React.FC = () => {
         // Not under the coin card: its own 대화하기 sat on top of the card's 충전하기 (10-17).
         visible={consultation.walking && !coinPrompt}
         counselor={counselor ? { id: params.counselorId, name: counselor.name } : undefined}
+        stood={consultation.stood}
       />
       <ConsultationOverlay
         history={previousMessages}
-        questionControls={!pixel && subject ? (
-          <SubjectSwitcher initialId={questionSubjectId} onChange={setQuestionSubjectId} />
-        ) : undefined}
         voice={voice}
         counselorName={counselor.name}
         state={consultation.state}
@@ -487,7 +565,7 @@ export const CounselingRoomScreen: React.FC = () => {
         <NoCoinsCard
           face={counselor.avatarImage ?? counselor.cardImage}
           accent={counselor.accent}
-          cost={CONSULT_COST}
+          cost={consultCost.current || CONSULT_COST}
           onClose={() => setCoinPrompt(false)}
         />
       )}
@@ -510,6 +588,7 @@ export const CounselingRoomScreen: React.FC = () => {
         onLayout={onTopBarLayout}
         testID="room-top-bar">
         {/* Silent on purpose, as the room has always been: its mix is Unity's (uiSounds.test). */}
+        <View style={styles.topLeft} pointerEvents="box-none">
         <View style={styles.topRight} pointerEvents="box-none">
           <RingButton testID="room-back" icon="back" size={RING_COMPACT} label={t('hud.back')} onPress={onExit} />
           {/* 일어서기 (10-17): out of the chair to walk the room; 대화하기 sits back down and the
@@ -519,6 +598,12 @@ export const CounselingRoomScreen: React.FC = () => {
               onPress={consultation.stand} />
           )}
         </View>
+          {/* Whose chart the question is about, in the header (30-10): it sat over the question box
+              and pushed the input up. Under the back button — the row beside it is full. */}
+          {!pixel && subject ? (
+            <SubjectSwitcher initialId={questionSubjectId} onChange={setQuestionSubjectId} />
+          ) : null}
+        </View>
         {/* The counselor's voice on/off (10-15). Her lines play on Unity's Voice bus; VOICE_AUDIO
             mutes it, the line already playing included, and the subtitles carry on. Remembered
             (sound store) and replayed to every room on READY. The pixel room has no voice to mute. */}
@@ -526,6 +611,16 @@ export const CounselingRoomScreen: React.FC = () => {
             room shows what is left; the pill opens the shop. */}
         <View style={styles.topRight} pointerEvents="box-none">
           <CoinPill />
+          {faceCamAvailable && (
+            <RingButton
+              testID="room-face-cam"
+              icon="camera"
+              size={RING_COMPACT}
+              active={faceCam}
+              label={t(faceCam ? 'character.cameraOff' : 'character.cameraOn')}
+              onPress={toggleFaceCam}
+            />
+          )}
           <RingButton
             testID="room-sound"
             icon={voiceOn ? 'speaker' : 'speakerOff'}
@@ -575,8 +670,9 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
+  topLeft: { gap: spacing.sm, alignItems: 'flex-start' },
   loadingVeil: {
     ...absoluteFill,
     alignItems: 'center',

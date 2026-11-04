@@ -77,6 +77,14 @@ jest.mock('../src/features/counseling/bridge', () => {
   const bridge = new NativeUnityBridge();
   const posted: { type: string; payload?: unknown }[] = [];
   bridge.registerView({ postMessage: (_g: string, _m: string, message: string) => posted.push(JSON.parse(message)) });
+  // The real module keeps Unity's music/sfx in step with the switches (syncUnityAudio); so does this.
+  const { useSoundStore: store } = jest.requireActual('../src/shared/audio/store');
+  const sync = () => {
+    const { musicEnabled, sfxEnabled } = store.getState();
+    bridge.sendWorldAudio(musicEnabled, sfxEnabled);
+  };
+  sync();
+  store.subscribe(sync);
   return {
     isNativeUnity: () => true,
     nativeUnityBridge: bridge,
@@ -118,6 +126,7 @@ import { useCoins } from '../src/features/coins/store/coinStore';
 import { useJourneyPlayer } from '../src/features/journey/player/journeyPlayer';
 import { NEWYEAR_2027 } from '../src/features/journey/data/journeys';
 import { useLanguageStore } from '../src/shared/i18n';
+import { useSceneTransition } from '../src/shared/transition/sceneTransition';
 import type { ViewInsetsPayload, WorldInitPayload } from '../src/features/counseling/types';
 
 const { mockPosted } = jest.requireMock('../src/features/counseling/bridge') as {
@@ -412,6 +421,8 @@ describe('the World screen', () => {
     await useSoundStore.persist.rehydrate();
     useSoundStore.setState({ musicEnabled: true, sfxEnabled: true });
     await render();
+    // The stored switches reach a freshly loaded hub on its READY (the bridge replays them).
+    fromUnity({ type: 'WORLD_READY' });
     expect(posts('WORLD_AUDIO').pop()?.payload).toEqual({ music: true, sfx: true });
     await act(async () => { useSoundStore.getState().setMusicEnabled(false); });
     expect(posts('WORLD_AUDIO').pop()?.payload).toEqual({ music: false, sfx: true });
@@ -579,7 +590,10 @@ describe('the World screen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('MyRoom');
     fire('blur');
     mockPosted.length = 0;
+    // The room's own transition has come and gone; the way back gets the world's (29-10).
+    useSceneTransition.setState({ active: null });
     fire('focus');
+    expect(useSceneTransition.getState().active?.place).toBe('world');
     expect(mockHost.mounts).toBe(1);
     fire('transitionEnd', { data: { closing: false } });
     expect(mockHost.mounts).toBe(2);
@@ -619,24 +633,11 @@ describe('the World screen', () => {
     }
   });
 
-  it('명상의 방: through the door, Home’s two sessions — the 10-minute meditation and the sleep guide', async () => {
+  it('명상의 방: through the door, straight into the room — its two sessions are chosen in there', async () => {
     await render();
     throughDoor('meditation');
-    // The door opens onto the choice, over the world, not into one of the two.
-    expect(overlayOpen('meditation')).toBe(true);
-    expect(mockNavigate).not.toHaveBeenCalled();
-    expect(byLabel('잠시 쉬어가기')).toBeDefined();
-    expect(byLabel('수면 가이드')).toBeDefined();
-    press('수면 가이드');
-    expect(mockNavigate).toHaveBeenCalledWith('SleepGuide');
-
-    mockNavigate.mockClear();
-    act(() => tree!.unmount());
-    tree = null;
-    await render();
-    await cardOf('meditation');
-    press('잠시 쉬어가기');
-    expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom');
+    expect(overlayOpen('meditation')).toBe(false);
+    expect(mockNavigate).toHaveBeenCalledWith('MeditationRoom', { fromDoor: true });
   });
 
   it('운세 여행의 방: boards the 2027 journey, or resumes the one under way', async () => {
@@ -644,7 +645,7 @@ describe('the World screen', () => {
     await cardOf('journey');
     expect(tree!.root.findAll(n => n.props.children === '이제, 2027년으로 출발할까요?').length).toBeGreaterThan(0);
     press('기차에 탑승하기');
-    expect(mockNavigate).toHaveBeenCalledWith('JourneyCounselor', { journeyId: NEWYEAR_2027.id });
+    expect(mockNavigate).toHaveBeenCalledWith('JourneyProfile', { journeyId: NEWYEAR_2027.id });
 
     act(() => tree!.unmount());
     tree = null;
@@ -662,7 +663,7 @@ describe('the World screen', () => {
     for (const tab of ['의상', '캐릭터', '배경', '아이템']) {
       expect(tree!.root.findAll(n => n.props.accessibilityLabel === tab).length).toBeGreaterThan(0);
     }
-    press('코인 충전');
+    press('Prayer Coins 충전');
     expect(useCoins.getState().shopOpen).toBe(true);
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(mockHost.unmounts).toBe(0);
@@ -701,7 +702,7 @@ describe('the World screen', () => {
     expect(posts('WORLD_GOTO').map(p => p.payload)).toEqual([{ zone: 'journey' }]);
     // Unity walks there, through the door, and the journey's own screen opens.
     throughDoor('journey');
-    expect(mockNavigate).toHaveBeenLastCalledWith('JourneyCounselor', { journeyId: NEWYEAR_2027.id });
+    expect(mockNavigate).toHaveBeenLastCalledWith('JourneyProfile', { journeyId: NEWYEAR_2027.id });
     act(() => tree!.unmount());
     tree = null;
     await render();

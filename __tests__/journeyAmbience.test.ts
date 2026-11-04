@@ -206,6 +206,22 @@ describe('the loops', () => {
     expect(last('jamb_platform.m4a').released).toBe(true);
   });
 
+  it('start nothing off screen — a state change while away waits for the return (29-10)', async () => {
+    await onPlatform();
+    player().setScreenActive(false);
+    await jest.advanceTimersByTimeAsync(AMBIENCE_FADE_MS + 50);
+    expect(stationAmbienceSlots()).toEqual([]);
+    // An unlock landing in the background moves the ride to a station: no bed comes up off screen.
+    useJourneyPlayer.setState({ status: 'paused', chapterIndex: IDX.health, transitionTo: null, stage: '' });
+    await jest.advanceTimersByTimeAsync(AMBIENCE_FADE_MS + 50);
+    expect(sounds('jamb_forest.m4a')).toHaveLength(0);
+    expect(stationAmbienceSlots()).toEqual([]);
+    // Back on the train: the station the state is at sounds.
+    player().setScreenActive(true);
+    await jest.advanceTimersByTimeAsync(AMBIENCE_FADE_MS + 50);
+    expect(vol('jamb_forest.m4a')).toBeCloseTo(STATION_AMBIENCE_VOLUME, 5);
+  });
+
   it('duck with the BGM under an effect', async () => {
     await onPlatform();
     playJourneySfx('orb');

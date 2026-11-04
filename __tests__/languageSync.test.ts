@@ -78,3 +78,63 @@ describe('language sync', () => {
     expect(useLanguageStore.getState().lang).toBe('ko');
   });
 });
+
+/**
+ * 29-10: a change made offline was undone on the next sign-in — the write failed, and the next
+ * sync applied the account's OLD language over it. Like the character (`characterUnpushed`), a
+ * persisted mark now says "push, don't pull" until the account has taken the device's choice.
+ */
+describe('a choice the account has not taken yet', () => {
+  beforeEach(() => useLanguageStore.setState({ langUnpushed: false }));
+  const settle = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
+
+  it('is pushed at the next sync instead of being overwritten', async () => {
+    mockSave.mockResolvedValueOnce(false);
+    setLanguageEverywhere('vi');
+    await settle();
+    expect(useLanguageStore.getState().langUnpushed).toBe(true);
+
+    mockFetch.mockResolvedValue('ja');
+    mockSave.mockResolvedValue(true);
+    await syncAccountLanguage();
+    expect(useLanguageStore.getState().lang).toBe('vi');
+    expect(mockSave).toHaveBeenLastCalledWith('vi');
+    expect(useLanguageStore.getState().langUnpushed).toBe(false);
+
+    // Taken: from now on the account wins again.
+    mockFetch.mockResolvedValue('ja');
+    await syncAccountLanguage();
+    expect(useLanguageStore.getState().lang).toBe('ja');
+  });
+
+  it('stays marked while the push keeps failing', async () => {
+    mockSave.mockResolvedValue(false);
+    setLanguageEverywhere('vi');
+    await settle();
+    mockFetch.mockResolvedValue('ja');
+    await syncAccountLanguage();
+    expect(useLanguageStore.getState().lang).toBe('vi');
+    expect(useLanguageStore.getState().langUnpushed).toBe(true);
+  });
+
+  it('a write that lands clears the mark', async () => {
+    setLanguageEverywhere('vi');
+    await settle();
+    expect(useLanguageStore.getState().langUnpushed).toBe(false);
+  });
+
+  it('survives a relaunch (persisted with the language)', async () => {
+    mockSave.mockResolvedValue(false);
+    setLanguageEverywhere('vi');
+    await settle();
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    const row = await AsyncStorage.getItem('prayers.lang.v1');
+    expect(JSON.parse(row).state).toMatchObject({ lang: 'vi', langUnpushed: true });
+    // …and read back on the next launch.
+    useLanguageStore.setState({ langUnpushed: false }, false);
+    await AsyncStorage.setItem('prayers.lang.v1', row);
+    await useLanguageStore.persist.rehydrate();
+    expect(useLanguageStore.getState().lang).toBe('vi');
+    expect(useLanguageStore.getState().langUnpushed).toBe(true);
+  });
+});

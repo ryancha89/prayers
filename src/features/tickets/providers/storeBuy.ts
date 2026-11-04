@@ -1,7 +1,7 @@
 import { apiBase } from '../../../shared/config/api';
 import { devlog } from '../../../shared/devlog';
 import { authedFetch } from '../../auth/api/headers';
-import { buyProduct, finishPurchase, storeAvailable } from './purchase';
+import { buyProduct, finishPurchase, storeAvailable, type ProductPurchase } from './purchase';
 
 /**
  * The one way a store product is bought and handed to the server — coin packs and the journey pass
@@ -54,8 +54,10 @@ export async function confirmStorePurchase(path: string, input: StoreConfirmInpu
 
 export type StoreBuyResult<R> =
   | { ok: true; confirmed: R }
-  /** The server answered and did not accept it: `confirmed` says why. Nothing was consumed. */
-  | { ok: false; reason: 'refused'; confirmed: R }
+  /** The server answered and did not accept it (or did not answer): `confirmed` says why. Nothing was
+   *  consumed. `purchase` is set when the STORE took the money (not the dev platform): it is still
+   *  unfinished, and the caller owns getting it confirmed — the player has paid (29-10). */
+  | { ok: false; reason: 'refused'; confirmed: R; purchase?: ProductPurchase }
   /** 'pending' (Android): accepted, not paid yet — it is credited when the store delivers it paid. */
   | { ok: false; reason: 'cancelled' | 'pending' | 'unavailable' | 'failed' };
 
@@ -87,7 +89,7 @@ export async function buyWithStore<R>(opts: {
     purchaseToken: purchase.purchaseToken,
     transactionId: purchase.transactionId,
   });
-  if (!opts.accepted(r)) return { ok: false, reason: 'refused', confirmed: r };
+  if (!opts.accepted(r)) return { ok: false, reason: 'refused', confirmed: r, purchase };
   await finishPurchase(purchase);
   return { ok: true, confirmed: r };
 }

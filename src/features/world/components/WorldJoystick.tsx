@@ -4,6 +4,7 @@ import Svg, { Circle, Path, Polygon } from 'react-native-svg';
 import { getUnityBridge } from '../../counseling/bridge';
 import { colors } from '../../../shared/theme';
 import { GoldKnob, starPoints } from '../../../shared/components/Ornaments';
+import { useKeyboardWalk } from './useKeyboardWalk';
 
 /**
  * The world's analogue stick, in the Zenless Zone Zero manner (user 02-10, two ZZZ screenshots):
@@ -23,8 +24,8 @@ import { GoldKnob, starPoints } from '../../../shared/components/Ornaments';
  */
 /** The touch zone (the parent places it bottom-left). */
 export const STICK_ZONE = { width: 220, height: 220 };
-const RING = 132;
-const KNOB = 52;
+const RING = 106; // 132 × 0.8 (10-22, "조이스틱 20% 축소")
+const KNOB = 42; // 52 × 0.8
 const RADIUS = (RING - KNOB) / 2 + 4;
 /** Below this share of the radius the stick is at rest — a resting thumb must not creep. */
 const DEAD = 0.12;
@@ -32,6 +33,8 @@ const DEAD = 0.12;
 const STEP = 0.05;
 /** The ring rests whole inside the zone's corner, its star clear of the zone's bottom. */
 const REST_AT = { x: RING / 2 + 6, y: STICK_ZONE.height - RING / 2 - 14 };
+/** The resting ring's right edge, from the zone's left — what a screen keeps clear beside the stick. */
+export const STICK_RING_RIGHT = REST_AT.x + RING / 2;
 /** Room under the ring for the star that hangs off its bottom. */
 const TAIL = 12;
 
@@ -53,11 +56,47 @@ function arc(c: number, r: number, a0: number, a1: number) {
   return `M ${p(a0)} A ${r} ${r} 0 0 1 ${p(a1)}`;
 }
 
-export const WorldJoystick: React.FC<{ visible: boolean }> = ({ visible }) => {
+/**
+ * TWO FINGERS (10-23, "이동중에 달리기 누르면 달려야해"): the stick keeps its touch (it refuses to hand
+ * it over), so RN routes every later finger to it too — a run tap while steering never reached the
+ * button, and PanResponder's dx/dy average all fingers, so the second one also yanked the knob. The
+ * stick now follows only its own finger (by identifier) and hands any other finger's touch-down to
+ * `onOtherTouch` (window coordinates), for the screen to hit-test its buttons.
+ *
+ * LOOK WHILE STEERING (04-11, "when walking running can not control screen angle change"): the same
+ * relay, held for the finger's whole life. The first OTHER finger that moves past the slop becomes a
+ * look-around drag, streamed to `onOtherDrag` ('begin' at the touch-down point, then 'move'/'end' in
+ * window coordinates) — the screen feeds it to the follow camera's `look`. A finger that never moves
+ * stays what it was: a button tap, already delivered through `onOtherTouch`.
+ */
+export const WorldJoystick: React.FC<{
+  visible: boolean;
+  onOtherTouch?: (pageX: number, pageY: number) => void;
+  onOtherDrag?: (phase: 'begin' | 'move' | 'end', pageX: number, pageY: number) => void;
+}> = ({ visible, onOtherTouch, onOtherDrag }) => {
   const knob = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const sent = useRef({ x: 0, y: 0 });
-  /** Where the ring sits (zone-local centre): its corner at rest, under the thumb in use. */
-  const [origin, setOrigin] = useState(REST_AT);
+  /** Where the ring sits (zone-local centre). Fixed in the corner (10-22, "움직이면 안되는데 아래
+   *  고정되어야함"): it used to jump under the thumb, which put it mid-screen in landscape. */
+  const origin = REST_AT;
+  /** Where the touch began, relative to the ring's centre — the drag is added to it, so the knob
+   *  goes where the finger is even when the touch did not start dead centre. */
+  const start = useRef({ x: 0, y: 0 });
+  /** The steering finger, and where it went down (window coordinates). */
+  const finger = useRef<{ id: string; x: number; y: number } | null>(null);
+  const other = useRef(onOtherTouch);
+  other.current = onOtherTouch;
+  const otherDrag = useRef(onOtherDrag);
+  otherDrag.current = onOtherDrag;
+  /** The second finger being tracked as a (possible) look drag. */
+  const look = useRef<{ id: string; x: number; y: number; moved: boolean } | null>(null);
+  /** Movement before the second finger counts as a look drag rather than a button tap. */
+  const LOOK_SLOP = 10;
+  const endLook = () => {
+    const l = look.current;
+    look.current = null;
+    if (l?.moved) otherDrag.current?.('end', l.x, l.y);
+  };
   /** Steering angle for the gold arc (radians, screen space), null at rest. */
   const [heading, setHeading] = useState<number | null>(null);
 
@@ -79,7 +118,6 @@ export const WorldJoystick: React.FC<{ visible: boolean }> = ({ visible }) => {
     } else {
       knob.setValue({ x: 0, y: 0 });
     }
-    setOrigin(REST_AT);
     send(0, 0);
   };
 
@@ -90,24 +128,65 @@ export const WorldJoystick: React.FC<{ visible: boolean }> = ({ visible }) => {
         onMoveShouldSetPanResponder: () => true,
         onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: e => {
-          // The ring moves under the thumb, kept fully inside the zone.
-          const r = RING / 2;
-          const x = Math.max(r, Math.min(STICK_ZONE.width - r, e.nativeEvent.locationX ?? REST_AT.x));
-          const y = Math.max(r, Math.min(STICK_ZONE.height - r - TAIL, e.nativeEvent.locationY ?? REST_AT.y));
-          setOrigin({ x, y });
+          const n = e.nativeEvent;
+          finger.current = { id: String(n.identifier), x: n.pageX, y: n.pageY };
+          start.current = {
+            x: (e.nativeEvent.locationX ?? REST_AT.x) - REST_AT.x,
+            y: (e.nativeEvent.locationY ?? REST_AT.y) - REST_AT.y,
+          };
         },
-        onPanResponderMove: (_e, g) => {
-          const v = stickVector(g.dx, g.dy);
-          knob.setValue({ x: v.kx, y: v.ky });
-          setHeading(v.x === 0 && v.y === 0 ? null : Math.atan2(v.ky, v.kx));
-          send(v.x, v.y);
+        // Every touch-down while the stick is held, its own first one included.
+        onPanResponderStart: e => {
+          for (const t of e.nativeEvent.changedTouches) {
+            if (String(t.identifier) === finger.current?.id) continue;
+            other.current?.(t.pageX, t.pageY);
+            if (!look.current) look.current = { id: String(t.identifier), x: t.pageX, y: t.pageY, moved: false };
+          }
         },
-        onPanResponderRelease: () => release(),
-        onPanResponderTerminate: () => release(),
+        onPanResponderMove: e => {
+          const f = finger.current;
+          const t = f && e.nativeEvent.touches.find(x => String(x.identifier) === f.id);
+          if (f && t) {
+            const v = stickVector(start.current.x + t.pageX - f.x, start.current.y + t.pageY - f.y);
+            knob.setValue({ x: v.kx, y: v.ky });
+            setHeading(v.x === 0 && v.y === 0 ? null : Math.atan2(v.ky, v.kx));
+            send(v.x, v.y);
+          }
+          // The second finger: a look-around drag once past the slop (see the header).
+          const l = look.current;
+          const o = l && e.nativeEvent.touches.find(x => String(x.identifier) === l.id);
+          if (!l || !o) return;
+          if (!l.moved) {
+            if (Math.hypot(o.pageX - l.x, o.pageY - l.y) <= LOOK_SLOP) return;
+            l.moved = true;
+            otherDrag.current?.('begin', l.x, l.y);
+          }
+          l.x = o.pageX; l.y = o.pageY;
+          otherDrag.current?.('move', o.pageX, o.pageY);
+        },
+        // The steering finger lifting stops the walk even while another finger is still down.
+        onPanResponderEnd: e => {
+          if (e.nativeEvent.changedTouches.some(t => String(t.identifier) === look.current?.id)) endLook();
+          if (e.nativeEvent.changedTouches.some(t => String(t.identifier) === finger.current?.id)) {
+            finger.current = null;
+            release();
+          }
+        },
+        onPanResponderRelease: () => { endLook(); finger.current = null; release(); },
+        onPanResponderTerminate: () => { endLook(); finger.current = null; release(); },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
+  // The keyboard drives the same walk (WASD / arrows, 30-10); the knob shows where it is heading.
+  // A finger on the stick wins: keys are ignored while it steers.
+  useKeyboardWalk(visible, (x, y) => {
+    if (finger.current) return;
+    knob.setValue({ x: x * RADIUS, y: -y * RADIUS });
+    setHeading(x === 0 && y === 0 ? null : Math.atan2(-y, x));
+    send(x, y);
+  });
 
   // Hidden (an overlay opened) or gone: the player must stop.
   useEffect(() => { if (!visible) release(false); }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps

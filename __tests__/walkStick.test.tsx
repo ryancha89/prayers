@@ -61,10 +61,16 @@ beforeEach(() => {
 });
 afterEach(() => jest.restoreAllMocks());
 
-const evt = (x = 60, y = 160) => ({ nativeEvent: { locationX: x, locationY: y } }) as never;
+// The ring's fixed centre in its zone (WorldJoystick REST_AT: RING/2 + 6, 220 − RING/2 − 14). The
+// ring no longer jumps to the touch, so a grab off-centre would already be a push.
+// The stick follows its own finger by identifier and window position (pageX/Y), so a second finger
+// can neither steer it nor hide from the screen (10-23).
+const evt = (x = 59, y = 153) => ({ nativeEvent: { locationX: x, locationY: y, identifier: 1, pageX: x, pageY: y } }) as never;
+const moveEvt = (dx: number, dy: number, extra: object[] = []) =>
+  ({ nativeEvent: { touches: [{ identifier: 1, pageX: 59 + dx, pageY: 153 + dy }, ...extra], changedTouches: [] } }) as never;
 const push = (dx: number, dy: number) =>
   act(() => {
-    stick.onPanResponderMove!(evt(), { dx, dy } as never);
+    stick.onPanResponderMove!(moveEvt(dx, dy), { dx, dy } as never);
   });
 const grab = () => act(() => stick.onPanResponderGrant!(evt(), {} as never));
 const lift = () => act(() => stick.onPanResponderRelease!(evt(), {} as never));
@@ -104,6 +110,25 @@ describe('the walk-in stick', () => {
     push(0, -200);
     expect(last()).toEqual({ type: 'WALK_INPUT', payload: { x: 0, y: 1 } });
     lift();
+    expect(last()).toEqual({ type: 'WALK_INPUT', payload: { x: 0, y: 0 } });
+    act(() => tree.unmount());
+  });
+
+  it('a second finger neither steers nor stops it; lifting the steering finger does (10-23)', () => {
+    const tree = mount();
+    grab();
+    push(0, -200);
+    act(() => {
+      stick.onPanResponderMove!(moveEvt(0, -200, [{ identifier: 2, pageX: 900, pageY: 400 }]), { dx: 400, dy: 0 } as never);
+    });
+    expect(last()).toEqual({ type: 'WALK_INPUT', payload: { x: 0, y: 1 } });
+    act(() => {
+      stick.onPanResponderEnd!({ nativeEvent: { changedTouches: [{ identifier: 2 }], touches: [] } } as never, {} as never);
+    });
+    expect(last()).toEqual({ type: 'WALK_INPUT', payload: { x: 0, y: 1 } });
+    act(() => {
+      stick.onPanResponderEnd!({ nativeEvent: { changedTouches: [{ identifier: 1 }], touches: [] } } as never, {} as never);
+    });
     expect(last()).toEqual({ type: 'WALK_INPUT', payload: { x: 0, y: 0 } });
     act(() => tree.unmount());
   });

@@ -11,7 +11,10 @@ import { sfx } from '../../../shared/audio/sfx';
 export const ConversationRow: React.FC<{
   conversation: ConversationSummary;
   onPress: () => void;
-}> = ({ conversation, onPress }) => {
+  /** Why this conversation cannot be opened on this phone (29-10): shown in place of the last line,
+   *  and the row stops taking the tap. Undefined = it opens. */
+  unavailable?: string;
+}> = ({ conversation, onPress, unavailable }) => {
   const t = useT();
   const lang = useLang();
   // Re-derive from the counselor id so the list follows the language — and so the face comes from
@@ -27,7 +30,11 @@ export const ConversationRow: React.FC<{
       sfx.tap();
       onPress();
     }}
-    style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+    disabled={!!unavailable}
+    accessibilityRole="button"
+    accessibilityState={{ disabled: !!unavailable }}
+    testID={`conversation-${conversation.sessionId}`}
+    style={({ pressed }) => [styles.row, pressed && styles.pressed, !!unavailable && styles.unavailable]}>
     <View style={[styles.portrait, { backgroundColor: conversation.counselorAccent }]}>
       {counselor?.avatarImage ? (
         <Image source={counselor.avatarImage} style={styles.portraitImg} />
@@ -40,8 +47,8 @@ export const ConversationRow: React.FC<{
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.time}>{relativeTime(conversation.updatedAt)}</Text>
       </View>
-      <Text style={styles.last} numberOfLines={1}>
-        {conversation.lastMessage || t('conv.tapToContinue')}
+      <Text style={[styles.last, !!unavailable && styles.why]} numberOfLines={unavailable ? 2 : 1}>
+        {unavailable ?? (conversation.lastMessage || t('conv.tapToContinue'))}
       </Text>
     </View>
   </Pressable>
@@ -58,6 +65,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   pressed: { backgroundColor: colors.card },
+  unavailable: { opacity: 0.55 },
+  why: { fontStyle: 'italic' },
   portraitImg: { width: '100%', height: '100%' },
   portrait: {
     width: 56,

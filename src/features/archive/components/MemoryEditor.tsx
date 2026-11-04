@@ -8,6 +8,7 @@ import { Icon } from '../../../shared/components/Icon';
 import { FIELDS, MOOD_ICON, isDiaryKind, type ArchiveCategory, type FieldSpec } from '../types';
 import { dayKey } from '../questions';
 import { validate } from '../validation';
+import { PLAN_SCOPES, maskWhen, placeholderOf, quickPicks, rawOf, scopeOf, storedOf, type PlanScope } from '../planWhen';
 
 /**
  * One form for every category, built from `FIELDS`. The headline (`content`) is always first;
@@ -43,6 +44,8 @@ export const MemoryEditor: React.FC<{
     ...(initial?.details ?? {}),
   }));
   const set = (k: string, v: string) => setDetails(d => ({ ...d, [k]: v }));
+  // The 계획's date as typed — `2027`, `2027-03` — while `details.date` holds the whole day.
+  const [whenRaw, setWhenRaw] = useState(() => rawOf(scopeOf(details), details.date ?? ''));
 
   const errors = Object.fromEntries(specs.map(f => [f.key, validate(f, details[f.key])]));
   const complete =
@@ -92,6 +95,62 @@ export const MemoryEditor: React.FC<{
         : 'archive.f.name';
 
   const renderField = (f: FieldSpec) => {
+    if (f.kind === 'when') {
+      const scope = scopeOf(details);
+      const enter = (s: PlanScope, raw: string) => {
+        setWhenRaw(raw);
+        setDetails(d => ({ ...d, scope: s, [f.key]: storedOf(s, raw) }));
+      };
+      return (
+        <View key={f.key} style={styles.field}>
+          <Text style={styles.label}>{t(f.label as TranslationKey)}</Text>
+          {/* 날짜 / 월 / 년. Switching keeps what it can: 2026-10-22 → 2026-10 → 2026. */}
+          <View style={styles.chips}>
+            {PLAN_SCOPES.map(s => (
+              <Pressable
+                key={s}
+                testID={`when-scope-${s}`}
+                onPress={() => {
+                  sfx.tap();
+                  if (s !== scope) enter(s, rawOf(s, storedOf(scope, whenRaw)));
+                }}
+                style={[styles.chip, s === scope && styles.chipOn]}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: s === scope }}>
+                <Text style={[styles.chipText, s === scope && styles.chipTextOn]}>{t(`archive.scope.${s}` as TranslationKey)}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <TextInput
+            testID="when-input"
+            style={styles.input}
+            value={whenRaw}
+            onChangeText={v => enter(scope, maskWhen(scope, v))}
+            placeholder={placeholderOf(scope)}
+            placeholderTextColor={colors.textMuted}
+            keyboardType="number-pad"
+            maxLength={placeholderOf(scope).length}
+          />
+          {/* 올해 / 내년, 이번 달 / 다음 달 — one tap for the usual answers. */}
+          {quickPicks(scope).length > 0 && (
+            <View style={styles.chips}>
+              {quickPicks(scope).map(q => (
+                <Pressable
+                  key={q.raw}
+                  testID={`when-quick-${q.raw}`}
+                  onPress={() => { sfx.tap(); enter(scope, q.raw); }}
+                  style={[styles.chip, whenRaw === q.raw && styles.chipOn]}>
+                  <Text style={[styles.chipText, whenRaw === q.raw && styles.chipTextOn]}>{t(q.label)}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+          {errors[f.key] ? (
+            <Text style={styles.error}>{t('archive.err.when', { format: placeholderOf(scope) })}</Text>
+          ) : null}
+        </View>
+      );
+    }
     if (f.kind === 'choice') {
       return (
         <View key={f.key} style={styles.field}>

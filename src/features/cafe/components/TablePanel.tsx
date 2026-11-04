@@ -9,7 +9,7 @@ import { useT, type TranslationKey } from '../../../shared/i18n';
 import { sfx } from '../../../shared/audio/sfx';
 import { useScreen } from '../../../shared/device/screen';
 import { IVORY, RING_COMPACT, SERIF } from '../../../shared/components/hud/Hud';
-import type { TarotConsultant } from '../api/cafeApi';
+import { CAFE_QUESTION_MAX, offersRetry, type TarotConsultant, type TarotReading } from '../api/cafeApi';
 import { CAFE_ART } from '../assets/art';
 import { Bubble, GhostButton, GoldButton, INK, Medallion, PanelBackdrop, PriceChip, ReaderFace } from './CafeChrome';
 import {
@@ -17,6 +17,7 @@ import {
   SPREAD_SIZE,
   STEP_ADVICE,
   STEP_OVERALL,
+  canChangeReader,
   inTarot,
   type CafeTable,
   type TableError,
@@ -46,6 +47,9 @@ const ERROR_COPY: Record<TableError, TranslationKey> = {
   invalidCards: 'cafe.pay.err.invalidCards',
   insufficient: 'cafe.pay.err.insufficient',
   notFound: 'cafe.pay.err.notFound',
+  questionInvalid: 'cafe.pay.err.questionInvalid',
+  unknownConsultant: 'cafe.pay.err.unknownConsultant',
+  rejected: 'cafe.pay.err.rejected',
 };
 
 /**
@@ -142,7 +146,9 @@ export const TablePanel: React.FC<{
             : { height: panelH + safe.bottom, paddingBottom: bottomPad, paddingLeft: safe.left + spacing.md, paddingRight: safe.right + spacing.md },
         ]}>
         <PanelBackdrop side={landscape} />
-        {s.consultant && inTarot(s) && <ReaderHead reader={s.consultant} onEnd={table.end} />}
+        {s.consultant && inTarot(s) && (
+          <ReaderHead reader={s.consultant} onEnd={table.end} onChange={canChangeReader(s) ? table.changeReader : undefined} />
+        )}
         <Body table={table} t={t} />
       </View>
     </KeyboardAvoidingView>
@@ -236,6 +242,9 @@ const Body: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) => {
       return (
         <>
           <Lines follow>
+            {/* The reading stays above the follow-ups, scrolled up to (29-10: "상담한 이력 볼 수 있어야함"). */}
+            {s.question ? <Bubble mine who={t('cafe.you')} text={s.question} /> : null}
+            {s.reading ? <ReadingRecap reading={s.reading} t={t} /> : null}
             <Said who={s.consultant?.name ?? ''} text={s.line} />
             {s.followups.map((f, i) => (
               <View key={i} style={styles.exchange}>
@@ -249,6 +258,8 @@ const Body: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) => {
                 {s.error ? <ErrorRow table={table} error={s.error} t={t} /> : <Bubble who={s.consultant?.name} text={t('cafe.thinking')} muted />}
               </View>
             ) : null}
+            {/* A refusal that let the question go (404, a bad question): still said, nothing locked. */}
+            {!s.pending && s.error ? <ErrorRow table={table} error={s.error} t={t} /> : null}
           </Lines>
           <GhostButton label={t('cafe.tarot.again')} icon="sparkle" onPress={table.askAnother} style={styles.selfStart}
             testID="cafe-again" />
@@ -257,7 +268,8 @@ const Body: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) => {
             initial=""
             placeholder={t('cafe.tarot.followupPlaceholder')}
             label={t('cafe.send')}
-            disabled={s.busy || !!s.pending}
+            // 404: the server has no such reading, so another follow-up would only be refused again.
+            disabled={s.busy || !!s.pending || s.error === 'notFound'}
             onSend={table.submitFollowup}
             testID="cafe-followup"
             price={CAFE_PRICE.followup}
@@ -389,16 +401,20 @@ export const ReaderRow: React.FC<{ reader: TarotConsultant; onPress: () => void;
   </Pressable>
 );
 
-const ReaderHead: React.FC<{ reader: TarotConsultant; onEnd: () => void }> = ({ reader, onEnd }) => (
+const ReaderHead: React.FC<{ reader: TarotConsultant; onEnd: () => void; onChange?: () => void }> = ({ reader, onEnd, onChange }) => {
+  const t = useT();
+  return (
   <View style={styles.headRow}>
     <ReaderFace reader={reader} size={42} glow />
     <View style={styles.grow}>
       <Text style={styles.guest} numberOfLines={1}>{reader.name}</Text>
       {reader.title ? <Text style={styles.readerTitle} numberOfLines={1}>{reader.title}</Text> : null}
     </View>
+    {onChange && <GhostButton label={t('cafe.tarot.change')} icon="people" onPress={onChange} testID="cafe-tarot-change" />}
     <EndButton onPress={onEnd} />
   </View>
-);
+  );
+};
 
 const EndButton: React.FC<{ onPress: () => void }> = ({ onPress }) => {
   const t = useT();
@@ -411,6 +427,31 @@ const Presenting: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) 
   const r = s.reading;
   if (!r || s.step < 0) {
     return <Lines><Waiting icon="sparkle" text={t('cafe.tarot.flipping')} /></Lines>;
+  }
+  // Her question before the summary (30-10): the answer goes into it. Skip keeps the reading's own.
+  if (s.clarify === 'asking' || s.clarify === 'thinking') {
+    const thinking = s.clarify === 'thinking';
+    return (
+      <>
+        <Lines follow>
+          <Said who={s.consultant?.name ?? ''} text={s.line} />
+          {s.clarifyAnswer ? <Bubble mine who={t('cafe.you')} text={s.clarifyAnswer} /> : null}
+          {thinking ? <Bubble who={s.consultant?.name} text={t('cafe.tarot.clarifyThinking')} muted /> : null}
+        </Lines>
+        {!thinking ? (
+          <GhostButton testID="cafe-clarify-skip" label={t('cafe.tarot.clarifySkip')} onPress={table.skipClarify} style={styles.selfStart} />
+        ) : null}
+        <Composer
+          key="clarify"
+          initial=""
+          placeholder={t('cafe.tarot.clarifyPlaceholder')}
+          label={t('cafe.send')}
+          disabled={thinking}
+          onSend={table.submitClarify}
+          testID="cafe-clarify"
+        />
+      </>
+    );
   }
   let head: string;
   let title: string;
@@ -455,6 +496,30 @@ const Presenting: React.FC<{ table: CafeTable; t: Translate }> = ({ table, t }) 
   );
 };
 
+/** The whole reading, once it is over: the seven cards, the overall and the advice, in one card. */
+const ReadingRecap: React.FC<{ reading: TarotReading; t: Translate }> = ({ reading, t }) => (
+  <View style={styles.readingCard} testID="cafe-reading-recap">
+    {reading.cards.map((c, i) => (
+      <View key={i} style={styles.recapItem}>
+        <Text style={styles.cardHead}>{[t('cafe.tarot.cardOf', { n: i + 1 }), c.position].filter(Boolean).join(' · ')}</Text>
+        <Text style={styles.recapTitle}>
+          {`${c.name} · ${t(c.orientation === 'reversed' ? 'cafe.tarot.reversed' : 'cafe.tarot.upright')}`}
+        </Text>
+        <Text style={styles.reply}>{c.meaning}</Text>
+      </View>
+    ))}
+    <View style={styles.cardRule} />
+    <View style={styles.recapItem}>
+      <Text style={styles.recapTitle}>{t('cafe.tarot.overall')}</Text>
+      <Text style={styles.reply}>{reading.overall}</Text>
+    </View>
+    <View style={styles.recapItem}>
+      <Text style={styles.recapTitle}>{t('cafe.tarot.advice')}</Text>
+      <Text style={styles.reply}>{reading.advice}</Text>
+    </View>
+  </View>
+);
+
 /** Where the reading is: seven card pips, then the overall and the advice as diamonds. */
 const Progress: React.FC<{ step: number }> = ({ step }) => (
   <View style={[styles.dots, styles.grow]}>
@@ -487,22 +552,29 @@ const Lines: React.FC<{ children: React.ReactNode; follow?: boolean }> = ({ chil
 const Said: React.FC<{ who: string; text: string }> = ({ text }) =>
   text ? <Bubble text={text} textID="cafe-reader-line" /> : null;
 
-const ErrorRow: React.FC<{ table: CafeTable; error: TableError; t: Translate }> = ({ table, error, t }) => (
-  <View style={styles.errorBox} testID="cafe-table-error">
-    <View style={styles.waitRow}>
-      <Icon name="bolt" size={16} color="#F5B38B" />
-      <Text style={[styles.errorText, styles.grow]}>{t(ERROR_COPY[error])}</Text>
+/** Each refusal in its own words (29-10: every 422 read "invalid cards"). Retry only where it can
+ *  help (cafeApi.offersRetry) — in the follow-up, only while the question is still there to resend;
+ *  a follow-up refused with nothing charged can also be dropped for another question. */
+const ErrorRow: React.FC<{ table: CafeTable; error: TableError; t: Translate }> = ({ table, error, t }) => {
+  const s = table.state;
+  const canRetry = offersRetry(error) && (s.stage !== 'followup' || !!s.pending);
+  const canDrop = s.stage === 'followup' && !!s.pending && error !== 'failed';
+  return (
+    <View style={styles.errorBox} testID="cafe-table-error">
+      <View style={styles.waitRow}>
+        <Icon name="bolt" size={16} color="#F5B38B" />
+        <Text style={[styles.errorText, styles.grow]}>{t(ERROR_COPY[error])}</Text>
+      </View>
+      <View style={styles.errorButtons}>
+        {error === 'insufficient' && (
+          <GoldButton label={t('cafe.pay.getCoins')} onPress={() => { sfx.tap(); table.getCoins(); }} />
+        )}
+        {canRetry ? <GhostButton testID="cafe-table-retry" label={t('cafe.retry')} onPress={table.retry} /> : null}
+        {canDrop ? <GhostButton testID="cafe-followup-drop" label={t('cafe.cancel')} onPress={table.dropFollowup} /> : null}
+      </View>
     </View>
-    <View style={styles.errorButtons}>
-      {error === 'insufficient' && (
-        <GoldButton label={t('cafe.pay.getCoins')} onPress={() => { sfx.tap(); table.getCoins(); }} />
-      )}
-      {error !== 'invalidCards' && error !== 'notFound' && (
-        <GhostButton testID="cafe-table-retry" label={t('cafe.retry')} onPress={table.retry} />
-      )}
-    </View>
-  </View>
-);
+  );
+};
 
 /** A text box and its send button. `initial` re-seeds it when it mounts (a cancelled question comes
  *  back in the box rather than vanishing). */
@@ -536,7 +608,7 @@ const Composer: React.FC<{
         placeholder={placeholder}
         placeholderTextColor={colors.textMuted}
         multiline
-        maxLength={500}
+        maxLength={CAFE_QUESTION_MAX}
       />
       <Pressable testID={`${testID}-send`} onPress={send} disabled={off} accessibilityRole="button" accessibilityLabel={label}
         accessibilityState={{ disabled: off }} style={({ pressed }) => [styles.send, price != null && styles.sendWide, off && styles.muted, pressed && styles.pressed]}>
@@ -616,6 +688,8 @@ const styles = StyleSheet.create({
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   cardTitle: { fontFamily: SERIF, fontSize: 20, color: IVORY },
   cardRule: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(233,196,106,0.45)' },
+  recapItem: { gap: 2, paddingVertical: spacing.xs },
+  recapTitle: { fontFamily: SERIF, fontSize: 16, color: IVORY },
   footRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   dots: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   pip: { width: 8, height: 12, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(233,196,106,0.45)' },

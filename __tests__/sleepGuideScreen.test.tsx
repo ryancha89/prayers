@@ -103,3 +103,27 @@ it('pauses and resumes both, ends on Replay, and Replay starts again from the to
   act(() => tree.unmount()); // leaving stops the session
   expect(mockSounds.every(s => s.released)).toBe(true);
 });
+
+/* ---- the yoga girl behind the guide (22-10) ---------------------------------------------------- */
+
+it('tells the girl in the room to sleep-breathe while the guide plays, slower than the room, out-breath longest', () => {
+  const { roomStateFor, SLEEP_BREATH } = require('../src/features/meditation/screens/SleepGuideScreen');
+  expect(roomStateFor('running')).toBe('breathing');
+  expect(roomStateFor('paused')).toBe('paused');
+  expect(roomStateFor('done')).toBe('done');
+  expect(roomStateFor('loading')).toBe('idle');
+  const cycle = SLEEP_BREATH.inMs + SLEEP_BREATH.holdMs + SLEEP_BREATH.outMs;
+  expect(cycle).toBeGreaterThan(14000 - 1500); // not quicker than the meditation room's 4-4-6 by much
+  expect(SLEEP_BREATH.outMs).toBeGreaterThan(SLEEP_BREATH.inMs);
+});
+
+
+it('waits on the sleep card\'s picture, not the meditation threshold\'s lone lantern', async () => {
+  let tree!: ReactTestRenderer.ReactTestRenderer;
+  await act(async () => {
+    tree = ReactTestRenderer.create(<SleepGuideScreen />);
+  });
+  expect(tree.root.findAll(n => n.props.testID === 'sleep-art').length).toBeGreaterThan(0);
+  expect(tree.root.findAll(n => n.props.testID === 'med-threshold')).toHaveLength(0);
+  act(() => tree.unmount());
+});

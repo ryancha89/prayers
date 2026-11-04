@@ -81,7 +81,7 @@ export function promptOrigin(
 const INK = '#2A2140';
 const IVORY = '#F7F0E1';
 /** The compass rose on the pill's right end, half over its edge. */
-const ROSE = 30;
+const ROSE = 24;
 
 /**
  * The prompt for the piece in reach, hung on the piece itself (CHA JEONGMIN's mockup, 07-10): its
@@ -157,10 +157,10 @@ export const ItemPrompt: React.FC<{
         style={({ pressed }) => [styles.pill, pressed && styles.pressed]}>
         <View style={styles.pillInner}>
           <View style={styles.iconRing}>
-            <Icon name={actIcon(action)} size={20} color={INK} />
+            <Icon name={actIcon(action)} size={16} color={INK} />
           </View>
           <Text style={styles.label} numberOfLines={1}>{label}</Text>
-          <Svg width={10} height={18} viewBox="0 0 10 18">
+          <Svg width={8} height={14} viewBox="0 0 10 18">
             <Polyline points="2 2 8 9 2 16" fill="none" stroke={INK} strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
         </View>
@@ -183,20 +183,21 @@ const styles = StyleSheet.create({
   line: { width: 1.5, flex: 1, backgroundColor: colors.gold },
   diamond: { width: 7, height: 7, transform: [{ rotate: '45deg' }], borderWidth: 1.5, borderColor: colors.gold, backgroundColor: 'rgba(16,14,40,0.6)' },
   // Two borders: a gold rim, and inside it a thin gold line on the ivory (the mockup's framed plate).
+  // Compact since 23-10 ("버튼들이 좀 큰것같아 콤팩트하게"): 56 pt tall → 40.
   pill: {
-    borderRadius: 30, padding: 3, backgroundColor: 'rgba(233,196,106,0.95)',
+    borderRadius: 22, padding: 2, backgroundColor: 'rgba(233,196,106,0.95)',
     shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 3 },
   },
   pillInner: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingLeft: 6, paddingRight: spacing.lg + ROSE / 2, paddingVertical: 6, minWidth: 168,
-    borderRadius: 27, backgroundColor: IVORY, borderWidth: 1, borderColor: 'rgba(181,140,62,0.55)',
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingLeft: 4, paddingRight: spacing.md + ROSE / 2, paddingVertical: 4, minWidth: 124,
+    borderRadius: 20, backgroundColor: IVORY, borderWidth: 1, borderColor: 'rgba(181,140,62,0.55)',
   },
   iconRing: {
-    width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center',
+    width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#EFE4CC', borderWidth: 1, borderColor: 'rgba(181,140,62,0.6)',
   },
-  label: { flex: 1, fontSize: 17, fontWeight: '700', color: INK, letterSpacing: 0.5 },
+  label: { flex: 1, fontSize: 15, fontWeight: '700', color: INK, letterSpacing: 0.5 },
   // The mockup's plate ends in a compass rose: on a dark disc so the ring reads over the gold rim.
   rose: {
     position: 'absolute', right: -ROSE / 2 + 2, top: '50%', marginTop: -ROSE / 2,

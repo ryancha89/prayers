@@ -21,6 +21,7 @@ import type { PhaseChoice } from '../flow/types';
 import { withCatCues, type CatCue } from '../pixel/cues';
 import type { ChatMode, UnityToRNEvent } from '../types';
 import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
+import { useSoundStore } from '../../../shared/audio/store';
 
 export interface UseConsultationOptions {
   /** The area the app already asked about — seeds the flow's topic. */
@@ -51,6 +52,10 @@ export interface UseConsultationOptions {
   /** Pin the answer style instead of reading the player's stored choice (and the room then hides
    *  the switch). */
   fixedChatMode?: ChatMode;
+  /** The room's coin check, for every way a question goes out — see `EngineOptions.canAsk`. */
+  canAsk?: () => boolean;
+  /** Whether a failed answer was the wallet — see `EngineOptions.coinsShort`. */
+  coinsShort?: () => Promise<boolean>;
 }
 
 export interface Consultation {
@@ -59,6 +64,8 @@ export interface Consultation {
   ready: boolean;
   /** The room is up and the player is on their feet — draw the walk controls, not the reading. */
   walking: boolean;
+  /** Walking after 일어서기, not before the first sit — the walk's Talk prompt reads 앉기. */
+  stood: boolean;
   /** The 일어서기 button can show: a walk-in room, someone in the chair, no answer on its way. */
   canStand: boolean;
   /** Out of the chair (10-17): her voice and the mic stop, the room goes back to walking; the
@@ -142,6 +149,8 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
       onUserLine: text => cbs.current.onUserLine?.(text),
       onDiscoveries: found => cbs.current.onDiscoveries?.(found),
       onFinished: () => cbs.current.onFinished?.(),
+      canAsk: () => cbs.current.canAsk?.() ?? true,
+      coinsShort: () => cbs.current.coinsShort?.() ?? Promise.resolve(false),
     });
     engineRef.current = engine;
     const unsubscribe = engine.subscribe(setState);
@@ -160,26 +169,42 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
     engineRef.current?.setLang(lang);
   }, [lang]);
 
+  const voiceOn = useSoundStore(st => st.voiceEnabled);
+  useEffect(() => {
+    engineRef.current?.setVoiceOn?.(voiceOn);
+  }, [voiceOn]);
+
   // Unity → engine. ORACLE_RESULT and SPEAK_DONE are the only two replies the
   // walk actually waits on; everything else on the channel belongs to the room.
   useEffect(() => {
     // A pixel room has no player; anything on the channel belongs to some other room.
     if (isPixel) return;
-    return getUnityBridge().onEvent((e: UnityToRNEvent) => {
-      if (e.type === 'UNITY_READY') {
-        // Order matters: mark the hold BEFORE lifting the veil, or the begin effect below runs
-        // for one render with seated still true and the counselor opens on an empty chair — the
-        // exact race this whole signal exists to close.
-        if (e.payload?.walkIn) { setSeated(false); setWalkIn(true); }
-        setReady(true);
-      } else if (e.type === 'UNITY_SEATED') setSeated(true);
+    const roomUp = (payload?: { walkIn?: boolean }) => {
+      // Order matters: mark the hold BEFORE lifting the veil, or the begin effect below runs
+      // for one render with seated still true and the counselor opens on an empty chair — the
+      // exact race this whole signal exists to close.
+      if (payload?.walkIn) { setSeated(false); setWalkIn(true); }
+      setReady(true);
+    };
+    const off = getUnityBridge().onEvent((e: UnityToRNEvent) => {
+      if (e.type === 'UNITY_READY') roomUp(e.payload);
+      else if (e.type === 'UNITY_SEATED') setSeated(true);
       else if (e.type === 'UNITY_STOOD') setSeated(false);
       else if (e.type === 'ORACLE_RESULT') engineRef.current?.onOracleResult(e.payload);
+      else if (e.type === 'SPEAK_STARTED') engineRef.current?.onSpeakStarted(engineKey(e.payload.cacheKey));
       else if (e.type === 'SPEAK_DONE') engineRef.current?.onSpeakDone(engineKey(e.payload.cacheKey));
       else if (e.type === 'MIC_STATE') engineRef.current?.onMicState(e.payload.state, e.payload.level);
       else if (e.type === 'MIC_RESULT') engineRef.current?.onMicResult(e.payload);
     });
-  }, [isPixel]);
+    // The READY may have come before this room mounted (29-10): on re-entry with a living Unity
+    // view, UnityEntry hears it and only then navigates here, and the room sat out its 30 s
+    // deadline waiting for a second one. Asked after subscribing, so no READY falls in between.
+    if (usesUnity) {
+      const already = getUnityBridge().readyRoom?.();
+      if (already) roomUp(already);
+    }
+    return off;
+  }, [isPixel, usesUnity]);
 
   // Begin once, when the stage is actually there to be staged.
   const begun = useRef(false);
@@ -195,13 +220,19 @@ export function useConsultationEngine(opts: UseConsultationOptions): Consultatio
     // `ready && !seated` is the whole of "walking": a seated room sets seated true before ready,
     // so this is false there, and a walk-in room flips it the moment the player sits.
     walking: ready && !seated,
+    // On foot AFTER the conversation began — only 일어서기 gets there; the walk-in never has begun.
+    stood: ready && !seated && begun.current,
     canStand: usesUnity && walkIn && ready && seated && begun.current && !state.pending,
     stand: useCallback(() => {
       engineRef.current?.hush();
       engineRef.current?.cancelMic();
       getUnityBridge().sendEvent({ type: 'WALK_STAND' });
     }, []),
-    tap: useCallback(() => engineRef.current?.tap(), []),
+    // The speaker switch is read at the tap: off, a tap never waits on a voice (30-10).
+    tap: useCallback(() => {
+      engineRef.current?.setVoiceOn?.(useSoundStore.getState().voiceEnabled);
+      engineRef.current?.tap();
+    }, []),
     choose: useCallback((c: PhaseChoice) => engineRef.current?.choose(c), []),
     submit: useCallback((t: string) => engineRef.current?.submitQuestion(t), []),
     retry: useCallback(() => engineRef.current?.retry(), []),

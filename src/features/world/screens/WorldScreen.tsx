@@ -11,9 +11,11 @@ import { useScreen } from '../../../shared/device/screen';
 import type { RootStackParamList } from '../../../navigation/types';
 import { UnityHost } from '../../counseling/components/UnityHost';
 import { WorldJoystick } from '../components/WorldJoystick';
+import { useKeyboardRun } from '../components/useKeyboardWalk';
 import { DoorCard, DoorTitle } from '../components/DoorCard';
 import { getWorldBridge, isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
+import { playerCharacter, playerHair, playerGender, playerOutfit } from '../../counseling/bridge/playerGender';
 import type { WorldInitPayload, WorldZone } from '../../counseling/types';
 import { CoinPill } from '../../coins/components/CoinPill';
 import { useCoins } from '../../coins/store/coinStore';
@@ -29,6 +31,7 @@ import { useSoundStore } from '../../../shared/audio/store';
 import { ProfileSheet, useMyRoomLevel, usePlayerName } from '../../myroom/components/ProfileSheet';
 import { fetchAttendance } from '../../tickets/api/attendance';
 import type { CounselorSummary } from '../../counselors/types';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -100,6 +103,8 @@ export function worldCoveredPx(r: MeasuredRects, landscape: boolean) {
  * path out of the world can be walked.
  */
 export const WorldScreen: React.FC = () => {
+  // The shared loading screen (picture, intro, tip) until this place's READY — sceneTransition.ts.
+  useEffect(() => { beginSceneTransition('world'); }, []);
   const navigation = useNavigation<Nav>();
   const t = useT();
   const lang = useLang();
@@ -205,7 +210,7 @@ export const WorldScreen: React.FC = () => {
     const open = () => {
       if (cancelled) return;
       const { position, returnZone } = useWorldStore.getState();
-      const init: WorldInitPayload = { lang, spawn: position };
+      const init: WorldInitPayload = { lang, spawn: position, playerGender: playerGender(), playerCharacter: playerCharacter(), playerHair: playerHair(), playerOutfit: playerOutfit() };
       if (returnZone) init.zone = returnZone;
       bridge.openWorld(init);
     };
@@ -246,6 +251,10 @@ export const WorldScreen: React.FC = () => {
     const offFocus = navigation.addListener('focus', () => {
       if (hostUp.current || waiting) return;
       waiting = true;
+      // The world reloads from scratch on the way back too (My Room, the cafe…), so it gets the same
+      // loading screen as the first open (29-10): beginning it only on mount let the return show the
+      // room's last frame and the black fade. Here, not at the remount, so the fallback path has it too.
+      beginSceneTransition('world');
       timer = setTimeout(remount, HOST_REMOUNT_FALLBACK_MS);
     });
     const offEnd = navigation.addListener('transitionEnd', (e: { data?: { closing?: boolean } }) => {
@@ -296,7 +305,9 @@ export const WorldScreen: React.FC = () => {
   const actions: ZoneActions = {
     counsel: c => leaveTo('counseling', () => openCounselor(navigation, c)),
     browse: () => navigation.popTo('Tabs', { screen: 'Home' }),
-    meditate: () => leaveTo('meditation', () => navigation.navigate('MeditationRoom')),
+    // Through the door (27-10, "vào thẳng phòng rồi chọn"): into the room, where the two sessions
+    // are offered — the choice no longer opens over the world.
+    meditate: () => leaveTo('meditation', () => navigation.navigate('MeditationRoom', { fromDoor: true })),
     sleep: () => leaveTo('meditation', () => navigation.navigate('SleepGuide')),
     journey: () =>
       leaveTo('journey', () => {
@@ -335,9 +346,8 @@ export const WorldScreen: React.FC = () => {
       if (c) actions.counsel(c);
       else setOverlay('counseling');
     },
-    // Two sessions behind this door (the 10-minute meditation, the sleep guide): the choice opens over
-    // the world, as the counselling door's picker does, rather than dropping into one of them.
-    meditation: () => setOverlay('meditation'),
+    // Straight in, like the cafe (27-10): the room itself offers its two sessions.
+    meditation: actions.meditate,
     journey: actions.journey,
     shop: () => leaveTo('shop', () => navigation.navigate('Tickets')),
     myroom: actions.myroom,
@@ -345,10 +355,11 @@ export const WorldScreen: React.FC = () => {
     // once the player has sat down.
     cafe: actions.cafe,
   };
-  /** A door's overlay — except the cafe's, which has none any more: every way of reaching that door
+  /** A door's overlay — except the cafe's and the meditation room's, which have none any more: every way of reaching that door
    *  (Unity silent at the door, Map while loading, the drawn hub) goes in instead. */
   const openOverlay = (zone: WorldZone) => {
     if (zone === 'cafe') actions.cafe();
+    else if (zone === 'meditation') actions.meditate();
     else setOverlay(zone);
   };
   door.current = {
@@ -390,6 +401,17 @@ export const WorldScreen: React.FC = () => {
     bridge.sendWorldRun(on);
   };
 
+  // A run tap from a second finger while the stick is held reaches the stick, not the button (see
+  // WorldJoystick); it is hit-tested here against the button's window rect.
+  const runRef = useRef<View>(null);
+  const runRect = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const measureRun = () => runRef.current?.measureInWindow((x, y, w, h) => { runRect.current = { x, y, w, h }; });
+  const tapWhileSteering = (px: number, py: number) => {
+    const r = runRect.current;
+    const slop = 8;
+    if (r && px >= r.x - slop && px <= r.x + r.w + slop && py >= r.y - slop && py <= r.y + r.h + slop) toggleRun();
+  };
+
   const lookOn = hostOn && worldUp && !overlay && !sheet && !entering;
   const camera = useWorldCamera(lookOn);
   // While a door is being walked through, nothing is drawn over the world.
@@ -397,6 +419,15 @@ export const WorldScreen: React.FC = () => {
   // While the 3D world loads there is nothing to walk: no stick, no run (02-10 screenshot: they
   // floated over the old drawing). Map stays — a door picked while loading opens at once.
   const loadingWorld = unity && !worldUp;
+  // Shift on a keyboard runs while held, then the button's own state comes back (30-10).
+  const runBeforeShift = useRef<boolean | null>(null);
+  useKeyboardRun(!busy && !loadingWorld, held => {
+    if (held) { runBeforeShift.current = run; setRun(true); bridge.sendWorldRun(true); return; }
+    const back = runBeforeShift.current ?? false;
+    runBeforeShift.current = null;
+    setRun(back);
+    bridge.sendWorldRun(back);
+  });
 
   return (
     <WorldSheetTop.Provider value={barBottom}>
@@ -412,7 +443,7 @@ export const WorldScreen: React.FC = () => {
       )}
       {/* The look-around layer: transparent, over the Unity view, under every control. A touch on
           the UnityView itself never reaches RN (useWorldCamera says why); taps are handed on. */}
-      {unity && lookOn && <View style={StyleSheet.absoluteFill} testID="world-look" {...camera} />}
+      {unity && lookOn && <View style={StyleSheet.absoluteFill} testID="world-look" {...camera.handlers} />}
 
       {/* Top row, as My Room's: who you are on the left (tap → the profile sheet), the coins and the
           way back to 2D on the right. */}
@@ -443,16 +474,17 @@ export const WorldScreen: React.FC = () => {
       <View
         pointerEvents="box-none"
         style={[styles.stick, { left: safe.left + spacing.xs, bottom: safe.bottom + spacing.xs }]}>
-        <WorldJoystick visible={!busy && !loadingWorld} />
+        <WorldJoystick visible={!busy && !loadingWorld} onOtherTouch={tapWhileSteering} onOtherDrag={camera.look} />
       </View>
 
       {!busy && (
         <View
           pointerEvents="box-none"
           style={[styles.buttons, { right: safe.right + spacing.lg, bottom: safe.bottom + spacing.lg }]}>
+          {/* Run is the row's size (10-22, "뛰기를 다른 아이콘이랑 크기 같게"), right above Menu. */}
           {!loadingWorld && (
-            <View style={styles.run}>
-              <RingButton testID="world-run" icon="run" size={RUN} label={t('world.run')} active={run} onPress={toggleRun} />
+            <View ref={runRef} onLayout={measureRun}>
+              <RingButton testID="world-run" icon="run" size={ROUND} label={t('world.run')} active={run} onPress={toggleRun} />
             </View>
           )}
           <View style={styles.round3}>
@@ -490,9 +522,8 @@ export const WorldScreen: React.FC = () => {
   );
 };
 
-/** My Room's sizes: the run ring, and the round buttons of a row. */
-const RUN = 54;
-const ROUND = 46;
+/** The round buttons of a row — run included. My Room's run and exit match it. */
+export const ROUND = 46;
 /** What the top row keeps on its right: the coin pill (about 96 pt at four digits), a gap, Home. */
 const TOP_RIGHT = 96 + spacing.sm + HUD_ICON;
 
@@ -506,7 +537,5 @@ const styles = StyleSheet.create({
   topRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   stick: { position: 'absolute' },
   buttons: { position: 'absolute', alignItems: 'flex-end', gap: spacing.md },
-  // Run sits over Menu, centred on it as My Room centres it over share.
-  run: { marginRight: (ROUND - RUN) / 2 },
   round3: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
 });

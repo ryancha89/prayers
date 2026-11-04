@@ -78,7 +78,8 @@ export interface ArchiveDiscovery {
   createdAt: string;
 }
 
-export type FieldKind = 'text' | 'multiline' | 'choice' | 'year' | 'date' | 'time';
+/** `when`: a day, a month or a year (planWhen.ts) — the 계획's date. */
+export type FieldKind = 'text' | 'multiline' | 'choice' | 'year' | 'date' | 'time' | 'when';
 
 export interface FieldSpec {
   key: string;
@@ -204,7 +205,7 @@ export const FIELDS: Record<ArchiveCategory, FieldSpec[]> = {
   ],
   // Spec 006: the desk's two other kinds, in the goals group with `goal`. A date and the text.
   wish: [{ key: 'date', kind: 'date', label: 'archive.f.date', required: true }],
-  plan: [{ key: 'date', kind: 'date', label: 'archive.f.date', required: true }],
+  plan: [{ key: 'date', kind: 'when', label: 'archive.f.when', required: true }],
   manual: [
     {
       key: 'section',

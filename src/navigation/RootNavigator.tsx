@@ -7,8 +7,10 @@ import { CounselorDetailScreen } from '../features/counselors/screens/CounselorD
 import { CounselingSubjectScreen } from '../features/counseling/screens/CounselingSubjectScreen';
 import { UnityEntryScreen } from '../features/counseling/screens/UnityEntryScreen';
 import { LectureScreen } from '../features/philosophy/screens/LectureScreen';
+import { StoryScreen } from '../features/story/screens/StoryScreen';
 import { CounselingRoomScreen } from '../features/counseling/screens/CounselingRoomScreen';
 import { AddSubjectScreen } from '../features/subjects/screens/AddSubjectScreen';
+import { CharacterSelectScreen } from '../features/character/screens/CharacterSelectScreen';
 import { hasBirthData, useSubjectsStore } from '../features/subjects/store/subjectsStore';
 import { LoginScreen } from '../features/auth/screens/LoginScreen';
 import { AccountScreen } from '../features/profile/screens/AccountScreen';
@@ -61,6 +63,13 @@ export const RootNavigator: React.FC = () => {
   // "Later" is honoured, but never silently: the counselor screen still refuses a consultation
   // with no chart and routes here, so deferring costs browsing nothing and hides nothing.
   const needsProfile = !hasBirthData(self) && !deferred;
+  // Then the character, once (26-10). Keyed on having picked one, like the profile is keyed on data,
+  // so an account from before this screen existed is asked on its next launch too.
+  // 27-10: and once more for accounts that picked on the old card screen, so everyone meets the 3D
+  // creator — `creatorSeen` is stored when the creator commits.
+  const playerCharacter = useSubjectsStore(s => s.playerCharacter);
+  const creatorSeen = useSubjectsStore(s => s.creatorSeen);
+  const needsCharacter = !needsProfile && (!playerCharacter || !creatorSeen);
 
   return (
   <Stack.Navigator
@@ -68,6 +77,8 @@ export const RootNavigator: React.FC = () => {
       headerShown: false,
       contentStyle: { backgroundColor: colors.bg },
       animation: 'slide_from_right',
+      // EVERY SCREEN FOLLOWS THE PHONE (29-10): the 26-10 portrait-by-default lock is undone — the
+      // tabs and menus turn with the phone again, as they did before (Info.plist's orientations).
     }}>
     {userAuth == null ? (
       <Stack.Screen name="Login" component={LoginScreen} options={{ animation: 'fade' }} />
@@ -79,12 +90,20 @@ export const RootNavigator: React.FC = () => {
     {userAuth != null && needsProfile ? (
       <Stack.Screen name="ProfileSetup" component={AddSubjectScreen} options={{ animation: 'fade' }} />
     ) : null}
+    {/* No swipe-back on any screen whose drag turns a 3D camera (30-10, "다른화면도 앵글돌릴때
+        이전화면으로 안가게"): here the drag turns the character (CHARACTER_VIEW). */}
+    {userAuth != null && needsCharacter ? (
+      <Stack.Screen name="CharacterSetup" component={CharacterSelectScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+    ) : null}
     <Stack.Screen name="Tabs" component={BottomTabNavigator} />
     <Stack.Screen name="Account" component={AccountScreen} />
     <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
     <Stack.Screen name="Notifications" component={NotificationsScreen} />
     <Stack.Screen name="Library" component={LibraryScreen} />
     <Stack.Screen name="MyInfo" component={MyInfoScreen} />
+    {/* The creator turns its body with a one-finger drag over the whole screen: iOS 26's full-screen
+        pop gesture took that drag as "back" and threw the edits away (review 27-10), as on the 3D rooms. */}
+    <Stack.Screen name="CharacterSelect" component={CharacterSelectScreen} options={{ gestureEnabled: false }} />
     <Stack.Screen name="Tickets" component={TicketsScreen} />
     <Stack.Screen name="Attendance" component={AttendanceScreen} />
     <Stack.Screen name="JourneyProfile" component={JourneyProfileScreen} />
@@ -100,8 +119,10 @@ export const RootNavigator: React.FC = () => {
     <Stack.Screen name="ArchiveSection" component={ArchiveSectionScreen} />
     {/* Fade, like My Room: from the World the UnityView must mount into a settled screen. Pushed with
         the default slide (02-10) the room never answered MEDITATION_INIT while My Room, fading, did. */}
-    <Stack.Screen name="MeditationRoom" component={MeditationRoomScreen} options={{ animation: 'fade' }} />
-    <Stack.Screen name="SleepGuide" component={SleepGuideScreen} options={{ animation: 'fade' }} />
+    {/* No swipe-back (30-10, "돌릴때 이전 화면으로 나가려는거 막아"): a sideways drag turns the camera
+        round her; the way out is the back button. */}
+    <Stack.Screen name="MeditationRoom" component={MeditationRoomScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+    <Stack.Screen name="SleepGuide" component={SleepGuideScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     {/* No swipe-back: the walk keys sit at the left edge, and a thumb on ◀ read as iOS's pop
         gesture (the cabin's lesson). The top bar's 2D button is the way out. */}
     <Stack.Screen name="World" component={WorldScreen} options={{ animation: 'fade', gestureEnabled: false }} />
@@ -112,7 +133,9 @@ export const RootNavigator: React.FC = () => {
         sits at the left edge and a one-finger drag looks round). The top bar's back is the way out. */}
     <Stack.Screen name="Cafe" component={CafeScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     <Stack.Screen name="Garden" component={GardenScreen} options={{ animation: 'fade', gestureEnabled: false }} />
-    <Stack.Screen name="Lecture" component={LectureScreen} options={{ animation: 'fade' }} />
+    {/* No swipe-back: a drag turns the lecture room's camera (LECTURE_CAMERA); the top bar's back is the way out. */}
+    <Stack.Screen name="Lecture" component={LectureScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+    <Stack.Screen name="Story" component={StoryScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     <Stack.Screen name="Legal" component={LegalScreen} />
     <Stack.Screen name="CounselorDetail" component={CounselorDetailScreen} />
     <Stack.Screen name="CounselingSubject" component={CounselingSubjectScreen} />

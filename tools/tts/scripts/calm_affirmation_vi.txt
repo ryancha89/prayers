@@ -1,0 +1,171 @@
+Nhẹ nhàng hít vào.
+<break time="3s" />
+
+Rồi... từ từ thở ra.
+<break time="3s" />
+
+Ngay lúc này,
+tôi không cần phải vội vàng điều gì cả.
+<break time="3s" />
+
+Tôi là đủ.
+<break time="2.5s" />
+
+Con người tôi lúc này... đã là đủ.
+<break time="3s" />
+
+Tôi tin vào chính mình.
+<break time="2.5s" />
+
+Tôi tin vào lựa chọn của mình.
+<break time="3s" />
+
+Từ từ hít vào...
+<break time="3s" />
+
+và thở ra.
+<break time="3s" />
+
+Tôi bình yên.
+<break time="2.5s" />
+
+Tôi an toàn.
+<break time="2.5s" />
+
+Tôi thư thái.
+<break time="3s" />
+
+
+Tôi không cần phải giải quyết mọi thứ ngay bây giờ.
+<break time="3s" />
+
+Tôi cho phép mình có thời gian mình cần.
+<break time="2.5s" />
+
+Tôi sống theo nhịp độ của riêng mình.
+<break time="3s" />
+
+Tôi là đủ.
+<break time="2.5s" />
+
+Tôi đang làm tốt.
+<break time="2.5s" />
+
+Tôi tin vào chính mình.
+<break time="3s" />
+
+
+Những lo lắng của hôm nay...
+tôi tạm đặt xuống.
+<break time="3s" />
+
+Những gì đã qua...
+tôi để nó trôi qua.
+<break time="3s" />
+
+Những gì chưa đến...
+tôi không lo trước.
+<break time="3s" />
+
+Bây giờ...
+tôi ở lại trong khoảnh khắc này.
+<break time="3s" />
+
+
+Tôi bình yên.
+<break time="2.5s" />
+
+Tôi thư thái.
+<break time="3s" />
+
+
+Những điều tốt đẹp...
+đang từ từ đến với tôi.
+<break time="3s" />
+
+Tôi sẵn sàng đón nhận những cơ hội tốt
+với một trái tim bình thản.
+<break time="3s" />
+
+
+Tôi xứng đáng được yêu thương.
+<break time="2.5s" />
+
+Tôi xứng đáng được hạnh phúc.
+<break time="2.5s" />
+
+Tôi xứng đáng có một cuộc sống bình yên.
+<break time="3s" />
+
+
+Tôi tin vào chính mình.
+<break time="3s" />
+
+Tôi là đủ.
+<break time="3s" />
+
+Tôi bình yên.
+<break time="3s" />
+
+Tôi đang làm tốt.
+<break time="3s" />
+
+
+Từ từ...
+hít vào.
+<break time="3s" />
+
+Rồi...
+thở ra thật dài.
+<break time="3s" />
+
+
+Hôm nay tôi...
+dịu dàng với bản thân hơn một chút.
+<break time="3s" />
+
+Tôi không vội vàng.
+<break time="3s" />
+
+Tôi không so sánh mình với ai.
+<break time="3s" />
+
+Tôi bước đi trên con đường của mình.
+<break time="3s" />
+
+
+Tôi là đủ.
+<break time="3s" />
+
+Tôi bình yên.
+<break time="3s" />
+
+Tôi tin vào chính mình.
+<break time="3s" />
+
+
+Và mọi thứ...
+từng chút một...
+đang trôi về hướng tốt đẹp.
+<break time="3s" />
+
+
+Bây giờ, một lần nữa...
+từ từ hít vào...
+<break time="3s" />
+
+và nhẹ nhàng thở ra.
+<break time="3s" />
+
+
+Tôi ổn.
+<break time="3s" />
+
+Tôi là đủ.
+<break time="3s" />
+
+Tôi bình yên.
+<break time="3s" />
+
+Tôi tin vào chính mình.
+<break time="3s" />

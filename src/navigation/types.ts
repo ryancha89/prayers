@@ -71,7 +71,9 @@ export type RootStackParamList = {
    * roster already knows how to hold "a counselor you can enter". The NAME is load-bearing —
    * App.tsx silences the app's bed on it (`SELF_SCORED_SCREENS`).
    */
-  MeditationRoom: undefined;
+  /** `fromDoor`: entered through the World's door (27-10) — the room offers its two sessions
+   *  (breathing here, or the sleep guide) instead of opening straight onto the breathing. */
+  MeditationRoom: { fromDoor?: boolean } | undefined;
   /**
    * The 30-minute sleep guide: voice + music, pure RN, no Unity. The NAME is load-bearing too —
    * App.tsx silences the app's bed on it (`SELF_SCORED_SCREENS`).
@@ -105,10 +107,18 @@ export type RootStackParamList = {
    *  above reachable too. */
   Legal: { doc: 'terms' | 'privacy' };
   ProfileSetup: undefined;
+  /** First run, after ProfileSetup: pick the body you walk in the 3D world. Same split as
+   *  ProfileSetup/AddSubject — the gate and the in-app edit are different routes. */
+  CharacterSetup: undefined;
+  /** The same picker opened from My Info. */
+  CharacterSelect: undefined;
   /** A recorded lecture series (the Schopenhauer 12강), opened at a chapter and line. Not a
    *  consultation: free, pre-recorded, nothing sent. The NAME is load-bearing — App.tsx silences the
    *  app's bed on it (`SELF_SCORED_SCREENS`), as for the meditation room. */
   Lecture: { chapter: number; line?: number };
+  /** An interactive story (Home 스토리 tab) — 「수호신 치즈냥이」 chapter 1. The name is load-bearing:
+   *  App.tsx lists it in SELF_SCORED_SCREENS (the cat's voice is the content). */
+  Story: { storyId: 'cheese' } | undefined;
   /** Loading screen that boots the (mock) Unity room, spec §17. */
   UnityEntry: {
     counselorId: string;

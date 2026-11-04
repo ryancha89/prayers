@@ -1,7 +1,7 @@
 import { apiBase } from '../../../shared/config/api';
 import { devlog } from '../../../shared/devlog';
 import { authedFetch } from '../../auth/api/headers';
-import { buyWithStore, confirmStorePurchase, type StoreConfirmInput } from '../../tickets/providers/storeBuy';
+import { confirmStorePurchase, type StoreConfirmInput } from '../../tickets/providers/storeBuy';
 import type { Lang } from '../../../shared/i18n';
 import type { JourneyCard, JourneyContent, JourneyPart, JourneyReport, JourneySummary, ReportBlock, ReportSection, StationCard } from '../types';
 import type { CounselingSubject } from '../../counseling/types';
@@ -315,23 +315,14 @@ export async function fetchJourneyAccess(journeyId: string, signal?: AbortSignal
 export async function confirmJourneyPurchase(
   journeyId: string,
   input: StoreConfirmInput,
-): Promise<{ owned: boolean; error?: string }> {
+): Promise<{ owned: boolean; error?: string; status?: number }> {
   const r = await confirmStorePurchase(`/api/v1/prayers/journeys/${journeyId}/purchase`, input);
-  if (!r || r.body == null) return { owned: false, error: 'network' };
+  if (!r || r.body == null) return { owned: false, error: 'network', status: r?.status };
   const b = r.body;
-  return { owned: !!b?.owned, error: b?.success ? undefined : b?.error_code ?? 'invalid' };
+  // `status` (29-10): only a 422 is the server's final no on a receipt; a 5xx with a JSON body also
+  // lands here as `error`, and that one is worth asking again (passPurchase).
+  return { owned: !!b?.owned, error: b?.success ? undefined : b?.error_code ?? 'invalid', status: r.status };
 }
 
-/**
- * Buy the journey pass through `buyWithStore`. `dev` is the server's own `dev_purchase` flag (not
- * `__DEV__`): checked first, since a simulator has the store module but no App Store. The dev
- * confirmation carries the platform only, exactly as the pass screen always sent it.
- */
-export function buyJourneyPass(journeyId: string, productId: string, dev: boolean) {
-  return buyWithStore({
-    productId,
-    dev,
-    confirm: input => confirmJourneyPurchase(journeyId, input.platform === 'dev' ? { platform: 'dev' } : input),
-    accepted: r => r.owned,
-  });
-}
+// buyJourneyPass lives in passPurchase.ts (29-10): a charged-but-unconfirmed pass is held and
+// retried there, which needs state this file of plain requests does not keep.

@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Image, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../shared/components/Text';
 import { HAIRLINE, IVORY, PLATE, RING_COMPACT, RingButton } from '../../../shared/components/hud/Hud';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../navigation/types';
+import { sleepAudio } from '../sleepAudio';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLang, useT } from '../../../shared/i18n';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
@@ -11,13 +14,15 @@ import { backgroundMusic, meditationBed } from '../../../shared/audio/background
 import { holdScreenAwake } from '../../../shared/device/keepAwake';
 import { BREATH, CYCLE_MS, MeditationSession, SESSION_MS, breathSync, type Phase, type SessionState } from '../session';
 import { UnityHost } from '../../counseling/components/UnityHost';
+import { useFollowCamera } from '../../world/components/useWorldCamera';
 import { guideVoice } from '../guideVoice';
 import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
 import { isNativeUnity, nativeUnityBridge } from '../../counseling/bridge';
 import { useViewInsets, type MeasuredRects } from '../../counseling/bridge/viewInsets';
 import { useScreen } from '../../../shared/device/screen';
-import { BottomFade, MED, PaceLine, Threshold, Vignette } from '../components/BreathStage';
+import { ArtWait, BottomFade, MED, PaceLine, Vignette } from '../components/BreathStage';
 import { SERIF } from '../../../shared/components/hud/Hud';
+import { beginSceneTransition } from '../../../shared/transition/sceneTransition';
 
 /**
  * The meditation room: ten minutes, music and text, no guided voice (decided 15-09).
@@ -85,9 +90,26 @@ const clock = (ms: number) => {
 
 const ROOM_ART = require('../assets/room.jpg');
 
+/** The two sessions offered when the player walks in through the World's door (27-10, "vào thẳng
+ *  phòng rồi chọn"): each with a frame of this room (cropped from MeditationLandscapePhotographer's
+ *  close / idle portraits, Docs/RoomPhotos/MeditationRoom/landscape/cards), 240 px. */
+const SESSION_ART = {
+  breathe: require('../assets/card_breathe.jpg'),
+  sleep: require('../assets/card_sleep.jpg'),
+};
+
 export const MeditationRoomScreen: React.FC = () => {
+  // The shared loading screen (picture, intro, tip) until this place's READY — sceneTransition.ts.
+  useEffect(() => { beginSceneTransition('meditation'); }, []);
   const t = useT();
   const lang = useLang();
+  // The player's look round the room (MEDITATION_CAMERA, 30-10): the world's fingers, from the shot.
+  const look = useFollowCamera({
+    enabled: isNativeUnity(),
+    home: { zoom: 0.5, yaw: 0, pitch: 0 },
+    send: c => nativeUnityBridge.sendMeditationCamera(c),
+    doubleTapHome: true,
+  });
   // The guide waits for the bell to ring out on a fresh start; this is that wait, so a Pause or a
   // Leave pressed inside it cancels the guide instead of letting it start talking afterwards.
   const guideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,7 +117,9 @@ export const MeditationRoomScreen: React.FC = () => {
     if (guideTimer.current) clearTimeout(guideTimer.current);
     guideTimer.current = null;
   };
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const params = useRoute().params as RootStackParamList['MeditationRoom'];
+  const fromDoor = params?.fromDoor === true;
   // Landscape: the ring, the clock and the button move into a panel on the right, so the girl in the
   // room keeps the left of the screen. Same tree, other styles: rotating mid-breath keeps the session,
   // its animations and the UnityHost exactly as they were.
@@ -367,11 +391,12 @@ export const MeditationRoomScreen: React.FC = () => {
           MEDITATION_READY never came. The same screen with the art on top loads the room fine. */}
       {isNativeUnity() && <UnityHost style={styles.unity} />}
       {isNativeUnity() ? (
-        // While the room loads: a threshold — dusk, one lantern breathing, the room's name — not the
-        // 2D concept art, whose girl is not the one in the room and whose crop was a strip in
-        // landscape (13-10). It lifts the moment the room answers, as the camera starts gliding in.
+        // While the room loads: the room's picture of the girl (ArtWait). From 13-10 it was a lone
+        // lantern on dusk (the threshold); 22-10 the PM's screenshot of that same wait on the sleep
+        // guide asked for the girl, so both rooms wait on her picture. It lifts the moment the room
+        // answers, as the camera starts gliding in.
         <Animated.View style={[styles.art, { opacity: artOut }]} pointerEvents="none">
-          <Threshold title={t('med.title')} pulse={pulse} />
+          <ArtWait source={ROOM_ART} testID="med-art" title={t('med.title')} pulse={pulse} width={view.width} height={view.height} />
         </Animated.View>
       ) : (
         // Without the embedded player (Expo, Jest, a build without Unity) the art IS the room.
@@ -383,7 +408,10 @@ export const MeditationRoomScreen: React.FC = () => {
       {/* The breath's light is IN the room now (Unity's MeditationBreathLight, behind her and on the
           rug): an overlay here can only sit on top of the 3D view, and it washed over her (13-10). */}
 
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
+      {/* Drag to turn round her, pinch to zoom, double-tap back to the directed shot (30-10). On the
+          controls' own layer: a touch on the UnityView itself never reaches RN, and the buttons
+          inside keep their taps (they claim the touch first). */}
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']} {...look}>
         {/* Top row: the way out (it does NOT fade — everything else may recede, the door cannot), the
             clock in the middle once the session is under way, and Pause on the right while breathing. */}
         <View style={styles.header} onLayout={trackHeader}>
@@ -430,9 +458,28 @@ export const MeditationRoomScreen: React.FC = () => {
                 styles.plate,
                 { opacity: arrive, transform: [{ translateY: arrive.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] },
               ]}>
-              <Text style={styles.plateTitle}>{t('med.title')}</Text>
-              <Text style={styles.plateLine}>{t('med.meta')}</Text>
-              <Action label={t('med.start')} onPress={begin} />
+              {fromDoor ? (
+                // Walked in from the World: the room's two sessions, chosen here, in the room.
+                <View style={[styles.choices, landscape && styles.choicesRow]}>
+                  <Choice testID="med-choice-breathe" art={SESSION_ART.breathe} title={t('home.breathe')} note={t('home.meditation')} compact={landscape} onPress={begin} />
+                  {sleepAudio.available() ? (
+                    <Choice
+                      testID="med-choice-sleep"
+                      art={SESSION_ART.sleep}
+                      title={t('home.sleep')}
+                      note={t('home.sleepHint')}
+                      compact={landscape}
+                      onPress={() => { silence(); navigation.replace('SleepGuide'); }}
+                    />
+                  ) : null}
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.plateTitle}>{t('med.title')}</Text>
+                  <Text style={styles.plateLine}>{t('med.meta')}</Text>
+                  <Action label={t('med.start')} onPress={begin} />
+                </>
+              )}
             </Animated.View>
           )}
         </View>
@@ -440,6 +487,24 @@ export const MeditationRoomScreen: React.FC = () => {
     </View>
   );
 };
+
+/** One of the door's two sessions: a frame of the room, its name and what it costs. */
+const Choice: React.FC<{ art: number; title: string; note: string; onPress: () => void; compact?: boolean; testID?: string }> = ({
+  art, title, note, onPress, compact, testID,
+}) => (
+  <Pressable
+    testID={testID}
+    accessibilityRole="button"
+    accessibilityLabel={title}
+    onPress={() => { sfx.select(); onPress(); }}
+    style={({ pressed }) => [styles.choice, compact && styles.choiceCompact, pressed && styles.actionPressed]}>
+    <Image source={art} style={compact ? styles.choiceArtCompact : styles.choiceArt} resizeMode="cover" accessibilityIgnoresInvertColors />
+    <View style={styles.choiceText}>
+      <Text style={styles.choiceTitle} numberOfLines={1}>{title}</Text>
+      <Text style={styles.choiceNote} numberOfLines={1}>{note}</Text>
+    </View>
+  </Pressable>
+);
 
 /** The only control on the screen. `quiet` is the running state: still reachable, no longer asking
  *  to be looked at. */
@@ -484,6 +549,21 @@ const styles = StyleSheet.create({
   band: { justifyContent: 'flex-end', alignItems: 'center', paddingBottom: spacing.md },
   // The words of the state, over the floor's fade (BottomFade) — no box: the room is the surface.
   plate: { alignItems: 'center', gap: spacing.sm, maxWidth: 440 },
+  choices: { gap: spacing.sm, alignSelf: 'stretch', paddingHorizontal: spacing.lg },
+  // Landscape: two cards side by side, centred, each a fixed width (30-10: `flex: 1` inside a plate
+  // that sizes to its content left them zero wide — two slivers of art, no words).
+  choicesRow: { flexDirection: 'row', justifyContent: 'center' },
+  choice: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md, minWidth: 300,
+    padding: spacing.sm, borderRadius: radius.md,
+    borderWidth: 1, borderColor: 'rgba(233,196,106,0.3)', backgroundColor: 'rgba(20,16,28,0.55)',
+  },
+  choiceCompact: { width: 280, minWidth: 0 },
+  choiceArt: { width: 64, height: 64, borderRadius: radius.sm },
+  choiceArtCompact: { width: 44, height: 44, borderRadius: radius.sm },
+  choiceText: { flex: 1, gap: 2 },
+  choiceTitle: { fontFamily: SERIF, fontSize: 17, color: MED.paper },
+  choiceNote: { fontSize: 12, color: MED.ash },
   plateTitle: { fontFamily: SERIF, fontSize: 24, color: MED.paper, letterSpacing: 0.4, textAlign: 'center' },
   plateLine: { fontFamily: SERIF, fontSize: 14, color: MED.ash, letterSpacing: 1.2, textAlign: 'center', marginBottom: spacing.xs },
   // While breathing: one word, quiet, and the rhythm under it.

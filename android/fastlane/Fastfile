@@ -46,6 +46,8 @@ platform :android do
     upload_to_play_store(
       track: track,
       aab: AAB_PATH,
+      # A stale app-release.apk from an earlier assembleRelease makes supply refuse "both apk(s) and aab".
+      skip_upload_apk: true,
       # metadata/android/<locale>/changelogs/<versionCode>.txt 가 있으면 그 버전의 변경사항으로 올라간다
       skip_upload_metadata: true,
       skip_upload_changelogs: !Dir.glob("metadata/android/*/changelogs/#{build_code}.txt").any?,

@@ -23,12 +23,19 @@ jest.mock('react-native', () => ({
 
 // The bridge pulls these in; none of them is what is under test here.
 jest.mock('../src/features/counseling/bridge/NativeUnityBridge', () => ({
-  NativeUnityBridge: class {},
+  NativeUnityBridge: class {
+    sendWorldAudio() {}
+    sendVoiceAudio() {}
+  },
 }));
 jest.mock('../src/features/counseling/bridge/MockUnityBridge', () => ({
   MockUnityBridge: class {},
 }));
 jest.mock('../src/shared/devlog', () => ({ devlog: () => {} }));
+// The real store persists through AsyncStorage, whose native module the react-native mock above hides.
+jest.mock('../src/shared/audio/store', () => ({
+  useSoundStore: { getState: () => ({ musicEnabled: true, sfxEnabled: true, voiceEnabled: true }), subscribe: () => () => {} },
+}));
 jest.mock('../src/shared/config/api', () => ({ apiBase: () => 'http://localhost:4000' }));
 
 type Bridge = typeof import('../src/features/counseling/bridge');

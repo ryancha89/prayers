@@ -1,0 +1,57 @@
+{
+  "resolution": [
+    540,
+    960
+  ],
+  "plates": {
+    "door": {
+      "file": "door.png"
+    },
+    "room": {
+      "file": "room.png",
+      "face": [
+        0.47259547710418703,
+        0.2935101628303528,
+        0.6547089576721191,
+        0.43278965950012205
+      ],
+      "variants": {
+        "idle": "room__idle.png",
+        "blink": "room__blink.png",
+        "talk": "room__talk.png"
+      }
+    },
+    "sofa": {
+      "file": "sofa.png",
+      "face": [
+        0.33483373522758486,
+        0.21705176830291747,
+        0.625301456451416,
+        0.4195075392723083
+      ],
+      "variants": {
+        "idle": "sofa__idle.png",
+        "blink": "sofa__blink.png",
+        "talk": "sofa__talk.png",
+        "smug": "sofa__smug.png"
+      }
+    },
+    "doorstep": {
+      "file": "doorstep.png",
+      "face": [
+        0.29812543988227846,
+        0.31433084011077883,
+        0.6389597415924072,
+        0.5524411857128143
+      ],
+      "variants": {
+        "idle": "doorstep__idle.png",
+        "blink": "doorstep__blink.png",
+        "talk": "doorstep__talk.png"
+      }
+    },
+    "nap": {
+      "file": "nap.png"
+    }
+  }
+}

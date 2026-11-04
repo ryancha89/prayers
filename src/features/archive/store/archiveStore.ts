@@ -53,19 +53,27 @@ interface ArchiveState {
 
   markAnswered: (questionId: number) => void;
 
-  /** Called by memoriesApi after a successful push: the queue is clear up to these ids. */
-  pushed: (ids: string[], deletedIds: string[]) => void;
+  /** Called by memoriesApi after a successful push, with the rows exactly as they were sent: each
+   *  one's dirty mark is cleared only if the row has not been edited since. */
+  pushed: (sent: ArchiveMemory[], deletedIds: string[]) => void;
   /** Called by memoriesApi after a pull: the server's rows, merged under local unsynced edits. */
   merge: (rows: ArchiveMemory[]) => void;
 
   /** How much of the person is drawn — a game meter, not a claim about the AI. */
-  completion: () => number;
+  /** `extra`: pieces that live outside the archive but belong to a card — the profile's own
+   *  birth data and MBTI count toward 기본정보 (archiveProfileFacts). */
+  completion: (extra?: Partial<Record<ArchiveCategory, number>>) => number;
 }
 
 const isCategory = (v: string): v is ArchiveCategory => (CATEGORIES as string[]).includes(v);
 
 /** What "complete" means: a few entries in most categories, weighted to the ones that change a
  *  reading. 100% is deliberately reachable — a meter nobody can fill is a nag, not a game. */
+/** What 기본정보 already holds from the profile (10-22, "정보있는데 왜 0개임?"): the birth data
+ *  the card shows on top, and the MBTI card under the chart. Shown there, so counted there. */
+export const archiveProfileFacts = (self: { birthDate?: string; gender?: string; mbti?: string }): number =>
+  (self.birthDate && self.gender ? 1 : 0) + (self.mbti ? 1 : 0);
+
 export const COMPLETION_TARGET: Record<ArchiveCategory, number> = {
   profile: 4,
   interest: 4,
@@ -178,9 +186,16 @@ export const useArchiveStore = create<ArchiveState>()(
       markAnswered: questionId =>
         set(s => ({ answeredQuestions: [...new Set([...s.answeredQuestions, questionId])] })),
 
-      pushed: (ids, deletedIds) =>
+      // 29-10: an edit made while the push was in flight is NOT what the server got. Clearing its
+      // mark by id lost it twice over — the pull that follows put the server's older copy back on
+      // the phone, and nothing pushed the edit again. Every edit replaces the row object (update /
+      // add never mutate), so "unchanged since it was sent" is the same object still in the list.
+      pushed: (sent, deletedIds) =>
         set(s => ({
-          dirty: s.dirty.filter(d => !ids.includes(d)),
+          dirty: s.dirty.filter(d => {
+            const was = sent.find(m => m.id === d);
+            return !was || s.memories.find(m => m.id === d) !== was;
+          }),
           deleted: s.deleted.filter(d => !deletedIds.includes(d)),
           lastSyncedAt: now(),
         })),
@@ -201,8 +216,8 @@ export const useArchiveStore = create<ArchiveState>()(
         set({ memories: [...merged.values()].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)) });
       },
 
-      completion: () => {
-        const counts: Record<string, number> = {};
+      completion: extra => {
+        const counts: Record<string, number> = { ...extra };
         get().memories.forEach(m => {
           counts[m.category] = (counts[m.category] ?? 0) + 1;
         });

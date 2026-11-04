@@ -58,7 +58,7 @@ beforeEach(() => {
 
 describe('the meditation guide', () => {
   it('ships every recording it names and links each natively', () => {
-    expect(Object.keys(GUIDES).sort()).toEqual(['en', 'ja', 'zh-CN', 'zh-TW']);
+    expect(Object.keys(GUIDES).sort()).toEqual(['en', 'ja', 'vi', 'zh-CN', 'zh-TW']);
     for (const f of new Set(Object.values(GUIDES) as string[])) {
       const file = path.join(ROOT, 'src', 'shared', 'assets', 'sounds', f);
       expect(fs.statSync(file).size).toBeGreaterThan(300_000); // a minute or more of speech
@@ -68,12 +68,13 @@ describe('the meditation guide', () => {
     }
   });
 
-  it('speaks English in a language that has no guide of its own', () => {
+  it('speaks each language in its own guide; Korean hears the one in its bed, not English (30-10)', () => {
     guideVoice.play('vi');
-    expect(mockCalls).toEqual([expect.stringContaining('meditation_guide_en'), 'play']);
+    expect(mockCalls).toEqual([expect.stringContaining('meditation_guide_vi'), 'play']);
     expect(mockDuck).toHaveBeenLastCalledWith(true);
-    expect(guideFor('ko')).toBe('meditation_guide_en.m4a');
+    expect(guideFor('vi')).toBe('meditation_guide_vi.m4a');
     expect(guideFor('ja')).toBe('meditation_guide_ja.m4a');
+    expect(guideFor('ko')).toBeNull();
   });
 
   it('speaks in English, over a ducked bed', () => {

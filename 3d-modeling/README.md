@@ -13,6 +13,8 @@
 
 공식 설명과 직접 검증한 결과를 구분한다. 수정할 때마다 작업 기록에 원인 → 조치 → 렌더/검증 → 남은 문제를 추가한다. 런타임 에셋에 반영하기 전까지 작업 결과는 이곳에서 관리한다.
 
+치즈(스토리 「수호신 치즈냥이」 1장 세트·고양이): [작업 기록](cheese/WORKLOG.md) — 방·고양이 모두 코드로 생성, 플레이어 시점 렌더를 앱 스토리 화면이 쓴다.
+
 시작점: [Tripo에서 참고한 제작 흐름](knowledge/tripo-workflow.md), [Blender 실험 노하우](knowledge/blender-character-notes.md), [루나 작업 기록](luna/WORKLOG.md).
 
 ## 루나 결과물

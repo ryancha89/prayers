@@ -77,12 +77,18 @@ const IDX = Object.fromEntries(NEWYEAR_2027.chapters.map((c, i) => [c.id, i]));
 const free = (): JourneyPart => ({ momentId: null, unlocked: true, label: null, teaser: null, text: 'A short line.', cards: [] });
 const locked = (id: string): JourneyPart => ({ momentId: id, unlocked: false, label: `L ${id}`, teaser: `Offer ${id}`, text: null, cards: [] });
 
-/** Topics [free, #0, #1], monthly [free, #0..#3]; a silent part runs 8 s (no TTS in tests). */
+/** An opened moment: one paid part bought anywhere opens the whole journey's free readings. */
+const bought = (id: string): JourneyPart => ({ ...locked(id), unlocked: true, text: `The paid ${id} line.` });
+
+/**
+ * Topics [free, #0, #1], monthly [free, #0..#2, #3 bought]; a silent part runs 8 s (no TTS in
+ * tests). Without a bought part the reading gate stops every station at its first lock.
+ */
 function content(): JourneyContent {
   const chapters = NEWYEAR_2027.chapters.map(c => {
     const parts =
       c.id === 'intro' || c.id === 'outro' ? [free()]
-      : c.id === 'monthly' ? [free(), locked('monthly#0'), locked('monthly#1'), locked('monthly#2'), locked('monthly#3')]
+      : c.id === 'monthly' ? [free(), locked('monthly#0'), locked('monthly#1'), locked('monthly#2'), bought('monthly#3')]
       : [free(), locked(`${c.id}#0`), locked(`${c.id}#1`)];
     return { id: c.id, narration: 'A short line.', cards: [], parts, card: null };
   });

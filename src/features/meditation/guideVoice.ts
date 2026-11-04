@@ -8,8 +8,8 @@ import { backgroundMusic } from '../../shared/audio/backgroundMusic';
  *
  * 15-09 decided "no guided voice": text and music pace the breath. On 26-09 guides were recorded
  * for English (3:50), Japanese (6:34) and Chinese (1:07). Since 19-10 (Linh: "ngôn ngữ nào không có
- * thì sử dụng tiếng Anh luôn") a language without its own recording hears the English one — Korean
- * and Vietnamese today — the same rule the Sleep Guide follows (sleepSession.ts).
+ * thì sử dụng tiếng Anh luôn") a language without its own recording hears the English one — the
+ * same rule the Sleep Guide follows (sleepSession.ts). Since 30-10 every app language has its own.
  *
  * All three are levelled to -18 LUFS (the Chinese recording came in 9 dB quieter and vanished under
  * the bed). It plays ONCE from Begin, over the start of the ten minutes; the breath carries on
@@ -19,6 +19,10 @@ import { backgroundMusic } from '../../shared/audio/backgroundMusic';
  * counselor's voice is the consultation's.
  */
 export const GUIDES: Partial<Record<Lang, string>> = {
+  // 30-10 ("한국어인데 왜 영어나옴 각 언어별로 나와야하는데"): Vietnamese, translated from the Korean
+  // script the English guide came from (tools/tts/scripts/calm_affirmation_vi.txt), rendered with
+  // tools/tts/render_affirmation.py and levelled to -18 LUFS. Korean has none: see guideFor.
+  vi: 'meditation_guide_vi.m4a',
   en: 'meditation_guide_en.m4a',
   ja: 'meditation_guide_ja.m4a',
   // One Mandarin recording for both scripts: what is SPOKEN does not change between them.
@@ -26,8 +30,13 @@ export const GUIDES: Partial<Record<Lang, string>> = {
   'zh-TW': 'meditation_guide_zh.m4a',
 };
 
-/** The recording a language hears: its own, else the English one. */
-export const guideFor = (lang: Lang | string): string | null => GUIDES[lang as Lang] ?? GUIDES.en ?? null;
+/**
+ * The recording a language hears: its own, else the English one — except Korean, which hears NONE.
+ * Its guide is already in its bed (backgroundMusic's `meditationKo`: the Korean affirmations mixed
+ * into the music), and the English fallback played on top of it — the 30-10 "한국어인데 왜 영어나옴".
+ */
+export const guideFor = (lang: Lang | string): string | null =>
+  lang === 'ko' ? null : GUIDES[lang as Lang] ?? GUIDES.en ?? null;
 
 let SoundModule: any = null;
 try {

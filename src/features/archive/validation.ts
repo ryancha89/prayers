@@ -20,17 +20,18 @@ export const yearIn = (v: string): number | null => {
   return y >= EARLIEST && y <= THIS_YEAR ? y : null;
 };
 
-/** A real calendar date, not in the future. */
-export const validDate = (v: string): boolean => {
+/** A real calendar date, not in the future — unless it is a plan's (`future`), which is the
+ *  point of a plan: 내년 has to be enterable (10-22). Fifty years out is the ceiling there. */
+export const validDate = (v: string, future = false): boolean => {
   const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!m) return false;
   const y = Number(m[1]);
   const mo = Number(m[2]);
   const d = Number(m[3]);
-  if (y < EARLIEST || y > THIS_YEAR || mo < 1 || mo > 12 || d < 1) return false;
+  if (y < EARLIEST || y > THIS_YEAR + (future ? 50 : 0) || mo < 1 || mo > 12 || d < 1) return false;
   const dt = new Date(Date.UTC(y, mo - 1, d));
   if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return false;
-  return dt.getTime() <= Date.now();
+  return future || dt.getTime() <= Date.now();
 };
 
 export const validTime = (v: string): boolean => {
@@ -49,6 +50,8 @@ export function validate(field: FieldSpec, raw: string | undefined): ValidationK
       return /^\d{4}$/.test(v) && yearIn(v) !== null ? null : 'archive.err.year';
     case 'date':
       return validDate(v) ? null : 'archive.err.date';
+    case 'when': // stored as a whole day whatever the scope (planWhen.storedOf); may be ahead
+      return validDate(v, true) ? null : 'archive.err.date';
     case 'time':
       return validTime(v) ? null : 'archive.err.time';
     case 'text':
