@@ -6,6 +6,9 @@
          advertising ID (firebase.json turns its collection off) and Play Console declares so —
          Play refused the 1.0.7 upload while the permission was in the merged manifest. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+    <!-- Same for the Privacy Sandbox ad-services permissions it adds: no ad id, no ad attribution. -->
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" tools:node="remove" />
     <!-- Asking the counselor out loud instead of typing. The embedded player records (Unity's
          ConsultationMic) and prompts for this at the moment the mic button is first pressed. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
