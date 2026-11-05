@@ -4,14 +4,18 @@ import { SignInCancelledError } from './signInError';
 /**
  * Google Sign-In, behind a guarded require — same reasoning as appleSignIn.ts.
  *
- * The client ids belong to Google Cloud project 1012229674984. The server verifies the token
- * and resolves a separate Prayers account in prayers_users.
+ * The client ids belong to Prayers' own Google Cloud project, 187696058156 (2026-11-05). Before
+ * that they were the shared 사주월드 project's (1012229674984), and Google's sheet said "사주월드".
+ * The server verifies the token and resolves a separate Prayers account in prayers_users; a
+ * Google account's `sub` is the same in either project, so existing accounts carry over.
  * Google only lets this package in once that project has an Android OAuth client for
- * `com.fortunetorch.prayers` with the signing key's SHA-1 — without it `signIn` rejects with
+ * `com.fortunetorch.prayers` with EVERY signing key's SHA-1 — the upload key AND Play's app
+ * signing keys (a Play install is re-signed by Google). Without it `signIn` rejects with
  * DEVELOPER_ERROR, which is a console setting, not a code bug.
+ * The iOS URL scheme in Info.plist is this iOS client id reversed.
  */
-const WEB_CLIENT_ID = '1012229674984-07lvobg7mcma0orpng913fpn7bq3v0cb.apps.googleusercontent.com';
-const IOS_CLIENT_ID = '1012229674984-fi6v2188t29ievf46v9kg95b06rheia5.apps.googleusercontent.com';
+const WEB_CLIENT_ID = '187696058156-gp3rsrb5iq0d9l0831v21hccjh6t39fo.apps.googleusercontent.com';
+const IOS_CLIENT_ID = '187696058156-hdgq6tgrkhmpqr06tqml35mrj280nhqq.apps.googleusercontent.com';
 
 type GoogleUser = { idToken: string | null; serverAuthCode: string | null; user: { name: string | null; email: string } };
 type GoogleModule = {
