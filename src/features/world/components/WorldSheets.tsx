@@ -189,10 +189,10 @@ export const ZoneOverlay: React.FC<{
         </>,
       );
     case 'meditation':
-      // Never opened (27-10): the door goes straight into the room, which offers its two sessions.
-      // ⚠️ MERGE 04-11: the garden card (world-med-garden, actions.garden) lived on this sheet and
-      // has no home now — the garden needs an entry in the meditation room's session list or its
-      // own World door (proposal §1 phase 3) before Tree of Mind is reachable again.
+      // Never opened (27-10): the door goes straight into the room, which offers its sessions —
+      // breathing, the sleep guide, and (05-11) Tree of Mind, whose card moved from this sheet
+      // into the room (MeditationRoomScreen's door choices). `actions.garden` stays for the day
+      // the garden gets its own World door (proposal §1 phase 3).
       return null;
     case 'journey':
       return sheet(
