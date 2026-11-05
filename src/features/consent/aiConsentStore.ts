@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { track } from '../../shared/analytics';
 
 /**
  * PERMISSION TO SEND PERSONAL DATA TO THIRD-PARTY AI (App Review 5.1.1(i) / 5.1.2(i), 2026-11-04).
@@ -63,6 +64,7 @@ export function useAiConsentFor(uid: string | null | undefined): boolean | null 
 
 export function grantAiConsent(uid: string, now = Date.now()) {
   useAiConsent.setState(s => ({ byUid: { ...s.byUid, [uid]: { version: AI_CONSENT_VERSION, at: now } } }));
+  track({ name: 'ai_consent', params: { action: 'granted' } });
 }
 
 export function withdrawAiConsent(uid: string) {

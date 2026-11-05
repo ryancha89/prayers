@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { track } from '../../../shared/analytics';
 
 /**
  * Who the player is, for real.
@@ -99,6 +100,8 @@ export function signedIn(input: {
     gameToken: null,
     gameTokenExpiresAt: null,
   });
+  // How people sign in (apple/google/kakao/reviewer) — never who (shared/analytics.ts).
+  track({ name: 'login', params: { method: input.provider } });
 }
 
 export function signedOut() {

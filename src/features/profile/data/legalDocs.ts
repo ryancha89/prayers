@@ -31,7 +31,7 @@ interface Document {
 }
 
 /** Last substantive edit. Shown to the reader, because a policy with no date is unverifiable. */
-const UPDATED = '2026-11-04';
+const UPDATED = '2026-11-05';
 
 const EN: Record<LegalDoc, Document> = {
   terms: {
@@ -98,7 +98,7 @@ const EN: Record<LegalDoc, Document> = {
           'Photos: only the photos you pick for your profile or your diary are read and uploaded. The rest of your library is never accessed.',
           'Microphone: only while you are recording a question to ask out loud. That recording is sent to our server to be turned into text, and is not kept after it has been transcribed.',
           'Camera: only when you take a profile photo, or when you let your character copy your facial expressions. Expression tracking runs on your phone; the camera image is never recorded or sent.',
-          'No advertising identifier, and no advertising or analytics SDK is embedded in this app.',
+          'No advertising identifier, and no advertising SDK. The app uses Google Analytics for Firebase (Google LLC) for usage statistics only: which screens are opened and which features are used, with device and app version information and a random app-instance identifier. It is not linked to your account, name or email, contains none of your questions, birth details or diary, and is not used for advertising or to track you across other apps.',
         ],
       },
       {
@@ -199,7 +199,7 @@ const KO: Record<LegalDoc, Document> = {
           '사진: 프로필이나 일기에 직접 고른 사진만 읽고 업로드합니다. 나머지 사진 보관함에는 접근하지 않습니다.',
           '마이크: 질문을 소리 내어 녹음하는 동안에만 사용합니다. 녹음은 글로 바꾸기 위해 서버로 전송되며, 변환이 끝나면 보관하지 않습니다.',
           '카메라: 프로필 사진을 찍을 때, 또는 캐릭터가 표정을 따라 하도록 허용했을 때만 사용합니다. 표정 인식은 휴대폰 안에서 처리되며 카메라 영상은 녹화되거나 전송되지 않습니다.',
-          '광고 식별자를 수집하지 않으며, 광고·분석 SDK를 탑재하지 않습니다.',
+          '광고 식별자를 수집하지 않으며, 광고 SDK를 탑재하지 않습니다. 이용 통계를 위해 Google Analytics for Firebase(Google LLC)를 사용합니다. 어떤 화면을 열고 어떤 기능을 썼는지와 기기·앱 버전 정보, 무작위로 만든 앱 설치 식별자만 수집하며, 계정·이름·이메일과 연결하지 않고, 질문·출생 정보·일기 내용은 포함하지 않으며, 광고나 다른 앱에 걸친 추적에 쓰지 않습니다.',
         ],
       },
       {
@@ -300,7 +300,7 @@ const VI: Record<LegalDoc, Document> = {
           'Ảnh: chỉ những ảnh bạn tự chọn cho hồ sơ hoặc nhật ký mới được đọc và tải lên. Phần còn lại của thư viện ảnh không bao giờ bị truy cập.',
           'Micro: chỉ trong lúc bạn đang ghi âm câu hỏi bằng giọng nói. Đoạn ghi âm được gửi lên máy chủ để chuyển thành chữ và không được giữ lại sau khi chuyển xong.',
           'Camera: chỉ khi bạn chụp ảnh đại diện, hoặc khi bạn cho nhân vật bắt chước nét mặt mình. Việc nhận diện nét mặt chạy ngay trên điện thoại; hình ảnh camera không bao giờ được ghi lại hay gửi đi.',
-          'Không mã quảng cáo, và ứng dụng không nhúng SDK quảng cáo hay phân tích nào.',
+          'Không mã quảng cáo và không SDK quảng cáo. Ứng dụng dùng Google Analytics for Firebase (Google LLC) chỉ để thống kê sử dụng: màn hình nào được mở và tính năng nào được dùng, kèm thông tin thiết bị, phiên bản ứng dụng và một mã cài đặt ngẫu nhiên. Dữ liệu này không gắn với tài khoản, tên hay email của bạn, không chứa câu hỏi, ngày sinh hay nhật ký, và không dùng cho quảng cáo hay để theo dõi bạn trên các ứng dụng khác.',
         ],
       },
       {

@@ -4,6 +4,7 @@ import { devlog } from '../../../shared/devlog';
 import { isLang } from '../../../shared/i18n';
 import type { Lang } from '../../../shared/i18n';
 import type { ChatMode } from '../types';
+import { track } from '../../../shared/analytics';
 
 /**
  * The Prayers consultation API on saju_server (`/api/v1/prayers/*`).
@@ -507,6 +508,9 @@ export async function sendConsultationMessage(
     },
     ...(input.focusMemoryId ? { focus_memory_id: input.focusMemoryId } : {}),
   };
+
+  // Usage statistics: which counselor, never the question (shared/analytics.ts).
+  track({ name: 'consultation_message', params: { counselor: input.tone ?? 'default' } });
 
   let res: Response;
   try {

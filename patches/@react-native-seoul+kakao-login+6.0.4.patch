@@ -1,0 +1,49 @@
+diff --git a/node_modules/@react-native-seoul/kakao-login/kakao-login.podspec b/node_modules/@react-native-seoul/kakao-login/kakao-login.podspec
+--- a/node_modules/@react-native-seoul/kakao-login/kakao-login.podspec
++++ b/node_modules/@react-native-seoul/kakao-login/kakao-login.podspec
+@@ -28,7 +28,13 @@
+   s.source_files = "ios/**/*.{h,c,cc,cpp,m,mm,swift}"
+   s.requires_arc = true
+ 
+-  s.dependency "React"
++  # prayers 11-05: under use_frameworks! (React Native Firebase) this pod links on its own, and the
++  # bare "React" umbrella left RCTRegisterModule undefined. Take the deps every RN module takes.
++  if defined?(install_modules_dependencies()) != nil
++    install_modules_dependencies(s)
++  else
++    s.dependency "React-Core"
++  end
+ 
+   if defined?($KakaoSDKVersion)
+     Pod::UI.puts "#{s.name}: Using user specified Kakao SDK version '#{$KakaoSDKVersion}'"
+diff --git a/node_modules/@react-native-seoul/kakao-login/ios/RNKakaoLogins/RNKakaoLogins.h b/node_modules/@react-native-seoul/kakao-login/ios/RNKakaoLogins/RNKakaoLogins.h
+--- a/node_modules/@react-native-seoul/kakao-login/ios/RNKakaoLogins/RNKakaoLogins.h
++++ b/node_modules/@react-native-seoul/kakao-login/ios/RNKakaoLogins/RNKakaoLogins.h
+@@ -6,10 +6,6 @@
+ //  Copyright © 2021 Facebook. All rights reserved.
+ //
+ 
++// prayers 11-05: the interface comes from the generated kakao_login-Swift.h now that the Swift
++// class is public (needed under use_frameworks!); declaring it here too was a duplicate.
+ @class RNKakaoLogins;
+-
+-@interface RNKakaoLogins : NSObject
+-- (RNKakaoLogins *)returnSwiftClassInstance;
+-+ (BOOL)isKakaoTalkLoginUrl:(NSURL *)url;
+-+ (BOOL)handleOpenUrl:(NSURL *)url;
+-@end
+diff --git a/node_modules/@react-native-seoul/kakao-login/ios/RNKakaoLogins/RNKakaoLogins.swift b/node_modules/@react-native-seoul/kakao-login/ios/RNKakaoLogins/RNKakaoLogins.swift
+--- a/node_modules/@react-native-seoul/kakao-login/ios/RNKakaoLogins/RNKakaoLogins.swift
++++ b/node_modules/@react-native-seoul/kakao-login/ios/RNKakaoLogins/RNKakaoLogins.swift
+@@ -12,8 +12,10 @@
+ import KakaoSDKAuth
+ import KakaoSDKUser
+ 
++// public (prayers 11-05): as its own framework under use_frameworks!, an internal class is not
++// exported, and the app's AppDelegate calls isKakaoTalkLoginUrl/handleOpenUrl on it.
+ @objc(RNKakaoLogins)
+-class RNKakaoLogins: NSObject {
++public class RNKakaoLogins: NSObject {
+ 
+     public override init() {
+         super.init()

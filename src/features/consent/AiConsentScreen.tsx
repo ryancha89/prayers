@@ -14,6 +14,7 @@ import type { RootStackParamList } from '../../navigation/types';
 import { signedOut, useAuthStore } from '../auth/store/authStore';
 import { forgetLocalData } from '../auth/api/deleteAccount';
 import { aiConsentCopy } from './aiConsentCopy';
+import { track } from '../../shared/analytics';
 import { aiConsentGrantedAt, grantAiConsent, useAiConsentFor, withdrawAiConsent } from './aiConsentStore';
 
 /**
@@ -51,7 +52,11 @@ export const AiConsentScreen: React.FC<{ review?: boolean }> = ({ review = false
     sfx.tap();
     Alert.alert(c.withdrawTitle, c.withdrawBody, [
       { text: c.cancel, style: 'cancel' },
-      { text: c.withdrawConfirm, style: 'destructive', onPress: () => { if (uid) withdrawAiConsent(uid); } },
+      { text: c.withdrawConfirm, style: 'destructive', onPress: () => {
+        if (!uid) return;
+        withdrawAiConsent(uid);
+        track({ name: 'ai_consent', params: { action: 'withdrawn' } });
+      } },
     ]);
   };
 

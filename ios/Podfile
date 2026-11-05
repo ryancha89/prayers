@@ -8,11 +8,15 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
-linkage = ENV['USE_FRAMEWORKS']
-if linkage != nil
-  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
-  use_frameworks! :linkage => linkage.to_sym
-end
+# Dynamic frameworks by default (11-05): React Native Firebase 27 resolves the Firebase Apple SDK
+# through Swift Package Manager only, and requires `use_frameworks! :linkage => :dynamic`.
+# USE_FRAMEWORKS still overrides it.
+linkage = ENV['USE_FRAMEWORKS'] || 'dynamic'
+Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+use_frameworks! :linkage => linkage.to_sym
+# RNFB 27 pins Firebase Apple SDK 13.x, which needs Xcode 26.2 (Swift 6.2.3). This machine builds
+# with Xcode 26.0.1, so stay on the last 12.x until Xcode is upgraded — then delete this line.
+$FirebaseSDKVersion = '12.19.3'
 
 # @azesmway/react-native-unity vendors UnityFramework from its own ios/ folder and
 # relies on a podspec prepare_command to copy it there from unity/builds/ios.

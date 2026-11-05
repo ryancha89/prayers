@@ -25,6 +25,7 @@ import { useAuthStore } from './features/auth/store/authStore';
 import { syncAccountCharacter } from './features/character/characterSync';
 import { useJourneyPlayer } from './features/journey/player/journeyPlayer';
 import { stopLine } from './features/philosophy/lectureVoice';
+import { trackScreen } from './shared/analytics';
 
 const queryClient = new QueryClient();
 
@@ -132,6 +133,7 @@ const syncAudioToRoute = () => {
   const route = navigationRef.isReady() ? navigationRef.getCurrentRoute() : undefined;
   const inUnity = !!route && UNITY_SCREENS.has(route.name);
   useCurrentRoute.setState({ name: route?.name ?? null });
+  trackScreen(route?.name);
   if (route?.name !== 'Lecture') stopLine();
   if (route?.name !== 'Journey') useJourneyPlayer.getState().setScreenActive(false);
 

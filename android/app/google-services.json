@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "973680895720",
+    "project_id": "prayers-c80e9",
+    "storage_bucket": "prayers-c80e9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:973680895720:android:03fb5fe13cb228540c8b5d",
+        "android_client_info": {
+          "package_name": "com.fortunetorch.prayers"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAb56aTptzaHWR9KPnST4tVGE6z6SO7qD8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

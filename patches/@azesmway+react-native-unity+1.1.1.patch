@@ -1586,3 +1586,47 @@ diff --git a/node_modules/@azesmway/react-native-unity/android/src/main/java/com
      } else {
          try {
              createPlayer(context.getCurrentActivity(), new UnityPlayerCallback() {
+diff --git a/node_modules/@azesmway/react-native-unity/react-native-unity.podspec b/node_modules/@azesmway/react-native-unity/react-native-unity.podspec
+--- a/node_modules/@azesmway/react-native-unity/react-native-unity.podspec
++++ b/node_modules/@azesmway/react-native-unity/react-native-unity.podspec
+@@ -14,7 +14,10 @@
+   s.platforms    = { :ios => "12.4" }
+   s.source       = { :git => "https://github.com/azesmway/react-native-unity.git", :tag => "#{s.version}" }
+ 
+-  s.source_files = "ios/**/*.{h,m,mm}"
++  # The bridge's own files only (prayers, 11-05). `ios/**` also swept in the vendored
++  # UnityFramework(.xcframework)'s headers, which under use_frameworks! (needed by React Native
++  # Firebase) became "Multiple commands produce …/react_native_unity.framework/Headers/*.h".
++  s.source_files = "ios/*.{h,m,mm}"
+ 
+   # Use install_modules_dependencies helper to install the dependencies if React Native version >=0.71.0.
+   # See https://github.com/facebook/react-native/blob/febf6b7f33fdb4904669f99d795eba4c0f95d7bf/scripts/cocoapods/new_architecture.rb#L79.
+diff --git a/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm b/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm
+--- a/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm
++++ b/node_modules/@azesmway/react-native-unity/ios/RNUnityView.mm
+@@ -1,7 +1,5 @@
+ #import "RNUnityView.h"
+-#ifdef DEBUG
+-#include <mach-o/ldsyms.h>
+-#endif
++#include <mach-o/dyld.h>
+ #ifdef RCT_NEW_ARCH_ENABLED
+ using namespace facebook::react;
+ #endif
+@@ -20,11 +18,11 @@
+     UnityFramework* ufw = [bundle.principalClass getInstance];
+     if (![ufw appController])
+     {
+-#ifdef DEBUG
+-      [ufw setExecuteHeader: &_mh_dylib_header];
+-#else
+-      [ufw setExecuteHeader: &_mh_execute_header];
+-#endif
++      // The app's own Mach-O header (image 0 is always the main executable). `_mh_execute_header`
++      // only links when this file is compiled into the app binary; under use_frameworks! (React
++      // Native Firebase, 11-05) it lives in react_native_unity.framework and the symbol is
++      // undefined, and `_mh_dylib_header` (the old DEBUG branch) named this framework instead.
++      [ufw setExecuteHeader: (const MachHeader *)_dyld_get_image_header(0)];
+     }
+ 
+     [ufw setDataBundleId: [bundle.bundleIdentifier cStringUsingEncoding:NSUTF8StringEncoding]];

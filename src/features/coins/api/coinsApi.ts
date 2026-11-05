@@ -7,6 +7,7 @@ import { devlog } from '../../../shared/devlog';
 import { devPurchases } from '../../../shared/device/simulator';
 import { useCoins } from '../store/coinStore';
 import { noteCoins } from '../../myroom/inbox/inboxStore';
+import { track } from '../../../shared/analytics';
 
 /**
  * Prayer Coins (PC) — the coin wallet (`users.coin_balance` on saju_server), 10-15 the app's one
@@ -266,6 +267,7 @@ async function credit(purchase: ProductPurchase, late: boolean): Promise<'credit
   useCoins.getState().setBalance(r.balance);
   noteCoins(r.coinsAdded, r.balance);
   useCoins.getState().clearNotice(purchase.productId);
+  if (r.coinsAdded > 0) track({ name: 'coins_credited', params: { product: purchase.productId, coins: r.coinsAdded } });
   // 29-10: a replay of an already-credited purchase adds 0 — nothing to announce, and announcing it
   // wiped whatever the shop was saying.
   if (late && r.coinsAdded > 0) useCoins.getState().noteLateCredit(purchase.productId, r.coinsAdded);
