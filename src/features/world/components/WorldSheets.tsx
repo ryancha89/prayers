@@ -133,7 +133,8 @@ export interface ZoneActions {
   myroom(): void;
   /** Into the coffee shop. Nothing is asked at its door: the player picks a table, then coffee or tarot there. */
   cafe(): void;
-  /** Tree of Mind (spec 008): into the garden, offered behind the meditation door. */
+  /** Tree of Mind (spec 008): into the garden. Its own hall door since 09-11; the meditation room's
+   *  door-choice list still offers it too (the user asked to keep both ways in). */
   garden(): void;
 }
 
@@ -191,8 +192,11 @@ export const ZoneOverlay: React.FC<{
     case 'meditation':
       // Never opened (27-10): the door goes straight into the room, which offers its sessions —
       // breathing, the sleep guide, and (05-11) Tree of Mind, whose card moved from this sheet
-      // into the room (MeditationRoomScreen's door choices). `actions.garden` stays for the day
-      // the garden gets its own World door (proposal §1 phase 3).
+      // into the room (MeditationRoomScreen's door choices).
+      return null;
+    case 'garden':
+      // Never opened either (09-11): the garden door goes straight in, and the garden screen asks
+      // for the sitting's length itself.
       return null;
     case 'journey':
       return sheet(

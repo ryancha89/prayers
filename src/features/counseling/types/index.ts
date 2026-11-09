@@ -529,6 +529,24 @@ export type RNToUnityEvent =
   | { type: 'GARDEN_ROTATE'; payload: { step: 1 | -1 } }
   | { type: 'GARDEN_ADD'; payload: { item: string } }
   | { type: 'GARDEN_REMOVE'; payload: Record<string, never> }
+  /* Meditation experiences (spec 010, specs/010-meditation-experiences/contract.md §2): ONE family
+     for every experience, present and phase-2 — `MEDI_INIT.experience` is the discriminator that
+     picks the scene. RN owns every word, the clock, the tap count, the sounds and the haptics;
+     Unity is the stage. The existing MEDITATION_* (breathing room) and GARDEN_* families are
+     untouched on purpose (FR-005). */
+  /** Load that experience's scene (MoktakTemple / SnowMountain) and hold on the establishing shot.
+   *  Remembered and repeated until MEDI_READY — the GARDEN_INIT discipline exactly. */
+  | { type: 'MEDI_INIT'; payload: MediInitPayload }
+  /** The session's phase; replayed on MEDI_READY. `running` starts Unity's self-paced
+   *  breath/ambience loop — snow animates the breath LOCALLY from the INIT config, never from a
+   *  per-frame stream. */
+  | { type: 'MEDI_STATE'; payload: MediStatePayload }
+  /** Moktak only: a tap landed. `counted` false = under RN's tap floor (Unity still flinches the
+   *  mallet, smaller). Count 108 triggers the closing strike framing. Not remembered: a tap that
+   *  missed a loading scene is long over, like GARDEN_TOUCH. */
+  | { type: 'MEDI_TAP'; payload: { count: number; counted: boolean } }
+  /** Leaving the experience (Unity: EndSession). */
+  | { type: 'MEDI_END' }
   /** A held direction key. x = right, y = forward, each in [-1, 1].
    *
    *  ONE MESSAGE PER PRESS: Unity keeps the last direction until told otherwise, so the press
@@ -633,9 +651,9 @@ export interface JourneyVoicePayload {
   startAt: number;
 }
 
-/** The world's doors (spec 004; `cafe` since 16-10). Mirrored by name on the Unity side (WorldPlan's
- *  Destination ids); a rename is a dead door. */
-export type WorldZone = 'counseling' | 'meditation' | 'journey' | 'shop' | 'myroom' | 'cafe';
+/** The world's doors (spec 004; `cafe` since 16-10, `garden` since 09-11). Mirrored by name on the
+ *  Unity side (WorldPlan's Destination ids); a rename is a dead door. */
+export type WorldZone = 'counseling' | 'meditation' | 'journey' | 'shop' | 'myroom' | 'cafe' | 'garden';
 
 /** A spot in the world: ground-plane position and facing, in Unity's world units and degrees. */
 export interface WorldSpot {
@@ -859,6 +877,34 @@ export interface GardenIslandPayload {
   orb: string | null;
 }
 
+/** MEDI_INIT's discriminator — phase 2 experiences add members here, not message types. */
+export type MediExperience = 'moktak' | 'snow_mountain';
+
+/** The server's breath pattern (contract §1 `breath`), as Unity paces itself from it. */
+export interface MediBreathConfig {
+  inMs: number;
+  holdMs: number;
+  outMs: number;
+}
+
+/** MEDI_INIT. Mirrored by name in Unity's RNMediInit. */
+export interface MediInitPayload {
+  experience: MediExperience;
+  lang: string;
+  /** Snow: the server's 4-4-6; absent for the moktak (no guided breath there). */
+  breath?: MediBreathConfig;
+  /** The player's haptics toggle, for parity — Unity may echo a strike with a camera nudge only
+   *  when the phone also ticks. */
+  haptics?: boolean;
+}
+
+export type MediStageState = 'intro' | 'running' | 'finishing' | 'done';
+
+/** MEDI_STATE. */
+export interface MediStatePayload {
+  state: MediStageState;
+}
+
 /** GARDEN_GROW. */
 export interface GardenGrowPayload {
   level: number;
@@ -1048,6 +1094,13 @@ export type UnityToRNEvent =
   | { type: 'GARDEN_SELECT'; payload: { uid: string; item: string } }
   /** Decor edit mode's working layout, and whether it may be saved (MYROOM_LAYOUT_CHANGED's shape). */
   | { type: 'GARDEN_LAYOUT_CHANGED'; payload: { layout: { items: MyRoomItem[] | null }; valid: boolean; reason: string; uid: string } }
+  /** Spec 010: the experience's scene is on screen — RN fades its drawn fallback. */
+  | { type: 'MEDI_READY' }
+  /** Spec 010's per-experience beats, without new types: `strike` (the strike animation landed,
+   *  with its count) · `final_bell` (the 108th-strike ceremony is done — RN may call finish) ·
+   *  `settled` (snow's establishing move is done — RN starts the clock; 4.5 s fallback as
+   *  GARDEN_SEATED). */
+  | { type: 'MEDI_EVENT'; payload: { name: string; count?: number } }
   /** Walk-in only: whether a counselor is within reach right now, and which one. The app shows or
    *  hides its Talk button on this and nothing else — the reach test lives in the room, and a
    *  second copy of it here would drift from the first. Sent on CHANGE, not per frame. */
@@ -1173,6 +1226,21 @@ export interface GardenBridge {
   sendGardenAdd(item: string): void;
   sendGardenRemove(): void;
   /** VIEW_INSETS: how much of the view the garden's UI covers. */
+  sendViewInsets(insets: ViewInsetsPayload): void;
+  onEvent(handler: (event: UnityToRNEvent) => void): () => void;
+}
+
+/** The meditation experiences' half of the bridge (spec 010) — its own interface for the reason
+ *  WorldBridge gives: the screens talk to the native bridge with the player in the build and to
+ *  the mock without, through the same calls. */
+export interface MeditationsBridge {
+  openMeditation(init: MediInitPayload): void;
+  closeMeditation(): void;
+  /** MEDI_STATE: the session's phase, remembered for MEDI_READY. */
+  sendMediState(payload: MediStatePayload): void;
+  /** MEDI_TAP: a tap on the moktak. Not remembered — a tap that missed the scene is over. */
+  sendMediTap(count: number, counted: boolean): void;
+  /** VIEW_INSETS: how much of the view the screen's UI covers. */
   sendViewInsets(insets: ViewInsetsPayload): void;
   onEvent(handler: (event: UnityToRNEvent) => void): () => void;
 }

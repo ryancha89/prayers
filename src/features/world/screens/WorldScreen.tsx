@@ -318,7 +318,10 @@ export const WorldScreen: React.FC = () => {
     coins: () => useCoins.getState().openShop(),
     myroom: () => leaveTo('myroom', () => navigation.navigate('MyRoom')),
     cafe: () => leaveTo('cafe', () => navigation.navigate('Cafe')),
-    garden: () => leaveTo('meditation', () => navigation.navigate('Garden')),
+    // Its own door since 09-11, so its own return zone: coming back out of the garden puts the
+    // player on the garden's step, not on the meditation room's (which is where `'meditation'`
+    // used to drop them, from the phase-1 days when the garden had no door of its own).
+    garden: () => leaveTo('garden', () => navigation.navigate('Garden')),
   };
 
   /**
@@ -354,12 +357,16 @@ export const WorldScreen: React.FC = () => {
     // Straight in (21-10): no choice sheet anywhere; coffee or tarot is chosen from the table's menu
     // once the player has sat down.
     cafe: actions.cafe,
+    // Straight in (09-11): the garden screen opens on its own duration picker, so a sheet in front of
+    // it would only ask the same question twice.
+    garden: actions.garden,
   };
-  /** A door's overlay — except the cafe's and the meditation room's, which have none any more: every way of reaching that door
+  /** A door's overlay — except the cafe's, the meditation room's and the garden's, which have none: every way of reaching that door
    *  (Unity silent at the door, Map while loading, the drawn hub) goes in instead. */
   const openOverlay = (zone: WorldZone) => {
     if (zone === 'cafe') actions.cafe();
     else if (zone === 'meditation') actions.meditate();
+    else if (zone === 'garden') actions.garden();
     else setOverlay(zone);
   };
   door.current = {

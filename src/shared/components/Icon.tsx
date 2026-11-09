@@ -47,6 +47,9 @@ export type IconName =
   | 'bag'
   // The World's coffee shop door (16-10).
   | 'coffee'
+  // The World's Tree of Mind door (09-11): a crown over a trunk, not the lotus — the garden is its
+  // own place, and the lotus already means a meditation session.
+  | 'tree'
   | 'close'
   | 'moon'
   | 'bolt'
@@ -336,6 +339,15 @@ const ICONS: Record<IconName, Draw> = {
       <Path d="M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5Z" stroke={c} />
       <Line x1="3" y1="22" x2="18" y2="22" stroke={c} />
       <Path d="M8 2.5c-.8 1 .8 2 0 3M12 2.5c-.8 1 .8 2 0 3" stroke={c} />
+    </>
+  ),
+  // The sacred tree: a round crown of three lobes over a short trunk with two roots. Drawn at this
+  // set's weight rather than borrowed, so it sits beside `lotus` and `coffee` on the Map list.
+  tree: c => (
+    <>
+      <Path d="M12 3a5 5 0 0 1 4.3 7.5A4 4 0 0 1 14 17h-4a4 4 0 0 1-2.3-6.5A5 5 0 0 1 12 3Z" stroke={c} />
+      <Line x1="12" y1="17" x2="12" y2="21" stroke={c} />
+      <Path d="M12 19.2 9.5 21M12 19.2 14.5 21" stroke={c} />
     </>
   ),
   close: c => (

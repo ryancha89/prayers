@@ -1,8 +1,14 @@
 /**
  * The meditation room entered through the World's door (27-10, "vào thẳng phòng rồi chọn"): the room
- * itself offers its sessions — breathing here, the sleep guide, or the Tree of Mind garden (05-11,
- * its card moved here from the World's meditation sheet) — where the World used to show them in a
- * sheet over the hub. From Home (no `fromDoor`) it still opens on the breathing's Begin.
+ * itself offers its sessions — breathing here, or the sleep guide — where the World used to show
+ * them in a sheet over the hub. From Home (no `fromDoor`) it still opens on the breathing's Begin.
+ *
+ * The room offered five for a few days and is back to TWO (09-11, "xóa những tab dư ở medition").
+ * The absent three are asserted absent on purpose: each is a PLACE, reached as a place (the garden
+ * through its own hall door, Moktak and SnowMountain through their own routes), and listing a place
+ * among this room's sittings is what made the band read as duplicated tabs on the phone. Their
+ * routes still exist, so nothing stops a card being added back — this test is what makes that a
+ * decision rather than an accident.
  */
 import React from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';
@@ -50,16 +56,16 @@ it('through the door: the sessions, chosen in the room; the sleep guide takes th
   await act(async () => { tree = ReactTestRenderer.create(<MeditationRoomScreen />); });
   expect(byId('med-choice-breathe').length).toBeGreaterThan(0);
   expect(byId('med-choice-sleep').length).toBeGreaterThan(0);
-  expect(byId('med-choice-garden').length).toBeGreaterThan(0);
   await act(async () => byId('med-choice-sleep')[0].props.onPress());
   expect(mockNavigation.replace).toHaveBeenCalledWith('SleepGuide');
 });
 
-it('through the door: Tree of Mind takes the room’s place too', async () => {
+it('through the door: the room offers its two sittings and nothing else', async () => {
   mockParams = { fromDoor: true };
   await act(async () => { tree = ReactTestRenderer.create(<MeditationRoomScreen />); });
-  await act(async () => byId('med-choice-garden')[0].props.onPress());
-  expect(mockNavigation.replace).toHaveBeenCalledWith('Garden');
+  expect(byId('med-choice-garden')).toHaveLength(0);
+  expect(byId('med-choice-moktak')).toHaveLength(0);
+  expect(byId('med-choice-snow')).toHaveLength(0);
 });
 
 it('from Home: no choice, the breathing’s own Begin', async () => {

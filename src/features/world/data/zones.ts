@@ -3,10 +3,16 @@ import type { TranslationKey } from '../../../shared/i18n';
 import type { WorldZone } from '../../counseling/types';
 
 /**
- * The world's six doors (spec 004, "The map"; the coffee shop since 16-10), in the order the Map sheet
- * lists them. `id` is the
+ * The world's seven doors (spec 004, "The map"; the coffee shop since 16-10, the Tree of Mind since
+ * 09-11), in the order the Map sheet lists them. `id` is the
  * bridge's zone string — Unity maps it to ZONE_Consultation / ZONE_Meditation / … — so it is not
- * free text. Pet Area, Garden, Shrine and Seasonal are walkable scenery with no door and are not here.
+ * free text. Pet Area, Shrine and Seasonal are walkable scenery with no door and are not here.
+ *
+ * The garden's hall door is now its ONLY way in. It briefly had two (09-11 morning, "giữ cả hai"):
+ * the card inside the meditation room, which was how phase 1 reached it before it had a door of its
+ * own (spec 008 §Q1 made that door phase 3). The card came out the same afternoon ("xóa những tab
+ * dư ở medition") — seen on the phone, a garden listed among sittings read as a duplicate rather
+ * than as the separate place it is.
  */
 export interface WorldZoneInfo {
   id: WorldZone;
@@ -23,6 +29,7 @@ export const WORLD_ZONES: readonly WorldZoneInfo[] = [
   { id: 'shop', icon: 'bag', label: 'world.zone.shop', sub: 'world.zone.shop.sub' },
   { id: 'myroom', icon: 'home', label: 'world.zone.myroom', sub: 'world.zone.myroom.sub' },
   { id: 'cafe', icon: 'coffee', label: 'world.zone.cafe', sub: 'world.zone.cafe.sub' },
+  { id: 'garden', icon: 'tree', label: 'world.zone.garden', sub: 'world.zone.garden.sub' },
 ];
 
 const IDS = new Set<string>(WORLD_ZONES.map(z => z.id));

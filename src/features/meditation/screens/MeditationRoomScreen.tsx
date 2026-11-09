@@ -93,11 +93,18 @@ const ROOM_ART = require('../assets/room.jpg');
 /** The sessions offered when the player walks in through the World's door (27-10, "vào thẳng
  *  phòng rồi chọn"): each with a frame of its place (the room cards cropped from
  *  MeditationLandscapePhotographer's close / idle portraits, Docs/RoomPhotos/MeditationRoom/
- *  landscape/cards; the garden from Docs/RoomPhotos/TreeOfMind/final_close.png), 240 px. */
+ *  landscape/cards), 240 px.
+ *
+ *  TWO cards since 09-11 (user, "xóa những tab dư ở medition"). The room had grown to five —
+ *  breathe, sleep, Tree of Mind, and spec 010's wooden fish and snow mountain — and the last two
+ *  shipped with PLACEHOLDER art borrowed from the first and third, so on the phone the band read
+ *  as five cards of which two were visibly duplicates. What is left is what this room is: a sitting
+ *  you do here, and the sleep guide. The other three are places of their own and are entered as
+ *  places: the garden through its own hall door (SanctuaryWorldBuilder.HallSeven.cs), and Moktak /
+ *  SnowMountain through their routes, which are still registered — only the cards are gone. */
 const SESSION_ART = {
   breathe: require('../assets/card_breathe.jpg'),
   sleep: require('../assets/card_sleep.jpg'),
-  garden: require('../assets/card_garden.jpg'),
 };
 
 export const MeditationRoomScreen: React.FC = () => {
@@ -461,30 +468,22 @@ export const MeditationRoomScreen: React.FC = () => {
                 { opacity: arrive, transform: [{ translateY: arrive.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] },
               ]}>
               {fromDoor ? (
-                // Walked in from the World: the room's sessions, chosen here, in the room. The
-                // Tree of Mind card moved in from the World's meditation sheet when the door
-                // started going straight into the room (merge 04-11) — the garden replaces this
-                // room the way the sleep guide does, so its scene owns the player cleanly.
-                <View style={[styles.choices, landscape && styles.choicesRow]}>
-                  <Choice testID="med-choice-breathe" art={SESSION_ART.breathe} title={t('home.breathe')} note={t('home.meditation')} compact={landscape} onPress={begin} />
+                // Walked in from the World: the room's sessions, chosen here, in the room.
+                // The grid stays (one row of two now) rather than reverting to `compact`: the band
+                // is a FIXED height that Unity frames her above, and the grid is the shape that was
+                // measured against it in both orientations.
+                <View style={styles.choicesGrid}>
+                  <Choice testID="med-choice-breathe" art={SESSION_ART.breathe} title={t('home.breathe')} note={t('home.meditation')} grid onPress={begin} />
                   {sleepAudio.available() ? (
                     <Choice
                       testID="med-choice-sleep"
                       art={SESSION_ART.sleep}
                       title={t('home.sleep')}
                       note={t('home.sleepHint')}
-                      compact={landscape}
+                      grid
                       onPress={() => { silence(); navigation.replace('SleepGuide'); }}
                     />
                   ) : null}
-                  <Choice
-                    testID="med-choice-garden"
-                    art={SESSION_ART.garden}
-                    title={t('world.med.garden')}
-                    note={t('world.med.gardenNote')}
-                    compact={landscape}
-                    onPress={() => { silence(); navigation.replace('Garden'); }}
-                  />
                 </View>
               ) : (
                 <>
@@ -501,17 +500,18 @@ export const MeditationRoomScreen: React.FC = () => {
   );
 };
 
-/** One of the door's two sessions: a frame of the room, its name and what it costs. */
-const Choice: React.FC<{ art: number; title: string; note: string; onPress: () => void; compact?: boolean; testID?: string }> = ({
-  art, title, note, onPress, compact, testID,
+/** One of the door's sessions: a frame of the room, its name and what it costs. `grid` is the
+ *  wrap layout (two per row); `compact` the old landscape row, kept for callers. */
+const Choice: React.FC<{ art: number; title: string; note: string; onPress: () => void; compact?: boolean; grid?: boolean; testID?: string }> = ({
+  art, title, note, onPress, compact, grid, testID,
 }) => (
   <Pressable
     testID={testID}
     accessibilityRole="button"
     accessibilityLabel={title}
     onPress={() => { sfx.select(); onPress(); }}
-    style={({ pressed }) => [styles.choice, compact && styles.choiceCompact, pressed && styles.actionPressed]}>
-    <Image source={art} style={compact ? styles.choiceArtCompact : styles.choiceArt} resizeMode="cover" accessibilityIgnoresInvertColors />
+    style={({ pressed }) => [styles.choice, compact && styles.choiceCompact, grid && styles.choiceGrid, pressed && styles.actionPressed]}>
+    <Image source={art} style={compact || grid ? styles.choiceArtCompact : styles.choiceArt} resizeMode="cover" accessibilityIgnoresInvertColors />
     <View style={styles.choiceText}>
       <Text style={styles.choiceTitle} numberOfLines={1}>{title}</Text>
       <Text style={styles.choiceNote} numberOfLines={1}>{note}</Text>
@@ -566,6 +566,18 @@ const styles = StyleSheet.create({
   // Landscape: two cards side by side, centred, each a fixed width (30-10: `flex: 1` inside a plate
   // that sizes to its content left them zero wide — two slivers of art, no words).
   choicesRow: { flexDirection: 'row', justifyContent: 'center' },
+  // Two per row, wrapped, in both orientations. Sized when the room offered five cards (spec 010)
+  // because a column of five is ~330 px against the band's 210; kept at two so the band's measured
+  // shape does not change if a session is ever added back.
+  choicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    alignSelf: 'stretch',
+    paddingHorizontal: spacing.sm,
+  },
+  choiceGrid: { flexBasis: '47%', minWidth: 0, padding: spacing.xs, gap: spacing.sm },
   choice: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md, minWidth: 300,
     padding: spacing.sm, borderRadius: radius.md,

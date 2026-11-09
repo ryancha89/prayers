@@ -14,18 +14,22 @@ import { WORLD_ZONES } from '../data/zones';
 const ARRIVAL = require('../assets/world_arrival.jpg');
 
 /** Where each door's label floats over the picture, as a share of the box (no-player mode only).
- *  The hall's six doors, left to right (16-10, re-ordered): journey, shop, counseling, meditation,
- *  cafe, my room — journey and my room the low side doors, shop and the cafe the back diagonals,
- *  counseling and meditation the centre pair at the back.
+ *  The hall's seven doors, left to right (16-10, re-ordered; the garden since 09-11): journey, shop,
+ *  counseling, meditation, cafe, garden, my room — journey and my room the low side doors, shop and
+ *  the cafe the back diagonals, counseling and meditation the centre pair at the back.
  *  Not their exact projection — the picture is cover-cropped on a phone and loses the side doors —
  *  but the same order, the back doors high and the side doors low. Spaced so that no two labels of
- *  one row touch on a 375 pt phone (the centre pair is the tight one); exported for that test. */
+ *  one row touch on a 375 pt phone (the centre pair is the tight one); exported for that test.
+ *  The garden shares the cafe's bay (the pane was split in two), so it belongs on the cafe's row —
+ *  but two labels there cannot both clear LABEL_W inside the box, so it hangs one step lower, still
+ *  between the cafe and my room. */
 export const LABEL_AT: Record<WorldZone, { x: number; y: number }> = {
   journey: { x: 0.17, y: 0.56 },
   shop: { x: 0.26, y: 0.38 },
   counseling: { x: 0.34, y: 0.22 },
   meditation: { x: 0.66, y: 0.22 },
   cafe: { x: 0.74, y: 0.38 },
+  garden: { x: 0.8, y: 0.47 },
   myroom: { x: 0.83, y: 0.56 },
 };
 

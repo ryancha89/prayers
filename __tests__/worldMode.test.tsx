@@ -523,7 +523,9 @@ describe('the World screen', () => {
       await render();
       fromUnity({ type: 'WORLD_READY' });
       fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'counseling' } });
-      fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'garden' } });
+      // `shrine` is walkable scenery, never a door — it was `garden` until 09-11, when the garden
+      // became the hall's seventh door and an ENTERED for it rightly went in.
+      fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'shrine' } });
       expect(anyOverlay()).toBe(0);
       fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'counseling' } });
       expect(overlayOpen('counseling')).toBe(true);     // the picker, over the world

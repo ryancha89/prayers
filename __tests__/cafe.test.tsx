@@ -3,8 +3,12 @@
  * player present.
  *
  * Pinned here:
- *  · the zones: six doors, `cafe` among them with its copy in every language, and the drawn hub's
+ *  · the zones: seven doors, `cafe` and (09-11) `garden` among them with their copy in every
+ *    language, and the drawn hub's
  *    labels in the hall's left→right order with no two of a row touching on a 375 pt phone,
+ *  · the Tree of Mind's own door (09-11): straight in like the cafe's, remembering ITS door — and
+ *    since the same afternoon the ONLY way in, the meditation room's card having gone
+ *    (meditationDoorChoice pins its absence),
  *  · the bridge: CAFE_INIT repeated until CAFE_READY (and again when the player boots underneath it
  *    or a new view arrives), insets then the orbit replayed on READY, a stick queued while loading
  *    dropped, CAFE_END once,
@@ -117,7 +121,7 @@ const fromUnity = (event: object) => act(() => nativeUnityBridge.receiveFromUnit
 
 describe('the sixth door', () => {
   it('is a zone, with a label and a line in every language', () => {
-    expect(WORLD_ZONES.map(z => z.id)).toEqual(['counseling', 'meditation', 'journey', 'shop', 'myroom', 'cafe']);
+    expect(WORLD_ZONES.map(z => z.id)).toEqual(['counseling', 'meditation', 'journey', 'shop', 'myroom', 'cafe', 'garden']);
     expect(isWorldZone('cafe')).toBe(true);
     for (const lang of Object.keys(translations) as (keyof typeof translations)[]) {
       const table = translations[lang] as Record<string, string>;
@@ -127,9 +131,9 @@ describe('the sixth door', () => {
     expect((translations.en as Record<string, string>)['world.zone.cafe']).toBe('Coffee Shop');
   });
 
-  it('puts the drawn hub’s six labels in the hall’s order, none touching on a 375 pt phone', () => {
+  it('puts the drawn hub’s seven labels in the hall’s order, none touching on a 375 pt phone', () => {
     const order = Object.entries(LABEL_AT).sort((a, b) => a[1].x - b[1].x).map(([id]) => id);
-    expect(order).toEqual(['journey', 'shop', 'counseling', 'meditation', 'cafe', 'myroom']);
+    expect(order).toEqual(['journey', 'shop', 'counseling', 'meditation', 'cafe', 'garden', 'myroom']);
     // Side doors low, back diagonals higher, the centre pair highest.
     expect(LABEL_AT.myroom.y).toBe(LABEL_AT.journey.y);
     expect(LABEL_AT.shop.y).toBe(LABEL_AT.cafe.y);
@@ -287,6 +291,43 @@ describe('the world’s cafe door', () => {
     expect(card.findAll(n => n.props.children === '커피숍').length).toBeGreaterThan(0);
     press('들어가기');
     expect(posts('WORLD_ENTER').map(p => p.payload)).toEqual([{ zone: 'cafe' }]);
+  });
+});
+
+describe('the world’s Tree of Mind door', () => {
+  it('through the door: no sheet, the host goes down first, the Garden route opens on its own door', async () => {
+    await act(async () => { tree = ReactTestRenderer.create(<WorldScreen />); });
+    fromUnity({ type: 'WORLD_READY' });
+    fromUnity({ type: 'WORLD_ARRIVED', payload: { zone: 'garden' } });
+    fromUnity({ type: 'WORLD_ENTERED', payload: { zone: 'garden' } });
+    await act(async () => {});
+    // The garden screen asks for the sitting's length itself: a sheet would ask it twice.
+    expect(byTestID('world-overlay-garden')).toHaveLength(0);
+    expect(mockNav.calls.map(c => c.args)).toEqual([['Garden']]);
+    expect(mockNav.calls[0].hostUnmounts).toBe(1);
+    expect(posts('WORLD_END')).toHaveLength(1);
+    // Its OWN door, not the meditation room's: coming back out stands the player at the garden.
+    expect(useWorldStore.getState().returnZone).toBe('garden');
+  });
+
+  it('a Tree of Mind pick on the Map goes straight in too', async () => {
+    await act(async () => { tree = ReactTestRenderer.create(<WorldScreen />); });
+    press('Map');
+    const sheet = byTestID('world-sheet-map')[0];
+    act(() => sheet.findAll(n => n.props.accessibilityLabel === '마음의 나무' && typeof n.props.onPress === 'function')[0].props.onPress());
+    await act(async () => {});
+    expect(byTestID('world-overlay-garden')).toHaveLength(0);
+    expect(mockNav.calls.map(c => c.args)).toEqual([['Garden']]);
+  });
+
+  it('is a zone with its name and line in every language, and its own icon', () => {
+    expect(isWorldZone('garden')).toBe(true);
+    expect(WORLD_ZONES.find(z => z.id === 'garden')?.icon).toBe('tree');
+    for (const lang of Object.keys(translations) as (keyof typeof translations)[]) {
+      const table = translations[lang] as Record<string, string>;
+      expect([lang, table['world.zone.garden']?.length > 0, table['world.zone.garden.sub']?.length > 0]).toEqual([lang, true, true]);
+    }
+    expect((translations.en as Record<string, string>)['world.zone.garden']).toBe('Tree of Mind');
   });
 });
 
