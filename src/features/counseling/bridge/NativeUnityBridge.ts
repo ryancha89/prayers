@@ -8,6 +8,11 @@ import {
   CardsGesture,
   CharacterInitPayload,
   CharacterViewPayload,
+  GardenBridge,
+  GardenGrowPayload,
+  GardenInitPayload,
+  GardenIslandPayload,
+  GardenStatePayload,
   LectureInitPayload,
   LectureStatePayload,
   MeditationStatePayload,
@@ -20,6 +25,7 @@ import {
   MyRoomCamera,
   MyRoomDragPhase,
   MyRoomInitPayload,
+  MyRoomItem,
   MyRoomLayout,
   MyRoomOwned,
   RNToUnityEvent,
@@ -71,14 +77,14 @@ const MEDITATION_RETRY_MS = 1500;
 const MEDITATION_MAX_TRIES = 4;
 
 /** Absolute-state messages sent while a finger moves: coalesced (see NativeUnityBridge.postStream). */
-const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'CAFE_CAMERA', 'CAFE_ZOOM', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK', 'ROOM_ZOOM', 'CHARACTER_VIEW', 'MEDITATION_CAMERA']);
+const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAMERA', 'MYROOM_DRAG', 'GARDEN_DRAG', 'CAFE_CAMERA', 'CAFE_ZOOM', 'JOURNEY_LOOK', 'JOURNEY_ZOOM', 'ROOM_LOOK', 'ROOM_ZOOM', 'CHARACTER_VIEW', 'MEDITATION_CAMERA']);
 /** ~30 a second per type: smooth under Unity's own easing, a quarter of what a thumb produced. */
 const STREAM_MS = 33;
 /** The scenes' own handshake events. Not every `*_READY` is one: CAFE_DECK_READY is a step inside the
  *  cafe, and filtering it as a stale scene READY left the tarot stuck at "spreading" (21-10). */
-const SCENE_READY = new Set<string>(['UNITY_READY', 'MEDITATION_READY', 'LECTURE_READY', 'JOURNEY_READY', 'WORLD_READY', 'MYROOM_READY', 'CAFE_READY']);
+const SCENE_READY = new Set<string>(['UNITY_READY', 'MEDITATION_READY', 'LECTURE_READY', 'JOURNEY_READY', 'WORLD_READY', 'MYROOM_READY', 'CAFE_READY', 'GARDEN_READY']);
 
-export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, CafeBridge {
+export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, CafeBridge, GardenBridge {
   private handlers = new Set<(e: UnityToRNEvent) => void>();
   private view: UnityViewLike | null = null;
   private ready = false;
@@ -158,6 +164,16 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   private cafeTries = 0;
   /** The player's last orbit, replayed on CAFE_READY. null = never touched: the scene's framing. */
   private cafeCamera: MyRoomCamera | null = null;
+  /** Tree of Mind's garden (spec 008): the same open-until-answered rule as the cafe. */
+  private gardenInit?: GardenInitPayload;
+  private gardenPending = false;
+  private gardenRetry: ReturnType<typeof setTimeout> | null = null;
+  private gardenTries = 0;
+  /** The last GARDEN_STATE, replayed on GARDEN_READY: Sit can be pressed while the garden still loads. */
+  private gardenState?: GardenStatePayload;
+  /** Phase 2: the island and its decor as last sent, replayed on GARDEN_READY. */
+  private gardenIsland?: GardenIslandPayload;
+  private gardenLayout?: MyRoomItem[] | null;
   private outbox: RNToUnityEvent[] = [];
   /** The latest VIEW_INSETS any Unity-hosting screen reported, and the JSON of the last one that
    *  actually went out (the dedupe key). */
@@ -184,11 +200,16 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.clearWorldRetry();
     this.clearMyRoomRetry();
     this.clearCafeRetry();
+    this.clearGardenRetry();
     this.payload = undefined;
     this.meditationPending = this.lecturePending = this.journeyPending = this.characterPending = false;
     this.characterInit = undefined;
-    this.worldPending = this.myRoomPending = this.cafePending = false;
+    this.worldPending = this.myRoomPending = this.cafePending = this.gardenPending = false;
     this.lectureInit = this.journeyInit = this.worldInit = this.myRoomInit = this.cafeInit = undefined;
+    this.gardenInit = undefined;
+    this.gardenState = undefined;
+    this.gardenIsland = undefined;
+    this.gardenLayout = undefined;
     this.initSent = false;
     this.viewInsetsPosted = '';
   }
@@ -952,6 +973,118 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.ready = false;
   }
 
+  /**
+   * Open the Tree of Mind garden (spec 008). Posts directly and repeats until GARDEN_READY, for the
+   * reasons openMeditationRoom gives — the garden never sends UNITY_READY either.
+   */
+  openGarden(init: GardenInitPayload): void {
+    this.beginScene('GARDEN_READY');
+    this.gardenInit = init;
+    this.gardenPending = true;
+    this.gardenTries = 0;
+    devlog(`[unity-bridge] GARDEN_INIT level ${init.level}`);
+    this.post({ type: 'GARDEN_INIT', payload: init });
+    this.armGardenRetry();
+  }
+
+  private armGardenRetry(): void {
+    this.clearGardenRetry();
+    this.gardenRetry = setTimeout(() => {
+      this.gardenRetry = null;
+      if (!this.gardenPending || !this.view || !this.gardenInit) return;
+      if (this.gardenTries >= MEDITATION_MAX_TRIES) {
+        devlog(`[unity-bridge] no GARDEN_READY after ${this.gardenTries} retries — staying on the drawn garden`);
+        return;
+      }
+      this.gardenTries += 1;
+      devlog(`[unity-bridge] GARDEN_INIT (retry ${this.gardenTries})`);
+      this.post({ type: 'GARDEN_INIT', payload: this.gardenInit });
+      this.armGardenRetry();
+    }, MEDITATION_RETRY_MS);
+  }
+
+  private clearGardenRetry(): void {
+    if (this.gardenRetry !== null) {
+      clearTimeout(this.gardenRetry);
+      this.gardenRetry = null;
+    }
+  }
+
+  /** What the sitting is doing. Posted at once when there is a view, remembered for GARDEN_READY. */
+  sendGardenState(payload: GardenStatePayload): void {
+    this.gardenState = payload;
+    if (this.view) this.post({ type: 'GARDEN_STATE', payload });
+  }
+
+  /** A finger down / up. Not remembered: a breath taken while the garden was loading is long over. */
+  sendGardenTouch(down: boolean, inRhythm?: boolean): void {
+    if (!this.view) return;
+    this.post({ type: 'GARDEN_TOUCH', payload: down ? { down } : { down, inRhythm: !!inRhythm } });
+  }
+
+  /** The server's answer to a finished sitting. Folded into the remembered INIT too, so a garden that
+   *  reloads (a retry, a late view) comes up at the new size rather than the old one. */
+  sendGardenGrow(grow: GardenGrowPayload): void {
+    if (this.gardenInit) this.gardenInit = { ...this.gardenInit, level: grow.level, progress: grow.progress, energy: grow.energy };
+    devlog(`[unity-bridge] GARDEN_GROW level ${grow.level}${grow.levelUp ? ' (level up)' : ''}`);
+    if (this.view) this.post({ type: 'GARDEN_GROW', payload: grow });
+  }
+
+  /** The island (phase 2). Posted at once when there is a view, remembered for GARDEN_READY. */
+  sendGardenIsland(island: GardenIslandPayload): void {
+    this.gardenIsland = island;
+    if (this.view) this.post({ type: 'GARDEN_ISLAND', payload: island });
+  }
+
+  /** The saved decor layout. Posted at once when there is a view, remembered for GARDEN_READY. */
+  sendGardenLayout(items: MyRoomItem[] | null): void {
+    this.gardenLayout = items;
+    if (this.view) this.post({ type: 'GARDEN_LAYOUT', payload: { layout: { items } } });
+  }
+
+  /* Decor edit mode: only meaningful once the garden is up (Decorate waits for GARDEN_READY), so these
+     post straight through, as My Room's do. A drag's `move` is a stream; `begin` and `end` are posted. */
+  sendGardenEdit(on: boolean, cancel?: boolean): void {
+    this.post({ type: 'GARDEN_EDIT', payload: cancel ? { on, cancel: true } : { on } });
+  }
+
+  sendGardenTap(x: number, y: number): void {
+    if (this.view) this.post({ type: 'GARDEN_TAP', payload: { x: unit(x), y: unit(y) } });
+  }
+
+  sendGardenDrag(phase: MyRoomDragPhase, x: number, y: number): void {
+    if (!this.view) return;
+    const event = { type: 'GARDEN_DRAG' as const, payload: { phase, x: unit(x), y: unit(y) } };
+    if (phase === 'move') this.postLive(event);
+    else this.post(event);
+  }
+
+  sendGardenRotate(step: 1 | -1): void {
+    this.post({ type: 'GARDEN_ROTATE', payload: { step } });
+  }
+
+  sendGardenAdd(item: string): void {
+    this.post({ type: 'GARDEN_ADD', payload: { item } });
+  }
+
+  sendGardenRemove(): void {
+    this.post({ type: 'GARDEN_REMOVE', payload: {} });
+  }
+
+  /** Leaving the garden. Idempotent, and safe when Unity never booted. */
+  closeGarden(): void {
+    if (this.expectedReady !== 'GARDEN_READY') return;
+    const wasOpen = this.gardenPending || this.gardenInit != null;
+    this.gardenPending = false;
+    this.gardenInit = undefined;
+    this.gardenState = undefined;
+    this.clearGardenRetry();
+    try {
+      if (this.view && wasOpen) this.post({ type: 'GARDEN_END' });
+    } catch {}
+    this.ready = false;
+  }
+
   /** Leaving the journey. Idempotent, and safe when Unity never booted. */
   closeJourneyRoom(): void {
     if (this.expectedReady !== 'JOURNEY_READY') return;
@@ -1057,6 +1190,11 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       devlog('[unity-bridge] CAFE_INIT (view registered)');
       this.post({ type: 'CAFE_INIT', payload: this.cafeInit });
       this.armCafeRetry();
+    }
+    if (this.gardenPending && this.gardenInit) {
+      devlog('[unity-bridge] GARDEN_INIT (view registered)');
+      this.post({ type: 'GARDEN_INIT', payload: this.gardenInit });
+      this.armGardenRetry();
     }
   }
 
@@ -1173,6 +1311,10 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
         devlog('[unity-bridge] CAFE_INIT (bridge ready)');
         this.post({ type: 'CAFE_INIT', payload: this.cafeInit });
       }
+      if (this.gardenPending && this.gardenInit) {
+        devlog('[unity-bridge] GARDEN_INIT (bridge ready)');
+        this.post({ type: 'GARDEN_INIT', payload: this.gardenInit });
+      }
     }
 
     // The meditation room's equivalent of UNITY_READY for TRANSPORT purposes only: it proves the
@@ -1275,6 +1417,20 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       if (this.cafeCamera) this.post({ type: 'CAFE_CAMERA', payload: this.cafeCamera });
       // A stick queued while the cafe loaded is a thumb long gone (as on the world and in My Room).
       this.outbox = this.outbox.filter(e => e.type !== 'WALK_INPUT');
+      this.ready = true;
+      this.everReady = true;
+      this.clearInitRetry();
+    }
+
+    if (event.type === 'GARDEN_READY') {
+      this.gardenPending = false;
+      this.clearGardenRetry();
+      // Insets first (the garden frames the tree by them), then what the sitting is doing — Sit may
+      // have been pressed while the garden was still loading.
+      this.replayViewInsets();
+      if (this.gardenState) this.post({ type: 'GARDEN_STATE', payload: this.gardenState });
+      if (this.gardenIsland) this.post({ type: 'GARDEN_ISLAND', payload: this.gardenIsland });
+      if (this.gardenLayout !== undefined) this.post({ type: 'GARDEN_LAYOUT', payload: { layout: { items: this.gardenLayout } } });
       this.ready = true;
       this.everReady = true;
       this.clearInitRetry();

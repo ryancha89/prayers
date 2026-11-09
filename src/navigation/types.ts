@@ -97,6 +97,12 @@ export type RootStackParamList = {
    * No params: what the player came for is asked inside, at the cafe's door (PM 21-10).
    */
   Cafe: undefined;
+  /**
+   * Tree of Mind (spec 008): the garden where the player meditates under their tree and it grows.
+   * Entered from the World's meditation door. The NAME is load-bearing — App.tsx lists it as a Unity
+   * screen (`UNITY_SCREENS`), like Cafe.
+   */
+  Garden: undefined;
   /** Terms and the privacy policy. Apple wants both reachable, and 5.1.1(v) wants the deletion
    *  above reachable too. */
   Legal: { doc: 'terms' | 'privacy' };

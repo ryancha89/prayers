@@ -318,6 +318,7 @@ export const WorldScreen: React.FC = () => {
     coins: () => useCoins.getState().openShop(),
     myroom: () => leaveTo('myroom', () => navigation.navigate('MyRoom')),
     cafe: () => leaveTo('cafe', () => navigation.navigate('Cafe')),
+    garden: () => leaveTo('meditation', () => navigation.navigate('Garden')),
   };
 
   /**

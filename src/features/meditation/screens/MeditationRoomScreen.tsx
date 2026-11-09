@@ -90,12 +90,14 @@ const clock = (ms: number) => {
 
 const ROOM_ART = require('../assets/room.jpg');
 
-/** The two sessions offered when the player walks in through the World's door (27-10, "vào thẳng
- *  phòng rồi chọn"): each with a frame of this room (cropped from MeditationLandscapePhotographer's
- *  close / idle portraits, Docs/RoomPhotos/MeditationRoom/landscape/cards), 240 px. */
+/** The sessions offered when the player walks in through the World's door (27-10, "vào thẳng
+ *  phòng rồi chọn"): each with a frame of its place (the room cards cropped from
+ *  MeditationLandscapePhotographer's close / idle portraits, Docs/RoomPhotos/MeditationRoom/
+ *  landscape/cards; the garden from Docs/RoomPhotos/TreeOfMind/final_close.png), 240 px. */
 const SESSION_ART = {
   breathe: require('../assets/card_breathe.jpg'),
   sleep: require('../assets/card_sleep.jpg'),
+  garden: require('../assets/card_garden.jpg'),
 };
 
 export const MeditationRoomScreen: React.FC = () => {
@@ -459,7 +461,10 @@ export const MeditationRoomScreen: React.FC = () => {
                 { opacity: arrive, transform: [{ translateY: arrive.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] },
               ]}>
               {fromDoor ? (
-                // Walked in from the World: the room's two sessions, chosen here, in the room.
+                // Walked in from the World: the room's sessions, chosen here, in the room. The
+                // Tree of Mind card moved in from the World's meditation sheet when the door
+                // started going straight into the room (merge 04-11) — the garden replaces this
+                // room the way the sleep guide does, so its scene owns the player cleanly.
                 <View style={[styles.choices, landscape && styles.choicesRow]}>
                   <Choice testID="med-choice-breathe" art={SESSION_ART.breathe} title={t('home.breathe')} note={t('home.meditation')} compact={landscape} onPress={begin} />
                   {sleepAudio.available() ? (
@@ -472,6 +477,14 @@ export const MeditationRoomScreen: React.FC = () => {
                       onPress={() => { silence(); navigation.replace('SleepGuide'); }}
                     />
                   ) : null}
+                  <Choice
+                    testID="med-choice-garden"
+                    art={SESSION_ART.garden}
+                    title={t('world.med.garden')}
+                    note={t('world.med.gardenNote')}
+                    compact={landscape}
+                    onPress={() => { silence(); navigation.replace('Garden'); }}
+                  />
                 </View>
               ) : (
                 <>
@@ -558,8 +571,12 @@ const styles = StyleSheet.create({
     padding: spacing.sm, borderRadius: radius.md,
     borderWidth: 1, borderColor: 'rgba(233,196,106,0.3)', backgroundColor: 'rgba(20,16,28,0.55)',
   },
-  choiceCompact: { width: 280, minWidth: 0 },
-  choiceArt: { width: 64, height: 64, borderRadius: radius.sm },
+  // 220, not 280: three cards side by side (breathe / sleep / garden) must fit a phone's landscape
+  // width inside the fixed band — at 280 the row ran off both edges.
+  choiceCompact: { width: 220, minWidth: 0 },
+  // 44, not 64: three stacked cards (breathe / sleep / garden) must fit the fixed portrait band
+  // (BOTTOM_BAND.portrait) — at 64 the stack rose past the band into the room.
+  choiceArt: { width: 44, height: 44, borderRadius: radius.sm },
   choiceArtCompact: { width: 44, height: 44, borderRadius: radius.sm },
   choiceText: { flex: 1, gap: 2 },
   choiceTitle: { fontFamily: SERIF, fontSize: 17, color: MED.paper },

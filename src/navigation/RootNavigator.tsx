@@ -35,6 +35,7 @@ import { NotificationsScreen } from '../features/notifications/screens/Notificat
 import { WorldScreen } from '../features/world/screens/WorldScreen';
 import { MyRoomScreen } from '../features/myroom/screens/MyRoomScreen';
 import { CafeScreen } from '../features/cafe/screens/CafeScreen';
+import { GardenScreen } from '../features/garden/screens/GardenScreen';
 import { useAuthStore } from '../features/auth/store/authStore';
 import { AiConsentReviewScreen, AiConsentScreen } from '../features/consent/AiConsentScreen';
 import { useAiConsentFor } from '../features/consent/aiConsentStore';
@@ -148,6 +149,7 @@ export const RootNavigator: React.FC = () => {
     {/* My Room's rules: fade (the UnityView mounts into a settled screen), no swipe-back (the stick
         sits at the left edge and a one-finger drag looks round). The top bar's back is the way out. */}
     <Stack.Screen name="Cafe" component={CafeScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+    <Stack.Screen name="Garden" component={GardenScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     {/* No swipe-back: a drag turns the lecture room's camera (LECTURE_CAMERA); the top bar's back is the way out. */}
     <Stack.Screen name="Lecture" component={LectureScreen} options={{ animation: 'fade', gestureEnabled: false }} />
     <Stack.Screen name="Story" component={StoryScreen} options={{ animation: 'fade', gestureEnabled: false }} />

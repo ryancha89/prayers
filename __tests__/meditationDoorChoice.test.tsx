@@ -1,7 +1,8 @@
 /**
  * The meditation room entered through the World's door (27-10, "vào thẳng phòng rồi chọn"): the room
- * itself offers its two sessions — breathing here, or the sleep guide — where the World used to show
- * them in a sheet over the hub. From Home (no `fromDoor`) it still opens on the breathing's Begin.
+ * itself offers its sessions — breathing here, the sleep guide, or the Tree of Mind garden (05-11,
+ * its card moved here from the World's meditation sheet) — where the World used to show them in a
+ * sheet over the hub. From Home (no `fromDoor`) it still opens on the breathing's Begin.
  */
 import React from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';
@@ -44,13 +45,21 @@ const byId = (id: string) => tree.root.findAll(n => n.props.testID === id && !!n
 // Not unmounted: the room's exit animation runs on teardown and needs a native node a test has not got.
 afterEach(() => { mockNavigation.replace.mockClear(); });
 
-it('through the door: both sessions, chosen in the room; the sleep guide takes the room’s place', async () => {
+it('through the door: the sessions, chosen in the room; the sleep guide takes the room’s place', async () => {
   mockParams = { fromDoor: true };
   await act(async () => { tree = ReactTestRenderer.create(<MeditationRoomScreen />); });
   expect(byId('med-choice-breathe').length).toBeGreaterThan(0);
   expect(byId('med-choice-sleep').length).toBeGreaterThan(0);
+  expect(byId('med-choice-garden').length).toBeGreaterThan(0);
   await act(async () => byId('med-choice-sleep')[0].props.onPress());
   expect(mockNavigation.replace).toHaveBeenCalledWith('SleepGuide');
+});
+
+it('through the door: Tree of Mind takes the room’s place too', async () => {
+  mockParams = { fromDoor: true };
+  await act(async () => { tree = ReactTestRenderer.create(<MeditationRoomScreen />); });
+  await act(async () => byId('med-choice-garden')[0].props.onPress());
+  expect(mockNavigation.replace).toHaveBeenCalledWith('Garden');
 });
 
 it('from Home: no choice, the breathing’s own Begin', async () => {

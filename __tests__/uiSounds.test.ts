@@ -30,6 +30,7 @@ const SILENT: Record<string, string> = {
   'features/journey/components/CardPick.tsx':
     'the caller answers the press (JourneyStageOverlay plays select); the pick plays its own deal/flip/reveal sounds',
   'features/subjects/components/SubjectCard.tsx': 'not wired yet',
+  'features/garden/components/GardenChrome.tsx': 'the caller answers the press (GardenScreen plays select / tap)',
   'features/counseling/components/CueTester.tsx':
     'dev-only cue tester, never in a release bundle — and it fires cues in rows of a dozen, ' +
     'so a tap per press would drown the very performance it exists to let you watch',
