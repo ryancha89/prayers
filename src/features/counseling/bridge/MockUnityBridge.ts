@@ -10,6 +10,9 @@ import {
   GardenInitPayload,
   GardenIslandPayload,
   GardenStatePayload,
+  MediInitPayload,
+  MediStatePayload,
+  MeditationsBridge,
   MyRoomAction,
   MyRoomBook,
   MyRoomBridge,
@@ -40,7 +43,7 @@ import {
  * Keep this the ONLY place that knows Unity is not yet real. UI code depends
  * solely on the `UnityBridge` interface (rule §52-7).
  */
-export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, CafeBridge, GardenBridge {
+export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, CafeBridge, GardenBridge, MeditationsBridge {
   private handlers = new Set<(e: UnityToRNEvent) => void>();
   private ready = false;
   private lastPayload?: UnitySessionPayload;
@@ -239,9 +242,35 @@ export class MockUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, 
   sendGardenEdit(on: boolean, cancel?: boolean): void { this.gardenCalls.push({ type: 'GARDEN_EDIT', payload: cancel ? { on, cancel } : { on } }); }
   sendGardenTap(x: number, y: number): void { this.gardenCalls.push({ type: 'GARDEN_TAP', payload: { x, y } }); }
   sendGardenDrag(phase: MyRoomDragPhase, x: number, y: number): void { this.gardenCalls.push({ type: 'GARDEN_DRAG', payload: { phase, x, y } }); }
+  sendGardenLook(yaw: number, pitch: number, zoom: number): void { this.gardenCalls.push({ type: 'GARDEN_LOOK', payload: { yaw, pitch, zoom } }); }
   sendGardenRotate(step: 1 | -1): void { this.gardenCalls.push({ type: 'GARDEN_ROTATE', payload: { step } }); }
   sendGardenAdd(item: string): void { this.gardenCalls.push({ type: 'GARDEN_ADD', payload: { item } }); }
   sendGardenRemove(): void { this.gardenCalls.push({ type: 'GARDEN_REMOVE' }); }
+
+  /* ---- MeditationsBridge (spec 010). Accepts every call; no scene loads, so MEDI_READY never comes
+     and the screen keeps its drawn stage (the tappable disc / the breath ring) — the whole no-Unity
+     experience. Recorded for tests. ---- */
+
+  lastMediInit?: MediInitPayload;
+  mediOpen = false;
+  mediCalls: { type: string; payload?: unknown }[] = [];
+
+  openMeditation(init: MediInitPayload): void {
+    this.lastMediInit = init;
+    this.mediOpen = true;
+  }
+
+  closeMeditation(): void {
+    this.mediOpen = false;
+  }
+
+  sendMediState(payload: MediStatePayload): void {
+    this.mediCalls.push({ type: 'MEDI_STATE', payload: { ...payload } });
+  }
+
+  sendMediTap(count: number, counted: boolean): void {
+    this.mediCalls.push({ type: 'MEDI_TAP', payload: { count, counted } });
+  }
 
   onEvent(handler: (event: UnityToRNEvent) => void): () => void {
     this.handlers.add(handler);

@@ -1,4 +1,5 @@
 import type { TranslationKey } from '../../shared/i18n';
+import { meditationBed, type Bed } from '../../shared/audio/backgroundMusic';
 import type { GardenIslandPayload, MyRoomItem } from '../counseling/types';
 import { copiesLeft } from '../myroom/edit/decorate';
 import type { DecorSpec, Element, Garden, GardenCatalog, SeedSpec, ShopFailure } from './api/gardenApi';
@@ -58,6 +59,15 @@ export function decorLeft(owned: Record<string, number>, items: MyRoomItem[] | n
 
 /** True when the account owns `id` (effects: orb colour, music). */
 export const ownsEffect = (owned: Record<string, number>, id: string) => (owned[id] ?? 0) > 0;
+
+/** The bed a sitting plays (T070): the layout's music decor when one is chosen, the meditation
+ *  bed otherwise. An id this build does not know falls back to the bed too — a server that later
+ *  sells `music_stream` must not silence older apps. */
+export function musicBed(music: string | null, lang: string): Bed {
+  if (music === 'music_rain') return 'gardenRain';
+  if (music === 'music_campfire') return 'gardenCampfire';
+  return meditationBed(lang);
+}
 
 export function shopErrorKey(f: ShopFailure): TranslationKey {
   switch (f.kind) {

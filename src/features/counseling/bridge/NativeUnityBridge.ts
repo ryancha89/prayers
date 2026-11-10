@@ -15,6 +15,9 @@ import {
   GardenStatePayload,
   LectureInitPayload,
   LectureStatePayload,
+  MediInitPayload,
+  MediStatePayload,
+  MeditationsBridge,
   MeditationStatePayload,
   JourneyInitPayload,
   JourneyStatePayload,
@@ -82,9 +85,9 @@ const STREAM_TYPES = new Set<string>(['WALK_INPUT', 'WORLD_CAMERA', 'MYROOM_CAME
 const STREAM_MS = 33;
 /** The scenes' own handshake events. Not every `*_READY` is one: CAFE_DECK_READY is a step inside the
  *  cafe, and filtering it as a stale scene READY left the tarot stuck at "spreading" (21-10). */
-const SCENE_READY = new Set<string>(['UNITY_READY', 'MEDITATION_READY', 'LECTURE_READY', 'JOURNEY_READY', 'WORLD_READY', 'MYROOM_READY', 'CAFE_READY', 'GARDEN_READY']);
+const SCENE_READY = new Set<string>(['UNITY_READY', 'MEDITATION_READY', 'LECTURE_READY', 'JOURNEY_READY', 'WORLD_READY', 'MYROOM_READY', 'CAFE_READY', 'GARDEN_READY', 'MEDI_READY']);
 
-export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, CafeBridge, GardenBridge {
+export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge, CafeBridge, GardenBridge, MeditationsBridge {
   private handlers = new Set<(e: UnityToRNEvent) => void>();
   private view: UnityViewLike | null = null;
   private ready = false;
@@ -174,6 +177,13 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
   /** Phase 2: the island and its decor as last sent, replayed on GARDEN_READY. */
   private gardenIsland?: GardenIslandPayload;
   private gardenLayout?: MyRoomItem[] | null;
+  /** Spec 010's experiences (moktak / snow mountain): the garden's open-until-answered rule. */
+  private mediInit?: MediInitPayload;
+  private mediPending = false;
+  private mediRetry: ReturnType<typeof setTimeout> | null = null;
+  private mediTries = 0;
+  /** The last MEDI_STATE, replayed on MEDI_READY: a sitting can begin while the scene still loads. */
+  private mediState?: MediStatePayload;
   private outbox: RNToUnityEvent[] = [];
   /** The latest VIEW_INSETS any Unity-hosting screen reported, and the JSON of the last one that
    *  actually went out (the dedupe key). */
@@ -201,6 +211,7 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.clearMyRoomRetry();
     this.clearCafeRetry();
     this.clearGardenRetry();
+    this.clearMediRetry();
     this.payload = undefined;
     this.meditationPending = this.lecturePending = this.journeyPending = this.characterPending = false;
     this.characterInit = undefined;
@@ -210,6 +221,9 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.gardenState = undefined;
     this.gardenIsland = undefined;
     this.gardenLayout = undefined;
+    this.mediPending = false;
+    this.mediInit = undefined;
+    this.mediState = undefined;
     this.initSent = false;
     this.viewInsetsPosted = '';
   }
@@ -1059,6 +1073,12 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     else this.post(event);
   }
 
+  /** A gesture, so postLive: the newest orbit replaces any still queued, like GARDEN_DRAG's move. */
+  sendGardenLook(yaw: number, pitch: number, zoom: number): void {
+    if (!this.view) return;
+    this.postLive({ type: 'GARDEN_LOOK', payload: { yaw: Number.isFinite(yaw) ? +yaw.toFixed(1) : 0, pitch: unitSigned(pitch), zoom: unitSigned(zoom) } });
+  }
+
   sendGardenRotate(step: 1 | -1): void {
     this.post({ type: 'GARDEN_ROTATE', payload: { step } });
   }
@@ -1081,6 +1101,72 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
     this.clearGardenRetry();
     try {
       if (this.view && wasOpen) this.post({ type: 'GARDEN_END' });
+    } catch {}
+    this.ready = false;
+  }
+
+  /* ---- MeditationsBridge (spec 010) ---- */
+
+  /**
+   * Open a meditation experience's scene. Posts directly and repeats until MEDI_READY, for the
+   * reasons openGarden gives — these scenes never send UNITY_READY either. One message family for
+   * every experience: `init.experience` picks the scene (contract.md §2).
+   */
+  openMeditation(init: MediInitPayload): void {
+    this.beginScene('MEDI_READY');
+    this.mediInit = init;
+    this.mediPending = true;
+    this.mediTries = 0;
+    devlog(`[unity-bridge] MEDI_INIT ${init.experience}`);
+    this.post({ type: 'MEDI_INIT', payload: init });
+    this.armMediRetry();
+  }
+
+  private armMediRetry(): void {
+    this.clearMediRetry();
+    this.mediRetry = setTimeout(() => {
+      this.mediRetry = null;
+      if (!this.mediPending || !this.view || !this.mediInit) return;
+      if (this.mediTries >= MEDITATION_MAX_TRIES) {
+        devlog(`[unity-bridge] no MEDI_READY after ${this.mediTries} retries — staying on the drawn stage`);
+        return;
+      }
+      this.mediTries += 1;
+      devlog(`[unity-bridge] MEDI_INIT (retry ${this.mediTries})`);
+      this.post({ type: 'MEDI_INIT', payload: this.mediInit });
+      this.armMediRetry();
+    }, MEDITATION_RETRY_MS);
+  }
+
+  private clearMediRetry(): void {
+    if (this.mediRetry !== null) {
+      clearTimeout(this.mediRetry);
+      this.mediRetry = null;
+    }
+  }
+
+  /** The session's phase. Posted at once when there is a view, remembered for MEDI_READY. */
+  sendMediState(payload: MediStatePayload): void {
+    this.mediState = payload;
+    if (this.view) this.post({ type: 'MEDI_STATE', payload });
+  }
+
+  /** A tap on the moktak. Not remembered: a strike that missed a loading scene is long over. */
+  sendMediTap(count: number, counted: boolean): void {
+    if (!this.view) return;
+    this.post({ type: 'MEDI_TAP', payload: { count, counted } });
+  }
+
+  /** Leaving the experience. Idempotent, and safe when Unity never booted. */
+  closeMeditation(): void {
+    if (this.expectedReady !== 'MEDI_READY') return;
+    const wasOpen = this.mediPending || this.mediInit != null;
+    this.mediPending = false;
+    this.mediInit = undefined;
+    this.mediState = undefined;
+    this.clearMediRetry();
+    try {
+      if (this.view && wasOpen) this.post({ type: 'MEDI_END' });
     } catch {}
     this.ready = false;
   }
@@ -1195,6 +1281,11 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       devlog('[unity-bridge] GARDEN_INIT (view registered)');
       this.post({ type: 'GARDEN_INIT', payload: this.gardenInit });
       this.armGardenRetry();
+    }
+    if (this.mediPending && this.mediInit) {
+      devlog('[unity-bridge] MEDI_INIT (view registered)');
+      this.post({ type: 'MEDI_INIT', payload: this.mediInit });
+      this.armMediRetry();
     }
   }
 
@@ -1314,6 +1405,10 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       if (this.gardenPending && this.gardenInit) {
         devlog('[unity-bridge] GARDEN_INIT (bridge ready)');
         this.post({ type: 'GARDEN_INIT', payload: this.gardenInit });
+      }
+      if (this.mediPending && this.mediInit) {
+        devlog('[unity-bridge] MEDI_INIT (bridge ready)');
+        this.post({ type: 'MEDI_INIT', payload: this.mediInit });
       }
     }
 
@@ -1436,6 +1531,18 @@ export class NativeUnityBridge implements UnityBridge, WorldBridge, MyRoomBridge
       this.clearInitRetry();
     }
 
+    if (event.type === 'MEDI_READY') {
+      this.mediPending = false;
+      this.clearMediRetry();
+      // Insets first (the stage frames its shot by them), then what the sitting is doing — a
+      // session may have begun while the scene was still loading (the garden's order).
+      this.replayViewInsets();
+      if (this.mediState) this.post({ type: 'MEDI_STATE', payload: this.mediState });
+      this.ready = true;
+      this.everReady = true;
+      this.clearInitRetry();
+    }
+
     if (event.type === 'UNITY_READY') {
       this.ready = true;
       this.everReady = true;
@@ -1529,4 +1636,9 @@ function describeLayout(layout: MyRoomLayout | null | undefined): string {
 /** A screen coordinate clamped to 0..1 (a finger can end past the edge); NaN becomes 0. */
 function unit(v: number): number {
   return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0;
+}
+
+/** A look or zoom axis clamped to -1..1, two decimals; NaN becomes 0. */
+function unitSigned(v: number): number {
+  return Number.isFinite(v) ? +Math.max(-1, Math.min(1, v)).toFixed(2) : 0;
 }

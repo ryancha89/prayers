@@ -55,7 +55,9 @@ const navigationRef = createNavigationContainerRef<RootStackParamList>();
 // Garden (spec 008, Tree of Mind): a Unity scene too; its music starts with the breathing, like the
 // meditation room's, so the app's bed must be off on arrival and SESSION_END must not reach it.
 // SleepGuide (22-10): the meditation room's scene and girl behind the sleep guide — the same rule.
-export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom', 'SleepGuide', 'World', 'MyRoom', 'Cafe', 'Lecture', 'Garden']);
+// Moktak / SnowMountain (spec 010): the garden's rule — their room tones start with the sitting,
+// so the app's bed must be off on arrival and SESSION_END must not reach them.
+export const UNITY_SCREENS = new Set(['CounselingRoom', 'UnityEntry', 'MeditationRoom', 'SleepGuide', 'World', 'MyRoom', 'Cafe', 'Lecture', 'Garden', 'Moktak', 'SnowMountain']);
 /** Screens that host the Unity player but NOT as a room that owns the sound: the train journey
  *  (spec 003) draws its cabin in Unity while its own narration keeps playing. They must not tear
  *  Unity down (stopAllAudio → SESSION_END), and must not pause the journey either — which is why

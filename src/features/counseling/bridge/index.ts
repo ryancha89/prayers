@@ -1,7 +1,7 @@
 import { NativeModules, UIManager } from 'react-native';
 import { devlog } from '../../../shared/devlog';
 import { apiBase } from '../../../shared/config/api';
-import { CafeBridge, GardenBridge, MyRoomBridge, UnityBridge, WorldBridge } from '../types';
+import { CafeBridge, GardenBridge, MeditationsBridge, MyRoomBridge, UnityBridge, WorldBridge } from '../types';
 import { MockUnityBridge } from './MockUnityBridge';
 import { NativeUnityBridge } from './NativeUnityBridge';
 import { useSoundStore } from '../../../shared/audio/store';
@@ -162,6 +162,14 @@ export function getGardenBridge(): GardenBridge {
   return mockBridge;
 }
 
+/** The meditation experiences' bridge (spec 010), decided when asked — the same instance rule as
+ *  getWorldBridge. */
+export function getMeditationsBridge(): MeditationsBridge {
+  if (isNativeUnity()) return nativeUnityBridge;
+  mockBridge ??= new MockUnityBridge();
+  return mockBridge;
+}
+
 export { MockUnityBridge } from './MockUnityBridge';
 export { NativeUnityBridge } from './NativeUnityBridge';
-export type { CafeBridge, GardenBridge, MyRoomBridge, UnityBridge, WorldBridge } from '../types';
+export type { CafeBridge, GardenBridge, MeditationsBridge, MyRoomBridge, UnityBridge, WorldBridge } from '../types';

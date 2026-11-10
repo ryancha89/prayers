@@ -41,7 +41,7 @@ try {
  * delivered file fades in from silence and ends at full level, so looping the original drops to
  * nothing every 9 minutes — audible, and worst exactly where a session runs long.
  */
-export type Bed = 'app' | 'meditation' | 'meditationKo';
+export type Bed = 'app' | 'meditation' | 'meditationKo' | 'gardenRain' | 'gardenCampfire' | 'templeAmbience' | 'snowWind';
 
 /**
  * ⚠️ `meditation_bed.m4a` has a KOREAN affirmation voice mixed into the music for its whole nine
@@ -54,6 +54,16 @@ const TRACKS: Record<Bed, string> = {
   app: 'prayers_ambient.m4a',
   meditation: 'meditation_bed_music.m4a',
   meditationKo: 'meditation_bed.m4a',
+  // The garden's music decor (spec 008 T070): 60 s seamless loops from Tools/audio/gen_garden_music.py,
+  // levelled against the meditation bed (-17 / -16 LUFS vs its -14 — steady noise reads louder than music).
+  gardenRain: 'garden_rain.m4a',
+  gardenCampfire: 'garden_campfire.m4a',
+  // Spec 010's two rooms: seamless loops from Tools/audio/gen_temple_ambience.py and
+  // gen_snow_wind.py, levelled against the meditation bed like the garden's pair. Bundled the
+  // same way (react-native.config.js assets + `npx react-native-asset`) — the Android asset-path
+  // chain lives in bundledSound.ts, so a name here is all a new bed needs.
+  templeAmbience: 'temple_ambience.m4a',
+  snowWind: 'snow_wind.m4a',
 };
 
 /** The meditation bed for a language: the voiced one is the Korean guide, so Korean only. */

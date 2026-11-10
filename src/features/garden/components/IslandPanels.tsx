@@ -108,6 +108,32 @@ export const PlotPanel: React.FC<{
   );
 };
 
+/** The collection book (spec 008, T071): every species the catalog sells or drops, named once the
+ *  server has recorded it (`garden.collection` — a species joins when one of it matures). An
+ *  uncollected species stays a mystery, its element the only hint. */
+export const CollectionPanel: React.FC<{
+  garden: Garden;
+  catalog: GardenCatalog;
+  maxHeight: number;
+  onClose: () => void;
+}> = ({ garden, catalog, maxHeight, onClose }) => {
+  const t = useT();
+  const got = new Set(garden.collection);
+  const n = catalog.seeds.filter(s => got.has(s.id)).length;
+  return (
+    <GardenPanel title={t('garden.collection')} onClose={onClose} maxHeight={maxHeight} testID="garden-collection">
+      <Text style={styles.note} testID="garden-collection-progress">{t('garden.collection.progress', { n, total: catalog.seeds.length })}</Text>
+      {catalog.seeds.map(spec => got.has(spec.id) ? (
+        <Row key={spec.id} testID={`garden-collect-${spec.id}`}
+          title={`${t(seedKey(spec.id))} · ${t(`garden.element.${spec.element}` as never)}`} />
+      ) : (
+        <Row key={spec.id} testID={`garden-collect-${spec.id}`} locked
+          title={t('garden.collection.hidden')} note={t(`garden.element.${spec.element}` as never)} />
+      ))}
+    </GardenPanel>
+  );
+};
+
 export type ShopTab = 'seeds' | 'decor' | 'land';
 
 /** The Gold shop: seeds (and the packets waiting to be planted), decor, and the land (every plot). */

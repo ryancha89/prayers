@@ -103,6 +103,17 @@ export type RootStackParamList = {
    * screen (`UNITY_SCREENS`), like Cafe.
    */
   Garden: undefined;
+  /**
+   * The Wooden Fish (spec 010): a candle-lit temple, 108 taps on the moktak. Entered from the
+   * meditation room's door sheet. The NAME is load-bearing — App.tsx lists it as a Unity screen
+   * (`UNITY_SCREENS`), like Garden.
+   */
+  Moktak: undefined;
+  /**
+   * The Snow Mountain (spec 010): 4-4-6 guided breathing on a snowy slope, 3/5/10/20 minutes.
+   * Entered from the meditation room's door sheet. The NAME is load-bearing — `UNITY_SCREENS`.
+   */
+  SnowMountain: undefined;
   /** Terms and the privacy policy. Apple wants both reachable, and 5.1.1(v) wants the deletion
    *  above reachable too. */
   Legal: { doc: 'terms' | 'privacy' };

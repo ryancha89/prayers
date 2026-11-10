@@ -8,7 +8,7 @@ import { RING_COMPACT, RingButton, SERIF } from '../../../shared/components/hud/
 import { useLang, useT, type TranslationKey } from '../../../shared/i18n';
 import { absoluteFill, colors, radius, spacing, typography } from '../../../shared/theme';
 import { sfx } from '../../../shared/audio/sfx';
-import { backgroundMusic, meditationBed } from '../../../shared/audio/backgroundMusic';
+import { backgroundMusic } from '../../../shared/audio/backgroundMusic';
 import { useScreenAudio } from '../../../shared/audio/useScreenAudio';
 import { holdScreenAwake } from '../../../shared/device/keepAwake';
 import { useScreen } from '../../../shared/device/screen';
@@ -26,6 +26,7 @@ import {
   type GardenDuration,
   type GardenFinish,
 } from '../api/gardenApi';
+import { useGardenLook } from '../components/useGardenLook';
 import { EXHALE_MS, INHALE_MS, breathSync } from '../breath';
 import { GardenSession, type GardenSessionState } from '../gardenSession';
 import {
@@ -43,9 +44,9 @@ import {
   type GardenStep,
 } from '../gardenFlow';
 import { DrawnGarden, DrawnOrb, EnergyRing, GARDEN, GardenButton } from '../components/GardenChrome';
-import { DecorateBar, PlotPanel, ShopPanel } from '../components/IslandPanels';
+import { CollectionPanel, DecorateBar, PlotPanel, ShopPanel } from '../components/IslandPanels';
 import { useIsland } from '../useIsland';
-import { SKIES, seedKey, skyKey } from '../island';
+import { SKIES, musicBed, seedKey, skyKey } from '../island';
 
 /**
  * Tree of Mind — phase 1 (spec 008, Saju/Docs/TreeOfMind-Design-Proposal.html §2 and §6).
@@ -101,6 +102,9 @@ export const GardenScreen: React.FC = () => {
     compute: gardenCoveredPx,
   });
   const trackHost = insets.track('host');
+  /** Where the header ends, so an orbit drag that began on the back button or the level ring is not
+   *  taken for the island's (useGardenLook). */
+  const [headerBottom, setHeaderBottom] = useState(0);
 
   const [step, setStepState] = useState<GardenStep>('loading');
   const stepRef = useRef<GardenStep>('loading');
@@ -225,7 +229,7 @@ export const GardenScreen: React.FC = () => {
     setStep('breathing');
     tellStage('breathing');
     sfx.bellIn();
-    backgroundMusic.start(meditationBed(lang));
+    backgroundMusic.start(musicBed(island.layout.music, lang));
     startOrb();
   };
   // The mount-time listener (GARDEN_SEATED) and the timers call the latest `begin`, not the first one.
@@ -338,6 +342,14 @@ export const GardenScreen: React.FC = () => {
     tellStage('garden');
   }, [session, tellStage, setStep]);
 
+  // The music decor answers right away (T070): choosing rain or the campfire while the bed is
+  // already playing swaps the track, not just the next sitting's.
+  useEffect(() => {
+    if (stepRef.current === 'breathing') backgroundMusic.start(musicBed(island.layout.music, lang));
+    // Only a music change restarts the bed; `lang` cannot change while seated.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [island.layout.music]);
+
   // Leaving the screen mid-sitting ends it: a clock left running behind another screen would pay for
   // minutes nobody sat through.
   const { silence } = useScreenAudio(() => {
@@ -414,6 +426,16 @@ export const GardenScreen: React.FC = () => {
     }),
   ).current;
 
+  // ── The camera round the island (10-11) ───────────────────────────────────────────────────────
+  // One finger only where the screen has no other use for it: while breathing it IS the breath, and in
+  // decor edit mode it selects and moves a piece. Two fingers orbit and pinch everywhere.
+  const gardenLook = useGardenLook({
+    bridge,
+    enabled: unity && step !== 'loading',
+    oneFinger: step === 'garden' && !island.panel,
+    topBarBottom: headerBottom,
+  });
+
   // ── Render ──────────────────────────────────────────────────────────────────────────────────
   const bandHeight = landscape ? screen.vh(0.36, 128, 170) : screen.vh(0.32, 220, 300);
   const panelHeight = landscape ? screen.vh(0.7, 220, 360) : screen.vh(0.55, 300, 520);
@@ -426,6 +448,7 @@ export const GardenScreen: React.FC = () => {
   return (
     <View
       style={styles.bg}
+      {...gardenLook}
       onLayout={e => {
         trackHost(e);
         const { width, height } = e.nativeEvent.layout;
@@ -456,7 +479,10 @@ export const GardenScreen: React.FC = () => {
       {step === 'editing' && <View testID="garden-edit-touch" style={styles.fill} {...editPan.panHandlers} />}
 
       <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']} pointerEvents="box-none">
-        <View style={styles.header} onLayout={insets.track('header')} pointerEvents="box-none">
+        <View
+          style={styles.header}
+          onLayout={e => { insets.track('header')(e); setHeaderBottom(e.nativeEvent.layout.y + e.nativeEvent.layout.height); }}
+          pointerEvents="box-none">
           <View style={styles.side}>
             <RingButton testID="garden-back" icon="back" size={RING_COMPACT} label={t('hud.back')}
               onPress={step === 'editing' ? () => { sfx.back(); island.endEdit(true); } : leave} />
@@ -496,6 +522,7 @@ export const GardenScreen: React.FC = () => {
             <View style={styles.hudButtons}>
               <HudButton testID="garden-open-shop" label={t('garden.shop')} onPress={() => { island.setError(null); island.setPanel({ kind: 'shop' }); }} />
               <HudButton testID="garden-open-decorate" label={t('garden.decorate')} onPress={() => { sfx.select(); island.startEdit(); }} />
+              <HudButton testID="garden-open-collection" label={t('garden.collection')} onPress={() => { island.setError(null); island.setPanel({ kind: 'collection' }); }} />
             </View>
             {(g.unlocks.time_of_day || g.unlocks.rain) && (
               <View style={styles.hudButtons}>
@@ -616,6 +643,9 @@ export const GardenScreen: React.FC = () => {
                 error={island.error ? t(island.error) : null} maxHeight={panelHeight}
                 onBuy={el => { sfx.select(); island.buyLand(g.plots[(island.panel as { index: number }).index - 1].index, el); }}
                 onPlant={() => { island.setTab('seeds'); island.setPanel({ kind: 'shop' }); }}
+                onClose={() => island.setPanel(null)} />
+            ) : island.panel?.kind === 'collection' ? (
+              <CollectionPanel garden={g} catalog={island.catalog} maxHeight={panelHeight}
                 onClose={() => island.setPanel(null)} />
             ) : (
               <ShopPanel tab={island.tab} garden={g} catalog={island.catalog} ownedDecor={island.ownedDecor}

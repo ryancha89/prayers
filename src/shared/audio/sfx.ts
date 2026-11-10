@@ -27,7 +27,8 @@ try {
 }
 
 /** Bundled natively via react-native.config.js `assets` + react-native-asset. */
-export type Cue = 'tap' | 'select' | 'back' | 'send' | 'bellIn' | 'bellOut';
+export type Cue = 'tap' | 'select' | 'back' | 'send' | 'bellIn' | 'bellOut'
+  | 'moktak1' | 'moktak2' | 'moktak3' | 'moktak4' | 'moktakBell';
 
 const FILES: Record<Cue, string> = {
   tap: 'ui_tap.m4a',
@@ -36,6 +37,14 @@ const FILES: Record<Cue, string> = {
   send: 'ui_send.m4a',
   bellIn: 'med_bell_in.m4a',
   bellOut: 'med_bell_out.m4a',
+  // The wooden fish (spec 010): four velocity-varied hits played round-robin — four PRELOADED
+  // instances, so a strike never has to retrigger the instance still ringing from the last one,
+  // and 108 taps in a row stay inside the same ~50 ms budget as every other press here.
+  moktak1: 'moktak_hit_1.m4a',
+  moktak2: 'moktak_hit_2.m4a',
+  moktak3: 'moktak_hit_3.m4a',
+  moktak4: 'moktak_hit_4.m4a',
+  moktakBell: 'moktak_bell.m4a',
 };
 
 /**
@@ -49,7 +58,7 @@ const FILES: Record<Cue, string> = {
  * taps off has said they do not want the app making noises at them, and a bowl is a noise the app
  * makes; the room's music is the thing they came for and has its own switch.
  */
-const LONG_CUES = new Set<Cue>(['bellIn', 'bellOut']);
+const LONG_CUES = new Set<Cue>(['bellIn', 'bellOut', 'moktakBell']);
 
 /** Under the music, not over it: these are punctuation, not events. `ui_send` is the one that may
  *  be felt as an event, and it is louder in the file rather than louder here — that spread is real
@@ -142,6 +151,11 @@ export function play(cue: Cue) {
   }
 }
 
+/** The next hit in the moktak's round-robin. Module state, like the loaded map: the rotation is a
+ *  property of the instrument, not of whichever screen is striking it. */
+const MOKTAK_HITS: Cue[] = ['moktak1', 'moktak2', 'moktak3', 'moktak4'];
+let moktakNext = 0;
+
 export const sfx = {
   tap: () => play('tap'),
   select: () => play('select'),
@@ -151,6 +165,14 @@ export const sfx = {
   bellIn: () => play('bellIn'),
   /** Lower and longer, as it ends — a release, not another instruction. */
   bellOut: () => play('bellOut'),
+  /** One strike of the wooden fish, round-robin across the four hits (spec 010 US1). */
+  moktakHit: () => {
+    const cue = MOKTAK_HITS[moktakNext % MOKTAK_HITS.length];
+    moktakNext += 1;
+    play(cue);
+  },
+  /** The closing bell of the 108th strike. */
+  moktakBell: () => play('moktakBell'),
 };
 
 /** Free the preloaded instances. Called when the app goes away, like the music player does. */

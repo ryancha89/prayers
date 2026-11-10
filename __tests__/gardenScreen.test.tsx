@@ -229,6 +229,16 @@ describe('the island (phase 2)', () => {
     act(() => tree.unmount());
   });
 
+  it('opens the collection book: a matured species named, the rest a mystery (T071)', async () => {
+    const tree = await open(garden({ collection: ['lotus'] }));
+    act(() => byId(tree, 'garden-open-collection').props.onPress());
+    expect(text(tree)).toContain('Collected 1/2');
+    expect(text(tree)).toContain('Lotus');
+    expect(text(tree)).toContain('???');
+    act(() => byId(tree, 'garden-panel-close').props.onPress());
+    act(() => tree.unmount());
+  });
+
   it('says a locked plot needs a level, and a refusal in words', async () => {
     const tree = await open(garden({ level: 1 }));
     act(() => (getGardenBridge() as MockUnityBridge).emitToRN({ type: 'GARDEN_PLOT_TAP', payload: { index: 3 } }));

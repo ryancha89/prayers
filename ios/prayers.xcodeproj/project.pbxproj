@@ -54,6 +54,7 @@
 		0B2EAC4A499D41FC893D574A /* schop_ja_c09_12.m4a in Resources */ = {isa = PBXBuildFile; fileRef = EB04AB9E1BB841BDA52C4A4E /* schop_ja_c09_12.m4a */; };
 		0B6052FCBEAD478E969F1125 /* schop_en_c11_02.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A9B2A6804F8045BB9BEB239E /* schop_en_c11_02.m4a */; };
 		0BA7CA75D17841A9A10C6755 /* schop_c06_08.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 9250A9DBA4F64BEA9368B155 /* schop_c06_08.m4a */; };
+		0BD03E310347443AAC1F0F3E /* moktak_bell.m4a in Resources */ = {isa = PBXBuildFile; fileRef = B1CCDE2EB9064FC4868A86DF /* moktak_bell.m4a */; };
 		0BE7ECFB85B245CEA4391D5F /* schop_en_c09_04.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5DB71E2520204609A23D7EEA /* schop_en_c09_04.m4a */; };
 		0C507C4B379A4DC1B85BA99C /* jsfx_fireflies.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 9BFD6335569D4CE8BFB56B3A /* jsfx_fireflies.m4a */; };
 		0C5B17295887490882B8D4B6 /* schop_c07_04.m4a in Resources */ = {isa = PBXBuildFile; fileRef = DE1F44F9D21D4B10A2E1AEDD /* schop_c07_04.m4a */; };
@@ -118,6 +119,7 @@
 		1B419E08FBE940CD9EF6A7AF /* schop_ja_c04_q.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 7B13C8B270C541BEB87CABCE /* schop_ja_c04_q.m4a */; };
 		1B772937074C414380B73A57 /* schop_en_c11_04.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CD69C4727A444B6DBEFA7B1F /* schop_en_c11_04.m4a */; };
 		1BB0E2061C2D4C1F8803B124 /* schop_c07_20.m4a in Resources */ = {isa = PBXBuildFile; fileRef = E99A9EFE95F144759F4E3463 /* schop_c07_20.m4a */; };
+		1BC09814563B441A8488CA5A /* moktak_hit_1.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 425BF7C368F744C3B7CA0B15 /* moktak_hit_1.m4a */; };
 		1BDC14079B4E4849A2BBBA4A /* schop_zh_c12_11.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 8A7059E3CCCF45A8AF1C2E34 /* schop_zh_c12_11.m4a */; };
 		1C0485E4ECBA4546A692C02F /* schop_c08_15.m4a in Resources */ = {isa = PBXBuildFile; fileRef = F5C1A1426EAB49ADBD9E4119 /* schop_c08_15.m4a */; };
 		1C9E10D341F845D3B8B611B5 /* schop_c07_14.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 6813FB5689954A4398C21749 /* schop_c07_14.m4a */; };
@@ -301,6 +303,7 @@
 		42F2AF36D329423882496277 /* schop_c12_31.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 29BB4B00C36844DCAD375DAE /* schop_c12_31.m4a */; };
 		42FEC4116FE34102B0628C65 /* schop_c12_09.m4a in Resources */ = {isa = PBXBuildFile; fileRef = C42FABED61054FF79A57D63E /* schop_c12_09.m4a */; };
 		4312930677B84E189F641A24 /* schop_ja_c09_09.m4a in Resources */ = {isa = PBXBuildFile; fileRef = B4EC0E0F95B54085ACEBF57B /* schop_ja_c09_09.m4a */; };
+		4366830B5CDA4CCD8611C6B3 /* garden_campfire.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 43D73F2663684CD18BC674F4 /* garden_campfire.m4a */; };
 		43915B5BD66E4BA49B5C234B /* schop_c08_10.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 39707E95B325479384E43CCE /* schop_c08_10.m4a */; };
 		43DABC2619BF4A1EB62D002C /* schop_c01_14.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 3129946EC5CB4AAEA3DA6490 /* schop_c01_14.m4a */; };
 		43F7ECABD6B84378B4A1FB86 /* schop_ja_c02_00.m4a in Resources */ = {isa = PBXBuildFile; fileRef = FDE8885607A04964AF34A8C3 /* schop_ja_c02_00.m4a */; };
@@ -375,6 +378,7 @@
 		519141FD386A4A779A148CDE /* schop_c07_01.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 042161146FF9462F933E3726 /* schop_c07_01.m4a */; };
 		51E924B9A92D48D7A7100EED /* schop_ja_c07_06.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 81911A3CC6BE428E85469E9C /* schop_ja_c07_06.m4a */; };
 		520A510017744443960DC895 /* schop_c06_02.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CD4A46CADFBC42CD886D245B /* schop_c06_02.m4a */; };
+		52365F6A36F94AD2BAAE01AA /* temple_ambience.m4a in Resources */ = {isa = PBXBuildFile; fileRef = DFF100FF6D6C46D384516D35 /* temple_ambience.m4a */; };
 		5297105AF41C40A29D9DA821 /* schop_ja_c01_11.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AE49EA9953854113988450E0 /* schop_ja_c01_11.m4a */; };
 		52A143109FDF4C0D93E87492 /* schop_zh_c04_05.m4a in Resources */ = {isa = PBXBuildFile; fileRef = E354A99B17E340E19D8469A4 /* schop_zh_c04_05.m4a */; };
 		52AE19C56D0C4F0785DF4EA8 /* schop_c04_14.m4a in Resources */ = {isa = PBXBuildFile; fileRef = B4C8C25C7EB945C485FFA1E1 /* schop_c04_14.m4a */; };
@@ -508,6 +512,7 @@
 		7301327FC6254505B2B20DF7 /* schop_zh_c01_10.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 8CE96746C7454BF89DCDAA0A /* schop_zh_c01_10.m4a */; };
 		733B60C9FB2744AB918D109A /* schop_en_c10_07.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 35544381B27E4B6BAC30CE26 /* schop_en_c10_07.m4a */; };
 		7388DF1532AC4FEBBE501E65 /* schop_en_c12_09.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A001CFDCF3BA4C8D8C1CFE2D /* schop_en_c12_09.m4a */; };
+		73C27E722B88463194F558C2 /* snow_wind.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 623F3BF1B18E43159C78E3A3 /* snow_wind.m4a */; };
 		73E68D5FADE34AC0A2FBD651 /* schop_en_c01_13.m4a in Resources */ = {isa = PBXBuildFile; fileRef = C9CAE4FB7F4441568C05DD83 /* schop_en_c01_13.m4a */; };
 		73F34958CBF74F90A0FEA2D4 /* schop_zh_c07_01.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 7C4707DA5D544B16B8DA6803 /* schop_zh_c07_01.m4a */; };
 		742AABC79DFE44269E5F7D4F /* schop_c12_36.m4a in Resources */ = {isa = PBXBuildFile; fileRef = E706AB893FA94D1280132BC2 /* schop_c12_36.m4a */; };
@@ -653,6 +658,7 @@
 		9486332C89284567ABE4B8ED /* schop_vi_c04_10.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 85926AD43264424F8FFDE1AA /* schop_vi_c04_10.m4a */; };
 		94BD154881AF4756ACCCB6BF /* schop_zh_c12_08.m4a in Resources */ = {isa = PBXBuildFile; fileRef = B8E6E8F8379A478BA1C9C4BC /* schop_zh_c12_08.m4a */; };
 		95194B3D768A4405A01037BE /* schop_c11_05.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 0392ADFC62934A12A4A03F59 /* schop_c11_05.m4a */; };
+		953F7E1610AA42F4B114837E /* moktak_hit_3.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 9E9216623D364910AB8951D2 /* moktak_hit_3.m4a */; };
 		957DCA5538184C38B6DFF393 /* schop_en_c06_q.m4a in Resources */ = {isa = PBXBuildFile; fileRef = C6EA61A3B22E49B9849D1764 /* schop_en_c06_q.m4a */; };
 		95883E6D8DF745B6A9EA6696 /* schop_zh_c03_07.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 03F381B6F1354B07B2F9FD9F /* schop_zh_c03_07.m4a */; };
 		95F016D53C2F41DF903AA7D0 /* schop_zh_c06_01.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 937CB0D4212F4A6BA6B02479 /* schop_zh_c06_01.m4a */; };
@@ -738,6 +744,7 @@
 		A88FADA38F334647AE086482 /* schop_c05_10.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 53C9BF735D82462ABD41C7D2 /* schop_c05_10.m4a */; };
 		A8E2CBA9F215424B874C714C /* schop_ja_c02_12.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 6ADF2D16ACB04871B847BA0A /* schop_ja_c02_12.m4a */; };
 		A9312D51A8A8494699D2F42E /* schop_ja_c08_00.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 69CBA554FCC440FF9F10FAFD /* schop_ja_c08_00.m4a */; };
+		A94EE18698E7439487F43C29 /* moktak_hit_2.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 889D77EB74D24920A9396409 /* moktak_hit_2.m4a */; };
 		A9AC765181784420B47E69ED /* schop_zh_c04_04.m4a in Resources */ = {isa = PBXBuildFile; fileRef = EDFBD85A3E1A4AAAA404E684 /* schop_zh_c04_04.m4a */; };
 		A9DCB1BDAD924631A4D7A7B0 /* schop_c07_17.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 35FB4DDC4D8F4E0090B6A2E0 /* schop_c07_17.m4a */; };
 		AA20BC210CAF41288C3D8908 /* schop_vi_c12_09.m4a in Resources */ = {isa = PBXBuildFile; fileRef = BE15891938BF478EB7B054A9 /* schop_vi_c12_09.m4a */; };
@@ -793,6 +800,7 @@
 		B76CF994B34C4EC7805C241E /* schop_vi_c03_06.m4a in Resources */ = {isa = PBXBuildFile; fileRef = C52F3E1466384417A8D1D4F9 /* schop_vi_c03_06.m4a */; };
 		B77B9B2EA04E49F394C7F108 /* schop_en_c08_07.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 551D0F101E9C449E9A9C25A0 /* schop_en_c08_07.m4a */; };
 		B7BA14B6413448789ECC6920 /* schop_en_c01_07.m4a in Resources */ = {isa = PBXBuildFile; fileRef = DAD5B01ECAE64C73863796EE /* schop_en_c01_07.m4a */; };
+		B80E3E4C7F694A779360AED8 /* moktak_hit_4.m4a in Resources */ = {isa = PBXBuildFile; fileRef = B06B60C8AF13417CA3F6A545 /* moktak_hit_4.m4a */; };
 		B846CAC48AF64A7D8B8D3CEB /* schop_en_c12_18.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 104FC54923674154A7F35419 /* schop_en_c12_18.m4a */; };
 		B86C2725AA0D4DEEACD2A45D /* schop_en_c09_13.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 17E60D149AA4427A80A9B987 /* schop_en_c09_13.m4a */; };
 		B898A472502A492FA5D3A3BA /* schop_zh_c11_07.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 85B9E1975FB84ACABB94D20C /* schop_zh_c11_07.m4a */; };
@@ -1010,6 +1018,7 @@
 		E738BE7ACBDD48848E654947 /* schop_ja_c02_09.m4a in Resources */ = {isa = PBXBuildFile; fileRef = E50F0943C4634348A35285A9 /* schop_ja_c02_09.m4a */; };
 		E7858402422E4CEF93710403 /* schop_c10_17.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A83042EF6BFE485C81FF47AD /* schop_c10_17.m4a */; };
 		E7FB10F9B8844776AB1B8666 /* schop_vi_c09_06.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 848FC20202744CAFB3CAF4F9 /* schop_vi_c09_06.m4a */; };
+		E8309955BCD54A2B94E496BA /* garden_rain.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 681A6E4A5D45443F89944605 /* garden_rain.m4a */; };
 		E836B605A8694B8188AB0D46 /* schop_ja_c01_09.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 5C95CD2BCB6B47B588E4B3A3 /* schop_ja_c01_09.m4a */; };
 		E8A325067B134F9393858147 /* schop_zh_c07_11.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 16B1816AA54747AD82FE09D6 /* schop_zh_c07_11.m4a */; };
 		E91E27D76C804C89A2B41963 /* schop_zh_c10_04.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 78B6877FB0BA481DB17F06B4 /* schop_zh_c10_04.m4a */; };
@@ -1400,10 +1409,12 @@
 		41BA47B6B3134E679FCAA630 /* schop_zh_c04_01.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c04_01.m4a; path = ../src/shared/assets/sounds/schop_zh_c04_01.m4a; sourceTree = "<group>"; };
 		42065884BDE14FF2898BCD79 /* schop_en_c07_03.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_en_c07_03.m4a; path = ../src/shared/assets/sounds/schop_en_c07_03.m4a; sourceTree = "<group>"; };
 		4244F48F6F884352BFF4A19F /* schop_zh_c10_06.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c10_06.m4a; path = ../src/shared/assets/sounds/schop_zh_c10_06.m4a; sourceTree = "<group>"; };
+		425BF7C368F744C3B7CA0B15 /* moktak_hit_1.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = moktak_hit_1.m4a; path = ../src/shared/assets/sounds/moktak_hit_1.m4a; sourceTree = "<group>"; };
 		4290C0C91DA74BA294384FA7 /* schop_vi_c04_07.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c04_07.m4a; path = ../src/shared/assets/sounds/schop_vi_c04_07.m4a; sourceTree = "<group>"; };
 		42AE8E4BBE5A4F5DA164450B /* schop_c03_14.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c03_14.m4a; path = ../src/shared/assets/sounds/schop_c03_14.m4a; sourceTree = "<group>"; };
 		42FF3DCEC6264194BD953F82 /* schop_zh_c06_q.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c06_q.m4a; path = ../src/shared/assets/sounds/schop_zh_c06_q.m4a; sourceTree = "<group>"; };
 		43D062BDCDAE4DCAABE548C0 /* schop_vi_c08_11.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c08_11.m4a; path = ../src/shared/assets/sounds/schop_vi_c08_11.m4a; sourceTree = "<group>"; };
+		43D73F2663684CD18BC674F4 /* garden_campfire.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = garden_campfire.m4a; path = ../src/shared/assets/sounds/garden_campfire.m4a; sourceTree = "<group>"; };
 		44256525416D45B4B87ACA40 /* schop_vi_c01_09.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c01_09.m4a; path = ../src/shared/assets/sounds/schop_vi_c01_09.m4a; sourceTree = "<group>"; };
 		44654C8E726A4B1984F06128 /* schop_ja_c04_03.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c04_03.m4a; path = ../src/shared/assets/sounds/schop_ja_c04_03.m4a; sourceTree = "<group>"; };
 		449A1CFD2417472787D06DE3 /* schop_c10_21.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c10_21.m4a; path = ../src/shared/assets/sounds/schop_c10_21.m4a; sourceTree = "<group>"; };
@@ -1525,6 +1536,7 @@
 		619828D4535342FA87D13215 /* schop_c12_30.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c12_30.m4a; path = ../src/shared/assets/sounds/schop_c12_30.m4a; sourceTree = "<group>"; };
 		619BF5C58BAD4D12AF64F46B /* schop_en_c11_13.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_en_c11_13.m4a; path = ../src/shared/assets/sounds/schop_en_c11_13.m4a; sourceTree = "<group>"; };
 		62229E780F3C4D23B412DF37 /* schop_vi_c12_10.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c12_10.m4a; path = ../src/shared/assets/sounds/schop_vi_c12_10.m4a; sourceTree = "<group>"; };
+		623F3BF1B18E43159C78E3A3 /* snow_wind.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = snow_wind.m4a; path = ../src/shared/assets/sounds/snow_wind.m4a; sourceTree = "<group>"; };
 		627F175A5F504C59B0ED3426 /* schop_zh_c02_04.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c02_04.m4a; path = ../src/shared/assets/sounds/schop_zh_c02_04.m4a; sourceTree = "<group>"; };
 		62A30FAE20F24F239E41FE55 /* schop_vi_c02_00.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c02_00.m4a; path = ../src/shared/assets/sounds/schop_vi_c02_00.m4a; sourceTree = "<group>"; };
 		62D286DC74EA4D60A8E73C15 /* schop_c02_06.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c02_06.m4a; path = ../src/shared/assets/sounds/schop_c02_06.m4a; sourceTree = "<group>"; };
@@ -1548,6 +1560,7 @@
 		67EC815948FE4CE98627A8C9 /* schop_en_c05_09.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_en_c05_09.m4a; path = ../src/shared/assets/sounds/schop_en_c05_09.m4a; sourceTree = "<group>"; };
 		67EDE853C0B7466180FF4B96 /* schop_c06_09.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c06_09.m4a; path = ../src/shared/assets/sounds/schop_c06_09.m4a; sourceTree = "<group>"; };
 		6813FB5689954A4398C21749 /* schop_c07_14.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c07_14.m4a; path = ../src/shared/assets/sounds/schop_c07_14.m4a; sourceTree = "<group>"; };
+		681A6E4A5D45443F89944605 /* garden_rain.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = garden_rain.m4a; path = ../src/shared/assets/sounds/garden_rain.m4a; sourceTree = "<group>"; };
 		686739A4FC3844838194294A /* schop_ja_c01_15.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c01_15.m4a; path = ../src/shared/assets/sounds/schop_ja_c01_15.m4a; sourceTree = "<group>"; };
 		687071E6A91E4E4490A48C88 /* schop_ja_c08_11.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c08_11.m4a; path = ../src/shared/assets/sounds/schop_ja_c08_11.m4a; sourceTree = "<group>"; };
 		6898E9D44FE54D19B62B70D1 /* schop_ja_c01_16.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c01_16.m4a; path = ../src/shared/assets/sounds/schop_ja_c01_16.m4a; sourceTree = "<group>"; };
@@ -1708,6 +1721,7 @@
 		8846DD956F0F466CAC952D3C /* schop_vi_c03_08.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c03_08.m4a; path = ../src/shared/assets/sounds/schop_vi_c03_08.m4a; sourceTree = "<group>"; };
 		88521E8C50214E379C96573C /* schop_vi_c09_10.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c09_10.m4a; path = ../src/shared/assets/sounds/schop_vi_c09_10.m4a; sourceTree = "<group>"; };
 		887EE8B46D9449F8A814DC71 /* schop_vi_c02_03.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c02_03.m4a; path = ../src/shared/assets/sounds/schop_vi_c02_03.m4a; sourceTree = "<group>"; };
+		889D77EB74D24920A9396409 /* moktak_hit_2.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = moktak_hit_2.m4a; path = ../src/shared/assets/sounds/moktak_hit_2.m4a; sourceTree = "<group>"; };
 		8963062A11544AABB2A88981 /* schop_zh_c07_03.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c07_03.m4a; path = ../src/shared/assets/sounds/schop_zh_c07_03.m4a; sourceTree = "<group>"; };
 		898C2DA6A88D4D93B4350267 /* schop_zh_c08_07.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c08_07.m4a; path = ../src/shared/assets/sounds/schop_zh_c08_07.m4a; sourceTree = "<group>"; };
 		899B4B53660F40C38FE51BC5 /* schop_ja_c08_07.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c08_07.m4a; path = ../src/shared/assets/sounds/schop_ja_c08_07.m4a; sourceTree = "<group>"; };
@@ -1821,6 +1835,7 @@
 		9E4DFE6596CD438FA02E6D2E /* schop_zh_c08_05.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c08_05.m4a; path = ../src/shared/assets/sounds/schop_zh_c08_05.m4a; sourceTree = "<group>"; };
 		9E5A215C3930456D9AA2780D /* schop_zh_c01_08.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c01_08.m4a; path = ../src/shared/assets/sounds/schop_zh_c01_08.m4a; sourceTree = "<group>"; };
 		9E7E709E673F440DBAC14A6F /* schop_c01_10.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c01_10.m4a; path = ../src/shared/assets/sounds/schop_c01_10.m4a; sourceTree = "<group>"; };
+		9E9216623D364910AB8951D2 /* moktak_hit_3.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = moktak_hit_3.m4a; path = ../src/shared/assets/sounds/moktak_hit_3.m4a; sourceTree = "<group>"; };
 		9EB93AFB11B840A59DF5FF61 /* schop_vi_c09_04.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c09_04.m4a; path = ../src/shared/assets/sounds/schop_vi_c09_04.m4a; sourceTree = "<group>"; };
 		9EBB521DF1DA44968C5FEE04 /* schop_c02_04.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c02_04.m4a; path = ../src/shared/assets/sounds/schop_c02_04.m4a; sourceTree = "<group>"; };
 		9F7AA73533634B9396218F14 /* schop_vi_c12_03.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_vi_c12_03.m4a; path = ../src/shared/assets/sounds/schop_vi_c12_03.m4a; sourceTree = "<group>"; };
@@ -1889,7 +1904,9 @@
 		AF62DEB79BE146E4A770A6C1 /* schop_c03_13.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c03_13.m4a; path = ../src/shared/assets/sounds/schop_c03_13.m4a; sourceTree = "<group>"; };
 		B0495C24771B409188D44CE9 /* schop_ja_c12_07.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c12_07.m4a; path = ../src/shared/assets/sounds/schop_ja_c12_07.m4a; sourceTree = "<group>"; };
 		B05170DFDBF7485DB54D0303 /* schop_zh_c03_10.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c03_10.m4a; path = ../src/shared/assets/sounds/schop_zh_c03_10.m4a; sourceTree = "<group>"; };
+		B06B60C8AF13417CA3F6A545 /* moktak_hit_4.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = moktak_hit_4.m4a; path = ../src/shared/assets/sounds/moktak_hit_4.m4a; sourceTree = "<group>"; };
 		B1939E0222D5484D875E29F8 /* schop_zh_c07_13.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_zh_c07_13.m4a; path = ../src/shared/assets/sounds/schop_zh_c07_13.m4a; sourceTree = "<group>"; };
+		B1CCDE2EB9064FC4868A86DF /* moktak_bell.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = moktak_bell.m4a; path = ../src/shared/assets/sounds/moktak_bell.m4a; sourceTree = "<group>"; };
 		B1EC08DC9FE04230926D0372 /* schop_ja_c06_00.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c06_00.m4a; path = ../src/shared/assets/sounds/schop_ja_c06_00.m4a; sourceTree = "<group>"; };
 		B22B5EC5DA624FBA80454F2B /* jsfx_card_deal.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = jsfx_card_deal.m4a; path = ../src/shared/assets/sounds/jsfx_card_deal.m4a; sourceTree = "<group>"; };
 		B24902BAB06D4056BBCDC3F0 /* schop_en_c01_02.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_en_c01_02.m4a; path = ../src/shared/assets/sounds/schop_en_c01_02.m4a; sourceTree = "<group>"; };
@@ -2077,6 +2094,7 @@
 		DE4418B1730F41269B9B0AA9 /* schop_en_c07_13.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_en_c07_13.m4a; path = ../src/shared/assets/sounds/schop_en_c07_13.m4a; sourceTree = "<group>"; };
 		DEED0F39A5794068B792F98C /* schop_ja_c04_02.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c04_02.m4a; path = ../src/shared/assets/sounds/schop_ja_c04_02.m4a; sourceTree = "<group>"; };
 		DF4788C4C62A4570A50011F7 /* schop_c11_07.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c11_07.m4a; path = ../src/shared/assets/sounds/schop_c11_07.m4a; sourceTree = "<group>"; };
+		DFF100FF6D6C46D384516D35 /* temple_ambience.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = temple_ambience.m4a; path = ../src/shared/assets/sounds/temple_ambience.m4a; sourceTree = "<group>"; };
 		E01ED9B2C0A6411EB38885D9 /* schop_ja_c01_02.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_ja_c01_02.m4a; path = ../src/shared/assets/sounds/schop_ja_c01_02.m4a; sourceTree = "<group>"; };
 		E0B87E429C084542B619A2E4 /* schop_en_c10_11.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_en_c10_11.m4a; path = ../src/shared/assets/sounds/schop_en_c10_11.m4a; sourceTree = "<group>"; };
 		E121FB73368C4652931B40DC /* schop_c05_03.m4a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = schop_c05_03.m4a; path = ../src/shared/assets/sounds/schop_c05_03.m4a; sourceTree = "<group>"; };
@@ -3345,6 +3363,15 @@
 				FBD3ACA4730249D5B9684D26 /* schop_en_c12_16.m4a */,
 				ADB23011EAA441F0A5276298 /* splash_sound.m4a */,
 				7512B8C68CC54F10850908D6 /* meditation_guide_vi.m4a */,
+				43D73F2663684CD18BC674F4 /* garden_campfire.m4a */,
+				681A6E4A5D45443F89944605 /* garden_rain.m4a */,
+				B06B60C8AF13417CA3F6A545 /* moktak_hit_4.m4a */,
+				9E9216623D364910AB8951D2 /* moktak_hit_3.m4a */,
+				B1CCDE2EB9064FC4868A86DF /* moktak_bell.m4a */,
+				889D77EB74D24920A9396409 /* moktak_hit_2.m4a */,
+				425BF7C368F744C3B7CA0B15 /* moktak_hit_1.m4a */,
+				DFF100FF6D6C46D384516D35 /* temple_ambience.m4a */,
+				623F3BF1B18E43159C78E3A3 /* snow_wind.m4a */,
 			);
 			name = Resources;
 			path = "";
@@ -4544,6 +4571,15 @@
 				6BCEC7206E784E7BB08D091E /* schop_en_c12_16.m4a in Resources */,
 				FFC289A9955E41E1A0432F2F /* splash_sound.m4a in Resources */,
 				AC4DCB8562014F61A4CBDBF7 /* meditation_guide_vi.m4a in Resources */,
+				4366830B5CDA4CCD8611C6B3 /* garden_campfire.m4a in Resources */,
+				E8309955BCD54A2B94E496BA /* garden_rain.m4a in Resources */,
+				B80E3E4C7F694A779360AED8 /* moktak_hit_4.m4a in Resources */,
+				953F7E1610AA42F4B114837E /* moktak_hit_3.m4a in Resources */,
+				0BD03E310347443AAC1F0F3E /* moktak_bell.m4a in Resources */,
+				A94EE18698E7439487F43C29 /* moktak_hit_2.m4a in Resources */,
+				1BC09814563B441A8488CA5A /* moktak_hit_1.m4a in Resources */,
+				52365F6A36F94AD2BAAE01AA /* temple_ambience.m4a in Resources */,
+				73C27E722B88463194F558C2 /* snow_wind.m4a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4651,7 +4687,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = prayers/prayers.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = LMV326UNSN;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = prayers/Info.plist;
@@ -4660,7 +4696,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -4684,7 +4720,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = prayers/prayers.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = LMV326UNSN;
 				INFOPLIST_FILE = prayers/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -4692,7 +4728,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",

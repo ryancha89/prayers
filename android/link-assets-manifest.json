@@ -2,6 +2,14 @@
   "migIndex": 1,
   "data": [
     {
+      "path": "src/shared/assets/sounds/garden_campfire.m4a",
+      "sha1": "070923bee2fed27e313273289c57928e8fb12c0f"
+    },
+    {
+      "path": "src/shared/assets/sounds/garden_rain.m4a",
+      "sha1": "cce8d3258b0f59ca8f1ad6912c8d716262b457f8"
+    },
+    {
       "path": "src/shared/assets/sounds/jamb_arrival.m4a",
       "sha1": "9dbe46118bf242204e0c1ca4ad0157e3a148b279"
     },
@@ -156,6 +164,26 @@
     {
       "path": "src/shared/assets/sounds/meditation_guide_zh.m4a",
       "sha1": "ed794d761b56a5eea09bf6213fb94d8b9a71dfa8"
+    },
+    {
+      "path": "src/shared/assets/sounds/moktak_bell.m4a",
+      "sha1": "e17b0c25e8f767532789fc27ebfdc12edcd01f9b"
+    },
+    {
+      "path": "src/shared/assets/sounds/moktak_hit_1.m4a",
+      "sha1": "866ceb048657fc35b6b0b2de54c95bc08f219542"
+    },
+    {
+      "path": "src/shared/assets/sounds/moktak_hit_2.m4a",
+      "sha1": "24c8cc990501375e4e4deb59938a5ded3774f47b"
+    },
+    {
+      "path": "src/shared/assets/sounds/moktak_hit_3.m4a",
+      "sha1": "0eb629fe575032ef8f871bb724b4ae560dfda0a9"
+    },
+    {
+      "path": "src/shared/assets/sounds/moktak_hit_4.m4a",
+      "sha1": "9968faa14bd14f564d804d17527f3f5c04296c4c"
     },
     {
       "path": "src/shared/assets/sounds/prayers_ambient.m4a",
@@ -4326,8 +4354,16 @@
       "sha1": "d0bcfe76d004b07a60b9c7eab3cdd66b7c012cb3"
     },
     {
+      "path": "src/shared/assets/sounds/snow_wind.m4a",
+      "sha1": "55d2ef95ef871095be6c2a874f76f46c29e4f3a4"
+    },
+    {
       "path": "src/shared/assets/sounds/splash_sound.m4a",
       "sha1": "e202bc92f98c1ee8df97797557a7b2535ba4db3e"
+    },
+    {
+      "path": "src/shared/assets/sounds/temple_ambience.m4a",
+      "sha1": "c8bbdd103f46e99fa526b5fcbac3845d9ad9428e"
     },
     {
       "path": "src/shared/assets/sounds/train_ambience.m4a",

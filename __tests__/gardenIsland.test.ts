@@ -8,7 +8,7 @@ jest.mock('../src/features/auth/api/headers', () => ({ authedFetch: jest.fn(), a
 
 import { authedFetch } from '../src/features/auth/api/headers';
 import { buyDecor, buyPlot, plantSeed, readGarden, saveLayout, type Garden, type GardenCatalog } from '../src/features/garden/api/gardenApi';
-import { decorForSale, decorLeft, islandPayload, layoutReasonKey, plantablePlots, seedsForSale, shopErrorKey } from '../src/features/garden/island';
+import { decorForSale, decorLeft, islandPayload, layoutReasonKey, musicBed, plantablePlots, seedsForSale, shopErrorKey } from '../src/features/garden/island';
 import { NativeUnityBridge } from '../src/features/counseling/bridge/NativeUnityBridge';
 
 const fetchMock = authedFetch as jest.Mock;
@@ -64,6 +64,15 @@ it('counts the decor left to place, placeable pieces only', () => {
   const placed = [{ uid: 'pebble_ring', item: 'pebble_ring', pos: { x: 1, z: 1 }, rot: 0, slot: null }];
   expect(decorLeft(owned, placed, CATALOG)).toEqual({ pebble_ring: 1 });
   expect(decorLeft(owned, null, CATALOG)).toEqual({ pebble_ring: 2 });
+});
+
+it('picks the sitting bed from the music decor, falling back to the meditation bed (T070)', () => {
+  expect(musicBed('music_rain', 'en')).toBe('gardenRain');
+  expect(musicBed('music_campfire', 'vi')).toBe('gardenCampfire');
+  expect(musicBed(null, 'en')).toBe('meditation');
+  expect(musicBed(null, 'ko')).toBe('meditationKo');
+  // A music id this build does not know (a later server's new track) must not silence the sitting.
+  expect(musicBed('music_stream', 'en')).toBe('meditation');
 });
 
 it('words the refusals', () => {

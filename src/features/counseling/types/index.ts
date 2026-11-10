@@ -526,6 +526,10 @@ export type RNToUnityEvent =
   /** A tap, 0..1 from the view's top-left: editing = select a piece; otherwise a plot → GARDEN_PLOT_TAP. */
   | { type: 'GARDEN_TAP'; payload: { x: number; y: number } }
   | { type: 'GARDEN_DRAG'; payload: { phase: MyRoomDragPhase; x: number; y: number } }
+  /** The player's orbit about the island (10-11). `yaw` is ABSOLUTE degrees and is NOT clamped — this
+   *  side accumulates the drag so the camera can go the whole way round, which is the only way to see
+   *  (and decorate) the island's far half. `pitch` and `zoom` are -1..1 as in ROOM_LOOK / ROOM_ZOOM. */
+  | { type: 'GARDEN_LOOK'; payload: { yaw: number; pitch: number; zoom: number } }
   | { type: 'GARDEN_ROTATE'; payload: { step: 1 | -1 } }
   | { type: 'GARDEN_ADD'; payload: { item: string } }
   | { type: 'GARDEN_REMOVE'; payload: Record<string, never> }
@@ -1222,6 +1226,8 @@ export interface GardenBridge {
   sendGardenEdit(on: boolean, cancel?: boolean): void;
   sendGardenTap(x: number, y: number): void;
   sendGardenDrag(phase: MyRoomDragPhase, x: number, y: number): void;
+  /** The camera's orbit about the island: absolute yaw in degrees (unbounded), pitch and zoom -1..1. */
+  sendGardenLook(yaw: number, pitch: number, zoom: number): void;
   sendGardenRotate(step: 1 | -1): void;
   sendGardenAdd(item: string): void;
   sendGardenRemove(): void;

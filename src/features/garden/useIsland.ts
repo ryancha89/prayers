@@ -23,7 +23,7 @@ import type { ShopTab } from './components/IslandPanels';
  * Room's flow (GARDEN_EDIT → GARDEN_LAYOUT_CHANGED → PUT with version → GARDEN_LAYOUT) on the garden's
  * calls. Unity is told the island on every change (GARDEN_ISLAND) and the saved decor (GARDEN_LAYOUT).
  */
-export type Panel = null | { kind: 'shop' } | { kind: 'plot'; index: number };
+export type Panel = null | { kind: 'shop' } | { kind: 'plot'; index: number } | { kind: 'collection' };
 
 export interface IslandInit {
   catalog: GardenCatalog;
