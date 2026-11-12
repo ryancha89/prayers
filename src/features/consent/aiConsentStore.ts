@@ -67,7 +67,7 @@ export function grantAiConsent(uid: string, now = Date.now()) {
 
 export function withdrawAiConsent(uid: string) {
   useAiConsent.setState(s => {
-    const { [uid]: _gone, ...rest } = s.byUid;
+    const rest = Object.fromEntries(Object.entries(s.byUid).filter(([k]) => k !== uid));
     return { byUid: rest };
   });
 }

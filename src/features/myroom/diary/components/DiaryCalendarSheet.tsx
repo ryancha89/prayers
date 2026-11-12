@@ -8,7 +8,6 @@ import { useLang, useT } from '../../../../shared/i18n';
 import { sfx } from '../../../../shared/audio/sfx';
 import { column } from '../../../../shared/device/screen';
 import { useArchiveStore } from '../../../archive/store/archiveStore';
-import { diaryEntries } from '../book';
 import { localDay } from '../text';
 import { dayMood, entriesByDay, monthCheer, monthGrid, monthOf, monthStats, moodColor, shiftMonth } from '../stats';
 import { ReflectionNote } from './DiaryBubbles';

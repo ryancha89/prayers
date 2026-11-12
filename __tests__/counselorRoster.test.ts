@@ -21,7 +21,6 @@ import {
   getLocalizedCounselor,
   localizeCounselors,
 } from '../src/features/counselors/data/mockCounselors';
-import { groupTopicsFor } from '../src/features/counseling/topicsForCounselor';
 import { toneForCharacter } from '../src/features/counseling/api/counselorAI';
 import { isPixelCounselor, PIXEL_COUNSELORS } from '../src/features/counseling/pixel/pixelCounselors';
 

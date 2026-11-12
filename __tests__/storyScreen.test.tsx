@@ -36,7 +36,7 @@ jest.mock('../src/features/story/voice/storySpeech', () => ({ available: () => f
 const mockTurn = jest.fn();
 jest.mock('../src/features/story/api/storyApi', () => ({ storyTurn: (...a: unknown[]) => mockTurn(...a) }));
 
-// eslint-disable-next-line import/first
+// The import comes after the jest.mock calls on purpose (the module reads them at load).
 import { StoryScreen } from '../src/features/story/screens/StoryScreen';
 
 let tree: ReactTestRenderer.ReactTestRenderer;

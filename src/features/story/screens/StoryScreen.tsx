@@ -126,6 +126,13 @@ export const StoryScreen: React.FC = () => {
     show(initialState(script, mode === 'prologue'));
   };
 
+  // useCallback: `next` depends on it, and a new function every render would rebuild that callback
+  // (and the typewriter/voice effects hanging off it) on every keystroke.
+  const flash = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2600);
+  }, []);
+
   const next = useCallback(() => {
     if (phase.kind !== 'beat') return;
     if (typing) {
@@ -152,7 +159,7 @@ export const StoryScreen: React.FC = () => {
       return;
     }
     show(advance(state, phase.beat));
-  }, [phase, typing, state, show, script]);
+  }, [phase, typing, state, show, script, flash, t, catLabel]);
 
   // ── typewriter + voice + the cat's face ──────────────────────────────────────────────────
   useEffect(() => {
@@ -291,10 +298,6 @@ export const StoryScreen: React.FC = () => {
     show(jump(state, p.node));
   };
 
-  const flash = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2600);
-  };
 
   useEffect(() => () => {
     abort.current?.abort();

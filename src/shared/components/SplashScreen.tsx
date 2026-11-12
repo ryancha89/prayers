@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Dimensions, Easing, Image, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, Easing, Image, StyleSheet } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { bundledSoundPath, bundledSoundBase } from '../audio/bundledSound';
 

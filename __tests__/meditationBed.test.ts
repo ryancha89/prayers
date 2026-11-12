@@ -73,8 +73,14 @@ jest.mock(
 
 import { backgroundMusic, meditationBed } from '../src/shared/audio/backgroundMusic';
 
-/** Let the (deferred) load callback run — see the double's constructor. */
-const settle = () => new Promise(resolve => setImmediate(resolve));
+/** Let the (deferred) load callback run — see the double's constructor.
+ *
+ * Several rounds, not one: the sound store rehydrates from AsyncStorage through its own promise
+ * chain, and in a full `jest` run (never on this file alone) one round landed before the load
+ * callback had run, so every expectation here saw an empty `loaded` list. */
+const settle = async () => {
+  for (let i = 0; i < 5; i++) await new Promise(resolve => setImmediate(resolve));
+};
 
 describe('the two beds', () => {
   beforeEach(() => {
