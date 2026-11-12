@@ -1443,9 +1443,11 @@ export class ConsultationEngine {
         ? null
         : this.oracleError === 'no_chart'
         ? 'consult_no_chart_body'
-        : this.oracleError === 'upstream'
-          ? 'consult_upstream_body'
-          : 'consult_disconnect_body';
+        : this.oracleError === 'rate_limited'
+          ? 'consult_rate_limited'
+          : this.oracleError === 'upstream'
+            ? 'consult_upstream_body'
+            : 'consult_disconnect_body';
     return {
       // Out of coins: the room's coin card says it; the notice under it only waits for the Retry.
       body: key ? loc(key, this.lang, '') : ui('notice.coins', this.lang),
@@ -1520,7 +1522,10 @@ export class ConsultationEngine {
   /** The staged reading's result, taken in (a failure already classified). */
   private applyReading(payload: OracleResultPayload) {
     this.oraclePending = false;
-    this.oracleError = payload.ok ? null : (payload.error ?? 'connection');
+    // `|| 'connection'`, not `?? `: the room sends an EMPTY string for a failure it could not
+    // classify, and an empty string is not nullish — it left oracleError falsy, so a failed turn
+    // showed no notice at all (11-11, together with the room learning to say 'ticket').
+    this.oracleError = payload.ok ? null : (payload.error || 'connection');
     this.followup = payload.followup ?? '';
     if (payload.report) this.reportData = payload.report;
     this.beats = {};

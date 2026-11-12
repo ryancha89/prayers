@@ -1788,6 +1788,45 @@ describe('coins', () => {
     expect(engine.getState().notice?.body).toBe('Not enough Prayer Coins for an answer. Top up, then try again.');
   });
 
+  it('the room\u2019s own "ticket" refusal shows the coin notice without asking the wallet', async () => {
+    // 11-11: the room used to send `error: ""` for an empty wallet, so the flow put up no notice at
+    // all and the player sat in a room that took no questions. It now says 'ticket' outright, and
+    // the coin card does not depend on the wallet probe answering.
+    const coinsShort = jest.fn(async () => false);
+    const { sched, engine } = withWallet({ coinsShort });
+    engine.begin();
+    sched.advance(60_000);
+    engine.submitQuestion('Q');
+    engine.onOracleResult({ ok: false, error: 'ticket', followup: '', beats: [] });
+    await flush();
+    sched.advance(120_000);
+    expect(engine.getState().screen).toBe('notice');
+    expect(engine.getState().notice?.body).toBe('Not enough Prayer Coins for an answer. Top up, then try again.');
+  });
+
+  it('the rate limit is worded as a wait, not as a lost connection', async () => {
+    const { sched, engine } = withWallet({ coinsShort: async () => false });
+    engine.begin();
+    sched.advance(60_000);
+    engine.submitQuestion('Q');
+    engine.onOracleResult({ ok: false, error: 'rate_limited', followup: '', beats: [] });
+    await flush();
+    sched.advance(120_000);
+    expect(engine.getState().notice?.body).toBe('You are asking faster than I can read. Give it a moment and ask again.');
+  });
+
+  it('a failed turn with no reason at all still shows a notice', async () => {
+    const { sched, engine } = withWallet({ coinsShort: async () => false });
+    engine.begin();
+    sched.advance(60_000);
+    engine.submitQuestion('Q');
+    engine.onOracleResult({ ok: false, error: '', followup: '', beats: [] });
+    await flush();
+    sched.advance(120_000);
+    expect(engine.getState().screen).toBe('notice');
+    expect(engine.getState().notice?.body).toBeTruthy();
+  });
+
   it('a real upstream failure keeps its own notice', async () => {
     const { sched, engine } = withWallet({ coinsShort: async () => false });
     engine.begin();

@@ -270,7 +270,9 @@ export interface OracleResultPayload {
   followup: string;
   report?: { rows: { label: string; score: number }[]; keywords: string; period: string };
   threadId?: string;
-  error?: OracleErrorKind;
+  /** '' is what the room sends when it has no reason to give — the flow reads that as a lost
+   *  connection rather than as "no error" (11-11). */
+  error?: OracleErrorKind | '';
   /** A loop answer rather than the staged reading. */
   loop?: boolean;
   /** What the counsellor noticed about the player this turn — 아카이브 "기억 후보". Mirrored by
