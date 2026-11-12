@@ -7,6 +7,7 @@ import { devlog } from '../../../shared/devlog';
 import { devPurchases } from '../../../shared/device/simulator';
 import { useCoins } from '../store/coinStore';
 import { noteCoins } from '../../myroom/inbox/inboxStore';
+import { claimPurchase, creditableNow, releasePurchase } from './purchaseOwner';
 
 /**
  * Prayer Coins (PC) — the coin wallet (`users.coin_balance` on saju_server), 10-15 the app's one
@@ -119,6 +120,9 @@ export async function buyCoins(productId: string, opts: { dev?: boolean } = {}):
           devlog(`[coins] server refused the receipt for ${productId} ${r.purchase.transactionId ?? ''} - left unfinished for support`);
           return { ok: false, reason: 'unverified' };
         }
+        // The device remembers who paid, so a relaunch after a sign-out cannot credit the next
+        // account with this receipt (purchaseOwner).
+        void claimPurchase(keyOf(r.purchase));
         if (at === session) holdForConfirm(r.purchase);
         return { ok: false, reason: 'awaiting' };
       }
@@ -247,6 +251,7 @@ export function retryHeldCoinPurchases(): Promise<void> {
  */
 async function credit(purchase: ProductPurchase, late: boolean): Promise<'credited' | 'retry' | 'refused'> {
   const at = session;
+  await claimPurchase(keyOf(purchase));
   const r = await confirmCoinPurchase({
     platform: purchase.platform,
     productId: purchase.productId,
@@ -256,12 +261,14 @@ async function credit(purchase: ProductPurchase, late: boolean): Promise<'credit
   if (!r.ok) {
     devlog(`[coins] could not confirm ${purchase.productId} ${purchase.transactionId ?? ''}: ${r.error}`);
     if (r.error !== 'invalid') return 'retry';
+    await releasePurchase(keyOf(purchase));
     if (at === session) useCoins.getState().noteConfirm(purchase.productId, 'unverified');
     return 'refused';
   }
   // Credited to whichever account sent it, so it is consumed either way; only the wallet on screen
   // belongs to the session that asked.
   await finishPurchase(purchase);
+  await releasePurchase(keyOf(purchase));
   if (at !== session) return 'credited';
   useCoins.getState().setBalance(r.balance);
   noteCoins(r.coinsAdded, r.balance);
@@ -278,6 +285,12 @@ async function credit(purchase: ProductPurchase, late: boolean): Promise<'credit
 async function settle(purchase: ProductPurchase): Promise<void> {
   if (!isCoinProduct(purchase.productId)) return;
   const key = keyOf(purchase);
+  // Another account on this device paid for it: leave it unfinished (the store keeps re-delivering
+  // it, and its owner is credited the next time they sign in here) rather than credit this one.
+  if (!(await creditableNow(key))) {
+    devlog(`[coins] not ours to confirm: ${purchase.productId} ${purchase.transactionId ?? ''} belongs to another account on this device`);
+    return;
+  }
   const at = session;
   const r = await credit(purchase, held.has(key));
   if (at !== session) return;
@@ -304,8 +317,9 @@ export function startCoinPurchaseRecovery(): () => void {
 /**
  * Sign-out (forgetLocalData): stop asking about the last account's payments. 29-10: the held map,
  * its timer and the foreground hook outlived the sign-out, so the next retry posted A's transaction
- * with B's token and the server credited B. The store transactions stay unfinished; the next
- * launch's recovery offers them again under whoever is signed in then.
+ * with B's token and the server credited B. The store transactions stay unfinished; the next launch's
+ * recovery offers them again — but only to the account that paid (11-11: `purchaseOwner` keeps that
+ * on the device, so B's launch no longer credits B with A's receipt).
  */
 export function stopCoinConfirms(): void {
   session += 1;
